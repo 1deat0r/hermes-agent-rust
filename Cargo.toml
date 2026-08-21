@@ -1,0 +1,26 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/hermes-constants",
+    "crates/hermes-time",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+rust-version = "1.97"
+
+[workspace.dependencies]
+chrono = { version = "0.4", default-features = false, features = ["std", "clock", "serde"] }
+chrono-tz = { version = "0.10", features = ["serde"] }
+serde = { version = "1", features = ["derive"] }
+serde_yaml = "0.9"
+thiserror = "2"
+once_cell = "1"
+
+[profile.dev]
+debug = true
+
+[profile.release]
+lto = "thin"

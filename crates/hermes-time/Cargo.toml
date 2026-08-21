@@ -1,0 +1,16 @@
+[package]
+name = "hermes-time"
+description = "1:1 Rust port of hermes_time.py (Nous Research Hermes Agent)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+chrono.workspace = true
+chrono-tz.workspace = true
+hermes-constants = { path = "../hermes-constants" }
+serde_yaml.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+tempfile = "3"
