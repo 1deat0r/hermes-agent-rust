@@ -5,3 +5,4 @@ Cargo.lock.orig
 .idea/
 *.swp
 .DS_Store
+.directory
