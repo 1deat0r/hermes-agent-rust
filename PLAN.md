@@ -191,5 +191,6 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   `parse_reasoning_effort` (@ b9aa928); parity tests assert exact full-list
   equality. Evidence: `cargo test --workspace` (unit) — 74 ok.
 - 2026-08-22 (session 1b): GitHub repo `1deat0r/hermes-agent-rust` created
-  (public). Commit policy: local+remote together on every commit (standing
-  rule).
+  (public, https://github.com/1deat0r/hermes-agent-rust), P0 commits pushed.
+  Standing rule: every commit is made locally AND pushed to origin in the
+  same step (no local-only commits). gh is authenticated as 1deat0r.
