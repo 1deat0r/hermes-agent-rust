@@ -180,15 +180,29 @@ pub trait LogTarget: Send + Sync {
     fn emit(&self, record: &LogRecord);
 }
 
-pub(crate) static REDACTOR: std::sync::OnceLock<Box<dyn Redactor>> = std::sync::OnceLock::new();
+pub(crate) static REDACTOR: std::sync::Mutex<Option<Box<dyn Redactor>>> =
+    std::sync::Mutex::new(None);
 
 /// Install the process-wide redactor (idempotent; first install wins).
 pub fn install_redactor(r: Box<dyn Redactor>) {
-    let _ = REDACTOR.set(r);
+    let mut slot = REDACTOR.lock().unwrap();
+    if slot.is_none() {
+        *slot = Some(r);
+    }
+}
+
+/// Test-only reset so unit tests are order-independent.
+#[cfg(test)]
+pub fn _reset_redactor_for_tests() {
+    *REDACTOR.lock().unwrap() = None;
 }
 
 pub(crate) fn redact(text: &str) -> String {
-    REDACTOR.get_or_init(|| Box::new(NoopRedactor)).redact(text)
+    let slot = REDACTOR.lock().unwrap();
+    match slot.as_deref() {
+        Some(redactor) => redactor.redact(text),
+        None => NoopRedactor.redact(text),
+    }
 }
 
 #[cfg(test)]
@@ -226,6 +240,7 @@ mod tests {
 
     #[test]
     fn redactor_default_noop_and_install() {
+        _reset_redactor_for_tests();
         assert_eq!(redact("secret=abc"), "secret=abc");
         struct Star;
         impl Redactor for Star {

@@ -51,6 +51,10 @@ pub struct SetupOptions {
 ///
 /// PARITY: hermes_logging.py `setup_logging` (259–363).
 pub fn setup_logging(opts: SetupOptions) -> PathBuf {
+    // Upstream installs the RedactingFormatter on every log handler; the
+    // port's process-wide redactor seam gets the same real redactor here
+    // (first install wins — PARITY: hermes_logging.py formatter wiring).
+    crate::record::install_redactor(Box::new(crate::redact::RedactingFormatter));
     let home = opts.hermes_home.clone().unwrap_or_else(hermes_constants::get_hermes_home);
     let log_dir = home.join("logs");
     let _ = std::fs::create_dir_all(&log_dir);

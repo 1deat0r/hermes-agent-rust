@@ -5,12 +5,12 @@
 //! (`agent.log`, `errors.log`, `gateway.log`, `gui.log`), component routing,
 //! thread-local session tags, a background queue listener so log I/O never
 //! blocks the emitting thread, external-rotation (inode) detection, and a
-//! pluggable redactor (the upstream `agent.redact.RedactingFormatter` port
-//! lands with the agent crate, P2).
+//! pluggable redactor (port of `agent/redact.py` lives in `redact`;
+//! `setup_logging` installs it as the process-wide redactor).
 //!
 //! Port status: **core complete** (P1). Documented divergences (PLAN.md §5):
-//! - redaction defaults to a no-op until `agent/redact.py` is ported (P2);
-//!   `install_redactor` is the seam.
+//! - redaction is wired at `setup_logging` time (first install wins);
+//!   before setup the seam stays Noop — no log facility exists yet.
 //! - managed-mode (`is_managed()`) 0o660 chmod and the Windows
 //!   concurrent-log-handler lock are deferred (POSIX primary target);
 //! - `setup_verbose_logging` routes through its own stderr LogTarget.
@@ -21,6 +21,7 @@
 //! preserved across the port.
 
 pub mod queue;
+pub mod redact;
 pub mod record;
 pub mod rotating;
 pub mod setup;
@@ -29,6 +30,7 @@ pub use queue::{
     drain_log_queue, flush_log_queue, register_queued_handler, register_queued_target,
     reset_queued_handlers, rotating_file_handlers,
 };
+pub use redact::{redact_cdp_url, redact_sensitive_text, redact_terminal_output, is_env_dump_command, mask_secret, RedactingFormatter};
 pub use record::{
     clear_session_context, install_redactor, set_session_context, Level, LogRecord, LogTarget,
     NoopRedactor, Redactor, LOG_FORMAT, LOG_FORMAT_VERBOSE,

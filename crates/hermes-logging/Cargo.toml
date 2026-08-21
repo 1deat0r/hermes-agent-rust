@@ -7,10 +7,12 @@ license.workspace = true
 
 [dependencies]
 chrono.workspace = true
+fancy-regex = "0.14"
 hermes-constants = { path = "../hermes-constants" }
 hermes-utils = { path = "../hermes-utils" }
 once_cell.workspace = true
 serde_yaml.workspace = true
 
 [dev-dependencies]
+serde_json = "1"
 tempfile = "3"
