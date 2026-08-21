@@ -5,10 +5,10 @@
   "hermes_time": {
     "status": "done"
   },
-  "hermes_utils": {
+  "hermes_logging": {
     "status": "done"
   },
-  "hermes_logging": {
+  "utils": {
     "status": "done"
   }
 }
