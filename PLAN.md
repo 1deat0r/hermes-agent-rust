@@ -89,7 +89,7 @@ Hermes-Agent-Rust/
     hermes-time/           # hermes_time.py                   (✅ complete)
     hermes-utils/          # utils.py                         (Phase 1)
     hermes-logging/        # hermes_logging.py                (Phase 1)
-    hermes-state/          # hermes_state{,_schema,_common,_portability,_search}.py  (Phase 1)
+    hermes-state/          # hermes_state{,_schema,_common,_portability,_search}.py  (Phase 1, open — common/schema/lifecycle landed)
     hermes-toolsets/       # toolsets.py, toolset_distributions.py, model_tools.py   (Phase 2)
     hermes-agent/          # run_agent.py + agent/            (Phase 2)
     hermes-tools/          # tools/                           (Phase 2)
@@ -191,8 +191,50 @@ Legend: ✅ done · 🟡 partial · ❌ missing
 | _ComponentFilter | ✅ | rotating::ComponentFilter |
 | QueueListener async path (_NonFormattingQueueHandler) | ✅ | queue (mpsc + worker thread) |
 | flush_log_queue / drain_log_queue / rotating_file_handlers / _reset_queued_handlers | ✅ | queue (drain join is unbounded — documented) |
-| RedactingFormatter (agent/redact.py, 1,197 LOC) | 🟡 | record::Redactor trait + NoopRedactor default; agent crate installs real redactor (P2) |
+| RedactingFormatter (agent/redact.py, 1,197 LOC) | ✅ | logging::redact::RedactingFormatter, installed at setup_logging |
 | setup_verbose_logging | ✅ | setup (stderr LogTarget with verbose format) |
+
+### hermes_state_common (upstream: hermes_state_common.py, 614 LOC) — ✅ complete
+| Function/surface | Status | Rust home |
+|---|---|---|
+| SCHEMA_SQL / DEFERRED_INDEX_SQL / FTS_SQL / FTS_TRIGRAM_SQL / LEGACY_FTS(_TRIGRAM)_SQL | ✅ byte-identical | common::* (generator: tools/gen_state_common_constants.py) |
+| SCHEMA_VERSION / FTS_STORAGE_VERSION / MAX_FTS5_QUERY_CHARS / FTS_CJK_STALE_KEY | ✅ | common |
+| _FTS_TRIGGERS / _FTS_CJK_TRIGGERS / FTS_CJK_TABLE_SQL / FTS_CJK_TRIGGER_SQL | ✅ | common |
+| escape_like | ✅ | common::escape_like |
+| preview shaping (_PREVIEW_RAW_SELECT, _shape_preview) | ✅ | common::{_preview_raw_select, _shape_preview} |
+| child classification SQL (_branch/_compression/_listable/_ephemeral_child_sql) | ✅ | common |
+| last-active SQL builders | ✅ | common |
+| skill-commands subset (SKILL_SCAFFOLD_SQL_LIKE, describe_skill_invocation, extract_user_instruction_from_skill_message) | ✅ | skill (inlined until agent crate lands, P2) |
+
+### hermes_state_schema (upstream: hermes_state_schema.py, 1,126 LOC) — ✅ complete
+| Function/surface | Status | Rust home |
+|---|---|---|
+| schema_read_probe_statements (cached) | ✅ | schema::schema_read_probe_statements |
+| _init_schema: SCHEMA_SQL, reconcile columns, PK heals (gateway_routing, session_model_usage), v16/v18/v20/v22/v23/v25 migrations, FTS storage stamp, title unique index | ✅ | schema::init_schema_inner |
+| FTS DDL branch (legacy-vs-v23), trigger repair/rebuild, UPDATE OF migration, CJK quarantine | ✅ | schema + state impl |
+| _parse_schema_columns (in-memory SQLite parse) | ✅ | schema::parse_schema_columns |
+
+### hermes_state (upstream: hermes_state.py, 9,996 LOC) — 🟡 partial (foundation)
+| Function/surface | Status | Rust home |
+|---|---|---|
+| SessionDB open (writable/RO), zeroed-DB quarantine, test-isolation guard, lock-patience open | ✅ | state::{open, open_read_only, open_writable} |
+| apply_wal_with_fallback + WAL-reset gate + pragmas | ✅ | wal (see row above) |
+| _execute_write (BEGIN IMMEDIATE + jitter retry, checkpoint cadence) | ✅ | state::execute_write |
+| close (TRUNCATE checkpoint writable-only) | ✅ | state::close |
+| get_meta / set_meta / _store_system_prompt / system_prompt_hash | ✅ | state |
+| create_session / append_message / get_messages / messages CRUD | ❌ next unit | — |
+| portability mixin (export/import, rich rows) | ❌ (hermes_state_portability.py, 714 LOC) | — |
+| search mixin (search_messages, FTS rebuild engine, anchored views) | ❌ (hermes_state_search.py, 2,305 LOC) | — |
+| compression locks / token writer / telegram topics / handoffs / prune/archive | ❌ next units | — |
+
+### agent/redact (upstream: agent/redact.py, 1,197 LOC) — ✅ complete (homed in hermes-logging)
+| Function/surface | Status | Rust home |
+|---|---|---|
+| redact_sensitive_text full pass chain (prefix/ENV/JSON/YAML/auth/headers/private keys/DB connstrs/JWT/phones/form) | ✅ | logging::redact::redact_sensitive_text |
+| mask_secret / _mask_token / non-reusable sentinel | ✅ | logging::redact |
+| redact_cdp_url / redact_terminal_output / is_env_dump_command / _command_reads_env_file | ✅ | logging::redact |
+| RedactingFormatter on the logging seam | ✅ installed at setup_logging (first-install-wins) | logging::redact::RedactingFormatter |
+| lookaround patterns | ✅ via fancy-regex (documented divergence) | — |
 
 ### hermes_time (upstream: hermes_time.py, 135 LOC)
 | Function/surface | Status | Rust home |
@@ -213,6 +255,9 @@ oracle tests). Upstream oracle files currently mirrored:
 - `tests/test_hermes_constants.py` (foundational subset) → `crates/hermes-constants/tests/parity_constants.rs`
 - `tests/cron/test_reasoning_config_per_model.py`, `tests/gateway/test_reasoning_config_per_model.py`
   → deferred until reasoning-config crate lands
+- `hermes_state_common.py` → `crates/hermes-state/src/common.rs` (golden `upstream/golden_state_common.json`)
+- `tests/test_hermes_state.py` TestConnectionLifecycle/TestSchemaInit subset → `crates/hermes-state/tests/parity_state_lifecycle.rs`
+- `agent/redact.py` → `crates/hermes-logging/src/redact.rs` (golden `upstream/golden_redact.json`)
 
 Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 + the exact command, e.g. `cargo test -p hermes-time (unit)`.
@@ -245,3 +290,30 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   (public, https://github.com/1deat0r/hermes-agent-rust), P0 commits pushed.
   Standing rule: every commit is made locally AND pushed to origin in the
   same step (no local-only commits). gh is authenticated as 1deat0r.
+- 2026-08-22 (session 1e): State subsystem + redactor — largest P1 chunk.
+  (a) hermes-state crate opened (rusqlite bundled; SQLite 3.50.2, FTS5 +
+  trigram + external-content verified). hermes_state_common ported 1:1:
+  byte-identical SCHEMA_SQL/FTS DDL (generator), preview shaping,
+  child-session + last-active SQL builders, skill-commands subset
+  (inlined until P2; golden upstream/golden_state_common.json). (b) WAL
+  machinery: apply_wal_with_fallback + WAL-reset gate + operator
+  journal_mode + config pragmas; bundled 3.50.2 matches upstream's
+  vulnerable window so fresh DBs prefer DELETE, exactly like upstream's
+  3.50.4. (c) SessionDB open/close + full schema init: writable+RO open,
+  zeroed-DB quarantine, test-isolation guard, lock-patience open retry,
+  _execute_write (BEGIN IMMEDIATE + jitter + checkpoint cadence),
+  schema migrations v16/v18/v20/v22/v23/v25 + PK heals + FTS branch +
+  UPDATE OF trigger migration + CJK ensure/quarantine. Lifecycle oracles
+  mirror TestConnectionLifecycle/TestSchemaInit. (d) agent/redact.py
+  ported into hermes-logging (fancy-regex for lookarounds): full 55-prefix
+  chain, ENV/JSON/YAML/auth/JWT/DB/phone/form passes, term-output policy,
+  RedactingFormatter installed at setup_logging (first-install-wins);
+  golden upstream/golden_redact.json byte-equality; corpus caught one
+  real bug (_ENV_ASSIGN_RE must not be IGNORECASE). Workspace tests 189
+  green; clippy clean. Evidence: `cargo test --workspace` (unit).
+  REMAINING state subsystem: SessionDB CRUD surface (create_session,
+  append_message, message reads, titles, prune/archive, compression
+  locks, token writer, telegram topics, handoffs, meta surfaces) then
+  hermes_state_portability + hermes_state_search (FTS rebuild engine,
+  search_messages). Inventory: 6 done / 2 partial (hermes_constants
+  deferred node/networking; hermes_state foundation-only) / 1,095 missing.
