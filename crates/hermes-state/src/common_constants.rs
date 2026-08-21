@@ -7,7 +7,7 @@ pub const FTS_STORAGE_VERSION: i64 = 1;
 pub const MAX_FTS5_QUERY_CHARS: usize = 2_048;
 pub const FTS_CJK_STALE_KEY: &str = "fts_cjk_stale";
 
-pub const SCHEMA_SQL: &str = r#"""
+pub const SCHEMA_SQL: &str = r#"
 CREATE TABLE IF NOT EXISTS schema_version (
     version INTEGER NOT NULL
 );
@@ -183,9 +183,9 @@ CREATE INDEX IF NOT EXISTS idx_session_model_usage_session ON session_model_usag
 CREATE INDEX IF NOT EXISTS idx_session_model_usage_model ON session_model_usage(model);
 CREATE INDEX IF NOT EXISTS idx_async_delegations_delivery
     ON async_delegations(delivery_state, completed_at);
-"""#;
+"#;
 
-pub const DEFERRED_INDEX_SQL: &str = r#"""
+pub const DEFERRED_INDEX_SQL: &str = r#"
 CREATE INDEX IF NOT EXISTS idx_messages_session_active
     ON messages(session_id, active, timestamp);
 CREATE INDEX IF NOT EXISTS idx_messages_active_null
@@ -198,9 +198,9 @@ CREATE INDEX IF NOT EXISTS idx_sessions_handoff_state
     ON sessions(handoff_state, started_at);
 CREATE INDEX IF NOT EXISTS idx_sessions_system_prompt_hash
     ON sessions(system_prompt_hash);
-"""#;
+"#;
 
-pub const FTS_SQL: &str = r#"""
+pub const FTS_SQL: &str = r#"
 CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts USING fts5(
     content,
     tool_name,
@@ -247,9 +247,9 @@ BEGIN
     INSERT INTO messages_fts(rowid, content, tool_name, tool_calls)
     VALUES (new.id, new.content, new.tool_name, new.tool_calls);
 END;
-"""#;
+"#;
 
-pub const FTS_TRIGRAM_SQL: &str = r#"""
+pub const FTS_TRIGRAM_SQL: &str = r#"
 CREATE VIEW IF NOT EXISTS messages_fts_trigram_src AS
     SELECT id, role, content, tool_name, tool_calls
     FROM messages
@@ -304,9 +304,9 @@ BEGIN
     SELECT new.id, new.content, new.tool_name, new.tool_calls
     WHERE new.role <> 'tool';
 END;
-"""#;
+"#;
 
-pub const LEGACY_FTS_SQL: &str = r#"""
+pub const LEGACY_FTS_SQL: &str = r#"
 CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts USING fts5(
     content
 );
@@ -330,9 +330,9 @@ AFTER UPDATE OF content, tool_name, tool_calls ON messages BEGIN
         COALESCE(new.content, '') || ' ' || COALESCE(new.tool_name, '') || ' ' || COALESCE(new.tool_calls, '')
     );
 END;
-"""#;
+"#;
 
-pub const LEGACY_FTS_TRIGRAM_SQL: &str = r#"""
+pub const LEGACY_FTS_TRIGRAM_SQL: &str = r#"
 CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts_trigram USING fts5(
     content,
     tokenize='trigram'
@@ -357,8 +357,69 @@ AFTER UPDATE OF content, tool_name, tool_calls ON messages BEGIN
         COALESCE(new.content, '') || ' ' || COALESCE(new.tool_name, '') || ' ' || COALESCE(new.tool_calls, '')
     );
 END;
-"""#;
+"#;
 
 pub const _FTS_TRIGGERS: [&str; 6] = ["messages_fts_insert", "messages_fts_delete", "messages_fts_update", "messages_fts_trigram_insert", "messages_fts_trigram_delete", "messages_fts_trigram_update"];
 
 pub const _FTS_CJK_TRIGGERS: [&str; 3] = ["messages_fts_cjk_insert", "messages_fts_cjk_delete", "messages_fts_cjk_update"];
+
+// ── CJK-bigram FTS surface (lives in hermes_state.py upstream, not common) ──
+pub const FTS_CJK_TABLE_SQL: &str = r#"
+CREATE VIEW IF NOT EXISTS messages_fts_cjk_src AS
+    SELECT id, role, content, tool_name, tool_calls
+    FROM messages
+    WHERE role <> 'tool';
+
+CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts_cjk USING fts5(
+    content,
+    tool_name,
+    tool_calls,
+    content='messages_fts_cjk_src',
+    content_rowid='id',
+    tokenize='cjk_unicode61'
+);
+"#;
+
+pub const FTS_CJK_TRIGGER_SQL: &str = r#"
+CREATE TRIGGER IF NOT EXISTS messages_fts_cjk_insert AFTER INSERT ON messages
+WHEN new.role <> 'tool'
+   AND (new.id > COALESCE((SELECT CAST(value AS INTEGER) FROM state_meta
+                           WHERE key = 'fts_cjk_rebuild_high_water'), -1)
+     OR new.id <= COALESCE((SELECT CAST(value AS INTEGER) FROM state_meta
+                            WHERE key = 'fts_cjk_rebuild_progress'), -1))
+BEGIN
+    INSERT INTO messages_fts_cjk(rowid, content, tool_name, tool_calls)
+    VALUES (new.id, new.content, new.tool_name, new.tool_calls);
+END;
+
+CREATE TRIGGER IF NOT EXISTS messages_fts_cjk_delete AFTER DELETE ON messages
+WHEN old.role <> 'tool'
+   AND (old.id > COALESCE((SELECT CAST(value AS INTEGER) FROM state_meta
+                           WHERE key = 'fts_cjk_rebuild_high_water'), -1)
+     OR old.id <= COALESCE((SELECT CAST(value AS INTEGER) FROM state_meta
+                            WHERE key = 'fts_cjk_rebuild_progress'), -1))
+BEGIN
+    INSERT INTO messages_fts_cjk(messages_fts_cjk, rowid, content, tool_name, tool_calls)
+    VALUES ('delete', old.id, old.content, old.tool_name, old.tool_calls);
+END;
+
+CREATE TRIGGER IF NOT EXISTS messages_fts_cjk_update
+AFTER UPDATE OF content, tool_name, tool_calls, role ON messages
+WHEN (old.content IS NOT new.content
+    OR old.tool_name IS NOT new.tool_name
+    OR old.tool_calls IS NOT new.tool_calls
+    OR old.role IS NOT new.role)
+   AND (old.id > COALESCE((SELECT CAST(value AS INTEGER) FROM state_meta
+                           WHERE key = 'fts_cjk_rebuild_high_water'), -1)
+     OR old.id <= COALESCE((SELECT CAST(value AS INTEGER) FROM state_meta
+                            WHERE key = 'fts_cjk_rebuild_progress'), -1))
+BEGIN
+    INSERT INTO messages_fts_cjk(messages_fts_cjk, rowid, content, tool_name, tool_calls)
+    SELECT 'delete', old.id, old.content, old.tool_name, old.tool_calls
+    WHERE old.role <> 'tool';
+    INSERT INTO messages_fts_cjk(rowid, content, tool_name, tool_calls)
+    SELECT new.id, new.content, new.tool_name, new.tool_calls
+    WHERE new.role <> 'tool';
+END;
+"#;
+

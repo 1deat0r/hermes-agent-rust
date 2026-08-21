@@ -9,9 +9,10 @@ license.workspace = true
 hermes-constants = { path = "../hermes-constants" }
 hermes-utils = { path = "../hermes-utils" }
 once_cell.workspace = true
-rusqlite = { version = "0.37", features = ["bundled"] }
+rusqlite = { version = "0.37", features = ["bundled", "load_extension"] }
 serde.workspace = true
 serde_json = "1"
+sha2 = "0.10"
 serde_yaml.workspace = true
 thiserror.workspace = true
 

@@ -32,7 +32,7 @@ for m in const_re.finditer(src):
     delim = '#'
     while ('"' + delim) in body or (delim + '"') in body:
         delim += '#'
-    out.append(f"pub const {name}: &str = r{delim}\"\"\"{body}\"\"\"{delim};")
+    out.append(f"pub const {name}: &str = r{delim}\"{body}\"{delim};")
     out.append("")
 
 # The FTS trigger tuples are Python string tuples, not triple-quoted; emit
