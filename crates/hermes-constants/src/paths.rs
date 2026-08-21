@@ -204,6 +204,9 @@ mod tests {
 
     #[test]
     fn optional_dir_env_wins() {
+        use std::sync::Mutex;
+        static M: Mutex<()> = Mutex::new(());
+        let _g = M.lock().unwrap();
         unsafe { std::env::set_var("HERMES_OPTIONAL_SKILLS", "/pkg/optskills") };
         assert_eq!(
             get_optional_skills_dir(None),
@@ -214,6 +217,9 @@ mod tests {
 
     #[test]
     fn config_path_uses_home() {
+        use std::sync::Mutex;
+        static M: Mutex<()> = Mutex::new(());
+        let _g = M.lock().unwrap();
         let td = TempDir::new().unwrap();
         unsafe { std::env::set_var("HERMES_HOME", td.path()) };
         assert_eq!(get_config_path(), td.path().join("config.yaml"));
@@ -289,9 +295,13 @@ mod display_tests {
 
     static ENV_MUTEX: Mutex<()> = Mutex::new(());
 
+    fn guard() -> std::sync::MutexGuard<'static, ()> {
+        ENV_MUTEX.lock().unwrap_or_else(|p| p.into_inner())
+    }
+
     #[test]
     fn display_shorthand_under_home() {
-        let _g = ENV_MUTEX.lock().unwrap();
+        let _g = guard();
         let td = tempfile::TempDir::new().unwrap();
         unsafe {
             std::env::set_var("HOME", td.path());
@@ -305,7 +315,7 @@ mod display_tests {
 
     #[test]
     fn display_absolute_outside_home() {
-        let _g = ENV_MUTEX.lock().unwrap();
+        let _g = guard();
         let td = tempfile::TempDir::new().unwrap();
         unsafe {
             std::env::set_var("HOME", td.path());

@@ -186,6 +186,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "hermes-logging"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "hermes-constants",
+ "hermes-utils",
+ "once_cell",
+ "serde_yaml",
+ "tempfile",
+]
+
+[[package]]
 name = "hermes-time"
 version = "0.1.0"
 dependencies = [

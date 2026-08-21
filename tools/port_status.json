@@ -7,5 +7,8 @@
   },
   "hermes_utils": {
     "status": "done"
+  },
+  "hermes_logging": {
+    "status": "done"
   }
 }

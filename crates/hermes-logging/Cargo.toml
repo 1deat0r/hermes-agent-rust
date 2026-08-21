@@ -1,0 +1,16 @@
+[package]
+name = "hermes-logging"
+description = "1:1 Rust port of hermes_logging.py (Nous Research Hermes Agent)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+chrono.workspace = true
+hermes-constants = { path = "../hermes-constants" }
+hermes-utils = { path = "../hermes-utils" }
+once_cell.workspace = true
+serde_yaml.workspace = true
+
+[dev-dependencies]
+tempfile = "3"

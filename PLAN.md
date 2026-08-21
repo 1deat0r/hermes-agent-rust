@@ -177,6 +177,23 @@ Legend: ✅ done · 🟡 partial · ❌ missing
 | base_url_hostname / base_url_host_matches | ✅ | urls |
 | model_forces_max_completion_tokens | ✅ | urls |
 
+### hermes_logging (upstream: hermes_logging.py, 800 LOC) — core complete (P1)
+| Function/surface | Status | Rust home |
+|---|---|---|
+| LOG_FORMAT / LOG_FORMAT_VERBOSE | ✅ | record::LOG_FORMAT(_VERBOSE) |
+| set_session_context / clear_session_context (thread-local) | ✅ | record |
+| LogRecord factory session_tag injection | ✅ | record::LogRecord::new + session_tag |
+| Level parsing (getattr fallback→INFO) | ✅ | record::Level::parse |
+| COMPONENT_PREFIXES / NOISY_LOGGERS | ✅ | setup |
+| setup_logging (agent.log/errors.log/gateway.log/gui.log, idempotent, force) | ✅ | setup |
+| _read_logging_config (logging.level/max_size_mb/backup_count) | ✅ | setup (managed overlay identity until P3) |
+| _ManagedRotatingFileHandler (rotation, managed chmod, inode reopen) | ✅ | rotating (managed chmod deferred to config crate) |
+| _ComponentFilter | ✅ | rotating::ComponentFilter |
+| QueueListener async path (_NonFormattingQueueHandler) | ✅ | queue (mpsc + worker thread) |
+| flush_log_queue / drain_log_queue / rotating_file_handlers / _reset_queued_handlers | ✅ | queue (drain join is unbounded — documented) |
+| RedactingFormatter (agent/redact.py, 1,197 LOC) | 🟡 | record::Redactor trait + NoopRedactor default; agent crate installs real redactor (P2) |
+| setup_verbose_logging | ✅ | setup (stderr LogTarget with verbose format) |
+
 ### hermes_time (upstream: hermes_time.py, 135 LOC)
 | Function/surface | Status | Rust home |
 |---|---|---|
@@ -202,6 +219,13 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 ## 7. Session log
 
+- 2026-08-22 (session 1d): hermes-logging crate landed (core complete):
+  rotating file handlers (agent/errors/gateway/gui), component routing,
+  thread-local session tags, async queue listener, external-rotation inode
+  reopening, config-driven defaults, verbose mode, pluggable redactor seam.
+  140 workspace tests green; clippy clean. Evidence: `cargo test --workspace`
+  (unit). Next foundation unit: `hermes-state` subsystem (state_schema /
+  state_common / state / portability / search, ~14K LOC) — largest P1 chunk.
 - 2026-08-22 (session 1c): P1 continuation. hermes-constants surfaces
   completed: node dir ordering, candidate node command names, display home,
   secure parent dir, profile-home helpers, per-model reasoning override
