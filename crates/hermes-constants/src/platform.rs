@@ -265,3 +265,104 @@ mod tests {
         assert_eq!(wsl_unc_path_to_posix("C:\\path"), None);
     }
 }
+
+// ── Node directory helpers (layout only; bootstrap machinery is P2) ───────
+//
+// PARITY: hermes_constants.py lines 285–318 (`iter_hermes_node_dirs`,
+// `_candidate_node_command_names`).
+
+use std::path::PathBuf;
+
+/// Hermes-managed Node.js directories in preferred lookup order.
+///
+/// Windows installs unpack portable Node directly into
+/// `%LOCALAPPDATA%\hermes\node`; POSIX installs use
+/// `$HERMES_HOME/node/bin`. Both shapes are returned on every platform so
+/// mixed or migrated installs still work.
+///
+/// PARITY: hermes_constants.py `iter_hermes_node_dirs` (285–303).
+pub fn iter_hermes_node_dirs(home: Option<&std::path::Path>) -> Vec<PathBuf> {
+    let root = home.map(|p| p.to_path_buf()).unwrap_or_else(super::home::get_hermes_home);
+    let dirs = root.join("node");
+    let bin_dir = root.join("node").join("bin");
+    if cfg!(windows) {
+        vec![dirs, bin_dir]
+    } else {
+        vec![bin_dir, dirs]
+    }
+}
+
+/// Candidate executable names for a Node tool command on the host platform.
+///
+/// PARITY: hermes_constants.py `_candidate_node_command_names` (305–318).
+pub fn candidate_node_command_names(command: &str) -> Vec<String> {
+    let base = std::path::Path::new(command)
+        .file_name()
+        .map(|n| n.to_string_lossy().into_owned())
+        .unwrap_or_else(|| command.to_string());
+    if !cfg!(windows) || base.contains('.') {
+        return vec![base];
+    }
+    let lower = base.to_lowercase();
+    match lower.as_str() {
+        "npm" => vec!["npm.cmd".into(), "npm.exe".into(), "npm".into()],
+        "npx" => vec!["npx.cmd".into(), "npx.exe".into(), "npx".into()],
+        "node" => vec!["node.exe".into(), "node".into()],
+        _ => vec![format!("{}.cmd", base), format!("{}.exe", base), base],
+    }
+}
+
+#[cfg(test)]
+mod node_tests {
+    use super::*;
+    use std::path::Path;
+
+    #[test]
+    fn posix_order_bin_first() {
+        let home = Path::new("/h");
+        #[cfg(not(windows))]
+        assert_eq!(
+            iter_hermes_node_dirs(Some(home)),
+            vec![PathBuf::from("/h/node/bin"), PathBuf::from("/h/node")]
+        );
+        #[cfg(windows)]
+        assert_eq!(
+            iter_hermes_node_dirs(Some(home)),
+            vec![PathBuf::from("/h/node"), PathBuf::from("/h/node/bin")]
+        );
+    }
+
+    #[test]
+    fn candidate_names_posix() {
+        #[cfg(not(windows))]
+        assert_eq!(candidate_node_command_names("npm"), vec!["npm".to_string()]);
+        #[cfg(not(windows))]
+        assert_eq!(candidate_node_command_names("/usr/bin/node"), vec!["node".to_string()]);
+        #[cfg(not(windows))]
+        assert_eq!(candidate_node_command_names("npm.cmd"), vec!["npm.cmd".to_string()]);
+    }
+
+    #[test]
+    fn candidate_names_windows() {
+        // The implementation is host-gated; on POSIX hosts we can only assert
+        // the non-Windows behavior. Windows branches are covered by review.
+        if cfg!(windows) {
+            assert_eq!(
+                candidate_node_command_names("npm"),
+                vec!["npm.cmd".to_string(), "npm.exe".to_string(), "npm".to_string()]
+            );
+            assert_eq!(
+                candidate_node_command_names("npx"),
+                vec!["npx.cmd".to_string(), "npx.exe".to_string(), "npx".to_string()]
+            );
+            assert_eq!(
+                candidate_node_command_names("node"),
+                vec!["node.exe".to_string(), "node".to_string()]
+            );
+            assert_eq!(
+                candidate_node_command_names("custom"),
+                vec!["custom.cmd".to_string(), "custom.exe".to_string(), "custom".to_string()]
+            );
+        }
+    }
+}

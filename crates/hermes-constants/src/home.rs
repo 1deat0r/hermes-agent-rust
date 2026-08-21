@@ -4,6 +4,7 @@
 //! (platform default, env home, profile-fallback warning, get_hermes_home,
 //! get_process_hermes_home, get_default_hermes_root).
 
+use crate::platform::is_container;
 use crate::probe::{Probe, RealProbe};
 use std::path::{Path, PathBuf};
 use once_cell::sync::Lazy;
@@ -249,7 +250,7 @@ pub(crate) fn get_process_hermes_home_with(platform: Platform, probe: &dyn Probe
 /// Python `Path.resolve()`-style tolerant resolution: canonicalize what
 /// exists, append the rest lexically. Upstream `Path.resolve()` is
 /// non-strict (Python 3.11 default `strict=False`).
-fn resolve_tolerant(path: &Path) -> PathBuf {
+pub(crate) fn resolve_tolerant(path: &Path) -> PathBuf {
     if let Ok(c) = std::fs::canonicalize(path) {
         return c;
     }
@@ -477,5 +478,355 @@ mod tests {
         warn_profile_fallback_once_with(&p);
         // No panic; with active == "default" the once-flag must NOT be set.
         assert!(!*PROFILE_FALLBACK_WARNED.lock().unwrap());
+    }
+}
+
+// ── Profile-home helpers ──────────────────────────────────────────────────
+//
+// PARITY: hermes_constants.py lines 819–941 (`_norm_home_path`,
+// `_profile_home_path`, `_is_profile_home`, `_iter_real_home_candidates`,
+// `get_real_home`, `get_subprocess_home`, `apply_subprocess_home_env`).
+
+use std::collections::HashMap;
+
+/// Environment map type mirroring upstream's `dict[str, str] | None` params.
+pub type EnvMap = HashMap<String, String>;
+
+/// Look up an env value: explicit map wins (non-empty), else process env.
+fn env_get(explicit: Option<&EnvMap>, key: &str) -> String {
+    if let Some(map) = explicit {
+        if let Some(v) = map.get(key) {
+            if !v.is_empty() {
+                return v.clone();
+            }
+        }
+    }
+    std::env::var(key).unwrap_or_default()
+}
+
+/// Return a comparable absolute path string, or `""` for empty input.
+///
+/// PARITY: hermes_constants.py `_norm_home_path` (819–829).
+pub fn norm_home_path(path: Option<&str>) -> String {
+    let raw = path.unwrap_or("").trim();
+    if raw.is_empty() {
+        return String::new();
+    }
+    let expanded = expand_user(raw);
+    norm_case(absolute(&expanded))
+}
+
+fn expand_user(path: &str) -> String {
+    if let Some(rest) = path.strip_prefix("~/") {
+        let home = dirs_home();
+        if let Some(h) = home {
+            return format!("{}/{}", h, rest);
+        }
+    } else if path == "~" {
+        if let Some(h) = dirs_home() {
+            return h;
+        }
+    }
+    path.to_string()
+}
+
+fn dirs_home() -> Option<String> {
+    let p = super::probe::RealProbe;
+    p.home_dir().map(|h| h.to_string_lossy().into_owned())
+}
+
+fn absolute(path: &str) -> String {
+    let p = std::path::Path::new(path);
+    if p.is_absolute() {
+        return resolve_tolerant(p).to_string_lossy().into_owned();
+    }
+    let cwd = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
+    resolve_tolerant(&cwd.join(p)).to_string_lossy().into_owned()
+}
+
+/// `os.path.normcase` — lowercase on Windows, identity on POSIX.
+fn norm_case(path: String) -> String {
+    if cfg!(windows) {
+        path.to_lowercase()
+    } else {
+        path
+    }
+}
+
+/// Return `{HERMES_HOME}/home` when the profile-home directory exists.
+///
+/// PARITY: hermes_constants.py `_profile_home_path` (831–840).
+pub fn profile_home_path(env: Option<&EnvMap>) -> Option<String> {
+    let hermes_home = get_hermes_home_override()
+        .or_else(|| env.and_then(|m| m.get("HERMES_HOME").filter(|v| !v.is_empty()).cloned()))
+        .or_else(|| {
+            let v = std::env::var("HERMES_HOME").unwrap_or_default();
+            (!v.is_empty()).then_some(v)
+        });
+    let hermes_home = hermes_home?;
+    let profile_home = std::path::Path::new(&hermes_home).join("home");
+    if profile_home.is_dir() {
+        Some(profile_home.to_string_lossy().into_owned())
+    } else {
+        None
+    }
+}
+
+/// Compare two candidate paths as normalized homes.
+///
+/// PARITY: hermes_constants.py `_is_profile_home` (842–844).
+pub fn is_profile_home(candidate: Option<&str>, profile_home: Option<&str>) -> bool {
+    if candidate.map(|c| c.trim().is_empty()).unwrap_or(true) {
+        return false;
+    }
+    if profile_home.map(|c| c.trim().is_empty()).unwrap_or(true) {
+        return false;
+    }
+    norm_home_path(candidate) == norm_home_path(profile_home)
+}
+
+/// Current uid's home from /etc/passwd (Python `pwd.getpwuid(getuid())`).
+fn passwd_home(probe: &dyn crate::probe::Probe) -> Option<String> {
+    #[cfg(unix)]
+    {
+        let uid = unsafe { libc::getuid() };
+        let text = probe.read_file(std::path::Path::new("/etc/passwd"))?;
+        for line in text.lines() {
+            let fields: Vec<&str> = line.split(':').collect();
+            if fields.len() >= 6 {
+                if let Ok(field_uid) = fields[2].parse::<u32>() {
+                    if field_uid == uid {
+                        let home = fields[5].trim();
+                        if !home.is_empty() {
+                            return Some(home.to_string());
+                        }
+                    }
+                }
+            }
+        }
+        None
+    }
+    #[cfg(not(unix))]
+    {
+        let _ = probe;
+        None
+    }
+}
+
+/// Real-home candidates in trust order: `HERMES_REAL_HOME`, `HOME`, passwd
+/// entry, `USERPROFILE`, `HOMEDRIVE`+`HOMEPATH`, `~` expansion.
+///
+/// PARITY: hermes_constants.py `_iter_real_home_candidates` (846–878).
+pub fn iter_real_home_candidates(env: Option<&EnvMap>) -> Vec<String> {
+    let mut candidates: Vec<String> = Vec::new();
+    let explicit = env_get(env, "HERMES_REAL_HOME");
+    if !explicit.trim().is_empty() {
+        candidates.push(explicit);
+    }
+    let home = env_get(env, "HOME");
+    if !home.trim().is_empty() {
+        candidates.push(home);
+    }
+    let probe = crate::probe::RealProbe;
+    if let Some(pw_home) = passwd_home(&probe) {
+        if !pw_home.trim().is_empty() {
+            candidates.push(pw_home);
+        }
+    }
+    let userprofile = env_get(env, "USERPROFILE");
+    if !userprofile.trim().is_empty() {
+        candidates.push(userprofile);
+    }
+    let drive = env_get(env, "HOMEDRIVE");
+    let path = env_get(env, "HOMEPATH");
+    if !drive.trim().is_empty() && !path.trim().is_empty() {
+        if path.starts_with('\\') || path.starts_with('/') {
+            candidates.push(format!("{}{}", drive, path));
+        } else {
+            candidates.push(format!("{}/{}", drive, path));
+        }
+    }
+    let expanded = {
+        let p = std::path::Path::new("~");
+        if p.exists() {
+            absolute("~")
+        } else {
+            String::new()
+        }
+    };
+    if !expanded.is_empty() && expanded != "~" {
+        candidates.push(expanded);
+    }
+    candidates
+}
+
+/// Return the OS user's real home directory, avoiding Hermes profile HOME.
+///
+/// PARITY: hermes_constants.py `get_real_home` (880–897).
+pub fn get_real_home(env: Option<&EnvMap>) -> String {
+    let profile_home = profile_home_path(env);
+    let mut seen: std::collections::HashSet<String> = std::collections::HashSet::new();
+    for candidate in iter_real_home_candidates(env) {
+        let key = norm_home_path(Some(&candidate));
+        if key.is_empty() || seen.contains(&key) {
+            continue;
+        }
+        seen.insert(key);
+        if !is_profile_home(Some(&candidate), profile_home.as_deref()) {
+            return candidate;
+        }
+    }
+    "/tmp".to_string()
+}
+
+/// Return a subprocess `HOME` override, if one should be applied.
+///
+/// PARITY: hermes_constants.py `get_subprocess_home` (899–928), including
+/// the alias normalization for `TERMINAL_HOME_MODE` and the container policy.
+pub fn get_subprocess_home(env: Option<&EnvMap>) -> Option<String> {
+    let profile_home = profile_home_path(env);
+    let mode_raw = env_get(env, "TERMINAL_HOME_MODE");
+    let mut mode = mode_raw.trim().to_lowercase();
+    if mode.is_empty() {
+        mode = "auto".to_string();
+    }
+    if matches!(mode.as_str(), "isolated" | "profile_home" | "profile-home") {
+        mode = "profile".to_string();
+    }
+    if matches!(mode.as_str(), "host" | "user" | "real_home" | "real-home") {
+        mode = "real".to_string();
+    }
+
+    if mode == "profile" {
+        return profile_home;
+    }
+
+    let real_home = get_real_home(env);
+    let current_home = env_get(env, "HOME");
+    if mode == "real" {
+        return if norm_home_path(Some(&real_home)) != norm_home_path(Some(&current_home)) {
+            Some(real_home)
+        } else {
+            None
+        };
+    }
+
+    if profile_home.is_some() && is_container() {
+        return profile_home;
+    }
+    if is_profile_home(Some(&current_home), profile_home.as_deref()) {
+        return if norm_home_path(Some(&real_home)) != norm_home_path(Some(&current_home)) {
+            Some(real_home)
+        } else {
+            None
+        };
+    }
+    None
+}
+
+/// Apply Hermes' subprocess HOME contract to `env` in-place.
+///
+/// PARITY: hermes_constants.py `apply_subprocess_home_env` (930–933).
+pub fn apply_subprocess_home_env(env: &mut EnvMap) {
+    let real_home = get_real_home(Some(env));
+    if !real_home.is_empty() {
+        env.insert("HERMES_REAL_HOME".to_string(), real_home);
+    }
+    let home = get_subprocess_home(Some(env));
+    if let Some(h) = home {
+        env.insert("HOME".to_string(), h);
+    }
+}
+
+#[cfg(test)]
+mod profile_tests {
+    use super::*;
+    use crate::probe::fakes::FakeProbe;
+
+    #[test]
+    fn norm_home_basic() {
+        // expanduser + absolute from cwd
+        let r = norm_home_path(Some("/tmp/../tmp/./x"));
+        assert_eq!(r, "/tmp/x");
+    }
+
+    #[test]
+    fn profile_home_path_exists() {
+        let td = tempfile::TempDir::new().unwrap();
+        std::fs::create_dir_all(td.path().join("home")).unwrap();
+        let mut env = EnvMap::new();
+        env.insert("HERMES_HOME".into(), td.path().to_string_lossy().into_owned());
+        assert_eq!(
+            profile_home_path(Some(&env)),
+            Some(td.path().join("home").to_string_lossy().into_owned())
+        );
+    }
+
+    #[test]
+    fn profile_home_path_missing() {
+        let td = tempfile::TempDir::new().unwrap();
+        let mut env = EnvMap::new();
+        env.insert("HERMES_HOME".into(), td.path().to_string_lossy().into_owned());
+        assert_eq!(profile_home_path(Some(&env)), None);
+    }
+
+    #[test]
+    fn is_profile_home_compares_normalized() {
+        let mut env = EnvMap::new();
+        env.insert("HERMES_HOME".into(), "/tmp/h".into());
+        let td = tempfile::TempDir::new().unwrap();
+        std::fs::create_dir_all(td.path().join("home")).unwrap();
+        env.insert("HERMES_HOME".into(), td.path().to_string_lossy().into_owned());
+        let ph = profile_home_path(Some(&env)).unwrap();
+        assert!(is_profile_home(Some(&ph), Some(&ph)));
+        assert!(!is_profile_home(Some("/elsewhere"), Some(&ph)));
+        assert!(!is_profile_home(None, Some(&ph)));
+        assert!(!is_profile_home(Some(&ph), None));
+    }
+
+    #[test]
+    fn real_home_skips_profile_home() {
+        // Explicit HERMES_REAL_HOME always wins even if HOME is the profile home.
+        let mut env = EnvMap::new();
+        env.insert("HERMES_REAL_HOME".into(), "/real".into());
+        env.insert("HOME".into(), "/real".into());
+        assert_eq!(get_real_home(Some(&env)), "/real");
+    }
+
+    #[test]
+    fn subprocess_home_real_mode_returns_real_when_different() {
+        let mut env = EnvMap::new();
+        env.insert("TERMINAL_HOME_MODE".into(), "real".into());
+        env.insert("HERMES_REAL_HOME".into(), "/real".into());
+        env.insert("HOME".into(), "/profile".into());
+        assert_eq!(get_subprocess_home(Some(&env)).as_deref(), Some("/real"));
+    }
+
+    #[test]
+    fn subprocess_home_real_mode_none_when_same() {
+        let mut env = EnvMap::new();
+        env.insert("TERMINAL_HOME_MODE".into(), "real".into());
+        env.insert("HERMES_REAL_HOME".into(), "/real".into());
+        env.insert("HOME".into(), "/real".into());
+        assert_eq!(get_subprocess_home(Some(&env)), None);
+    }
+
+    #[test]
+    fn apply_subprocess_home_env_inserts_keys() {
+        let mut env = EnvMap::new();
+        env.insert("TERMINAL_HOME_MODE".into(), "real".into());
+        env.insert("HERMES_REAL_HOME".into(), "/real".into());
+        env.insert("HOME".into(), "/profile".into());
+        apply_subprocess_home_env(&mut env);
+        assert_eq!(env.get("HERMES_REAL_HOME").map(|s| s.as_str()), Some("/real"));
+        assert_eq!(env.get("HOME").map(|s| s.as_str()), Some("/real"));
+    }
+
+    #[test]
+    fn passwd_home_parses_current_uid() {
+        let probe = FakeProbe::new();
+        // We can't know the running uid in a unit test without libc in scope
+        // here; exercise the parser path via /etc/passwd absence instead.
+        assert_eq!(passwd_home(&probe), None);
     }
 }

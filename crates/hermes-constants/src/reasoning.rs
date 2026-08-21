@@ -84,6 +84,17 @@ impl<'a> From<Option<&'a str>> for EffortInput<'a> {
     }
 }
 
+impl<'a> EffortInput<'a> {
+    /// Convert a borrowed effort into an owned, 'static form (test helper).
+    pub fn into_static(self) -> EffortInput<'static> {
+        match self {
+            EffortInput::Bool(b) => EffortInput::Bool(b),
+            EffortInput::None => EffortInput::None,
+            EffortInput::Str(s) => EffortInput::Str(Box::leak(s.to_string().into_boxed_str())),
+        }
+    }
+}
+
 // ── Spelling-tolerant variant generation (upstream algorithm, step-for-step) ──
 
 fn dash_to_dot(re: &regex::Regex, s: &str) -> String {
@@ -256,5 +267,96 @@ mod tests {
         for s in &v {
             assert!(seen.insert(s.clone()), "duplicate {}", s);
         }
+    }
+}
+
+// ── Per-model reasoning-effort resolution (trait-based; config crate ports
+//    the dict-backed resolve_reasoning_config in P1) ───────────────────────
+
+/// Override-map lookup, mirroring upstream's `overrides.get(variant)` over a
+/// dict of per-model `reasoning_effort` values. The future config crate
+/// implements this for its YAML/JSON dict type; tests use a HashMap impl.
+pub trait ReasoningOverrideMap {
+    fn get(&self, key: &str) -> Option<EffortInput<'_>>;
+}
+
+impl ReasoningOverrideMap for HashMap<String, EffortInput<'_>> {
+    fn get(&self, key: &str) -> Option<EffortInput<'_>> {
+        self.get(key).cloned()
+    }
+}
+
+use std::collections::HashMap;
+
+/// Lookup a per-model reasoning_effort override with spelling-tolerance.
+///
+/// Resolution order follows upstream: for each canonical variant of `model`
+/// (exact → dots/dashes → bare → prepended prefixes), the first variant
+/// present in `overrides` whose parsed value is non-None wins.
+///
+/// PARITY: hermes_constants.py `resolve_per_model_reasoning_effort`
+/// (1064–1090).
+pub fn resolve_per_model_reasoning_effort(
+    model: &str,
+    overrides: &dyn ReasoningOverrideMap,
+) -> Option<ReasoningConfig> {
+    if !model.is_empty() {
+        for variant in canonical_model_variants(model) {
+            if let Some(input) = overrides.get(&variant) {
+                if let Some(result) = parse_reasoning_effort(input) {
+                    return Some(result);
+                }
+            }
+        }
+    }
+    None
+}
+
+#[cfg(test)]
+mod per_model_tests {
+    use super::*;
+
+    fn map(pairs: &[(&str, EffortInput)]) -> HashMap<String, EffortInput<'static>> {
+        pairs
+            .iter()
+            .map(|(k, v)| (k.to_string(), v.clone().into_static()))
+            .collect()
+    }
+
+    #[test]
+    fn exact_match() {
+        let m = map(&[("claude-opus-4.5", EffortInput::Str("high"))]);
+        let r = resolve_per_model_reasoning_effort("claude-opus-4.5", &m).unwrap();
+        assert_eq!(r, ReasoningConfig { enabled: true, effort: Some("high".into()) });
+    }
+
+    #[test]
+    fn empty_model_returns_none() {
+        let m = map(&[("claude-opus-4.5", EffortInput::Str("high"))]);
+        assert_eq!(resolve_per_model_reasoning_effort("", &m), None);
+    }
+
+    #[test]
+    fn exact_wins_over_variant() {
+        // Both "claude-opus-4.5" and the dotted variant present; exact wins
+        // because canonical_model_variants lists exact first.
+        let m = map(&[
+            ("claude-opus-4.5", EffortInput::Str("high")),
+            ("claude.opus.4.5", EffortInput::Str("low")),
+        ]);
+        let r = resolve_per_model_reasoning_effort("claude-opus-4.5", &m).unwrap();
+        assert_eq!(r.effort.as_deref(), Some("high"));
+    }
+
+    #[test]
+    fn invalid_override_value_falls_through() {
+        // A present-but-invalid value must be skipped, and the next valid
+        // variant honored (upstream returns None only when nothing parses).
+        let m = map(&[
+            ("claude-opus-4.5", EffortInput::Str("bogus")),
+            ("claude-opus-4-5", EffortInput::Bool(false)),
+        ]);
+        let r = resolve_per_model_reasoning_effort("claude-opus-4.5", &m).unwrap();
+        assert_eq!(r, ReasoningConfig { enabled: false, effort: None });
     }
 }

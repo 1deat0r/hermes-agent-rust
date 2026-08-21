@@ -220,3 +220,121 @@ mod tests {
         unsafe { std::env::remove_var("HERMES_HOME") };
     }
 }
+
+// ── User-facing home display + secure parent dirs ─────────────────────────
+//
+// PARITY: hermes_constants.py lines 780–817 (`display_hermes_home`,
+// `secure_parent_dir`).
+
+/// Return a user-friendly display string for the current HERMES_HOME.
+///
+/// Uses `~/` shorthand for readability: `~/.hermes`, `~/.hermes/profiles/coder`,
+/// or `/opt/hermes-custom`.
+///
+/// PARITY: hermes_constants.py `display_hermes_home` (780–789).
+pub fn display_hermes_home() -> String {
+    let home = get_hermes_home();
+    let user_home = std::env::var_os("HOME")
+        .map(std::path::PathBuf::from)
+        .or_else(|| {
+            if cfg!(windows) {
+                std::env::var_os("USERPROFILE").map(std::path::PathBuf::from)
+            } else {
+                None
+            }
+        });
+    if let Some(uh) = user_home {
+        if let Ok(rel) = home.strip_prefix(&uh) {
+            if rel.as_os_str().is_empty() {
+                return home.to_string_lossy().into_owned();
+            }
+            return format!("~/{}", rel.to_string_lossy());
+        }
+    }
+    home.to_string_lossy().into_owned()
+}
+
+/// Chmod `0o700` on the parent directory of `path`, but only if safe.
+///
+/// Refuses to chmod `/` or any top-level directory (resolved parent with
+/// fewer than 3 parts) to prevent catastrophic host bricking when
+/// `HERMES_HOME` or other path env vars resolve to an unexpected location.
+///
+/// PARITY: hermes_constants.py `secure_parent_dir` (799–809).
+pub fn secure_parent_dir(path: &Path) {
+    let Some(parent) = path.parent() else {
+        return;
+    };
+    let parent = crate::home::resolve_tolerant(parent);
+    // Refuse root and its direct children (/usr, /home, /var, /tmp, …).
+    let part_count = parent.components().count();
+    if part_count < 3 {
+        return;
+    }
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let _ = std::fs::set_permissions(&parent, std::fs::Permissions::from_mode(0o700));
+    }
+    #[cfg(not(unix))]
+    {
+        let _ = parent;
+    }
+}
+
+#[cfg(test)]
+mod display_tests {
+    use super::*;
+    use std::sync::Mutex;
+
+    static ENV_MUTEX: Mutex<()> = Mutex::new(());
+
+    #[test]
+    fn display_shorthand_under_home() {
+        let _g = ENV_MUTEX.lock().unwrap();
+        let td = tempfile::TempDir::new().unwrap();
+        unsafe {
+            std::env::set_var("HOME", td.path());
+            std::env::set_var("HERMES_HOME", td.path().join(".hermes"));
+        }
+        let s = display_hermes_home();
+        assert_eq!(s, "~/.hermes");
+        unsafe { std::env::remove_var("HOME") };
+        unsafe { std::env::remove_var("HERMES_HOME") };
+    }
+
+    #[test]
+    fn display_absolute_outside_home() {
+        let _g = ENV_MUTEX.lock().unwrap();
+        let td = tempfile::TempDir::new().unwrap();
+        unsafe {
+            std::env::set_var("HOME", td.path());
+            std::env::set_var("HERMES_HOME", "/opt/hermes-custom");
+        }
+        let s = display_hermes_home();
+        assert_eq!(s, "/opt/hermes-custom");
+        unsafe { std::env::remove_var("HOME") };
+        unsafe { std::env::remove_var("HERMES_HOME") };
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn secure_parent_dir_refuses_root_children() {
+        // No panic, no chmod on / or /usr etc.
+        secure_parent_dir(Path::new("/etc/passwd"));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn secure_parent_dir_chmods_safe_deep_path() {
+        use std::os::unix::fs::PermissionsExt;
+        let td = tempfile::TempDir::new().unwrap();
+        std::fs::create_dir_all(td.path().join("a/b")).unwrap();
+        let target = td.path().join("a/b/file");
+        std::fs::write(&target, "x").unwrap();
+        std::fs::set_permissions(td.path().join("a/b"), std::fs::Permissions::from_mode(0o755)).unwrap();
+        secure_parent_dir(&target);
+        let mode = std::fs::metadata(td.path().join("a/b")).unwrap().permissions().mode() & 0o777;
+        assert_eq!(mode, 0o700);
+    }
+}

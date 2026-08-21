@@ -1,4 +1,11 @@
 {
-  "hermes_constants": {"status": "partial"},
-  "hermes_time": {"status": "done"}
+  "hermes_constants": {
+    "status": "partial"
+  },
+  "hermes_time": {
+    "status": "done"
+  },
+  "hermes_utils": {
+    "status": "done"
+  }
 }

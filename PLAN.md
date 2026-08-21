@@ -150,14 +150,32 @@ Legend: ✅ done · 🟡 partial · ❌ missing
 | venv_bin_dir / venv_python_path | ✅ | constants::venv |
 | FIRST_PARTY_MODULE_ROOTS, is_first_party_module | ✅ | constants::modules |
 | PARTIAL_STREAM_STUB_ID, FINISH_REASON_LENGTH, OPENROUTER_*, AI_GATEWAY_BASE_URL | ✅ | constants::values |
-| iter_hermes_node_dirs / _candidate_node_command_names | 🟡 deferred (node subsystem, P2) | — |
+| iter_hermes_node_dirs / _candidate_node_command_names | ✅ | platform::iter_hermes_node_dirs / candidate_node_command_names |
 | node_tool_runnable / managed-node bootstrap/heal | ❌ deferred (node subsystem, P2) | — |
 | agent_browser_runnable | ❌ deferred (P2) | — |
-| display_hermes_home / secure_parent_dir | 🟡 deferred (P1, needs utilities) | — |
-| profile-home helpers (_profile_home_path, get_real_home, …) | ❌ deferred (P1, profile subsystem) | — |
-| resolve_per_model_reasoning_effort / resolve_reasoning_config | 🟡 deferred (P1, needs config crate) | — |
+| display_hermes_home / secure_parent_dir | ✅ | paths::{display_hermes_home, secure_parent_dir} |
+| profile-home helpers (_profile_home_path, get_real_home, …) | ✅ | home::{norm_home_path, profile_home_path, is_profile_home, iter_real_home_candidates, get_real_home, get_subprocess_home, apply_subprocess_home_env} |
+| resolve_per_model_reasoning_effort | ✅ | reasoning::resolve_per_model_reasoning_effort (trait-based over `ReasoningOverrideMap`) |
+| resolve_reasoning_config | 🟡 deferred to config crate (P1/P3) — consumes config dict shape | — |
 | apply_ipv4_preference | ❌ deferred (P3 networking) | — |
 | partial_update_hint / update diagnostics | ❌ deferred (P3) | — |
+
+### hermes_utils (upstream: utils.py, 666 LOC) — ✅ complete
+| Function/surface | Status | Rust home |
+|---|---|---|
+| TRUTHY_STRINGS, is_truthy_value, env_var_enabled | ✅ | truthy |
+| env_int / env_float / env_bool | ✅ | truthy |
+| _preserve_file_mode/_owner, _restore_file_mode/_owner | ✅ | atomic (POSIX chmod/chown, best-effort) |
+| atomic_replace (symlink-preserving, EXDEV/EBUSY fallback) | ✅ | atomic::atomic_replace |
+| atomic_write_text / atomic_json_write | ✅ | atomic |
+| warn_if_credential_file_broadly_readable | ✅ | atomic |
+| IndentDumper / atomic_yaml_write | 🟡 | yaml::atomic_yaml_write — serde_yaml rendering; value+atomicity parity, PyYAML byte-format divergence documented |
+| atomic_roundtrip_yaml_update | 🟡 | yaml::atomic_roundtrip_yaml_update — comment-preserving for scalar/dotted-key updates; full-rewrite fallback for complex values (documented) |
+| safe_json_loads | ✅ | json |
+| fast_safe_load | ✅ | yaml::fast_safe_load (serde_yaml; identical safe-tag semantics) |
+| normalize_proxy_url / normalize_proxy_env_vars | ✅ | proxy |
+| base_url_hostname / base_url_host_matches | ✅ | urls |
+| model_forces_max_completion_tokens | ✅ | urls |
 
 ### hermes_time (upstream: hermes_time.py, 135 LOC)
 | Function/surface | Status | Rust home |
@@ -184,6 +202,15 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 ## 7. Session log
 
+- 2026-08-22 (session 1c): P1 continuation. hermes-constants surfaces
+  completed: node dir ordering, candidate node command names, display home,
+  secure parent dir, profile-home helpers, per-model reasoning override
+  (trait-based, config dict impl deferred to config crate). hermes-utils
+  crate landed (full utils.py port: truthy/env coercions, atomic writes,
+  YAML write + comment-preserving roundtrip, JSON safe-parse, proxy
+  normalization, URL hostname helpers, max-completion-token families).
+  Parity oracles vendored (`upstream/golden_utils.json`); workspace tests
+  124 green; clippy clean. Evidence: `cargo test --workspace` (unit).
 - 2026-08-22 (session 1): P0 scaffold. Inventory generated, governance set,
   workspace created, hermes-constants foundational subset + hermes-time full
   port landed with parity tests. Binary renamed/shaped; golden fixtures

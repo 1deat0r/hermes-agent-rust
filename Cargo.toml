@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "crates/hermes-constants",
     "crates/hermes-time",
+    "crates/hermes-utils",
 ]
 
 [workspace.package]
