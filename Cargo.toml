@@ -5,6 +5,7 @@ members = [
     "crates/hermes-time",
     "crates/hermes-utils",
     "crates/hermes-logging",
+    "crates/hermes-state",
 ]
 
 [workspace.package]

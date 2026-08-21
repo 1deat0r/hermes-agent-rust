@@ -1,0 +1,19 @@
+[package]
+name = "hermes-state"
+description = "1:1 Rust port of hermes_state*.py (Nous Research Hermes Agent) — SQLite SessionDB"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+hermes-constants = { path = "../hermes-constants" }
+hermes-utils = { path = "../hermes-utils" }
+once_cell.workspace = true
+rusqlite = { version = "0.37", features = ["bundled"] }
+serde.workspace = true
+serde_json = "1"
+serde_yaml.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+tempfile = "3"
