@@ -241,6 +241,7 @@ Legend: ✅ done · 🟡 partial · ❌ missing
 | search mixin (search_messages, FTS rebuild engine, anchored views) | ❌ (hermes_state_search.py, 2,305 LOC) | — |
 | compression locks (try_acquire/release/refresh, holder-dead reclaim, publish_compression_child, find_live_compression_child, reopen_orphaned_compression_session) | ✅ | locks ((+ _non_continuation_child_filter_sql in common)) |
 | token writer / telegram topics / handoffs / prune/archive | ❌ next units | — |
+| replace_messages (active_only) / has_archived_messages / archive_and_compact (+ _merge_model_config_json) / rewind_to_message | ✅ | rewrite |
 
 ### agent/redact (upstream: agent/redact.py, 1,197 LOC) — ✅ complete (homed in hermes-logging)
 | Function/surface | Status | Rust home |
@@ -373,3 +374,20 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   test_session_system_prompt_dedup.py::test_compression_child_*; 15
   parity tests; workspace 233 tests green; clippy clean. Evidence:
   `cargo test --workspace` (unit).
+
+- 2026-08-22 (session 1h): Message rewrite/rewind surfaces landed —
+  rewrite.rs. replace_messages (atomic delete+reinsert; active_only=true
+  #80216-safe path preserves soft-archived rows; CompressionSessionClosed
+  rejection), has_archived_messages (cheap probe), archive_and_compact
+  (non-destructive in-place compaction: active=0/compacted=1 archive +
+  fresh active rows in one txn; model_config_patch merged via shared
+  _merge_model_config_json with on_missing=raise; counts track the live
+  set), rewind_to_message (soft-delete id>=target incl. target; target
+  row returned with decoded content for prompt prefill; rewind_count
+  always bumped; ValueError on missing/non-user target). StoredMessage
+  gained the `compacted` flag (get_messages parity). Oracle:
+  test_replace_messages_preserves_timestamps / compression roundtrip /
+  display_metadata, tests/hermes_state/test_replace_messages_archive_
+  siblings.py, gateway rewind DB contract; 13 parity tests; workspace
+  246 tests green; clippy clean. Evidence: `cargo test --workspace`
+  (unit).

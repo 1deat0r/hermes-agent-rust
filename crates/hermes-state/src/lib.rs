@@ -5,6 +5,7 @@
 pub mod cfg;
 pub mod common;
 pub mod locks;
+pub mod rewrite;
 pub mod crud;
 pub mod schema;
 pub mod skill;

@@ -118,6 +118,7 @@ pub struct StoredMessage {
     pub platform_message_id: Option<String>,
     pub observed: bool,
     pub active: bool,
+    pub compacted: bool,
     pub api_content: Option<String>,
     pub display_kind: Option<String>,
     pub display_metadata: Option<Value>,
@@ -153,7 +154,7 @@ fn encode_content(content: Option<&Value>) -> Option<rusqlite::types::Value> {
     }
 }
 
-fn decode_content(raw: Option<rusqlite::types::Value>) -> Option<Value> {
+pub(crate) fn decode_content(raw: Option<rusqlite::types::Value>) -> Option<Value> {
     // Upstream reads the column via dict(row) and _decode_content: scalars
     // (str/int/float) pass through unchanged; sentinel JSON is parsed.
     match raw {
@@ -1095,6 +1096,7 @@ impl SessionDB {
                     platform_message_id: r.get("platform_message_id")?,
                     observed: r.get::<_, i64>("observed")? != 0,
                     active: r.get::<_, i64>("active")? != 0,
+                    compacted: r.get::<_, i64>("compacted")? != 0,
                     api_content: r.get("api_content")?,
                     display_kind: r.get("display_kind")?,
                     display_metadata: decode_display_metadata(display_metadata.as_deref()),
