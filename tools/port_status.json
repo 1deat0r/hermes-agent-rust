@@ -64,5 +64,8 @@
   },
   "tools.read_extract": {
     "status": "done"
+  },
+  "agent.file_safety": {
+    "status": "done"
   }
 }

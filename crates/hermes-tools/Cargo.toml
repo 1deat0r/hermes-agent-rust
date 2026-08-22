@@ -8,6 +8,8 @@ tempfile = "3"
 
 [dependencies]
 chrono = { workspace = true }
+hermes-constants = { path = "../hermes-constants" }
+shellexpand = "3"
 roxmltree = "0.20"
 zip = { version = "2", default-features = false, features = ["deflate"] }
 regex = "1"

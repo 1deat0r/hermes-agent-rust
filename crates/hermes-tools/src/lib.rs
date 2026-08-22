@@ -21,6 +21,7 @@
 
 pub mod ansi_strip;
 pub mod binary_extensions;
+pub mod file_safety;
 pub mod file_state;
 pub mod path_security;
 pub mod read_extract;
@@ -44,6 +45,9 @@ pub use schema_sanitizer::{
 };
 pub use ansi_strip::{sanitize_display_text, strip_ansi};
 pub use binary_extensions::{is_binary_extension, BINARY_EXTENSIONS};
+pub use file_safety::{
+    get_read_block_error, get_write_denied_error, is_write_denied, raise_if_read_blocked,
+};
 pub use file_state::{check_stale, get_registry, known_reads, note_write, record_read, writes_since, FileStateRegistry};
 pub use path_security::validate_within_dir;
 pub use read_extract::{extract_document_text, is_extractable_document, ExtractionError};

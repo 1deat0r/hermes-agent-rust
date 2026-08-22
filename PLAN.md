@@ -318,6 +318,23 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 ## 7. Session log
 
+- 2026-08-22 (session 3c): agent/file_safety.py ported — hermes-tools
+  src/file_safety.rs (@ b9aa928, 693 LOC; homed in hermes-tools until the
+  agent crate opens). Write denial: build_write_denied_paths/prefixes
+  (ssh/aws/gnupg/kube/docker/azure/github/gcloud + sudoers/systemd + ENV
+  store + .netrc/.pgpass/.npmrc/.pypirc/.git-credentials + hermes state.db
+  / sessions / mcp-tokens / pairing via home+root), HERMES_WRITE_SAFE_ROOT
+  gate, classify_write_denial returning credential/safe_root/None.
+  Read denial: skills/.hub cache-blocking, credential-store exact files
+  (auth.json/.lock/.env/.anthropic_oauth/webhook_subscriptions/google
+  oauth/bws_cache), mcp-tokens prefix, project-local env-basename block
+  (case-insensitive, .env.example allowed). Uses hermes-constants home/
+  root resolution through the ported get_hermes_home /
+  get_default_hermes_root. Oracle: tests/agent/test_file_safety.py +
+  write-denial classification; 5 pure-path parity tests + 2 isolated
+  env-binary tests (HERMES_HOME / HERMES_WRITE_SAFE_ROOT are process-
+  global, isolated like the file-state kill switch); workspace 555 tests
+  green; clippy clean. Evidence: `cargo test --workspace` (unit).
 - 2026-08-22 (session 3b): Stdlib document extraction landed — hermes-tools
   src/read_extract.rs (@ b9aa928, 346 LOC). .ipynb (cells in order,
   markdown/code labels + numbering, output payloads never leak, legacy
