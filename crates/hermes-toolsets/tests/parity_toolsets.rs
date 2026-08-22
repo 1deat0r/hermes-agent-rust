@@ -188,3 +188,61 @@ fn sample_returns_high_probability_toolsets() {
     let err = sample_toolsets_from_distribution("nope", None).expect_err("unknown");
     assert!(err.contains("Unknown distribution"));
 }
+
+// =====================================================================
+// registry seam integration (hermes-tools registry wired into toolsets)
+// =====================================================================
+
+use std::sync::Arc;
+
+struct OkHandler;
+impl hermes_tools::registry::ToolHandler for OkHandler {
+    fn call(
+        &self,
+        _: serde_json::Value,
+        _: Option<&str>,
+        _: Option<&str>,
+    ) -> hermes_tools::registry::ToolResult {
+        hermes_tools::registry::ToolResult::Text("{}".to_string())
+    }
+}
+
+fn register_tool(name: &str, toolset: &str) {
+    hermes_tools::registry::registry()
+        .register(
+            name,
+            toolset,
+            serde_json::json!({"description": name, "parameters": {"type": "object"}}),
+            Arc::new(OkHandler),
+            None,
+            None,
+            vec![],
+            None,
+            None,
+            None,
+            None,
+            None,
+            false,
+        )
+        .expect("register");
+}
+
+#[test]
+fn registry_tools_merge_into_builtin_toolset() {
+    register_tool("plugin_search_x", "web");
+    // get_toolset with registry merges sorted union.
+    let web = get_toolset("web", true).expect("web");
+    let tools = web["tools"].as_array().unwrap();
+    assert!(tools.iter().any(|t| t.as_str() == Some("web_search")));
+    assert!(tools.iter().any(|t| t.as_str() == Some("plugin_search_x")));
+    // Static view excludes the registry overlay.
+    let static_web = get_toolset("web", false).expect("static web");
+    let static_tools = static_web["tools"].as_array().unwrap();
+    assert!(!static_tools.iter().any(|t| t.as_str() == Some("plugin_search_x")));
+}
+
+#[test]
+fn registry_alias_validates() {
+    hermes_tools::registry::registry().register_toolset_alias("mcp-smart", "web");
+    assert!(validate_toolset("mcp-smart"));
+}

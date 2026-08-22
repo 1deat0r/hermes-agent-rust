@@ -21,28 +21,34 @@ use std::sync::{Mutex, OnceLock};
 
 use crate::data::{ToolsetDef, TOOLSETS};
 
-/// Registry-dependent lookups (empty until the tools/registry crate lands).
+/// Registry-dependent lookups, backed by the live hermes-tools singleton.
 pub(crate) fn registry_lookup() -> RegistryView {
-    RegistryView::empty()
+    let reg = hermes_tools::registry::registry();
+    RegistryView {
+        names_for_toolset: reg
+            .get_registered_toolset_names()
+            .into_iter()
+            .map(|ts| {
+                let names = reg.get_tool_names_for_toolset(&ts);
+                (ts, names)
+            })
+            .collect(),
+        registered_toolset_names: reg.get_registered_toolset_names().into_iter().collect(),
+        toolset_aliases: reg.get_registered_toolset_aliases(),
+        platform_registered: reg
+            .get_registered_toolset_names()
+            .into_iter()
+            .filter(|n| n.starts_with("hermes-"))
+            .collect(),
+    }
 }
 
-/// The subset of tools.registry the toolsets module needs.
+/// A snapshot of the tools.registry surface the toolsets module reads.
 pub(crate) struct RegistryView {
     pub names_for_toolset: HashMap<String, Vec<String>>,
     pub registered_toolset_names: HashSet<String>,
     pub toolset_aliases: HashMap<String, String>,
     pub platform_registered: HashSet<String>,
-}
-
-impl RegistryView {
-    pub fn empty() -> Self {
-        RegistryView {
-            names_for_toolset: HashMap::new(),
-            registered_toolset_names: HashSet::new(),
-            toolset_aliases: HashMap::new(),
-            platform_registered: HashSet::new(),
-        }
-    }
 }
 
 fn static_toolset(name: &str) -> Option<ToolsetDef> {
@@ -88,12 +94,30 @@ fn toolset_all(name: &str) -> Option<(String, Vec<String>, Vec<String>)> {
 /// PARITY: toolsets.py get_toolset @ b9aa928. The registry-merge behavior of
 /// `include_registry=True` is deferred until the tools crate lands — the
 /// parameter is accepted for call-site parity and behaves statically.
-pub fn get_toolset(name: &str, _include_registry: bool) -> Option<serde_json::Value> {
-    // Static/custom view (registry merge deferred to the tools crate).
+pub fn get_toolset(name: &str, include_registry: bool) -> Option<serde_json::Value> {
     let (description, tools, includes) = toolset_all(name)?;
+    if !include_registry {
+        return Some(serde_json::json!({
+            "description": description,
+            "tools": tools,
+            "includes": includes,
+        }));
+    }
+    // Registry-merged view: overlay tools plugins registered into this
+    // toolset onto the static definition.
+    let registry = registry_lookup();
+    let mut merged: Vec<String> = tools.into_iter().collect();
+    if let Some(extra) = registry.names_for_toolset.get(name) {
+        for t in extra {
+            if !merged.contains(t) {
+                merged.push(t.clone());
+            }
+        }
+    }
+    merged.sort();
     Some(serde_json::json!({
         "description": description,
-        "tools": tools,
+        "tools": merged,
         "includes": includes,
     }))
 }

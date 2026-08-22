@@ -318,6 +318,14 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 ## 7. Session log
 
+- 2026-08-22 (session 1x): Registry seam wired — hermes-toolsets now
+  depends on hermes-tools and reads the live registry singleton.
+  get_toolset(include_registry=true) merges registry tools into builtin
+  toolsets (sorted union); validate_toolset accepts registry aliases;
+  resolve_toolset's hermes-* plugin-platform auto-gen now sees real
+  registered platform tools. 2 integration parity tests added (registry
+  merge + alias validation); workspace 450 tests green; clippy clean.
+  Evidence: `cargo test --workspace` (unit).
 - 2026-08-22 (session 1w): hermes-tools crate opened — tools/registry.py
   (@ b9aa928, 956 LOC). ToolRegistry singleton: register (cross-toolset
   shadow rejection, override opt-in + plugin ownership gate),

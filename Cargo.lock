@@ -352,6 +352,7 @@ dependencies = [
 name = "hermes-toolsets"
 version = "0.1.0"
 dependencies = [
+ "hermes-tools",
  "serde_json",
 ]
 
