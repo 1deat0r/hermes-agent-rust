@@ -25,5 +25,14 @@
   },
   "hermes_state_common": {
     "status": "done"
+  },
+  "toolsets": {
+    "status": "done"
+  },
+  "toolset_distributions": {
+    "status": "done"
+  },
+  "tools.registry": {
+    "status": "done"
   }
 }

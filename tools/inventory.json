@@ -1,20 +1,20 @@
 {
  "generated_from": "/home/mustbearn/Projects/Research/hermes-agent-repo",
- "generated_at": "2026-08-22T16:41:52",
+ "generated_at": "2026-08-22T16:42:48",
  "summary": {
   "modules": 3882,
   "total_lines": 1510733,
   "production_modules": 1103,
   "production_lines": 843792,
   "status_counts": {
-   "done": 8,
+   "done": 11,
    "partial": 1,
-   "missing": 3873
+   "missing": 3870
   },
   "prod_status_counts": {
-   "done": 8,
+   "done": 11,
    "partial": 1,
-   "missing": 1094
+   "missing": 1091
   },
   "packages": {
    "gateway": {
@@ -85,7 +85,8 @@
     "lines": 123020,
     "modules": 131,
     "status": {
-     "missing": 131
+     "missing": 130,
+     "done": 1
     }
    },
    "tests.run_agent": {
@@ -312,7 +313,8 @@
     "lines": 1029,
     "modules": 1,
     "status": {
-     "missing": 1
+     "missing": 0,
+     "done": 1
     }
    },
    "optional-skills.security": {
@@ -645,7 +647,8 @@
     "lines": 358,
     "modules": 1,
     "status": {
-     "missing": 1
+     "missing": 0,
+     "done": 1
     }
    },
    "tests.test_packaging_metadata": {
@@ -3992,7 +3995,7 @@
   "toolsets": {
    "lines": 1029,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "tests.hermes_cli.test_commands": {
@@ -4141,7 +4144,7 @@
     "model_tools",
     "utils"
    ],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "tools.browser_camofox": {
@@ -7982,7 +7985,7 @@
    "imports": [
     "toolsets"
    ],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "agent.pet.generate.orchestrate": {
