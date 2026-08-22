@@ -256,14 +256,20 @@ pub struct SessionDB {
 ///   - `Sqlite` — any sqlite3.Error (locked/busy retried by execute_write)
 ///   - `CompressionInProgress` — SessionCompressionInProgressError
 ///     (transient: retried with the short compression-busy budget)
+///   - `CompressionBusy` — CompressionSessionBusyError (base class; permanent —
+///     only the SessionCompressionInProgressError subclass is retried)
 ///   - `CompressionSessionClosed` — CompressionSessionClosedError (permanent)
 ///   - `ValueError` — ValueError raised by title/sanitize surfaces (permanent)
+///   - `Runtime` — plain RuntimeError raised by publication/recovery surfaces
+///     (permanent; propagates like upstream)
 #[derive(Debug)]
 pub enum WriteError {
     Sqlite(rusqlite::Error),
     CompressionInProgress(String),
+    CompressionBusy(String),
     CompressionSessionClosed(String),
     ValueError(String),
+    Runtime(String),
 }
 
 impl std::fmt::Display for WriteError {
@@ -273,11 +279,13 @@ impl std::fmt::Display for WriteError {
             WriteError::CompressionInProgress(s) => {
                 write!(f, "Session {:?} is being compressed by another writer", s)
             }
+            WriteError::CompressionBusy(s) => write!(f, "{}", s),
             WriteError::CompressionSessionClosed(s) => write!(
                 f,
                 "Session {:?} is closed by compression; adopt its live continuation before appending messages",
                 s
             ),
+            WriteError::Runtime(s) => write!(f, "{}", s),
             WriteError::ValueError(m) => write!(f, "{}", m),
         }
     }

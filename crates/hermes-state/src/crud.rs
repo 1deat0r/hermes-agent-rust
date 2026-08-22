@@ -216,7 +216,7 @@ fn parse_tool_calls(tool_calls: Option<&Value>) -> Option<Value> {
     }
 }
 
-fn truthy(value: Option<&Value>) -> bool {
+pub(crate) fn truthy(value: Option<&Value>) -> bool {
     match value {
         None => false,
         Some(Value::Null) => false,
@@ -242,7 +242,7 @@ const SESSION_SELECT: &str = "SELECT s.*, \
      FROM sessions s \
      LEFT JOIN system_prompts sp ON sp.hash = s.system_prompt_hash ";
 
-fn session_row(row: &Row<'_>) -> rusqlite::Result<SessionRow> {
+pub(crate) fn session_row(row: &Row<'_>) -> rusqlite::Result<SessionRow> {
     Ok(SessionRow {
         id: row.get("id")?,
         source: row.get("source")?,
@@ -964,7 +964,7 @@ impl SessionDB {
     /// Insert *messages* as fresh active rows. Runs inside the caller's write
     /// transaction. Returns `(inserted_count, tool_call_count)`.
     /// PARITY: SessionDB._insert_message_rows @ b9aa928 (7073–7170)
-    fn insert_message_rows(
+    pub(crate) fn insert_message_rows(
         conn: &Connection,
         session_id: &str,
         messages: &[MessageInput],

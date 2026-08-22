@@ -4,6 +4,7 @@
 //! Port target: upstream @ b9aa928.
 pub mod cfg;
 pub mod common;
+pub mod locks;
 pub mod crud;
 pub mod schema;
 pub mod skill;

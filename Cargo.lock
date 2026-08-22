@@ -315,7 +315,9 @@ version = "0.1.0"
 dependencies = [
  "hermes-constants",
  "hermes-utils",
+ "libc",
  "once_cell",
+ "regex",
  "rusqlite",
  "serde",
  "serde_json",

@@ -140,6 +140,26 @@ pub fn _ephemeral_child_sql(alias: &str) -> String {
     )
 }
 
+/// Non-continuation child filter used by the compression lineage guard
+/// (find_live_compression_child / reopen_orphaned_compression_session): a
+/// branched/delegated/tool child is NOT a canonical continuation of its
+/// compression parent, so it must not block reopen or count as the unique
+/// live child. The two marker bindings (parent_session_id) are added by the
+/// caller — the snippet ends with a `!= ?` placeholder for each marker.
+// PARITY: hermes_state.py _NON_CONTINUATION_CHILD_FILTER_SQL @ b9aa928 (3661)
+pub fn _non_continuation_child_filter_sql(alias: &str) -> String {
+    format!(
+        concat!(
+            "  AND COALESCE(json_extract(COALESCE({alias}model_config, '{{}}'),",
+            " '$._branched_from'), '') != ?\n",
+            "  AND COALESCE(json_extract(COALESCE({alias}model_config, '{{}}'),",
+            " '$._delegate_from'), '') != ?\n",
+            "  AND COALESCE({alias}source, '') != 'tool'\n",
+        ),
+        alias = alias,
+    )
+}
+
 /// SQL expression for session recency used by list/status surfaces.
 // PARITY: hermes_state_common.py _sql_session_last_active @ b9aa928
 pub fn _sql_session_last_active(alias: &str) -> String {

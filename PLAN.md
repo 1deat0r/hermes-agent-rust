@@ -239,7 +239,8 @@ Legend: ✅ done · 🟡 partial · ❌ missing
 | _check_transcript_write_guards + compression-busy short-wait in _execute_write | ✅ | crud::check_transcript_write_guards + state::execute_write |
 | portability mixin (export/import, rich rows) | ❌ (hermes_state_portability.py, 714 LOC) | — |
 | search mixin (search_messages, FTS rebuild engine, anchored views) | ❌ (hermes_state_search.py, 2,305 LOC) | — |
-| compression locks / token writer / telegram topics / handoffs / prune/archive | ❌ next units | — |
+| compression locks (try_acquire/release/refresh, holder-dead reclaim, publish_compression_child, find_live_compression_child, reopen_orphaned_compression_session) | ✅ | locks ((+ _non_continuation_child_filter_sql in common)) |
+| token writer / telegram topics / handoffs / prune/archive | ❌ next units | — |
 
 ### agent/redact (upstream: agent/redact.py, 1,197 LOC) — ✅ complete (homed in hermes-logging)
 | Function/surface | Status | Rust home |
@@ -351,4 +352,24 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   MessageStorage/TimestampPreservation/Title families) +
   tests/hermes_state/test_append_messages_batch.py; 29 CRUD parity
   tests added; workspace 218 tests green; clippy clean. Evidence:
+  `cargo test --workspace` (unit).
+
+- 2026-08-22 (session 1g): Compression-lock lifecycle landed — locks.rs.
+  try_acquire_compression_lock (single-txn DELETE-expired + INSERT OR
+  IGNORE + ownership SELECT; dead-pid reclaim via libc kill probe),
+  refresh_compression_lock (holder-only ownership, revives expired own
+  row), release_compression_lock (idempotent, holder-checked),
+  get_compression_lock_holder, _compression_lock_holder_process_is_dead
+  (POSIX ESRCH probe; Windows stays TTL-only = upstream's nt early
+  return; no psutil fast path — documented divergence), and the recovery
+  family: find_live_compression_child (ambiguous -> None),
+  reopen_orphaned_compression_session (Result<bool> — upstream has no
+  try/except so sqlite3 errors propagate), publish_compression_child
+  (atomic parent-close + child row + handoff; lease-required by default;
+  CompressionSessionBusyError + RuntimeError mapped to new
+  WriteError::CompressionBusy/Runtime variants; model_config empty-dict
+  -> NULL like create_session). Oracle: test_refresh_compression_lock_*,
+  tests/state/test_compression_lineage_guard.py,
+  test_session_system_prompt_dedup.py::test_compression_child_*; 15
+  parity tests; workspace 233 tests green; clippy clean. Evidence:
   `cargo test --workspace` (unit).
