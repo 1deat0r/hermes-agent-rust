@@ -90,8 +90,8 @@ Hermes-Agent-Rust/
     hermes-utils/          # utils.py                         (Phase 1)
     hermes-logging/        # hermes_logging.py                (Phase 1)
     hermes-state/          # hermes_state{,_schema,_common,_portability,_search}.py  (Phase 1, open — common/schema/lifecycle landed)
-    hermes-toolsets/       # toolsets.py, toolset_distributions.py, model_tools.py   (Phase 2)
-    hermes-agent/          # run_agent.py + agent/            (Phase 2)
+    hermes-toolsets/       # toolsets.py, toolset_distributions.py (✅ open — model_tools.py deferred with tools registry), model_tools.py   (Phase 2)
+    hermes-agent/          # run_agent.py + agent/            (Phase 2, next after toolsets)
     hermes-tools/          # tools/                           (Phase 2)
     hermes-batch/          # batch_runner.py, trajectory_compressor.py, mini_swe_runner.py (Phase 2)
     hermes-cli/            # cli.py + hermes_cli/             (Phase 3, bin `hermes`)
@@ -117,6 +117,16 @@ Dependency direction is bottom-up; a crate never depends on a higher layer.
 | **P3** | CLI: cli.py + hermes_cli/ | `hermes` binary matches CLI surface; config load/save parity |
 | **P4** | Gateway: gateway/, plugins/, cron | Gateway connects to ≥1 real platform + cron fires |
 | **P5** | tui_gateway, acp_adapter, remaining scripts | Full surface parity |
+
+**P1 status: 🟡 FOUNDATION COMPLETE (2026-08-22, session 1u).** hermes-constants
+(foundational subset), hermes-time, hermes-utils, hermes-logging (incl.
+agent/redact.py), and the full hermes_state* module family (hermes_state.py
+9,996 LOC / all 176 SessionDB methods, hermes_state_schema / _common /
+_portability / _search) are ported with parity tests. Remaining P1-deferred
+items (operator-flagged to P2/P3): apply_ipv4_preference, partial_update_
+hint, managed-node bootstrap, agent_browser_runnable, resolve_reasoning_
+config (config crate), node/profile constants remainder. Phase 2 (agent
+core: toolsets, run_agent, agent/, tools/, batch) is open.
 
 **P0 status: ✅ COMPLETE (2026-08-22).** Exit criteria met:
 `cargo build --workspace` green; `cargo test --workspace` green (74 tests:
@@ -308,6 +318,26 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 ## 7. Session log
 
+- 2026-08-22 (session 1v): hermes-toolsets crate opened — toolsets.py +
+  toolset_distributions.py (P2 start). Static data generated 1:1 from
+  upstream via tools/gen_toolsets.py (AST-parses upstream, emits data.rs):
+  56 core tools, 4 webhook-safe, 59 toolsets, 17 distributions. Logic port:
+  get_toolset (static/custom view; registry merge deferred), bundle_non_core
+  _tools (bundle delta minus core #33924), resolve_toolset (cycle-safe,
+  visited-set sharing for diamonds, "all"/"*" special aliases, hermes-*
+  plugin-platform auto-gen seam), resolve_multiple_toolsets,
+  create_custom_toolset (runtime overlay), get_toolset_info,
+  get_toolset_names / get_all_toolsets / validate_toolset;
+  distributions::get/list/sample/validate (probability sampling, highest-
+  probability fallback, ValueError for unknown). DIVERGENCE (documented):
+  registry-dependent lookups (tools.registry overlays, plugin platforms, MCP
+  aliases) return empty until the tools registry crate lands — the
+  include_registry parameter is accepted for call-site parity and behaves
+  statically; `registry_lookup()` names the seam. Oracle: test_toolsets.py +
+  test_toolset_distributions.py (17 tests); live Python-vs-Rust output
+  byte-identical for web/debugging/hermes-telegram/all/bundle-delta/names;
+  workspace 435 tests green; clippy clean. Evidence:
+  `cargo test --workspace` (unit).
 - 2026-08-22 (session 1u): Delete + maintenance surfaces landed —
   delete.rs (plus finalize_orphaned_compression_sessions in locks.rs).
   message_count, has_platform_message_id, clear_messages, module helpers
