@@ -15,15 +15,15 @@
     "status": "done"
   },
   "hermes_state_search": {
-    "status": "partial"
+    "status": "done"
   },
   "hermes_state_schema": {
-    "status": "partial"
+    "status": "done"
   },
   "hermes_state_portability": {
-    "status": "partial"
+    "status": "done"
   },
   "hermes_state_common": {
-    "status": "partial"
+    "status": "done"
   }
 }

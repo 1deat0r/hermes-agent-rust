@@ -1,19 +1,19 @@
 {
  "generated_from": "/home/mustbearn/Projects/Research/hermes-agent-repo",
- "generated_at": "2026-08-22T16:10:01",
+ "generated_at": "2026-08-22T16:41:52",
  "summary": {
   "modules": 3882,
   "total_lines": 1510733,
   "production_modules": 1103,
   "production_lines": 843792,
   "status_counts": {
-   "done": 4,
-   "partial": 5,
+   "done": 8,
+   "partial": 1,
    "missing": 3873
   },
   "prod_status_counts": {
-   "done": 4,
-   "partial": 5,
+   "done": 8,
+   "partial": 1,
    "missing": 1094
   },
   "packages": {
@@ -163,7 +163,7 @@
     "modules": 1,
     "status": {
      "missing": 0,
-     "partial": 1
+     "done": 1
     }
    },
    "tests.cron": {
@@ -284,7 +284,7 @@
     "modules": 1,
     "status": {
      "missing": 0,
-     "partial": 1
+     "done": 1
     }
    },
    "scripts.ci": {
@@ -398,7 +398,7 @@
     "modules": 1,
     "status": {
      "missing": 0,
-     "partial": 1
+     "done": 1
     }
    },
    "skills.research": {
@@ -456,7 +456,7 @@
     "modules": 1,
     "status": {
      "missing": 0,
-     "partial": 1
+     "done": 1
     }
    },
    "tests.test_minimax_oauth": {
@@ -2678,7 +2678,7 @@
   "hermes_state_search": {
    "lines": 2305,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "hermes_cli.runtime_provider": {
@@ -3776,7 +3776,7 @@
     "hermes_constants",
     "hermes_state_common"
    ],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "hermes_cli.service_manager": {
@@ -4987,7 +4987,7 @@
   "hermes_state_portability": {
    "lines": 714,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "tests.tools.test_wake_word": {
@@ -5565,7 +5565,7 @@
   "hermes_state_common": {
    "lines": 614,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "tests.hermes_cli.test_auth_codex_provider": {
