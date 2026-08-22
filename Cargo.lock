@@ -340,6 +340,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "hermes-tools"
+version = "0.1.0"
+dependencies = [
+ "log",
+ "once_cell",
+ "serde_json",
+]
+
+[[package]]
 name = "hermes-toolsets"
 version = "0.1.0"
 dependencies = [

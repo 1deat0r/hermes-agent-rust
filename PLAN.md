@@ -92,7 +92,7 @@ Hermes-Agent-Rust/
     hermes-state/          # hermes_state{,_schema,_common,_portability,_search}.py  (Phase 1, open — common/schema/lifecycle landed)
     hermes-toolsets/       # toolsets.py, toolset_distributions.py (✅ open — model_tools.py deferred with tools registry), model_tools.py   (Phase 2)
     hermes-agent/          # run_agent.py + agent/            (Phase 2, next after toolsets)
-    hermes-tools/          # tools/                           (Phase 2)
+    hermes-tools/          # tools/ (✅ registry.py open — tool files scheduled)   (Phase 2)
     hermes-batch/          # batch_runner.py, trajectory_compressor.py, mini_swe_runner.py (Phase 2)
     hermes-cli/            # cli.py + hermes_cli/             (Phase 3, bin `hermes`)
     hermes-gateway/        # gateway/                         (Phase 4)
@@ -318,6 +318,25 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 ## 7. Session log
 
+- 2026-08-22 (session 1w): hermes-tools crate opened — tools/registry.py
+  (@ b9aa928, 956 LOC). ToolRegistry singleton: register (cross-toolset
+  shadow rejection, override opt-in + plugin ownership gate),
+  deregister (unowned-plugin block, toolset-check/alias cleanup),
+  get_definitions (check_fn-filtered OpenAI schemas, per-call shared
+  check dedup, dynamic_schema_overrides, name fallback),
+  dispatch (ToolHandler trait, panic -> error json, raw string result
+  parity), check_fn TTL cache with flake suppression
+  (30s TTL / 60s last-good grace / 512 cap, identity by Arc pointer so
+  shared probes dedup like Python callable keys), toolset query surfaces
+  (names/tool-names/aliases/emoji/limits/requirements/availability),
+  tool_error / tool_result helpers, module singleton. DIVERGENCE
+  (documented): async handlers are adapted to the sync ToolHandler trait
+  by their tool crates; cache_scope (multiplex profile isolation) and
+  discover_builtin_tools (AST scan) are seams until agent/tools-catalog
+  land. Oracle: tests/tools/test_registry.py core behaviors (register/
+  dispatch, definitions, shared check, availability, plugin gates,
+  helpers); 12 parity tests in parity_registry.rs; workspace 448 tests
+  green; clippy clean. Evidence: `cargo test --workspace` (unit).
 - 2026-08-22 (session 1v): hermes-toolsets crate opened — toolsets.py +
   toolset_distributions.py (P2 start). Static data generated 1:1 from
   upstream via tools/gen_toolsets.py (AST-parses upstream, emits data.rs):

@@ -1,0 +1,27 @@
+//! hermes-tools — 1:1 Rust port of the tools/ layer, beginning with
+//! tools/registry.py (@ b9aa928, 956 LOC).
+//!
+//! The registry is the hub every tool file registers into and every
+//! consumer (model_tools, run_agent, CLI) reads from. It owns the
+//! check_fn TTL cache, generation counter, plugin-override policy, and
+//! schema/dispatch surfaces.
+//!
+//! DOCUMENTED DIVERGENCES (same names as in module docs):
+//! - Python handlers are callables; Rust handlers implement
+//!   `ToolHandler`. The `is_async`/asyncio bridge is an executor seam:
+//!   async Python handlers are adapted to the sync trait by their tool
+//!   crates before registration.
+//! - `_plugin_owner_of` resolves from `handler.__globals__["__name__"]`;
+//!   here the owner module string is carried on each registration (the
+//!   `owner_module` parameter), mirroring the same policy check.
+//! - `check_fn_cache_scope()` (multiplex profile isolation) is a no-op
+//!   returning None until the agent/secret_scope crate lands.
+//! - `discover_builtin_tools` (Python AST scan) is a seam returning the
+//!   tool-catalog list once the tool renderers land.
+
+pub mod registry;
+
+pub use registry::{
+    registry, tool_error, tool_result, CheckFnCache, ToolEntry, ToolHandler,
+    ToolRegistry, ToolResult,
+};
