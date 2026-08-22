@@ -318,6 +318,23 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 ## 7. Session log
 
+- 2026-08-22 (session 2c): Tool result persistence + budgets landed —
+  hermes-tools src/budget_config.rs + src/tool_result_storage.rs
+  (@ b9aa928). budget_config: BudgetConfig (frozen defaults 100K/200K/
+  1.5K), resolve_threshold priority (pinned read_file=inf > overrides >
+  registry capped > default), budget_for_context_window (proportional
+  scaling with floor/clamp). tool_result_storage: safe filename hashing,
+  generate_preview (last-newline truncation), SandboxExecutor seam (the
+  Python env.execute abstraction), write-to-sandbox via stdin (no argv
+  ceiling), <persisted-output> replacement block (KB/MB sizing + thousands
+  grouping), maybe_persist_tool_result (threshold/override/inf paths,
+  inline-truncation fallback), enforce_turn_budget (aggregate spill of
+  largest non-persisted results until under budget, persisted-tag skip).
+  Oracle: test_tool_result_storage.py + test_budget_config.py core
+  behaviors (unchanged boundary, path-escape neutralization, stdin
+  verbatim, env-temp-dir, turn-budget spill); 14 parity tests in
+  parity_tool_result_storage.rs; workspace 521 tests green; clippy clean.
+  Evidence: `cargo test --workspace` (unit).
 - 2026-08-22 (session 2b): Second/third tool-file ports —
   tools/ansi_strip.py and tools/session_search_tool.py → hermes-tools
   src/ansi_strip.rs + src/session_search.rs (@ b9aa928). ansi_strip: full

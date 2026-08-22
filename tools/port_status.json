@@ -46,5 +46,11 @@
   },
   "tools.ansi_strip": {
     "status": "done"
+  },
+  "tools.tool_result_storage": {
+    "status": "done"
+  },
+  "tools.budget_config": {
+    "status": "done"
   }
 }
