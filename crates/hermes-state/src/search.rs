@@ -41,18 +41,15 @@ const MALFORMED_SCHEMA_MARKERS: [&str; 2] = [
     "database disk image is malformed",
 ];
 
-static SPECIAL_CHARS_RE: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r#"[+{}():"^]"#).unwrap());
+static SPECIAL_CHARS_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r#"[+{}():"^]"#).unwrap());
 static STAR_COLLAPSE_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"\*+").unwrap());
 static LEADING_STAR_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"(^|\s)\*").unwrap());
 static LEADING_OPERATOR_RE: Lazy<Regex> =
     Lazy::new(|| Regex::new(r"(?i)^(AND|OR|NOT)\b\s*").unwrap());
 static TRAILING_OPERATOR_RE: Lazy<Regex> =
     Lazy::new(|| Regex::new(r"(?i)\s+(AND|OR|NOT)\s*$").unwrap());
-static DOTTED_TERM_RE: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"\b(\w+(?:[._-]\w+)+)\b").unwrap());
-static QUOTED_NON_SPACE_RE: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r#""[^"]*"|\S+"#).unwrap());
+static DOTTED_TERM_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"\b(\w+(?:[._-]\w+)+)\b").unwrap());
+static QUOTED_NON_SPACE_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r#""[^"]*"|\S+"#).unwrap());
 // ── helpers ────────────────────────────────────────────────────────────────
 
 fn malformed_or_fts_corrupt(msg: &str) -> bool {
@@ -180,8 +177,7 @@ fn search_message_fields(fields: Option<&[String]>) -> Result<Option<Vec<String>
     let Some(fields) = fields else {
         return Ok(None);
     };
-    let requested: std::collections::HashSet<&str> =
-        fields.iter().map(|s| s.as_str()).collect();
+    let requested: std::collections::HashSet<&str> = fields.iter().map(|s| s.as_str()).collect();
     let unknown: Vec<&str> = requested
         .iter()
         .filter(|f| !SEARCH_MESSAGE_RESULT_FIELDS.contains(f))
@@ -228,11 +224,7 @@ impl SessionDB {
         }
     }
 
-    fn _seed_fts_rebuild_markers(
-        &self,
-        conn: &Connection,
-        force: bool,
-    ) -> Result<i64, WriteError> {
+    fn _seed_fts_rebuild_markers(&self, conn: &Connection, force: bool) -> Result<i64, WriteError> {
         let existing_hw: Option<i64> = conn
             .query_row(
                 "SELECT value FROM state_meta WHERE key = 'fts_rebuild_high_water'",
@@ -266,8 +258,9 @@ impl SessionDB {
                 return Ok(hw);
             }
         }
-        let hw: i64 = conn
-            .query_row("SELECT COALESCE(MAX(id), 0) FROM messages", [], |r| r.get(0))?;
+        let hw: i64 = conn.query_row("SELECT COALESCE(MAX(id), 0) FROM messages", [], |r| {
+            r.get(0)
+        })?;
         conn.execute(
             "INSERT INTO state_meta (key, value) VALUES ('fts_rebuild_high_water', ?) \
              ON CONFLICT(key) DO UPDATE SET value = excluded.value",
@@ -385,7 +378,10 @@ impl SessionDB {
                 )
                 .unwrap();
             stmt.query_map(
-                rusqlite::params![format!("{}%", crate::state::SessionDB::FTS_TRASH_PREFIX.replace('_', "\\_"))],
+                rusqlite::params![format!(
+                    "{}%",
+                    crate::state::SessionDB::FTS_TRASH_PREFIX.replace('_', "\\_")
+                )],
                 |r| r.get::<_, String>(0),
             )
             .unwrap()
@@ -445,7 +441,10 @@ impl SessionDB {
                 };
                 if upper_rows.is_empty() {
                     conn.execute(&format!("DROP TABLE IF EXISTS {}", tbl), [])?;
-                    conn.execute("DELETE FROM state_meta WHERE key = ?", rusqlite::params![marker_key])?;
+                    conn.execute(
+                        "DELETE FROM state_meta WHERE key = ?",
+                        rusqlite::params![marker_key],
+                    )?;
                     log_warn(&format!("Old FTS shadow table {} torn down.", tbl));
                     return Ok(true);
                 }
@@ -539,7 +538,8 @@ impl SessionDB {
         };
         if !more {
             if let Some(status) = self.fts_rebuild_status() {
-                if status["indexed"].as_i64().unwrap_or(0) >= status["total"].as_i64().unwrap_or(0) {
+                if status["indexed"].as_i64().unwrap_or(0) >= status["total"].as_i64().unwrap_or(0)
+                {
                     self._fts_rebuild_finish();
                 }
             }
@@ -749,7 +749,8 @@ impl SessionDB {
         };
         if !more {
             if let Some(status) = self.fts_cjk_rebuild_status() {
-                if status["indexed"].as_i64().unwrap_or(0) >= status["total"].as_i64().unwrap_or(0) {
+                if status["indexed"].as_i64().unwrap_or(0) >= status["total"].as_i64().unwrap_or(0)
+                {
                     self._fts_cjk_rebuild_finish();
                 }
             }
@@ -838,7 +839,10 @@ fn schema_has_fts_trash(conn: &Connection) -> bool {
 /// Sanitize user input for safe use in FTS5 MATCH queries.
 /// PARITY: hermes_state_search.py _sanitize_fts5_query @ b9aa928
 pub fn sanitize_fts5_query(query: &str) -> String {
-    let bound: String = query.chars().take(crate::common::MAX_FTS5_QUERY_CHARS).collect();
+    let bound: String = query
+        .chars()
+        .take(crate::common::MAX_FTS5_QUERY_CHARS)
+        .collect();
 
     // Step 1: extract balanced double-quoted phrases into placeholders.
     let mut quoted_parts: Vec<String> = Vec::new();
@@ -886,13 +890,19 @@ pub fn sanitize_fts5_query(query: &str) -> String {
     sanitized = LEADING_STAR_RE.replace_all(&sanitized, "$1").into_owned();
 
     // Step 4: remove dangling boolean operators at start/end.
-    sanitized = LEADING_OPERATOR_RE.replace_all(sanitized.trim(), "").into_owned();
-    sanitized = TRAILING_OPERATOR_RE.replace_all(sanitized.trim(), "").into_owned();
+    sanitized = LEADING_OPERATOR_RE
+        .replace_all(sanitized.trim(), "")
+        .into_owned();
+    sanitized = TRAILING_OPERATOR_RE
+        .replace_all(sanitized.trim(), "")
+        .into_owned();
 
     // Step 5: wrap unquoted dotted/hyphenated terms in double quotes in a
     // single pass (avoids the sequential double-quoting bug).
     sanitized = DOTTED_TERM_RE
-        .replace_all(&sanitized, |caps: &regex::Captures| format!("\"{}\"", &caps[1]))
+        .replace_all(&sanitized, |caps: &regex::Captures| {
+            format!("\"{}\"", &caps[1])
+        })
         .into_owned();
 
     // Step 6: restore preserved quoted phrases.
@@ -982,7 +992,9 @@ impl SessionDB {
             None => window_rows.clone(),
         };
         let window_min_id = window_rows[0]["id"].as_i64().unwrap_or(0);
-        let window_max_id = window_rows[window_rows.len() - 1]["id"].as_i64().unwrap_or(0);
+        let window_max_id = window_rows[window_rows.len() - 1]["id"]
+            .as_i64()
+            .unwrap_or(0);
 
         let mut bookend_start_rows: Vec<Value> = Vec::new();
         let mut bookend_end_rows: Vec<Value> = Vec::new();
@@ -995,10 +1007,8 @@ impl SessionDB {
                 }
                 _ => String::new(),
             };
-            let mut params_start: Vec<Box<dyn rusqlite::ToSql>> = vec![
-                Box::new(session_id.to_string()),
-                Box::new(window_min_id),
-            ];
+            let mut params_start: Vec<Box<dyn rusqlite::ToSql>> =
+                vec![Box::new(session_id.to_string()), Box::new(window_min_id)];
             if let Some(roles) = keep_roles {
                 for r in roles {
                     params_start.push(Box::new(r.clone()));
@@ -1014,17 +1024,17 @@ impl SessionDB {
             let mut stmt_start = conn.prepare(&sql_start).map_err(WriteError::Sqlite)?;
             bookend_start_rows = stmt_start
                 .query_map(
-                    rusqlite::params_from_iter(params_start.iter().map(|p| p as &dyn rusqlite::ToSql)),
+                    rusqlite::params_from_iter(
+                        params_start.iter().map(|p| p as &dyn rusqlite::ToSql),
+                    ),
                     super::portability::message_row_to_value,
                 )
                 .map_err(WriteError::Sqlite)?
                 .collect::<Result<Vec<_>, _>>()
                 .map_err(WriteError::Sqlite)?;
 
-            let mut params_end: Vec<Box<dyn rusqlite::ToSql>> = vec![
-                Box::new(session_id.to_string()),
-                Box::new(window_max_id),
-            ];
+            let mut params_end: Vec<Box<dyn rusqlite::ToSql>> =
+                vec![Box::new(session_id.to_string()), Box::new(window_max_id)];
             if let Some(roles) = keep_roles {
                 for r in roles {
                     params_end.push(Box::new(r.clone()));
@@ -1040,7 +1050,9 @@ impl SessionDB {
             let mut stmt_end = conn.prepare(&sql_end).map_err(WriteError::Sqlite)?;
             bookend_end_rows = stmt_end
                 .query_map(
-                    rusqlite::params_from_iter(params_end.iter().map(|p| p as &dyn rusqlite::ToSql)),
+                    rusqlite::params_from_iter(
+                        params_end.iter().map(|p| p as &dyn rusqlite::ToSql),
+                    ),
                     super::portability::message_row_to_value,
                 )
                 .map_err(WriteError::Sqlite)?
@@ -1067,7 +1079,11 @@ impl SessionDB {
         limit: i64,
         include_inactive: bool,
     ) -> Result<Vec<Value>, WriteError> {
-        let active_clause = if include_inactive { "" } else { " AND active = 1" };
+        let active_clause = if include_inactive {
+            ""
+        } else {
+            " AND active = 1"
+        };
         let display_clause = " AND (display_kind IS NULL OR display_kind = '')";
         let fetch_limit = limit * 2 + 5;
         let sql = format!(
@@ -1079,10 +1095,9 @@ impl SessionDB {
         let conn = self.writer_conn();
         let mut stmt = conn.prepare(&sql).map_err(WriteError::Sqlite)?;
         let rows: Vec<(i64, f64, Option<rusqlite::types::Value>)> = stmt
-            .query_map(
-                rusqlite::params![session_id, fetch_limit],
-                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
-            )
+            .query_map(rusqlite::params![session_id, fetch_limit], |r| {
+                Ok((r.get(0)?, r.get(1)?, r.get(2)?))
+            })
             .map_err(WriteError::Sqlite)?
             .collect::<Result<_, _>>()
             .map_err(WriteError::Sqlite)?;
@@ -1204,7 +1219,11 @@ impl SessionDB {
              JOIN messages m ON m.id = {}.rowid \
              JOIN sessions s ON s.id = m.session_id \
              WHERE {} {} LIMIT ? OFFSET ?",
-            table, table, table, tri_where.join(" AND "), order_by_sql,
+            table,
+            table,
+            table,
+            tri_where.join(" AND "),
+            order_by_sql,
         );
         tri_params.push(Box::new(limit));
         tri_params.push(Box::new(offset));
@@ -1236,8 +1255,7 @@ impl SessionDB {
         fields: Option<&[String]>,
     ) -> Result<Vec<Value>, WriteError> {
         let started = std::time::Instant::now();
-        let result_fields = search_message_fields(fields)
-            .map_err(WriteError::ValueError)?;
+        let result_fields = search_message_fields(fields).map_err(WriteError::ValueError)?;
         if !self.fts_enabled() {
             return Ok(vec![]);
         }
@@ -1359,33 +1377,31 @@ impl SessionDB {
             // bounded LIKE scan over the unindexed id gap.
             if self.fts_rebuild_status().is_some() && (matches.len() as i64) < limit {
                 let gap = self._search_unindexed_gap(
-                        &sanitized,
-                        limit.saturating_sub(matches.len() as i64),
-                        include_inactive,
-                        source_filter,
-                        exclude_sources,
-                        role_filter,
-                    );
-                    if let Ok(gap_matches) = gap {
-                        let seen: std::collections::HashSet<i64> = matches
-                            .iter()
-                            .filter_map(|m| m.get("id").and_then(|v| v.as_i64()))
-                            .collect();
-                        for m in gap_matches {
-                            if let Some(id) = m.get("id").and_then(|v| v.as_i64()) {
-                                if !seen.contains(&id) {
-                                    matches.push(m);
-                                }
+                    &sanitized,
+                    limit.saturating_sub(matches.len() as i64),
+                    include_inactive,
+                    source_filter,
+                    exclude_sources,
+                    role_filter,
+                );
+                if let Ok(gap_matches) = gap {
+                    let seen: std::collections::HashSet<i64> = matches
+                        .iter()
+                        .filter_map(|m| m.get("id").and_then(|v| v.as_i64()))
+                        .collect();
+                    for m in gap_matches {
+                        if let Some(id) = m.get("id").and_then(|v| v.as_i64()) {
+                            if !seen.contains(&id) {
+                                matches.push(m);
                             }
                         }
                     }
+                }
             }
 
             // Pure-Latin miss → retry on substring-capable indexes
             // (CJK-bigram then trigram) for the #54242 class.
-            if matches.is_empty()
-                && !(role_filter.is_some_and(|r| r.iter().any(|v| v == "tool")))
-            {
+            if matches.is_empty() && !(role_filter.is_some_and(|r| r.iter().any(|v| v == "tool"))) {
                 let fb_query = sanitized.trim_matches('"').trim().to_string();
                 if self.fts_cjk_available() {
                     if let Some(fb) = self._run_trigram_search(
@@ -1402,7 +1418,10 @@ impl SessionDB {
                         matches = fb;
                     }
                 }
-                if matches.is_empty() && self.trigram_available() && trigram_eligible_tokens(&sanitized) {
+                if matches.is_empty()
+                    && self.trigram_available()
+                    && trigram_eligible_tokens(&sanitized)
+                {
                     if let Some(fb) = self._run_trigram_search(
                         &fb_query,
                         "messages_fts_trigram",
@@ -1422,7 +1441,9 @@ impl SessionDB {
 
         // Add surrounding context (1 message before + after each match) only
         // when the selected projection consumes it.
-        let wants_context = result_fields.as_ref().is_none_or(|f| f.iter().any(|x| x == "context"));
+        let wants_context = result_fields
+            .as_ref()
+            .is_none_or(|f| f.iter().any(|x| x == "context"));
         if wants_context {
             for m in &mut matches {
                 let mid = m.get("id").and_then(|v| v.as_i64()).unwrap_or(0);
@@ -1601,7 +1622,9 @@ impl SessionDB {
             let run = || -> Result<Vec<Value>, rusqlite::Error> {
                 let mut stmt = conn.prepare(&sql)?;
                 let rows = stmt.query_map(
-                    rusqlite::params_from_iter(cjk_params.iter().map(|p| p as &dyn rusqlite::ToSql)),
+                    rusqlite::params_from_iter(
+                        cjk_params.iter().map(|p| p as &dyn rusqlite::ToSql),
+                    ),
                     super::portability::row_to_value,
                 )?;
                 rows.collect()
@@ -1653,8 +1676,11 @@ impl SessionDB {
                 .filter(|t| !["AND", "OR", "NOT"].contains(&t.to_ascii_uppercase().as_str()))
                 .map(str::to_string)
                 .collect();
-            let non_op_tokens: Vec<String> =
-                if non_op_tokens.is_empty() { vec![raw_query.clone()] } else { non_op_tokens };
+            let non_op_tokens: Vec<String> = if non_op_tokens.is_empty() {
+                vec![raw_query.clone()]
+            } else {
+                non_op_tokens
+            };
             let mut token_clauses = Vec::new();
             let mut like_params: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
             for tok in &non_op_tokens {
@@ -1716,11 +1742,16 @@ impl SessionDB {
             };
             let rows: Result<Vec<Value>, _> = stmt
                 .query_map(
-                    rusqlite::params_from_iter(like_params.iter().map(|p| p as &dyn rusqlite::ToSql)),
+                    rusqlite::params_from_iter(
+                        like_params.iter().map(|p| p as &dyn rusqlite::ToSql),
+                    ),
                     super::portability::row_to_value,
                 )
                 .map_err(WriteError::Sqlite)
-                .and_then(|it| it.collect::<Result<Vec<_>, _>>().map_err(WriteError::Sqlite));
+                .and_then(|it| {
+                    it.collect::<Result<Vec<_>, _>>()
+                        .map_err(WriteError::Sqlite)
+                });
             if let Ok(rows) = rows {
                 matches = rows;
             }
@@ -1750,10 +1781,13 @@ impl SessionDB {
 
         // Degrade the FTS query to LIKE terms.
         let mut terms: Vec<String> = Vec::new();
-        for raw_tok in QUOTED_NON_SPACE_RE
-            .find_iter(fts_query)
-            .map(|m| m.as_str().trim_matches('"').trim_matches('*').trim().to_string())
-        {
+        for raw_tok in QUOTED_NON_SPACE_RE.find_iter(fts_query).map(|m| {
+            m.as_str()
+                .trim_matches('"')
+                .trim_matches('*')
+                .trim()
+                .to_string()
+        }) {
             let upper = raw_tok.to_ascii_uppercase();
             if raw_tok.is_empty() || ["AND", "OR", "NOT", "NEAR"].contains(&upper.as_str()) {
                 continue;
@@ -1841,7 +1875,11 @@ impl SessionDB {
             let sql = format!("INSERT INTO {}({}) VALUES('optimize')", tbl, tbl);
             match conn.execute(&sql, []) {
                 Ok(_) => optimized += 1,
-                Err(e) => log_warn(&format!("FTS optimize failed for {}: {}", tbl, rusqlite_msg(&e))),
+                Err(e) => log_warn(&format!(
+                    "FTS optimize failed for {}: {}",
+                    tbl,
+                    rusqlite_msg(&e)
+                )),
             }
         }
         optimized
@@ -1864,7 +1902,11 @@ impl SessionDB {
                 }
                 Err(e) => {
                     let _ = conn.execute_batch("ROLLBACK");
-                    log_warn(&format!("FTS rebuild failed for {}: {}", tbl, rusqlite_msg(&e)));
+                    log_warn(&format!(
+                        "FTS rebuild failed for {}: {}",
+                        tbl,
+                        rusqlite_msg(&e)
+                    ));
                 }
             }
         }
@@ -1879,11 +1921,15 @@ impl SessionDB {
         max_commands: Option<usize>,
     ) -> Result<usize, WriteError> {
         if max_pages <= 0 {
-            return Err(WriteError::ValueError("max_pages must be greater than zero".into()));
+            return Err(WriteError::ValueError(
+                "max_pages must be greater than zero".into(),
+            ));
         }
         let max_commands = max_commands.unwrap_or(FTS_MERGE_COMMANDS_PER_PASS);
         if max_commands == 0 {
-            return Err(WriteError::ValueError("max_commands must be greater than zero".into()));
+            return Err(WriteError::ValueError(
+                "max_commands must be greater than zero".into(),
+            ));
         }
         let mut executed = 0usize;
         let conn = self.writer_conn();
@@ -1898,7 +1944,8 @@ impl SessionDB {
             for _ in 0..max_commands {
                 let before = conn.total_changes();
                 let sql = format!("INSERT INTO {}({}, rank) VALUES('merge', ?)", tbl, tbl);
-                conn.execute(&sql, rusqlite::params![max_pages]).map_err(WriteError::Sqlite)?;
+                conn.execute(&sql, rusqlite::params![max_pages])
+                    .map_err(WriteError::Sqlite)?;
                 executed += 1;
                 if conn.total_changes() - before < 2 {
                     break;
@@ -1961,7 +2008,10 @@ impl SessionDB {
                 }
             }
             let hw = self._seed_fts_rebuild_markers(conn, true)?;
-            conn.execute("DELETE FROM state_meta WHERE key = 'fts_optimize_available'", [])?;
+            conn.execute(
+                "DELETE FROM state_meta WHERE key = 'fts_optimize_available'",
+                [],
+            )?;
             Ok(hw)
         };
         let hw = self.execute_write(&f, None)?;
@@ -1970,8 +2020,11 @@ impl SessionDB {
         {
             let conn = self.writer_conn();
             let base_ok = self.ensure_fts_schema(&conn, "messages_fts", crate::common::FTS_SQL);
-            let trigram_ok =
-                self.ensure_fts_schema(&conn, "messages_fts_trigram", crate::common::FTS_TRIGRAM_SQL);
+            let trigram_ok = self.ensure_fts_schema(
+                &conn,
+                "messages_fts_trigram",
+                crate::common::FTS_TRIGRAM_SQL,
+            );
             self.set_trigram_available(trigram_ok);
             if !base_ok {
                 return Err(WriteError::Runtime(
@@ -2010,8 +2063,11 @@ impl SessionDB {
         } else if pending && !legacy {
             let conn = self.writer_conn();
             let base_ok = self.ensure_fts_schema(&conn, "messages_fts", crate::common::FTS_SQL);
-            let trigram_ok =
-                self.ensure_fts_schema(&conn, "messages_fts_trigram", crate::common::FTS_TRIGRAM_SQL);
+            let trigram_ok = self.ensure_fts_schema(
+                &conn,
+                "messages_fts_trigram",
+                crate::common::FTS_TRIGRAM_SQL,
+            );
             self.set_trigram_available(trigram_ok);
             if !base_ok {
                 return Err(WriteError::Runtime(
@@ -2030,7 +2086,9 @@ impl SessionDB {
 
         let emit = |phase: &str, progress_cb: Option<&dyn Fn(&Value)>| {
             if let Some(cb) = progress_cb {
-                let st = self.fts_rebuild_status().or_else(|| self.fts_cjk_rebuild_status());
+                let st = self
+                    .fts_rebuild_status()
+                    .or_else(|| self.fts_cjk_rebuild_status());
                 let payload = match &st {
                     Some(st) => json!({
                         "phase": phase,
@@ -2123,7 +2181,10 @@ impl SessionDB {
             let v = match conn.execute_batch("VACUUM") {
                 Ok(()) => Some(true),
                 Err(e) => {
-                    log_warn(&format!("VACUUM after FTS optimize failed: {}", rusqlite_msg(&e)));
+                    log_warn(&format!(
+                        "VACUUM after FTS optimize failed: {}",
+                        rusqlite_msg(&e)
+                    ));
                     Some(false)
                 }
             };
@@ -2157,7 +2218,10 @@ impl SessionDB {
                  ON CONFLICT(key) DO UPDATE SET value = excluded.value",
                 rusqlite::params![crate::common::FTS_STORAGE_VERSION.to_string()],
             )?;
-            conn.execute("DELETE FROM state_meta WHERE key = 'fts_optimize_available'", [])?;
+            conn.execute(
+                "DELETE FROM state_meta WHERE key = 'fts_optimize_available'",
+                [],
+            )?;
             conn.execute(
                 "UPDATE schema_version SET version = ? WHERE version < ?",
                 rusqlite::params![crate::common::SCHEMA_VERSION, crate::common::SCHEMA_VERSION],
@@ -2166,7 +2230,10 @@ impl SessionDB {
         };
         let refusal = self.execute_write(&settle, None)?;
         if let Some(reason) = refusal {
-            log_warn(&format!("FTS storage optimization settle refused ({})", reason));
+            log_warn(&format!(
+                "FTS storage optimization settle refused ({})",
+                reason
+            ));
             return Ok(json!({"ok": false, "reason": reason, "vacuumed": vacuum_ok}));
         }
         emit("done", progress_cb);

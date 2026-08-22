@@ -13,6 +13,7 @@
 
 use std::cell::{Cell, RefCell};
 use std::path::{Path, PathBuf};
+use std::sync::{mpsc, Arc, Mutex};
 
 use once_cell::sync::Lazy;
 use rusqlite::{Connection, OpenFlags, OptionalExtension};
@@ -44,7 +45,12 @@ fn real_platform_state_root() -> Option<PathBuf> {
             }
         }
         let home = std::env::var("USERPROFILE").unwrap_or_default();
-        return Some(PathBuf::from(home).join("AppData").join("Local").join("hermes"));
+        return Some(
+            PathBuf::from(home)
+                .join("AppData")
+                .join("Local")
+                .join("hermes"),
+        );
     }
     let home = std::env::var("HOME").unwrap_or_default();
     Some(PathBuf::from(home).join(".hermes"))
@@ -68,7 +74,10 @@ fn ensure_test_isolation(db_path: &Path) -> Result<(), String> {
     let Ok(resolved) = db_path.canonicalize().or_else(|_| {
         db_path
             .parent()
-            .map(|p| p.canonicalize().map(|c| c.join(db_path.file_name().unwrap_or_default())))
+            .map(|p| {
+                p.canonicalize()
+                    .map(|c| c.join(db_path.file_name().unwrap_or_default()))
+            })
             .unwrap_or_else(|| std::fs::canonicalize(db_path))
     }) else {
         return Ok(());
@@ -120,7 +129,10 @@ pub fn is_zeroed_state_db(path: &Path) -> bool {
 pub fn quarantine_zeroed_state_db(path: &Path) -> Option<PathBuf> {
     let dir = path.parent()?;
     let _ = std::fs::create_dir_all(dir);
-    let lock_path = dir.join(format!("{}.quarantine.lock", path.file_name()?.to_string_lossy()));
+    let lock_path = dir.join(format!(
+        "{}.quarantine.lock",
+        path.file_name()?.to_string_lossy()
+    ));
     let lock = std::fs::File::options()
         .create(true)
         .append(true)
@@ -183,7 +195,9 @@ pub fn fts5_cjk_so_path() -> PathBuf {
             return p;
         }
     }
-    hermes_constants::get_hermes_home().join("lib").join("libfts5_cjk.so")
+    hermes_constants::get_hermes_home()
+        .join("lib")
+        .join("libfts5_cjk.so")
 }
 
 /// config.yaml `sessions.cjk_fts` (default on), via its env bridge.
@@ -238,6 +252,13 @@ pub struct SessionDB {
     pub db_path: PathBuf,
     pub read_only: bool,
     conn: RefCell<Option<Connection>>,
+    // Async token-accounting writer (see crate::token). `token_writer` is
+    // the shared queue+condvar; `token_writer_thread` owns the writer's
+    // JoinHandle; `token_writer_exit` carries the thread's exit signal so
+    // stop/join can bound its wait.
+    pub(crate) token_writer: Arc<crate::token::TokenWriterShared>,
+    pub(crate) token_writer_thread: Arc<Mutex<Option<std::thread::JoinHandle<()>>>>,
+    pub(crate) token_writer_exit: Arc<Mutex<Option<mpsc::Receiver<()>>>>,
     // interior-mutable capability flags (upstream plain attributes)
     fts_enabled: Cell<bool>,
     trigram_available: Cell<bool>,
@@ -337,6 +358,9 @@ impl SessionDB {
             db_path,
             read_only,
             conn: RefCell::new(None),
+            token_writer: crate::token::TokenWriterShared::new(),
+            token_writer_thread: Arc::new(Mutex::new(None)),
+            token_writer_exit: Arc::new(Mutex::new(None)),
             fts_enabled: Cell::new(false),
             trigram_available: Cell::new(false),
             fts_cjk_loaded: Cell::new(false),
@@ -368,8 +392,11 @@ impl SessionDB {
     fn open_read_only(&mut self) -> Result<(), String> {
         // URI read-only attach; no schema init (SELECT-only), no write lock.
         let uri = format!("file:{}?mode=ro", self.db_path.display());
-        let conn = Connection::open_with_flags(&uri, OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_URI)
-            .map_err(|e| e.to_string())?;
+        let conn = Connection::open_with_flags(
+            &uri,
+            OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_URI,
+        )
+        .map_err(|e| e.to_string())?;
         conn.busy_timeout(std::time::Duration::from_millis(1000))
             .map_err(|e| e.to_string())?;
         // Read-only opens must not touch the FTS probe if schema is malformed;
@@ -409,8 +436,14 @@ impl SessionDB {
 
         // #68474 zeroed state.db handling.
         if self.db_path.exists() && is_zeroed_state_db(&self.db_path) {
-            let zsize = std::fs::metadata(&self.db_path).map(|m| m.len() as i64).unwrap_or(-1);
-            let snaps = self.db_path.parent().unwrap_or(Path::new(".")).join("state-snapshots");
+            let zsize = std::fs::metadata(&self.db_path)
+                .map(|m| m.len() as i64)
+                .unwrap_or(-1);
+            let snaps = self
+                .db_path
+                .parent()
+                .unwrap_or(Path::new("."))
+                .join("state-snapshots");
             let qpath = quarantine_zeroed_state_db(&self.db_path);
             let msg = format!(
                 "state.db looks ZEROED ({} bytes, no SQLite header). Preserved at {}. Restore from {} via `hermes snapshot list` / `hermes snapshot restore <id>` if available. Opening a fresh empty database so the agent can start.",
@@ -430,7 +463,8 @@ impl SessionDB {
 
         // Connect + init with lock patience (mirrors
         // _connect_and_init_with_lock_patience).
-        let deadline = std::time::Instant::now() + std::time::Duration::from_secs_f64(Self::WRITE_PATIENCE_S);
+        let deadline =
+            std::time::Instant::now() + std::time::Duration::from_secs_f64(Self::WRITE_PATIENCE_S);
         loop {
             match self.connect_and_init() {
                 Ok(()) => return Ok(()),
@@ -452,7 +486,11 @@ impl SessionDB {
                         (Self::WRITE_RETRY_MIN_S, Self::WRITE_RETRY_MAX_S)
                     };
                     let jitter = lo + rand_uniform() * (hi - lo);
-                    let sleep_for = jitter.min((deadline - std::time::Instant::now()).as_secs_f64().max(0.001));
+                    let sleep_for = jitter.min(
+                        (deadline - std::time::Instant::now())
+                            .as_secs_f64()
+                            .max(0.001),
+                    );
                     std::thread::sleep(std::time::Duration::from_secs_f64(sleep_for));
                     let _ = patience;
                 }
@@ -464,11 +502,12 @@ impl SessionDB {
         let conn = Connection::open(&self.db_path).map_err(|e| e.to_string())?;
         conn.busy_timeout(std::time::Duration::from_millis(1000))
             .map_err(|e| e.to_string())?;
-        let wal_mode = crate::wal::apply_wal_with_fallback(&conn, "state.db", false)
-            .map_err(|e| e.0)?;
+        let wal_mode =
+            crate::wal::apply_wal_with_fallback(&conn, "state.db", false).map_err(|e| e.0)?;
         self.wal_active.set(wal_mode == "wal");
         crate::wal::apply_database_pragmas(&conn, "state.db");
-        conn.execute_batch("PRAGMA foreign_keys=ON").map_err(|e| e.to_string())?;
+        conn.execute_batch("PRAGMA foreign_keys=ON")
+            .map_err(|e| e.to_string())?;
         let cjk_loaded = load_fts5_cjk_extension(&conn);
         self.fts_cjk_loaded.set(cjk_loaded);
         // The connection must be visible before schema init: the schema
@@ -496,7 +535,26 @@ impl SessionDB {
         })
     }
 
+    /// Borrow the writer connection for a write, returning a clean error
+    /// when the DB is closed (mirrors upstream's "Cannot operate on a
+    /// closed database" RuntimeError rather than panicking).
+    pub fn conn_for_write(&self) -> Result<std::cell::Ref<'_, Connection>, WriteError> {
+        let guard = self.conn.borrow();
+        match guard.as_ref() {
+            Some(_) => Ok(std::cell::Ref::map(guard, |c| {
+                c.as_ref().expect("checked conn")
+            })),
+            None => Err(WriteError::Sqlite(rusqlite::Error::SqliteFailure(
+                rusqlite::ffi::Error::new(rusqlite::ffi::SQLITE_MISUSE),
+                Some("Cannot operate on a closed database.".to_string()),
+            ))),
+        }
+    }
+
     pub fn close(&self) {
+        // Drain queued token deltas first — the background writer needs the
+        // connection. Bounded: close() joins with the standard 10s budget.
+        self.stop_token_writer(10.0);
         {
             let conn_opt = self.conn.borrow();
             if let Some(conn) = conn_opt.as_ref() {
@@ -527,7 +585,7 @@ impl SessionDB {
         // measured from then, not from the start of the write.
         let mut compression_deadline: Option<std::time::Instant> = None;
         loop {
-            let conn = self.writer_conn();
+            let conn = self.conn_for_write()?;
             let attempt = (|| -> Result<T, WriteError> {
                 conn.execute_batch("BEGIN IMMEDIATE")?;
                 let result = f(&conn);
@@ -581,8 +639,7 @@ impl SessionDB {
                     if msg.contains("locked") || msg.contains("busy") {
                         if !self.sleep_before_write_retry(deadline, patience_s) {
                             return Err(WriteError::Sqlite(rusqlite::Error::SqliteFailure(
-                                e,
-                                None,
+                                e, None,
                             )));
                         }
                         continue;
@@ -610,16 +667,13 @@ impl SessionDB {
 
     /// Sleep one jitter interval if the patience budget still allows it.
     // PARITY: hermes_state.py _sleep_before_write_retry @ b9aa928 (2898–2927)
-    pub fn sleep_before_write_retry(
-        &self,
-        deadline: std::time::Instant,
-        patience_s: f64,
-    ) -> bool {
+    pub fn sleep_before_write_retry(&self, deadline: std::time::Instant, patience_s: f64) -> bool {
         let now = std::time::Instant::now();
         if now >= deadline {
             return false;
         }
-        let elapsed = now.duration_since(deadline - std::time::Duration::from_secs_f64(patience_s))
+        let elapsed = now
+            .duration_since(deadline - std::time::Duration::from_secs_f64(patience_s))
             .as_secs_f64();
         let (jitter_lo, jitter_hi) = if elapsed >= Self::WRITE_RETRY_SLOW_AFTER_S {
             (Self::WRITE_RETRY_SLOW_MIN_S, Self::WRITE_RETRY_SLOW_MAX_S)
@@ -636,11 +690,9 @@ impl SessionDB {
     // PARITY: hermes_state.py _try_wal_checkpoint @ b9aa928 (2991–3020)
     pub fn try_wal_checkpoint(&self) {
         let conn = self.writer_conn();
-        let _ = conn.query_row(
-            "PRAGMA wal_checkpoint(PASSIVE)",
-            [],
-            |r| Ok((r.get::<_, i64>(1)?, r.get::<_, i64>(2)?)),
-        );
+        let _ = conn.query_row("PRAGMA wal_checkpoint(PASSIVE)", [], |r| {
+            Ok((r.get::<_, i64>(1)?, r.get::<_, i64>(2)?))
+        });
     }
 
     /// Hook for the FTS bounded-merge cadence (search port provides the real
@@ -656,11 +708,9 @@ impl SessionDB {
 
     pub fn get_meta(&self, key: &str) -> Option<String> {
         let conn = self.writer_conn();
-        conn.query_row(
-            "SELECT value FROM state_meta WHERE key = ?",
-            [key],
-            |r| r.get(0),
-        )
+        conn.query_row("SELECT value FROM state_meta WHERE key = ?", [key], |r| {
+            r.get(0)
+        })
         .optional()
         .ok()
         .flatten()
@@ -680,25 +730,63 @@ impl SessionDB {
 
     // Accessors used by the schema mixin -------------------------------------------------
 
-    pub fn fts_enabled(&self) -> bool { self.fts_enabled.get() }
-    pub fn set_fts_enabled(&self, v: bool) { self.fts_enabled.set(v); }
-    pub fn trigram_available(&self) -> bool { self.trigram_available.get() }
-    pub fn set_trigram_available(&self, v: bool) { self.trigram_available.set(v); }
-    pub fn fts_cjk_loaded(&self) -> bool { self.fts_cjk_loaded.get() }
-    pub fn set_fts_cjk_loaded(&self, v: bool) { self.fts_cjk_loaded.set(v); }
-    pub fn fts_cjk_available(&self) -> bool { self.fts_cjk_available.get() }
-    pub fn set_fts_cjk_available(&self, v: bool) { self.fts_cjk_available.set(v); }
-    pub fn fts_unavailable_warned(&self) -> bool { self.fts_unavailable_warned.get() }
-    pub fn set_fts_unavailable_warned(&self, v: bool) { self.fts_unavailable_warned.set(v); }
-    pub fn trigram_unavailable_warned(&self) -> bool { self.trigram_unavailable_warned.get() }
-    pub fn set_trigram_unavailable_warned(&self, v: bool) { self.trigram_unavailable_warned.set(v); }
-    pub fn wal_active(&self) -> bool { self.wal_active.get() }
-    pub fn set_wal_active(&self, v: bool) { self.wal_active.set(v); }
-    pub fn write_count(&self) -> u64 { self.write_count.get() }
-    pub fn fts_runtime_rebuild_attempted(&self) -> bool { self.fts_runtime_rebuild_attempted.get() }
-    pub fn set_fts_runtime_rebuild_attempted(&self, v: bool) { self.fts_runtime_rebuild_attempted.set(v); }
-    pub fn fts_usermerge_floor_applied(&self) -> bool { self.fts_usermerge_floor_applied.get() }
-    pub fn set_fts_usermerge_floor_applied(&self, v: bool) { self.fts_usermerge_floor_applied.set(v); }
+    pub fn fts_enabled(&self) -> bool {
+        self.fts_enabled.get()
+    }
+    pub fn set_fts_enabled(&self, v: bool) {
+        self.fts_enabled.set(v);
+    }
+    pub fn trigram_available(&self) -> bool {
+        self.trigram_available.get()
+    }
+    pub fn set_trigram_available(&self, v: bool) {
+        self.trigram_available.set(v);
+    }
+    pub fn fts_cjk_loaded(&self) -> bool {
+        self.fts_cjk_loaded.get()
+    }
+    pub fn set_fts_cjk_loaded(&self, v: bool) {
+        self.fts_cjk_loaded.set(v);
+    }
+    pub fn fts_cjk_available(&self) -> bool {
+        self.fts_cjk_available.get()
+    }
+    pub fn set_fts_cjk_available(&self, v: bool) {
+        self.fts_cjk_available.set(v);
+    }
+    pub fn fts_unavailable_warned(&self) -> bool {
+        self.fts_unavailable_warned.get()
+    }
+    pub fn set_fts_unavailable_warned(&self, v: bool) {
+        self.fts_unavailable_warned.set(v);
+    }
+    pub fn trigram_unavailable_warned(&self) -> bool {
+        self.trigram_unavailable_warned.get()
+    }
+    pub fn set_trigram_unavailable_warned(&self, v: bool) {
+        self.trigram_unavailable_warned.set(v);
+    }
+    pub fn wal_active(&self) -> bool {
+        self.wal_active.get()
+    }
+    pub fn set_wal_active(&self, v: bool) {
+        self.wal_active.set(v);
+    }
+    pub fn write_count(&self) -> u64 {
+        self.write_count.get()
+    }
+    pub fn fts_runtime_rebuild_attempted(&self) -> bool {
+        self.fts_runtime_rebuild_attempted.get()
+    }
+    pub fn set_fts_runtime_rebuild_attempted(&self, v: bool) {
+        self.fts_runtime_rebuild_attempted.set(v);
+    }
+    pub fn fts_usermerge_floor_applied(&self) -> bool {
+        self.fts_usermerge_floor_applied.get()
+    }
+    pub fn set_fts_usermerge_floor_applied(&self, v: bool) {
+        self.fts_usermerge_floor_applied.set(v);
+    }
 
     pub fn cjk_update_trigger_is_narrowed(&self, conn: &Connection) -> bool {
         schema::cjk_update_trigger_is_narrowed(conn)
@@ -723,6 +811,43 @@ impl SessionDB {
             rusqlite::params![key, value],
         )?;
         Ok(())
+    }
+}
+
+impl Drop for SessionDB {
+    fn drop(&mut self) {
+        // Safety net for a SessionDB dropped without close(): bounded stop.
+        // If the writer thread is still alive afterwards (stuck apply), leak
+        // the shared queue state so the thread's own Arc keeps the Mutex and
+        // Condvar alive — daemon-equivalent to upstream's atexit drain. The
+        // writer thread exits on the next stop/close or process teardown.
+        let shared = self.token_writer.clone();
+        let alive = {
+            let guard = self
+                .token_writer_thread
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            match guard.as_ref() {
+                Some(h) => !h.is_finished(),
+                None => false,
+            }
+        };
+        if alive {
+            self.stop_token_writer(0.1);
+            let alive_after = {
+                let guard = self
+                    .token_writer_thread
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner);
+                match guard.as_ref() {
+                    Some(h) => !h.is_finished(),
+                    None => false,
+                }
+            };
+            if alive_after {
+                std::mem::forget(shared);
+            }
+        }
     }
 }
 

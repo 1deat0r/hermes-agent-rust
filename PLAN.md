@@ -240,7 +240,10 @@ Legend: ✅ done · 🟡 partial · ❌ missing
 | portability mixin (export/import, rich rows) | ✅ | portability |
 | search mixin (search_messages, FTS rebuild engine, anchored views) | ✅ | search (search_sessions_by_id deferred) |
 | compression locks (try_acquire/release/refresh, holder-dead reclaim, publish_compression_child, find_live_compression_child, reopen_orphaned_compression_session) | ✅ | locks ((+ _non_continuation_child_filter_sql in common)) |
-| token writer / telegram topics / handoffs / prune/archive | ❌ next units | — |
+| async token accounting (queue/flush/stop writer, update_token_counts, ensure_session, record_auxiliary_usage, per-model usage upsert) | ✅ | token (dedicated writer connection — documented divergence) |
+| telegram topics | ❌ next unit | — |
+| handoffs | ❌ next | — |
+| prune/archive | ❌ next | — |
 | replace_messages (active_only) / has_archived_messages / archive_and_compact (+ _merge_model_config_json) / rewind_to_message | ✅ | rewrite |
 | portability mixin (rich rows, distinct cwds, cron runs, skill-scaffolded, export/import) | ✅ | portability (incl. get_compression_lineage + search_sessions deps) |
 | search mixin (search_messages, FTS rebuild engine, anchored views) | ✅ | search (search_sessions_by_id deferred — needs list_sessions_rich) |
@@ -283,6 +286,33 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 ## 7. Session log
 
+- 2026-08-22 (session 1k): Async token accounting landed — token.rs.
+  Background writer queue (dedicated writer thread + condvar): queue_token_
+  counts (append+notify, dead-thread respawn, sync fallback after close),
+  flush_token_counts (fast path, live-writer authoritative, dead-writer
+  caller-drain with busy-before-clear protocol), _token_writer_loop,
+  _apply_token_batch (defensive coalesce-fallback), _coalesce_token_deltas
+  (adjacent same-route merge; sum fields summed, cost fields None-preserving,
+  absolute never merges), _stop_token_writer (bounded join via exit channel,
+  leftover drain claims busy), writer respawn semantics. update_token_counts
+  (absolute/incremental SQL, _insert_session_row ensure in its own write
+  txn, first_accounted_route pre-read, incremental-only per-model usage via
+  _record_model_usage upsert), ensure_session, record_auxiliary_usage (task
+  dimension, aux rows never inherit route, api_call_count=1, empty-id/task
+  short-circuit). get_session now drains the queue first (upstream flush
+  seam). DIVERGENCE (documented in token.rs): SessionDB is !Sync, so the
+  writer uses its own dedicated connection opened at spawn (observable
+  semantics preserved: strict enqueue order, per-delta BEGIN IMMEDIATE with
+  the same busy/jitter retry budget; the sessions-DB checkpoint cadence is
+  skipped on the writer conn — performance only). close() joins the writer
+  (bounded) and drains leftovers; Drop safety net leaks the shared queue
+  state for a still-running writer (daemon-equivalent to atexit). Oracle:
+  tests/agent/test_async_token_accounting.py (ordering/absolute-barrier/
+  backlog-sum/coalesced-equals-sequential/read-your-writes/enqueue-after-
+  close/field-contract) + tests/hermes_state/test_aux_usage_accounting.py
+  (record/accumulate/coexist subset) — monkeypatch-gated cases noted
+  non-portable. 17 parity tests in parity_state_token.rs; workspace 291
+  tests green; clippy clean. Evidence: `cargo test --workspace` (unit).
 - 2026-08-22 (session 1d): hermes-logging crate landed (core complete):
   rotating file handlers (agent/errors/gateway/gui), component routing,
   thread-local session tags, async queue listener, external-rotation inode
@@ -330,11 +360,10 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   golden upstream/golden_redact.json byte-equality; corpus caught one
   real bug (_ENV_ASSIGN_RE must not be IGNORECASE). Workspace tests 189
   green; clippy clean. Evidence: `cargo test --workspace` (unit).
-  REMAINING state subsystem (post-2026-08-22 1g–1j): token writer
-  (queue_token_counts/flush), telegram topics, handoffs, prune/archive,
-  surface read helpers (list_sessions_rich, list_gateway_sessions,
-  counts, search_sessions_by_id — the latter two depend on
-  list_sessions_rich), then the operator-flagged P2/P3 deferreds
+  REMAINING state subsystem (post-2026-08-22 1k): telegram topics,
+  handoffs, prune/archive, surface read helpers (list_sessions_rich,
+  list_gateway_sessions, counts, search_sessions_by_id — the latter two
+  depend on list_sessions_rich), then the operator-flagged P2/P3 deferreds
   (apply_ipv4_preference, partial_update_hint, managed-node bootstrap,
   agent_browser_runnable, resolve_reasoning_config).
 - 2026-08-22 (session 1f): SessionDB CRUD surface landed — sessions,

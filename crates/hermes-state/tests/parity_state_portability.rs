@@ -30,10 +30,16 @@ fn msg(role: &str, content: &str) -> MessageInput {
 
 fn seed_run(db: &SessionDB, job_id: &str, idx: i64, started_at: f64) {
     let sid = format!("cron_{}_{:08}", job_id, idx);
-    db.create_session(&sid, "cron", &NewSession::default()).unwrap();
-    db.append_message(&sid, &msg("user", &format!("run {} for {}", idx, job_id)), None)
+    db.create_session(&sid, "cron", &NewSession::default())
         .unwrap();
-    db.append_message(&sid, &msg("assistant", "done"), None).unwrap();
+    db.append_message(
+        &sid,
+        &msg("user", &format!("run {} for {}", idx, job_id)),
+        None,
+    )
+    .unwrap();
+    db.append_message(&sid, &msg("assistant", "done"), None)
+        .unwrap();
     db.end_session(&sid, "completed").unwrap();
     db.writer_conn()
         .execute(
@@ -58,12 +64,20 @@ fn list_cron_job_runs_scopes_newest_first_and_enriched() {
 
     let runs = db.list_cron_job_runs("alpha", 20, 0).unwrap();
     assert_eq!(runs.len(), 5);
-    assert!(runs.iter().all(|r| r["id"].as_str().unwrap().starts_with("cron_alpha_")));
-    let sts: Vec<f64> = runs.iter().map(|r| r["started_at"].as_f64().unwrap()).collect();
+    assert!(runs
+        .iter()
+        .all(|r| r["id"].as_str().unwrap().starts_with("cron_alpha_")));
+    let sts: Vec<f64> = runs
+        .iter()
+        .map(|r| r["started_at"].as_f64().unwrap())
+        .collect();
     let mut sorted = sts.clone();
     sorted.sort_by(|a, b| b.partial_cmp(a).unwrap());
     assert_eq!(sts, sorted);
-    assert!(runs[0]["preview"].as_str().unwrap().starts_with("run 4 for alpha"));
+    assert!(runs[0]["preview"]
+        .as_str()
+        .unwrap()
+        .starts_with("run 4 for alpha"));
     assert!(runs[0]["last_active"].as_f64().unwrap() >= runs[0]["started_at"].as_f64().unwrap());
     db.close();
 }
@@ -99,11 +113,15 @@ fn rich_row_compact_omits_system_prompt_keeps_git_fields() {
     // TestCompactRows single-row + batch paths
     let (_dir, path) = tmp_db("state.db");
     let db = SessionDB::open(Some(path), false).expect("open");
-    db.create_session("s1", "cli", &NewSession {
-        model: Some("m".to_string()),
-        system_prompt: Some("big blob ".repeat(500)),
-        ..Default::default()
-    })
+    db.create_session(
+        "s1",
+        "cli",
+        &NewSession {
+            model: Some("m".to_string()),
+            system_prompt: Some("big blob ".repeat(500)),
+            ..Default::default()
+        },
+    )
     .unwrap();
     db.update_session_cwd("s1", "/tmp/w1", Some("main"), Some("/tmp/w1"), true)
         .unwrap();
@@ -139,7 +157,8 @@ fn list_skill_scaffolded_and_first_assistant_text() {
     let (_dir, path) = tmp_db("state.db");
     let db = SessionDB::open(Some(path), false).expect("open");
     let sid = "sk1";
-    db.create_session(sid, "cli", &NewSession::default()).unwrap();
+    db.create_session(sid, "cli", &NewSession::default())
+        .unwrap();
     db.append_message(
         sid,
         &MessageInput {
@@ -152,16 +171,23 @@ fn list_skill_scaffolded_and_first_assistant_text() {
         None,
     )
     .unwrap();
-    db.append_message(sid, &msg("assistant", "plain first reply"), None).unwrap();
+    db.append_message(sid, &msg("assistant", "plain first reply"), None)
+        .unwrap();
     db.set_session_title(sid, "skill title").unwrap();
 
     let scaffolded = db.list_skill_scaffolded_sessions(200).unwrap();
     assert_eq!(scaffolded.len(), 1);
     assert_eq!(scaffolded[0]["id"], json!("sk1"));
     assert_eq!(scaffolded[0]["title"], json!("skill title"));
-    assert!(scaffolded[0]["content"].as_str().unwrap().contains("/remember"));
+    assert!(scaffolded[0]["content"]
+        .as_str()
+        .unwrap()
+        .contains("/remember"));
 
-    assert_eq!(db.get_first_assistant_text(sid).unwrap(), "plain first reply");
+    assert_eq!(
+        db.get_first_assistant_text(sid).unwrap(),
+        "plain first reply"
+    );
     db.close();
 }
 
@@ -169,8 +195,10 @@ fn list_skill_scaffolded_and_first_assistant_text() {
 fn get_first_assistant_text_empty_for_no_assistant() {
     let (_dir, path) = tmp_db("state.db");
     let db = SessionDB::open(Some(path), false).expect("open");
-    db.create_session("s1", "cli", &NewSession::default()).unwrap();
-    db.append_message("s1", &msg("user", "only user"), None).unwrap();
+    db.create_session("s1", "cli", &NewSession::default())
+        .unwrap();
+    db.append_message("s1", &msg("user", "only user"), None)
+        .unwrap();
     assert_eq!(db.get_first_assistant_text("s1").unwrap(), "");
     assert_eq!(db.get_first_assistant_text("ghost").unwrap(), "");
     db.close();
@@ -181,15 +209,22 @@ fn distinct_session_cwds_aggregates_and_respects_archived() {
     let (_dir, path) = tmp_db("state.db");
     let db = SessionDB::open(Some(path), false).expect("open");
     for sid in ["a1", "a2", "b1"] {
-        db.create_session(sid, "cli", &NewSession::default()).unwrap();
+        db.create_session(sid, "cli", &NewSession::default())
+            .unwrap();
     }
-    db.update_session_cwd("a1", "/work/proj", None, Some("/work/proj"), true).unwrap();
-    db.update_session_cwd("a2", "/work/proj", None, Some("/work/proj"), true).unwrap();
-    db.update_session_cwd("b1", "/tmp", None, None, true).unwrap();
+    db.update_session_cwd("a1", "/work/proj", None, Some("/work/proj"), true)
+        .unwrap();
+    db.update_session_cwd("a2", "/work/proj", None, Some("/work/proj"), true)
+        .unwrap();
+    db.update_session_cwd("b1", "/tmp", None, None, true)
+        .unwrap();
 
     let all = db.distinct_session_cwds(false).unwrap();
     assert_eq!(all.len(), 2);
-    let proj = all.iter().find(|r| r["cwd"] == json!("/work/proj")).unwrap();
+    let proj = all
+        .iter()
+        .find(|r| r["cwd"] == json!("/work/proj"))
+        .unwrap();
     assert_eq!(proj["sessions"], json!(2));
     assert!(proj["last_active"].as_f64().unwrap() > 0.0);
     // Archived rows are excluded by default.
@@ -197,10 +232,16 @@ fn distinct_session_cwds_aggregates_and_respects_archived() {
         .execute("UPDATE sessions SET archived = 1 WHERE id = 'a1'", [])
         .unwrap();
     let live = db.distinct_session_cwds(false).unwrap();
-    let proj_live = live.iter().find(|r| r["cwd"] == json!("/work/proj")).unwrap();
+    let proj_live = live
+        .iter()
+        .find(|r| r["cwd"] == json!("/work/proj"))
+        .unwrap();
     assert_eq!(proj_live["sessions"], json!(1));
     let with_archived = db.distinct_session_cwds(true).unwrap();
-    let proj_with = with_archived.iter().find(|r| r["cwd"] == json!("/work/proj")).unwrap();
+    let proj_with = with_archived
+        .iter()
+        .find(|r| r["cwd"] == json!("/work/proj"))
+        .unwrap();
     assert_eq!(proj_with["sessions"], json!(2));
     db.close();
 }
@@ -210,11 +251,15 @@ fn export_session_roundtrips_through_import() {
     // End-to-end export → import of a session with a shared prompt.
     let (_dir, path) = tmp_db("state.db");
     let db = SessionDB::open(Some(path), false).expect("open");
-    db.create_session("s1", "cli", &NewSession {
-        model: Some("m".to_string()),
-        system_prompt: Some("exported prompt".to_string()),
-        ..Default::default()
-    })
+    db.create_session(
+        "s1",
+        "cli",
+        &NewSession {
+            model: Some("m".to_string()),
+            system_prompt: Some("exported prompt".to_string()),
+            ..Default::default()
+        },
+    )
     .unwrap();
     db.append_messages_batch(
         "s1",
@@ -254,14 +299,26 @@ fn import_deduplicates_shared_prompts() {
     let (_dir, path) = tmp_db("source.db");
     let source = SessionDB::open(Some(path), false).expect("open");
     let prompt = "shared imported prompt";
-    source.create_session("s1", "cli", &NewSession {
-        system_prompt: Some(prompt.to_string()),
-        ..Default::default()
-    }).unwrap();
-    source.create_session("s2", "telegram", &NewSession {
-        system_prompt: Some(prompt.to_string()),
-        ..Default::default()
-    }).unwrap();
+    source
+        .create_session(
+            "s1",
+            "cli",
+            &NewSession {
+                system_prompt: Some(prompt.to_string()),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+    source
+        .create_session(
+            "s2",
+            "telegram",
+            &NewSession {
+                system_prompt: Some(prompt.to_string()),
+                ..Default::default()
+            },
+        )
+        .unwrap();
     let exported = [
         source.export_session("s1").unwrap().unwrap(),
         source.export_session("s2").unwrap().unwrap(),
@@ -283,8 +340,24 @@ fn import_deduplicates_shared_prompts() {
         .flatten()
         .collect();
     assert_eq!(hashes.len(), 1);
-    assert_eq!(target.get_session("s1").unwrap().unwrap().system_prompt.as_deref(), Some(prompt));
-    assert_eq!(target.get_session("s2").unwrap().unwrap().system_prompt.as_deref(), Some(prompt));
+    assert_eq!(
+        target
+            .get_session("s1")
+            .unwrap()
+            .unwrap()
+            .system_prompt
+            .as_deref(),
+        Some(prompt)
+    );
+    assert_eq!(
+        target
+            .get_session("s2")
+            .unwrap()
+            .unwrap()
+            .system_prompt
+            .as_deref(),
+        Some(prompt)
+    );
     target.close();
 }
 
@@ -296,10 +369,15 @@ fn import_rejects_oversized_payloads_atomically() {
 
     let oversized = "x".repeat(5 * 1024 * 1024 + 1);
     let r = db
-        .import_sessions(&[json!({"id": "oversized", "messages": [{"role": "user", "content": oversized}]})])
+        .import_sessions(&[
+            json!({"id": "oversized", "messages": [{"role": "user", "content": oversized}]}),
+        ])
         .unwrap();
     assert!(!r.ok);
-    assert_eq!(r.errors[0]["error"], "session exceeds the import size limit");
+    assert_eq!(
+        r.errors[0]["error"],
+        "session exceeds the import size limit"
+    );
     assert!(db.get_session("oversized").unwrap().is_none());
 
     let many: Vec<Value> = (0..10_001)
@@ -309,7 +387,10 @@ fn import_rejects_oversized_payloads_atomically() {
         .import_sessions(&[json!({"id": "too-many-messages", "messages": many})])
         .unwrap();
     assert!(!r.ok);
-    assert_eq!(r.errors[0]["error"], "messages exceeds the per-session import limit");
+    assert_eq!(
+        r.errors[0]["error"],
+        "messages exceeds the per-session import limit"
+    );
     assert!(db.get_session("too-many-messages").unwrap().is_none());
     db.close();
 }
@@ -331,7 +412,14 @@ fn import_wires_parents_and_detaches_missing() {
     assert!(r.ok, "import failed: {:?}", r.errors);
     assert_eq!(r.imported, 2);
     assert_eq!(r.detached, 0);
-    assert_eq!(db.get_session("c").unwrap().unwrap().parent_session_id.as_deref(), Some("p"));
+    assert_eq!(
+        db.get_session("c")
+            .unwrap()
+            .unwrap()
+            .parent_session_id
+            .as_deref(),
+        Some("p")
+    );
 
     // Child with a missing parent in another payload: detached edge.
     let r = db
@@ -339,7 +427,12 @@ fn import_wires_parents_and_detaches_missing() {
         .unwrap();
     assert!(r.ok);
     assert_eq!(r.detached, 1);
-    assert!(db.get_session("orphan-child").unwrap().unwrap().parent_session_id.is_none());
+    assert!(db
+        .get_session("orphan-child")
+        .unwrap()
+        .unwrap()
+        .parent_session_id
+        .is_none());
 
     // Cycle in the payload: the closing edge is dropped, not committed.
     let r = db
@@ -363,11 +456,16 @@ fn import_wires_parents_and_detaches_missing() {
 fn search_sessions_mru_order_workspace_key_and_enrichment() {
     let (_dir, path) = tmp_db("state.db");
     let db = SessionDB::open(Some(path), false).expect("open");
-    db.create_session("old", "cli", &NewSession::default()).unwrap();
-    db.create_session("new", "cli", &NewSession::default()).unwrap();
-    db.append_message("old", &msg("user", "old turn"), None).unwrap();
-    db.append_message("new", &msg("user", "fresh turn"), None).unwrap();
-    db.update_session_cwd("new", "/repo/src", Some("main"), Some("/repo"), true).unwrap();
+    db.create_session("old", "cli", &NewSession::default())
+        .unwrap();
+    db.create_session("new", "cli", &NewSession::default())
+        .unwrap();
+    db.append_message("old", &msg("user", "old turn"), None)
+        .unwrap();
+    db.append_message("new", &msg("user", "fresh turn"), None)
+        .unwrap();
+    db.update_session_cwd("new", "/repo/src", Some("main"), Some("/repo"), true)
+        .unwrap();
 
     let all = db.search_sessions(None, 100, 0, None).unwrap();
     let ids: Vec<&str> = all.iter().map(|r| r["id"].as_str().unwrap()).collect();
@@ -380,9 +478,15 @@ fn search_sessions_mru_order_workspace_key_and_enrichment() {
     assert_eq!(ws.len(), 1);
     assert_eq!(ws[0]["id"], json!("new"));
     // Source filter.
-    db.create_session("tg", "telegram", &NewSession::default()).unwrap();
+    db.create_session("tg", "telegram", &NewSession::default())
+        .unwrap();
     let src = db.search_sessions(Some("telegram"), 100, 0, None).unwrap();
-    assert_eq!(src.iter().map(|r| r["id"].as_str().unwrap()).collect::<Vec<_>>(), vec!["tg"]);
+    assert_eq!(
+        src.iter()
+            .map(|r| r["id"].as_str().unwrap())
+            .collect::<Vec<_>>(),
+        vec!["tg"]
+    );
     db.close();
 }
 
@@ -391,20 +495,34 @@ fn get_compression_lineage_through_tip_and_fork_shortcut() {
     let (_dir, path) = tmp_db("state.db");
     let db = SessionDB::open(Some(path), false).expect("open");
     // root ->(compression)-> mid ->(compression)-> tip
-    db.create_session("root", "cli", &NewSession::default()).unwrap();
-    db.append_message("root", &msg("user", "root turn"), None).unwrap();
+    db.create_session("root", "cli", &NewSession::default())
+        .unwrap();
+    db.append_message("root", &msg("user", "root turn"), None)
+        .unwrap();
     db.end_session("root", "compression").unwrap();
-    db.create_session("mid", "cli", &NewSession {
-        parent_session_id: Some("root".to_string()),
-        ..Default::default()
-    }).unwrap();
-    db.append_message("mid", &msg("user", "mid turn"), None).unwrap();
+    db.create_session(
+        "mid",
+        "cli",
+        &NewSession {
+            parent_session_id: Some("root".to_string()),
+            ..Default::default()
+        },
+    )
+    .unwrap();
+    db.append_message("mid", &msg("user", "mid turn"), None)
+        .unwrap();
     db.end_session("mid", "compression").unwrap();
-    db.create_session("tip", "cli", &NewSession {
-        parent_session_id: Some("mid".to_string()),
-        ..Default::default()
-    }).unwrap();
-    db.append_message("tip", &msg("user", "tip turn"), None).unwrap();
+    db.create_session(
+        "tip",
+        "cli",
+        &NewSession {
+            parent_session_id: Some("mid".to_string()),
+            ..Default::default()
+        },
+    )
+    .unwrap();
+    db.append_message("tip", &msg("user", "tip turn"), None)
+        .unwrap();
 
     assert_eq!(
         db.get_compression_lineage("tip").unwrap(),
@@ -415,10 +533,15 @@ fn get_compression_lineage_through_tip_and_fork_shortcut() {
         vec!["root", "mid", "tip"]
     );
     // An explicit fork child (tool source) is its own lineage.
-    db.create_session("fork", "tool", &NewSession {
-        parent_session_id: Some("tip".to_string()),
-        ..Default::default()
-    }).unwrap();
+    db.create_session(
+        "fork",
+        "tool",
+        &NewSession {
+            parent_session_id: Some("tip".to_string()),
+            ..Default::default()
+        },
+    )
+    .unwrap();
     assert_eq!(db.get_compression_lineage("fork").unwrap(), vec!["fork"]);
 
     // export_session_lineage merges segments.
@@ -434,10 +557,19 @@ fn get_compression_lineage_through_tip_and_fork_shortcut() {
 fn export_all_lists_message_bearing_sessions() {
     let (_dir, path) = tmp_db("state.db");
     let db = SessionDB::open(Some(path), false).expect("open");
-    db.create_session("one", "cli", &NewSession::default()).unwrap();
-    db.append_message("one", &msg("user", "hello"), None).unwrap();
-    db.create_session("two", "telegram", &NewSession::default()).unwrap();
-    db.append_messages_batch("two", &[msg("user", "hi"), msg("assistant", "yo")], None, None).unwrap();
+    db.create_session("one", "cli", &NewSession::default())
+        .unwrap();
+    db.append_message("one", &msg("user", "hello"), None)
+        .unwrap();
+    db.create_session("two", "telegram", &NewSession::default())
+        .unwrap();
+    db.append_messages_batch(
+        "two",
+        &[msg("user", "hi"), msg("assistant", "yo")],
+        None,
+        None,
+    )
+    .unwrap();
 
     let all = db.export_all(None).unwrap();
     assert_eq!(all.len(), 2);

@@ -47,12 +47,15 @@ fn live_contents(db: &SessionDB, sid: &str) -> Vec<String> {
 
 fn all_rows(db: &SessionDB, sid: &str) -> Vec<(String, String, bool, bool)> {
     // (content, role, active, compacted)
-    let rows: Vec<(String, String, bool, bool)> = db.get_messages(sid, true, None, 0)
+    let rows: Vec<(String, String, bool, bool)> = db
+        .get_messages(sid, true, None, 0)
         .unwrap()
         .into_iter()
         .map(|m| {
             (
-                m.content.and_then(|c| c.as_str().map(str::to_string)).unwrap_or_default(),
+                m.content
+                    .and_then(|c| c.as_str().map(str::to_string))
+                    .unwrap_or_default(),
                 m.role.clone(),
                 m.active,
                 m.compacted,
@@ -67,7 +70,8 @@ fn replace_messages_preserves_explicit_timestamps() {
     // test_replace_messages_preserves_timestamps
     let (_dir, path) = tmp_db("state.db");
     let db = SessionDB::open(Some(path), false).expect("open");
-    db.create_session("s1", "cli", &NewSession::default()).unwrap();
+    db.create_session("s1", "cli", &NewSession::default())
+        .unwrap();
     let msgs = [
         msg_ts("user", "first", 100.0),
         msg_ts("assistant", "second", 200.0),
@@ -97,7 +101,8 @@ fn compression_replace_roundtrip_preserves_timestamps() {
     let (_dir, path) = tmp_db("state.db");
     let db = SessionDB::open(Some(path), false).expect("open");
     let timestamps = [1_500_000_000.0, 1_500_000_100.0, 1_500_000_200.0];
-    db.create_session("s1", "cli", &NewSession::default()).unwrap();
+    db.create_session("s1", "cli", &NewSession::default())
+        .unwrap();
     for (i, ts) in timestamps.iter().enumerate() {
         let role = if i % 2 == 0 { "user" } else { "assistant" };
         db.append_message("s1", &msg_ts(role, &format!("msg-{}", i), *ts), None)
@@ -131,7 +136,8 @@ fn replace_messages_preserves_display_metadata() {
     // _insert_message_rows)
     let (_dir, path) = tmp_db("state.db");
     let db = SessionDB::open(Some(path), false).expect("open");
-    db.create_session("s1", "cli", &NewSession::default()).unwrap();
+    db.create_session("s1", "cli", &NewSession::default())
+        .unwrap();
     let meta = json!({"kind": "note", "n": 3});
     let m = MessageInput {
         role: "assistant".to_string(),
@@ -147,7 +153,8 @@ fn replace_messages_preserves_display_metadata() {
 
 fn seed_compacted_session(db: &SessionDB, sid: &str) {
     // _seed_compacted_session from test_replace_messages_archive_siblings
-    db.create_session(sid, "test", &NewSession::default()).unwrap();
+    db.create_session(sid, "test", &NewSession::default())
+        .unwrap();
     db.append_messages_batch(
         sid,
         &[
@@ -190,7 +197,10 @@ fn active_only_replace_preserves_archived_rows() {
 
     db.replace_messages(
         "acp-compacted",
-        &[msg("user", "rewritten"), msg("assistant", "rewritten answer")],
+        &[
+            msg("user", "rewritten"),
+            msg("assistant", "rewritten answer"),
+        ],
         true,
     )
     .unwrap();
@@ -211,10 +221,12 @@ fn fresh_session_active_only_equals_full_replace() {
     let (_dir, path) = tmp_db("state.db");
     let db = SessionDB::open(Some(path), false).expect("open");
     let sid = "acp-fresh";
-    db.create_session(sid, "test", &NewSession::default()).unwrap();
+    db.create_session(sid, "test", &NewSession::default())
+        .unwrap();
     db.append_messages_batch(sid, &[msg("user", "q"), msg("assistant", "a")], None, None)
         .unwrap();
-    db.replace_messages(sid, &[msg("user", "only")], true).unwrap();
+    db.replace_messages(sid, &[msg("user", "only")], true)
+        .unwrap();
     assert_eq!(live_contents(&db, sid), vec!["only"]);
     assert_eq!(archived_count(&db, sid), 0);
     db.close();
@@ -226,7 +238,8 @@ fn destructive_replace_removes_archived_rows_too() {
     let db = SessionDB::open(Some(path), false).expect("open");
     let sid = "dest";
     seed_compacted_session(&db, sid);
-    db.replace_messages(sid, &[msg("user", "full rewrite")], false).unwrap();
+    db.replace_messages(sid, &[msg("user", "full rewrite")], false)
+        .unwrap();
     assert_eq!(archived_count(&db, sid), 0);
     assert_eq!(live_contents(&db, sid), vec!["full rewrite"]);
     db.close();
@@ -237,17 +250,22 @@ fn replace_rejects_compression_closed_session() {
     let (_dir, path) = tmp_db("state.db");
     let db = SessionDB::open(Some(path), false).expect("open");
     let sid = "closed";
-    db.create_session(sid, "cli", &NewSession::default()).unwrap();
+    db.create_session(sid, "cli", &NewSession::default())
+        .unwrap();
     db.append_message(sid, &msg("user", "x"), None).unwrap();
     db.end_session(sid, "compression").unwrap();
-    let err = db.replace_messages(sid, &[msg("user", "y")], false).unwrap_err();
+    let err = db
+        .replace_messages(sid, &[msg("user", "y")], false)
+        .unwrap_err();
     assert!(
         matches!(err, WriteError::CompressionSessionClosed(_)),
         "got {:?}",
         err
     );
     // Even the active-only rewrite path rejects the closed session.
-    let err = db.replace_messages(sid, &[msg("user", "y")], true).unwrap_err();
+    let err = db
+        .replace_messages(sid, &[msg("user", "y")], true)
+        .unwrap_err();
     assert!(matches!(err, WriteError::CompressionSessionClosed(_)));
     db.close();
 }
@@ -257,10 +275,12 @@ fn has_archived_messages_probe() {
     let (_dir, path) = tmp_db("state.db");
     let db = SessionDB::open(Some(path), false).expect("open");
     let sid = "probe";
-    db.create_session(sid, "cli", &NewSession::default()).unwrap();
+    db.create_session(sid, "cli", &NewSession::default())
+        .unwrap();
     assert!(!db.has_archived_messages(sid).unwrap());
     db.append_message(sid, &msg("user", "q"), None).unwrap();
-    db.archive_and_compact(sid, &[msg("assistant", "sum")], None).unwrap();
+    db.archive_and_compact(sid, &[msg("assistant", "sum")], None)
+        .unwrap();
     assert!(db.has_archived_messages(sid).unwrap());
     db.close();
 }
@@ -270,7 +290,8 @@ fn archive_and_compact_archives_and_counts_active_set() {
     let (_dir, path) = tmp_db("state.db");
     let db = SessionDB::open(Some(path), false).expect("open");
     let sid = "ac";
-    db.create_session(sid, "cli", &NewSession::default()).unwrap();
+    db.create_session(sid, "cli", &NewSession::default())
+        .unwrap();
     db.append_messages_batch(
         sid,
         &[
@@ -285,11 +306,7 @@ fn archive_and_compact_archives_and_counts_active_set() {
     .unwrap();
 
     let inserted = db
-        .archive_and_compact(
-            sid,
-            &[msg("assistant", "summary"), msg("user", "q3")],
-            None,
-        )
+        .archive_and_compact(sid, &[msg("assistant", "summary"), msg("user", "q3")], None)
         .unwrap();
     assert_eq!(inserted, 2);
 
@@ -312,19 +329,28 @@ fn archive_and_compact_merges_model_config_patch() {
     let (_dir, path) = tmp_db("state.db");
     let db = SessionDB::open(Some(path), false).expect("open");
     let sid = "cfg";
-    db.create_session(sid, "cli", &NewSession {
-        model_config: Some(json!({"a": 1, "keep": "yes", "remove": "me"})),
-        ..Default::default()
-    })
+    db.create_session(
+        sid,
+        "cli",
+        &NewSession {
+            model_config: Some(json!({"a": 1, "keep": "yes", "remove": "me"})),
+            ..Default::default()
+        },
+    )
     .unwrap();
     let mut patch = serde_json::Map::new();
     patch.insert("b".to_string(), json!(2));
     patch.insert("remove".to_string(), Value::Null); // delete key
-    db.archive_and_compact(sid, &[msg("assistant", "sum")], Some(&patch)).unwrap();
+    db.archive_and_compact(sid, &[msg("assistant", "sum")], Some(&patch))
+        .unwrap();
 
     let raw_config: Option<String> = db
         .writer_conn()
-        .query_row("SELECT model_config FROM sessions WHERE id = ?", rusqlite::params![sid], |r| r.get(0))
+        .query_row(
+            "SELECT model_config FROM sessions WHERE id = ?",
+            rusqlite::params![sid],
+            |r| r.get(0),
+        )
         .unwrap();
     let cfg: Value = serde_json::from_str(&raw_config.unwrap()).unwrap();
     assert_eq!(cfg["a"], json!(1));
@@ -333,7 +359,9 @@ fn archive_and_compact_merges_model_config_patch() {
     assert!(cfg.get("remove").is_none());
 
     // Patching a vanished session raises ValueError (on_missing="raise").
-    let err = db.archive_and_compact("ghost", &[msg("assistant", "s")], Some(&patch)).unwrap_err();
+    let err = db
+        .archive_and_compact("ghost", &[msg("assistant", "s")], Some(&patch))
+        .unwrap_err();
     assert!(matches!(err, WriteError::ValueError(_)), "got {:?}", err);
     db.close();
 }
@@ -341,10 +369,13 @@ fn archive_and_compact_merges_model_config_patch() {
 // ── rewind_to_message ───────────────────────────────────────────────────────
 
 fn seed_turns(db: &SessionDB, sid: &str, turns: usize) {
-    db.create_session(sid, "telegram", &NewSession::default()).unwrap();
+    db.create_session(sid, "telegram", &NewSession::default())
+        .unwrap();
     for i in 1..=turns {
-        db.append_message(sid, &msg("user", &format!("q{}", i)), None).unwrap();
-        db.append_message(sid, &msg("assistant", &format!("a{}", i)), None).unwrap();
+        db.append_message(sid, &msg("user", &format!("q{}", i)), None)
+            .unwrap();
+        db.append_message(sid, &msg("assistant", &format!("a{}", i)), None)
+            .unwrap();
     }
 }
 
@@ -363,17 +394,23 @@ fn rewind_soft_deletes_from_target_to_tail() {
     assert_eq!(res.target_message["content"], json!("q3"));
     assert_eq!(res.target_message["role"], json!("user"));
     assert_eq!(res.new_head_id, Some(4));
-    assert_eq!(
-        live_contents(&db, sid),
-        vec!["q1", "a1", "q2", "a2"]
-    );
+    assert_eq!(live_contents(&db, sid), vec!["q1", "a1", "q2", "a2"]);
     // Rewound rows stay on disk (active=0) for audit.
-    let inactive: Vec<_> = db.get_messages(sid, true, None, 0)
-        .unwrap().into_iter().filter(|m| !m.active).collect();
+    let inactive: Vec<_> = db
+        .get_messages(sid, true, None, 0)
+        .unwrap()
+        .into_iter()
+        .filter(|m| !m.active)
+        .collect();
     assert_eq!(inactive.len(), 2);
     // rewind_count is bumped.
-    let count: i64 = db.writer_conn()
-        .query_row("SELECT COALESCE(rewind_count, 0) FROM sessions WHERE id = ?", rusqlite::params![sid], |r| r.get(0))
+    let count: i64 = db
+        .writer_conn()
+        .query_row(
+            "SELECT COALESCE(rewind_count, 0) FROM sessions WHERE id = ?",
+            rusqlite::params![sid],
+            |r| r.get(0),
+        )
         .unwrap();
     assert_eq!(count, 1);
     db.close();
@@ -404,7 +441,8 @@ fn rewind_two_turns_and_validation() {
     let err = db.rewind_to_message(sid, 999).unwrap_err();
     assert!(matches!(err, WriteError::ValueError(_)), "got {:?}", err);
     // Wrong-session target.
-    db.create_session("other", "cli", &NewSession::default()).unwrap();
+    db.create_session("other", "cli", &NewSession::default())
+        .unwrap();
     let err = db.rewind_to_message("other", 1).unwrap_err();
     assert!(matches!(err, WriteError::ValueError(_)), "got {:?}", err);
     db.close();
@@ -415,7 +453,8 @@ fn rewind_to_latest_rewinds_to_empty_head() {
     let (_dir, path) = tmp_db("state.db");
     let db = SessionDB::open(Some(path), false).expect("open");
     let sid = "one";
-    db.create_session(sid, "cli", &NewSession::default()).unwrap();
+    db.create_session(sid, "cli", &NewSession::default())
+        .unwrap();
     db.append_message(sid, &msg("user", "only"), None).unwrap();
     let res = db.rewind_to_message(sid, 1).unwrap();
     assert_eq!(res.rewound_count, 1);

@@ -122,11 +122,23 @@ mod tests {
 
     #[test]
     fn markers_are_byte_identical_to_upstream() {
-        assert_eq!(SKILL_SCAFFOLD_SQL_LIKE, "[IMPORTANT: The user has invoked the %");
+        assert_eq!(
+            SKILL_SCAFFOLD_SQL_LIKE,
+            "[IMPORTANT: The user has invoked the %"
+        );
         assert_eq!(SKILL_EXCERPT_JOINT, "\u{1e}");
-        assert_eq!(_SKILL_INVOCATION_PREFIX, "[IMPORTANT: The user has invoked the ");
-        assert_eq!(_SINGLE_SKILL_MARKER, "The full skill content is loaded below.]");
-        assert_eq!(_SINGLE_SKILL_INSTRUCTION, "The user has provided the following instruction alongside the skill invocation: ");
+        assert_eq!(
+            _SKILL_INVOCATION_PREFIX,
+            "[IMPORTANT: The user has invoked the "
+        );
+        assert_eq!(
+            _SINGLE_SKILL_MARKER,
+            "The full skill content is loaded below.]"
+        );
+        assert_eq!(
+            _SINGLE_SKILL_INSTRUCTION,
+            "The user has provided the following instruction alongside the skill invocation: "
+        );
         assert_eq!(_RUNTIME_NOTE, "\n\n[Runtime note:");
         assert_eq!(_BUNDLE_MARKER, " skill bundle,");
         assert_eq!(_BUNDLE_USER_INSTRUCTION, "\nUser instruction: ");
@@ -151,7 +163,10 @@ mod tests {
     #[test]
     fn describe_bare_invocation() {
         let msg = "[IMPORTANT: The user has invoked the \"remember\"\nThe full skill content is loaded below.]";
-        assert_eq!(describe_skill_invocation(msg, " — ").as_deref(), Some("/remember"));
+        assert_eq!(
+            describe_skill_invocation(msg, " — ").as_deref(),
+            Some("/remember")
+        );
     }
 
     #[test]

@@ -359,9 +359,20 @@ AFTER UPDATE OF content, tool_name, tool_calls ON messages BEGIN
 END;
 "#;
 
-pub const _FTS_TRIGGERS: [&str; 6] = ["messages_fts_insert", "messages_fts_delete", "messages_fts_update", "messages_fts_trigram_insert", "messages_fts_trigram_delete", "messages_fts_trigram_update"];
+pub const _FTS_TRIGGERS: [&str; 6] = [
+    "messages_fts_insert",
+    "messages_fts_delete",
+    "messages_fts_update",
+    "messages_fts_trigram_insert",
+    "messages_fts_trigram_delete",
+    "messages_fts_trigram_update",
+];
 
-pub const _FTS_CJK_TRIGGERS: [&str; 3] = ["messages_fts_cjk_insert", "messages_fts_cjk_delete", "messages_fts_cjk_update"];
+pub const _FTS_CJK_TRIGGERS: [&str; 3] = [
+    "messages_fts_cjk_insert",
+    "messages_fts_cjk_delete",
+    "messages_fts_cjk_update",
+];
 
 // ── CJK-bigram FTS surface (lives in hermes_state.py upstream, not common) ──
 pub const FTS_CJK_TABLE_SQL: &str = r#"
@@ -422,4 +433,3 @@ BEGIN
     WHERE new.role <> 'tool';
 END;
 "#;
-

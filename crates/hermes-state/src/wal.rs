@@ -147,9 +147,8 @@ pub fn resolve_journal_mode() -> String {
 ///
 /// PARITY: hermes_state.py _on_disk_journal_mode @ b9aa928 (624–645).
 pub fn on_disk_journal_mode(conn: &rusqlite::Connection) -> Option<String> {
-    let row: Result<Option<String>, _> = conn.query_row("PRAGMA journal_mode", [], |r| {
-        r.get::<_, Option<String>>(0)
-    });
+    let row: Result<Option<String>, _> =
+        conn.query_row("PRAGMA journal_mode", [], |r| r.get::<_, Option<String>>(0));
     match row {
         Ok(Some(mode)) => Some(mode.trim().to_ascii_lowercase()),
         Ok(None) => None,
@@ -194,7 +193,11 @@ impl From<WalError> for WalUnsupportedError {
 }
 
 const fn version(major: u32, minor: u32, patch: u32) -> SqliteVersionInfo {
-    SqliteVersionInfo { major, minor, patch }
+    SqliteVersionInfo {
+        major,
+        minor,
+        patch,
+    }
 }
 
 /// Dedup ERROR/WARNING per db_label across the process (Python's module sets
@@ -275,7 +278,10 @@ pub fn log_wal_fallback_once(db_label: &str, exc: &str) {
 /// condition.
 ///
 /// PARITY: hermes_state.py _set_journal_mode_no_wait @ b9aa928 (957–993).
-pub fn set_journal_mode_no_wait(conn: &rusqlite::Connection, mode: &str) -> Result<String, WalError> {
+pub fn set_journal_mode_no_wait(
+    conn: &rusqlite::Connection,
+    mode: &str,
+) -> Result<String, WalError> {
     let previous_timeout: i64 = conn
         .query_row("PRAGMA busy_timeout", [], |r| r.get::<_, Option<i64>>(0))
         .ok()
@@ -283,11 +289,13 @@ pub fn set_journal_mode_no_wait(conn: &rusqlite::Connection, mode: &str) -> Resu
         .unwrap_or(0);
     conn.execute_batch("PRAGMA busy_timeout=0")?;
     let result = (|| -> Result<String, WalError> {
-        let row: Option<String> = conn
-            .query_row(&format!("PRAGMA journal_mode={}", mode), [], |r| {
+        let row: Option<String> =
+            conn.query_row(&format!("PRAGMA journal_mode={}", mode), [], |r| {
                 r.get::<_, Option<String>>(0)
             })?;
-        Ok(row.map(|s| s.trim().to_ascii_lowercase()).unwrap_or_default())
+        Ok(row
+            .map(|s| s.trim().to_ascii_lowercase())
+            .unwrap_or_default())
     })();
     // Restore the previous timeout before propagating any error.
     let _ = conn.execute_batch(&format!("PRAGMA busy_timeout={}", previous_timeout));
@@ -350,7 +358,11 @@ pub fn apply_delete_for_wal_reset_bug(
     if require_delete && actual != "delete" {
         return Err(WalError(format!(
             "could not set configured journal_mode=delete (got {})",
-            if actual.is_empty() { "no result" } else { &actual }
+            if actual.is_empty() {
+                "no result"
+            } else {
+                &actual
+            }
         )));
     }
     log_wal_reset_bug_once(db_label, false, false);
@@ -398,7 +410,11 @@ pub fn apply_wal_with_fallback(
         if actual != "delete" {
             return Err(WalError(format!(
                 "could not set configured journal_mode=delete (got {})",
-                if actual.is_empty() { "no result" } else { &actual }
+                if actual.is_empty() {
+                    "no result"
+                } else {
+                    &actual
+                }
             )));
         }
         return Ok(actual);
@@ -601,9 +617,7 @@ mod tests {
                     for _ in 0..5 {
                         match rusqlite::Connection::open(&path) {
                             Ok(conn) => {
-                                if let Err(e) =
-                                    apply_wal_with_fallback(&conn, "state.db", false)
-                                {
+                                if let Err(e) = apply_wal_with_fallback(&conn, "state.db", false) {
                                     if e.0.to_ascii_lowercase().contains("disk i/o error") {
                                         errors.lock().unwrap().push(e.0);
                                     }

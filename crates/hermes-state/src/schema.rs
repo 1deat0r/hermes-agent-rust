@@ -108,9 +108,7 @@ pub fn parse_schema_columns(schema_sql: &str) -> Vec<(String, Vec<(String, Strin
         .expect("SCHEMA_SQL parses on a clean in-memory database");
     let mut out: Vec<(String, Vec<(String, String)>)> = Vec::new();
     let mut stmt = ref_conn
-        .prepare(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
-        )
+        .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
         .expect("list tables");
     let tables: Vec<String> = stmt
         .query_map([], |r| r.get(0))
@@ -120,7 +118,10 @@ pub fn parse_schema_columns(schema_sql: &str) -> Vec<(String, Vec<(String, Strin
     for tbl in tables {
         let mut cols: Vec<(String, String)> = Vec::new();
         let mut pt = ref_conn
-            .prepare(&format!("PRAGMA table_info(\"{}\")", tbl.replace('"', "\"\"")))
+            .prepare(&format!(
+                "PRAGMA table_info(\"{}\")",
+                tbl.replace('"', "\"\"")
+            ))
             .expect("table_info");
         let rows = pt
             .query_map([], |r| {
@@ -203,7 +204,11 @@ pub fn fts_trigger_count(conn: &Connection) -> rusqlite::Result<i64> {
 // PARITY: hermes_state_schema.py _fts_update_trigger_needs_narrowing @ b9aa928
 pub fn fts_update_trigger_needs_narrowing(sql: Option<&str>) -> bool {
     let Some(sql) = sql else { return false };
-    let compact = sql.split_whitespace().collect::<Vec<_>>().join(" ").to_uppercase();
+    let compact = sql
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .to_uppercase();
     if compact.contains("AFTER UPDATE OF ") {
         return false;
     }
@@ -227,7 +232,9 @@ pub fn migrate_broad_fts_update_triggers(db: &SessionDB) -> i64 {
         placeholders.join(",")
     )) {
         Ok(mut stmt) => stmt
-            .query_map(params, |r| Ok((r.get::<_, String>(0)?, r.get::<_, Option<String>>(1)?)))
+            .query_map(params, |r| {
+                Ok((r.get::<_, String>(0)?, r.get::<_, Option<String>>(1)?))
+            })
             .and_then(|m| m.collect())
             .unwrap_or_default(),
         Err(_) => vec![],
@@ -330,7 +337,10 @@ pub fn rebuild_fts_indexes(conn: &Connection, include_trigram: bool) -> rusqlite
 
 /// Rebuild the LEGACY inline FTS indexes (pre-v23) from messages.
 // PARITY: hermes_state_schema.py _rebuild_legacy_fts_indexes @ b9aa928
-pub fn rebuild_legacy_fts_indexes(conn: &Connection, include_trigram: bool) -> rusqlite::Result<()> {
+pub fn rebuild_legacy_fts_indexes(
+    conn: &Connection,
+    include_trigram: bool,
+) -> rusqlite::Result<()> {
     conn.execute_batch("DELETE FROM messages_fts")?;
     conn.execute_batch(
         "INSERT INTO messages_fts(rowid, content) \
@@ -372,9 +382,11 @@ pub fn fts_external_index_empty_with_messages(conn: &Connection) -> bool {
         Ok(0) | Err(_) => return false,
         Ok(_) => {}
     }
-    match conn.query_row("SELECT EXISTS(SELECT 1 FROM messages_fts_docsize)", [], |r| {
-        r.get::<_, i64>(0)
-    }) {
+    match conn.query_row(
+        "SELECT EXISTS(SELECT 1 FROM messages_fts_docsize)",
+        [],
+        |r| r.get::<_, i64>(0),
+    ) {
         Ok(0) => true,
         Ok(_) => false,
         Err(_) => false,
@@ -389,9 +401,9 @@ impl SessionDB {
     /// One-time `_dedupe_legacy_system_prompts`.
     // PARITY: hermes_state_schema.py @ b9aa928
     pub(crate) fn dedupe_legacy_system_prompts(&self, conn: &Connection) {
-        let rows: Vec<(String, String)> = match conn.prepare(
-            "SELECT id, system_prompt FROM sessions WHERE system_prompt IS NOT NULL",
-        ) {
+        let rows: Vec<(String, String)> = match conn
+            .prepare("SELECT id, system_prompt FROM sessions WHERE system_prompt IS NOT NULL")
+        {
             Ok(mut stmt) => stmt
                 .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))
                 .and_then(|m| m.collect())
@@ -487,10 +499,9 @@ impl SessionDB {
                     ))
                     .ok()
                     .and_then(|mut stmt| {
-                        stmt.query_map(
-                            rusqlite::params_from_iter(_FTS_CJK_TRIGGERS.iter()),
-                            |r| r.get::<_, String>(0),
-                        )
+                        stmt.query_map(rusqlite::params_from_iter(_FTS_CJK_TRIGGERS.iter()), |r| {
+                            r.get::<_, String>(0)
+                        })
                         .ok()
                         .map(|it| it.filter_map(|r| r.ok()).collect::<Vec<_>>())
                     })
@@ -522,13 +533,17 @@ impl SessionDB {
         if !cjk_present {
             let _ = conn.execute("DELETE FROM state_meta WHERE key = ?", [FTS_CJK_STALE_KEY]);
             let n_msgs: i64 = conn
-                .query_row("SELECT COUNT(*) FROM messages WHERE role <> 'tool'", [], |r| {
-                    r.get(0)
-                })
+                .query_row(
+                    "SELECT COUNT(*) FROM messages WHERE role <> 'tool'",
+                    [],
+                    |r| r.get(0),
+                )
                 .unwrap_or(0);
             if n_msgs > 0 {
                 let hw: i64 = conn
-                    .query_row("SELECT COALESCE(MAX(id), 0) FROM messages", [], |r| r.get(0))
+                    .query_row("SELECT COALESCE(MAX(id), 0) FROM messages", [], |r| {
+                        r.get(0)
+                    })
                     .unwrap_or(0);
                 for (k, v) in [
                     ("fts_cjk_rebuild_high_water", hw.to_string()),
@@ -543,9 +558,11 @@ impl SessionDB {
             }
         }
         let stale = conn
-            .query_row("SELECT 1 FROM state_meta WHERE key = ?", [FTS_CJK_STALE_KEY], |_r| {
-                Ok(())
-            })
+            .query_row(
+                "SELECT 1 FROM state_meta WHERE key = ?",
+                [FTS_CJK_STALE_KEY],
+                |_r| Ok(()),
+            )
             .optional()
             .ok()
             .flatten()
@@ -615,7 +632,9 @@ pub fn store_system_prompt(
     conn: &Connection,
     system_prompt: Option<String>,
 ) -> rusqlite::Result<Option<String>> {
-    let Some(prompt) = system_prompt else { return Ok(None) };
+    let Some(prompt) = system_prompt else {
+        return Ok(None);
+    };
     let prompt_hash = system_prompt_hash(&prompt);
     conn.execute(
         "INSERT OR IGNORE INTO system_prompts (hash, prompt) VALUES (?, ?)",
@@ -666,7 +685,8 @@ impl SessionDB {
         );
 
         // Deferred indexes referencing the reconciler-added active column.
-        conn.execute_batch(DEFERRED_INDEX_SQL).map_err(|e| e.to_string())?;
+        conn.execute_batch(DEFERRED_INDEX_SQL)
+            .map_err(|e| e.to_string())?;
 
         // Heal NULL active rows unconditionally on every startup.
         let _ = conn.execute_batch("UPDATE messages SET active = 1 WHERE active IS NULL");
@@ -681,7 +701,9 @@ impl SessionDB {
 
         // ── Schema version bookkeeping ────────────────────────────────────
         let row: Option<i64> = conn
-            .query_row("SELECT version FROM schema_version LIMIT 1", [], |r| r.get(0))
+            .query_row("SELECT version FROM schema_version LIMIT 1", [], |r| {
+                r.get(0)
+            })
             .optional()
             .map_err(|e| e.to_string())?;
         match row {
@@ -715,9 +737,9 @@ impl SessionDB {
                 }
                 if current_version < 18 && crate::common::SCHEMA_VERSION >= 18 {
                     // v18: gateway metadata consolidation — best-effort.
-                    if std::panic::catch_unwind(std::panic::AssertUnwindSafe(
-                        || self.backfill_gateway_metadata_from_sessions_json(conn),
-                    ))
+                    if std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                        self.backfill_gateway_metadata_from_sessions_json(conn)
+                    }))
                     .is_err()
                     {
                         // best-effort backfill; failures degrade silently
@@ -870,22 +892,29 @@ impl SessionDB {
 
         if fts5_available {
             if db_has_legacy_inline_fts(conn).unwrap_or(false) {
-                let triggers_need_repair = fts_trigger_count(conn).unwrap_or(0) < _FTS_TRIGGERS.len() as i64;
+                let triggers_need_repair =
+                    fts_trigger_count(conn).unwrap_or(0) < _FTS_TRIGGERS.len() as i64;
                 let enabled = self.ensure_fts_schema(conn, "messages_fts", LEGACY_FTS_SQL);
                 self.set_fts_enabled(enabled);
                 if enabled {
-                    let trigram_enabled = self.ensure_fts_schema(conn, "messages_fts_trigram", LEGACY_FTS_TRIGRAM_SQL);
+                    let trigram_enabled = self.ensure_fts_schema(
+                        conn,
+                        "messages_fts_trigram",
+                        LEGACY_FTS_TRIGRAM_SQL,
+                    );
                     self.set_trigram_available(trigram_enabled);
                     if triggers_need_repair {
                         let _ = rebuild_legacy_fts_indexes(conn, trigram_enabled);
                     }
                 }
             } else {
-                let triggers_need_repair = fts_trigger_count(conn).unwrap_or(0) < _FTS_TRIGGERS.len() as i64;
+                let triggers_need_repair =
+                    fts_trigger_count(conn).unwrap_or(0) < _FTS_TRIGGERS.len() as i64;
                 let enabled = self.ensure_fts_schema(conn, "messages_fts", FTS_SQL);
                 self.set_fts_enabled(enabled);
                 if enabled {
-                    let trigram_enabled = self.ensure_fts_schema(conn, "messages_fts_trigram", FTS_TRIGRAM_SQL);
+                    let trigram_enabled =
+                        self.ensure_fts_schema(conn, "messages_fts_trigram", FTS_TRIGRAM_SQL);
                     self.set_trigram_available(trigram_enabled);
                     if triggers_need_repair {
                         let _ = rebuild_fts_indexes(conn, trigram_enabled);
@@ -908,7 +937,9 @@ impl SessionDB {
     /// One-time v18 backfill of gateway metadata from sessions.json.
     // PARITY: hermes_state_schema.py _backfill_gateway_metadata_from_sessions_json @ b9aa928
     pub(crate) fn backfill_gateway_metadata_from_sessions_json(&self, conn: &Connection) {
-        let sessions_file = hermes_constants::get_hermes_home().join("sessions").join("sessions.json");
+        let sessions_file = hermes_constants::get_hermes_home()
+            .join("sessions")
+            .join("sessions.json");
         if !sessions_file.exists() {
             return;
         }
@@ -922,7 +953,9 @@ impl SessionDB {
             if key.starts_with('_') {
                 continue;
             }
-            let Some(entry) = entry.as_object() else { continue };
+            let Some(entry) = entry.as_object() else {
+                continue;
+            };
             let Some(session_id) = entry.get("session_id").and_then(|v| v.as_str()) else {
                 continue;
             };
@@ -997,7 +1030,8 @@ pub fn heal_gateway_routing_pk(conn: &Connection) -> rusqlite::Result<()> {
 /// Rebuild `session_model_usage` when its PRIMARY KEY lacks `task`.
 // PARITY: hermes_state_schema.py _heal_session_model_usage_pk @ b9aa928
 pub fn heal_session_model_usage_pk(conn: &Connection) -> rusqlite::Result<()> {
-    let rows: Vec<(String, i64)> = match conn.prepare("PRAGMA table_info(\"session_model_usage\")") {
+    let rows: Vec<(String, i64)> = match conn.prepare("PRAGMA table_info(\"session_model_usage\")")
+    {
         Ok(mut stmt) => stmt
             .query_map([], |r| Ok((r.get::<_, String>(1)?, r.get::<_, i64>(5)?)))
             .and_then(|m| m.collect())?,
@@ -1062,7 +1096,6 @@ pub fn heal_session_model_usage_pk(conn: &Connection) -> rusqlite::Result<()> {
     let _ = conn.execute_batch("PRAGMA foreign_keys=ON");
     result
 }
-
 
 /// Test-only probe wrapper.
 pub fn ensure_fts_schema_probe(conn: &Connection, table_name: &str) -> Option<bool> {

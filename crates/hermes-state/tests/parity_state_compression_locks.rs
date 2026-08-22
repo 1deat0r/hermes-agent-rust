@@ -60,7 +60,8 @@ fn refresh_requires_holder_and_preserves_reclaimability() {
     // test_refresh_compression_lock_requires_holder_and_preserves_reclaimability
     let (_dir, path) = tmp_db("state.db");
     let db = SessionDB::open(Some(path), false).expect("open");
-    db.create_session("s1", "cli", &NewSession::default()).unwrap();
+    db.create_session("s1", "cli", &NewSession::default())
+        .unwrap();
 
     assert!(db.try_acquire_compression_lock("s1", "holder-a", 100.0));
     let original = lock_expires(&db, "s1").expect("lock row exists");
@@ -82,7 +83,8 @@ fn refresh_cannot_resurrect_a_lock_already_reclaimed() {
     // test_refresh_cannot_resurrect_a_lock_already_reclaimed
     let (_dir, path) = tmp_db("state.db");
     let db = SessionDB::open(Some(path), false).expect("open");
-    db.create_session("s1", "cli", &NewSession::default()).unwrap();
+    db.create_session("s1", "cli", &NewSession::default())
+        .unwrap();
 
     assert!(db.try_acquire_compression_lock("s1", "holder-a", 100.0));
     expire_lock(&db, "s1");
@@ -100,7 +102,8 @@ fn acquire_reclaims_dead_structured_holder_immediately() {
     // the full TTL: a holder carrying a gone local pid is reclaimed now.
     let (_dir, path) = tmp_db("state.db");
     let db = SessionDB::open(Some(path), false).expect("open");
-    db.create_session("s1", "cli", &NewSession::default()).unwrap();
+    db.create_session("s1", "cli", &NewSession::default())
+        .unwrap();
 
     db.writer_conn()
         .execute(
@@ -118,7 +121,8 @@ fn acquire_reclaims_dead_structured_holder_immediately() {
 fn acquire_never_reclaims_same_process_or_unstructured_holder() {
     let (_dir, path) = tmp_db("state.db");
     let db = SessionDB::open(Some(path), false).expect("open");
-    db.create_session("s1", "cli", &NewSession::default()).unwrap();
+    db.create_session("s1", "cli", &NewSession::default())
+        .unwrap();
 
     // Same-process holder (this test process owns the pid): never reclaimed.
     let pid = std::process::id();
@@ -126,11 +130,16 @@ fn acquire_never_reclaims_same_process_or_unstructured_holder() {
         .execute(
             "INSERT INTO compression_locks (session_id, holder, acquired_at, expires_at) \
              VALUES ('s1', ?, 0, ?)",
-            rusqlite::params![format!("pid={}:1:live", pid), hermes_state::state::now() + 1000.0],
+            rusqlite::params![
+                format!("pid={}:1:live", pid),
+                hermes_state::state::now() + 1000.0
+            ],
         )
         .unwrap();
     assert!(!db.try_acquire_compression_lock("s1", "competitor", 100.0));
-    assert!(lock_holder(&db, "s1").unwrap().starts_with(&format!("pid={}", pid)));
+    assert!(lock_holder(&db, "s1")
+        .unwrap()
+        .starts_with(&format!("pid={}", pid)));
 
     // Unstructured holder (no pid= marker): TTL-only, never reclaimed.
     db.writer_conn()
@@ -141,7 +150,10 @@ fn acquire_never_reclaims_same_process_or_unstructured_holder() {
         )
         .unwrap();
     assert!(!db.try_acquire_compression_lock("s2", "competitor", 100.0));
-    assert_eq!(lock_holder(&db, "s2").as_deref(), Some("legacy-holder-name"));
+    assert_eq!(
+        lock_holder(&db, "s2").as_deref(),
+        Some("legacy-holder-name")
+    );
     db.close();
 }
 
@@ -149,7 +161,8 @@ fn acquire_never_reclaims_same_process_or_unstructured_holder() {
 fn release_is_idempotent_and_holder_checked() {
     let (_dir, path) = tmp_db("state.db");
     let db = SessionDB::open(Some(path), false).expect("open");
-    db.create_session("s1", "cli", &NewSession::default()).unwrap();
+    db.create_session("s1", "cli", &NewSession::default())
+        .unwrap();
 
     assert!(db.try_acquire_compression_lock("s1", "owner", 100.0));
     // Wrong holder cannot clobber.
@@ -167,10 +180,14 @@ fn release_is_idempotent_and_holder_checked() {
 fn get_holder_returns_only_non_expired() {
     let (_dir, path) = tmp_db("state.db");
     let db = SessionDB::open(Some(path), false).expect("open");
-    db.create_session("s1", "cli", &NewSession::default()).unwrap();
+    db.create_session("s1", "cli", &NewSession::default())
+        .unwrap();
 
     assert!(db.try_acquire_compression_lock("s1", "owner", 100.0));
-    assert_eq!(db.get_compression_lock_holder("s1").as_deref(), Some("owner"));
+    assert_eq!(
+        db.get_compression_lock_holder("s1").as_deref(),
+        Some("owner")
+    );
     expire_lock(&db, "s1");
     assert_eq!(db.get_compression_lock_holder("s1"), None);
     // Fast path: empty session id.
@@ -181,8 +198,10 @@ fn get_holder_returns_only_non_expired() {
 // ── find_live_compression_child ─────────────────────────────────────────────
 
 fn compression_parent(db: &SessionDB, session_id: &str) {
-    db.create_session(session_id, "webui", &NewSession::default()).unwrap();
-    db.append_message(session_id, &user_message("before split"), None).unwrap();
+    db.create_session(session_id, "webui", &NewSession::default())
+        .unwrap();
+    db.append_message(session_id, &user_message("before split"), None)
+        .unwrap();
     db.end_session(session_id, "compression").unwrap();
 }
 
@@ -192,10 +211,14 @@ fn find_live_compression_child_returns_unique_direct_child() {
     let (_dir, path) = tmp_db("state.db");
     let db = SessionDB::open(Some(path), false).expect("open");
     compression_parent(&db, "parent");
-    db.create_session("child", "webui", &NewSession {
-        parent_session_id: Some("parent".to_string()),
-        ..Default::default()
-    })
+    db.create_session(
+        "child",
+        "webui",
+        &NewSession {
+            parent_session_id: Some("parent".to_string()),
+            ..Default::default()
+        },
+    )
     .unwrap();
 
     let child = db.find_live_compression_child("parent").unwrap().unwrap();
@@ -210,20 +233,29 @@ fn find_live_compression_child_fails_closed_when_ambiguous() {
     let (_dir, path) = tmp_db("state.db");
     let db = SessionDB::open(Some(path), false).expect("open");
     compression_parent(&db, "parent");
-    db.create_session("child-a", "webui", &NewSession {
-        parent_session_id: Some("parent".to_string()),
-        ..Default::default()
-    })
+    db.create_session(
+        "child-a",
+        "webui",
+        &NewSession {
+            parent_session_id: Some("parent".to_string()),
+            ..Default::default()
+        },
+    )
     .unwrap();
-    db.create_session("child-b", "webui", &NewSession {
-        parent_session_id: Some("parent".to_string()),
-        ..Default::default()
-    })
+    db.create_session(
+        "child-b",
+        "webui",
+        &NewSession {
+            parent_session_id: Some("parent".to_string()),
+            ..Default::default()
+        },
+    )
     .unwrap();
 
     assert!(db.find_live_compression_child("parent").unwrap().is_none());
     // Non-compression parent and empty id resolve to None.
-    db.create_session("live", "cli", &NewSession::default()).unwrap();
+    db.create_session("live", "cli", &NewSession::default())
+        .unwrap();
     assert!(db.find_live_compression_child("live").unwrap().is_none());
     assert!(db.find_live_compression_child("").unwrap().is_none());
     db.close();
@@ -240,11 +272,14 @@ fn reopen_orphaned_compression_session_reopens_parent_without_child() {
     assert!(row.ended_at.is_none());
     assert!(row.end_reason.is_none());
 
-    db.append_message("orphan", &user_message("recovered turn"), None).unwrap();
+    db.append_message("orphan", &user_message("recovered turn"), None)
+        .unwrap();
     let msgs = db.get_messages("orphan", false, None, 0).unwrap();
-    let contents: Vec<Option<serde_json::Value>> =
-        msgs.iter().map(|m| m.content.clone()).collect();
-    assert_eq!(contents, vec![Some(json!("before split")), Some(json!("recovered turn"))]);
+    let contents: Vec<Option<serde_json::Value>> = msgs.iter().map(|m| m.content.clone()).collect();
+    assert_eq!(
+        contents,
+        vec![Some(json!("before split")), Some(json!("recovered turn"))]
+    );
     db.close();
 }
 
@@ -253,13 +288,19 @@ fn reopen_orphaned_compression_session_fails_closed_with_child() {
     let (_dir, path) = tmp_db("state.db");
     let db = SessionDB::open(Some(path), false).expect("open");
     compression_parent(&db, "parent-with-child");
-    db.create_session("child", "webui", &NewSession {
-        parent_session_id: Some("parent-with-child".to_string()),
-        ..Default::default()
-    })
+    db.create_session(
+        "child",
+        "webui",
+        &NewSession {
+            parent_session_id: Some("parent-with-child".to_string()),
+            ..Default::default()
+        },
+    )
     .unwrap();
 
-    assert!(!db.reopen_orphaned_compression_session("parent-with-child").unwrap());
+    assert!(!db
+        .reopen_orphaned_compression_session("parent-with-child")
+        .unwrap());
     let parent = db.get_session("parent-with-child").unwrap().unwrap();
     assert_eq!(parent.end_reason.as_deref(), Some("compression"));
     assert!(parent.ended_at.is_some());
@@ -271,20 +312,30 @@ fn reopen_orphaned_compression_session_ignores_non_continuation_children() {
     let (_dir, path) = tmp_db("state.db");
     let db = SessionDB::open(Some(path), false).expect("open");
     compression_parent(&db, "parent-with-branch");
-    db.create_session("branch", "webui", &NewSession {
-        parent_session_id: Some("parent-with-branch".to_string()),
-        model_config: Some(json!({"_branched_from": "parent-with-branch"})),
-        ..Default::default()
-    })
+    db.create_session(
+        "branch",
+        "webui",
+        &NewSession {
+            parent_session_id: Some("parent-with-branch".to_string()),
+            model_config: Some(json!({"_branched_from": "parent-with-branch"})),
+            ..Default::default()
+        },
+    )
     .unwrap();
-    db.create_session("delegate", "tool", &NewSession {
-        parent_session_id: Some("parent-with-branch".to_string()),
-        model_config: Some(json!({"_delegate_from": "parent-with-branch"})),
-        ..Default::default()
-    })
+    db.create_session(
+        "delegate",
+        "tool",
+        &NewSession {
+            parent_session_id: Some("parent-with-branch".to_string()),
+            model_config: Some(json!({"_delegate_from": "parent-with-branch"})),
+            ..Default::default()
+        },
+    )
     .unwrap();
 
-    assert!(db.reopen_orphaned_compression_session("parent-with-branch").unwrap());
+    assert!(db
+        .reopen_orphaned_compression_session("parent-with-branch")
+        .unwrap());
     db.close();
 }
 
@@ -296,14 +347,20 @@ fn reopen_fails_closed_when_continuation_inherits_foreign_markers() {
     let (_dir, path) = tmp_db("state.db");
     let db = SessionDB::open(Some(path), false).expect("open");
     compression_parent(&db, "delegate-session");
-    db.create_session("delegate-continuation", "subagent", &NewSession {
-        parent_session_id: Some("delegate-session".to_string()),
-        model_config: Some(json!({"_delegate_from": "some-original-parent"})),
-        ..Default::default()
-    })
+    db.create_session(
+        "delegate-continuation",
+        "subagent",
+        &NewSession {
+            parent_session_id: Some("delegate-session".to_string()),
+            model_config: Some(json!({"_delegate_from": "some-original-parent"})),
+            ..Default::default()
+        },
+    )
     .unwrap();
 
-    assert!(!db.reopen_orphaned_compression_session("delegate-session").unwrap());
+    assert!(!db
+        .reopen_orphaned_compression_session("delegate-session")
+        .unwrap());
     let parent = db.get_session("delegate-session").unwrap().unwrap();
     assert_eq!(parent.end_reason.as_deref(), Some("compression"));
     db.close();
@@ -317,8 +374,11 @@ fn reopen_fails_closed_while_lease_active_or_already_open() {
     assert!(db.try_acquire_compression_lock("leased", "owner", 1000.0));
     assert!(!db.reopen_orphaned_compression_session("leased").unwrap());
     // A non-compression-ended session is not reopenable.
-    db.create_session("open-session", "cli", &NewSession::default()).unwrap();
-    assert!(!db.reopen_orphaned_compression_session("open-session").unwrap());
+    db.create_session("open-session", "cli", &NewSession::default())
+        .unwrap();
+    assert!(!db
+        .reopen_orphaned_compression_session("open-session")
+        .unwrap());
     db.close();
 }
 
@@ -330,8 +390,10 @@ fn publish_compression_child_uses_content_addressed_prompt() {
     let (_dir, path) = tmp_db("state.db");
     let db = SessionDB::open(Some(path), false).expect("open");
     let prompt = "compressed child prompt";
-    db.create_session("parent", "webui", &NewSession::default()).unwrap();
-    db.append_message("parent", &user_message("original"), None).unwrap();
+    db.create_session("parent", "webui", &NewSession::default())
+        .unwrap();
+    db.append_message("parent", &user_message("original"), None)
+        .unwrap();
     assert!(db.try_acquire_compression_lock("parent", "holder", 60.0));
 
     db.publish_compression_child(
@@ -354,12 +416,24 @@ fn publish_compression_child_uses_content_addressed_prompt() {
         .query_row(
             "SELECT system_prompt, system_prompt_hash FROM sessions WHERE id = 'child'",
             [],
-            |r| Ok((r.get::<_, Option<String>>(0)?, r.get::<_, Option<String>>(1)?)),
+            |r| {
+                Ok((
+                    r.get::<_, Option<String>>(0)?,
+                    r.get::<_, Option<String>>(1)?,
+                ))
+            },
         )
         .unwrap();
     assert!(raw.0.is_none());
     assert!(raw.1.is_some());
-    assert_eq!(db.get_session("child").unwrap().unwrap().system_prompt.as_deref(), Some(prompt));
+    assert_eq!(
+        db.get_session("child")
+            .unwrap()
+            .unwrap()
+            .system_prompt
+            .as_deref(),
+        Some(prompt)
+    );
     // Parent closed atomically with child publication.
     let parent = db.get_session("parent").unwrap().unwrap();
     assert_eq!(parent.end_reason.as_deref(), Some("compression"));
@@ -375,41 +449,90 @@ fn publish_compression_child_uses_content_addressed_prompt() {
 fn publish_requires_lease_and_rejects_bad_states() {
     let (_dir, path) = tmp_db("state.db");
     let db = SessionDB::open(Some(path), false).expect("open");
-    db.create_session("parent", "webui", &NewSession::default()).unwrap();
+    db.create_session("parent", "webui", &NewSession::default())
+        .unwrap();
 
     // No lease at all -> CompressionSessionBusyError.
     let err = db
         .publish_compression_child(
-            "parent", "child", "webui", &[user_message("x")], None, None, None, None, None,
-            None, true,
+            "parent",
+            "child",
+            "webui",
+            &[user_message("x")],
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            true,
         )
         .unwrap_err();
-    assert!(matches!(err, WriteError::CompressionBusy(_)), "got {:?}", err);
+    assert!(
+        matches!(err, WriteError::CompressionBusy(_)),
+        "got {:?}",
+        err
+    );
 
     // Wrong holder -> busy.
     db.try_acquire_compression_lock("parent", "real-holder", 100.0);
     let err = db
         .publish_compression_child(
-            "parent", "child", "webui", &[user_message("x")], None, None, None, None, None,
-            Some("imposter"), true,
+            "parent",
+            "child",
+            "webui",
+            &[user_message("x")],
+            None,
+            None,
+            None,
+            None,
+            None,
+            Some("imposter"),
+            true,
         )
         .unwrap_err();
-    assert!(matches!(err, WriteError::CompressionBusy(_)), "got {:?}", err);
+    assert!(
+        matches!(err, WriteError::CompressionBusy(_)),
+        "got {:?}",
+        err
+    );
 
     // Unknown parent: upstream checks the lease FIRST, so with a required
     // lease the missing lock row is a busy error before the parent probe.
     let err = db
         .publish_compression_child(
-            "ghost", "child", "webui", &[user_message("x")], None, None, None, None, None,
-            Some("real-holder"), true,
+            "ghost",
+            "child",
+            "webui",
+            &[user_message("x")],
+            None,
+            None,
+            None,
+            None,
+            None,
+            Some("real-holder"),
+            true,
         )
         .unwrap_err();
-    assert!(matches!(err, WriteError::CompressionBusy(_)), "got {:?}", err);
+    assert!(
+        matches!(err, WriteError::CompressionBusy(_)),
+        "got {:?}",
+        err
+    );
     // With require_compression_lease=false the parent probe runs: RuntimeError.
     let err = db
         .publish_compression_child(
-            "ghost", "child", "webui", &[user_message("x")], None, None, None, None, None,
-            None, false,
+            "ghost",
+            "child",
+            "webui",
+            &[user_message("x")],
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            false,
         )
         .unwrap_err();
     assert!(matches!(err, WriteError::Runtime(_)), "got {:?}", err);
@@ -417,23 +540,50 @@ fn publish_requires_lease_and_rejects_bad_states() {
     // Empty handoff -> RuntimeError ("must not be empty").
     let err = db
         .publish_compression_child(
-            "parent", "child", "webui", &[], None, None, None, None, None,
-            Some("real-holder"), true,
+            "parent",
+            "child",
+            "webui",
+            &[],
+            None,
+            None,
+            None,
+            None,
+            None,
+            Some("real-holder"),
+            true,
         )
         .unwrap_err();
     assert!(matches!(err, WriteError::Runtime(_)), "got {:?}", err);
 
     // require_compression_lease=false allows publication without a lock.
     db.publish_compression_child(
-        "parent", "child2", "webui", &[user_message("x")], None, None, None, None, None,
-        None, false,
+        "parent",
+        "child2",
+        "webui",
+        &[user_message("x")],
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        false,
     )
     .unwrap();
     // Parent now ended -> publishing again fails with RuntimeError.
     let err = db
         .publish_compression_child(
-            "parent", "child3", "webui", &[user_message("x")], None, None, None, None, None,
-            Some("real-holder"), true,
+            "parent",
+            "child3",
+            "webui",
+            &[user_message("x")],
+            None,
+            None,
+            None,
+            None,
+            None,
+            Some("real-holder"),
+            true,
         )
         .unwrap_err();
     assert!(matches!(err, WriteError::Runtime(_)), "got {:?}", err);

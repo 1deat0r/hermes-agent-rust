@@ -39,7 +39,11 @@ fn writable_open_creates_schema_and_stamps_version() {
         "compression_locks",
         "async_delegations",
     ] {
-        assert!(tables.contains(&required.to_string()), "missing table {}", required);
+        assert!(
+            tables.contains(&required.to_string()),
+            "missing table {}",
+            required
+        );
     }
     let version: i64 = conn
         .query_row("SELECT version FROM schema_version", [], |r| r.get(0))
@@ -77,7 +81,9 @@ fn writable_close_issues_truncate_checkpoint() {
     db.close();
     // After close the state file is still a valid SQLite DB.
     let conn = Connection::open(&path).expect("reopen after close");
-    let v: i64 = conn.query_row("SELECT version FROM schema_version", [], |r| r.get(0)).unwrap();
+    let v: i64 = conn
+        .query_row("SELECT version FROM schema_version", [], |r| r.get(0))
+        .unwrap();
     assert_eq!(v, SCHEMA_VERSION);
 }
 
@@ -155,7 +161,10 @@ fn legacy_inline_fts_detection() {
         let legacy = hermes_state::schema::db_has_legacy_inline_fts(conn).unwrap();
         assert!(!legacy, "fresh schema is v23 external-content");
         // Simulated legacy shape: single-column messages_fts.
-        conn.execute_batch("DROP TABLE messages_fts; CREATE VIRTUAL TABLE messages_fts USING fts5(content)").unwrap();
+        conn.execute_batch(
+            "DROP TABLE messages_fts; CREATE VIRTUAL TABLE messages_fts USING fts5(content)",
+        )
+        .unwrap();
         let legacy2 = hermes_state::schema::db_has_legacy_inline_fts(conn).unwrap();
         assert!(legacy2, "single-column shape detected as legacy");
     }
@@ -175,7 +184,8 @@ fn zeroed_db_is_quarantined_and_reopened_fresh() {
     let db = SessionDB::open(Some(path.clone()), false).expect("fresh open after quarantine");
     let version: i64 = {
         let conn = Connection::open(&path).unwrap();
-        conn.query_row("SELECT version FROM schema_version", [], |r| r.get(0)).unwrap()
+        conn.query_row("SELECT version FROM schema_version", [], |r| r.get(0))
+            .unwrap()
     };
     assert_eq!(version, SCHEMA_VERSION);
     db.close();
@@ -229,7 +239,13 @@ fn schema_sql_is_source_of_truth() {
                 .collect::<Result<_, _>>()
                 .unwrap();
             for (col_name, _reconstructed) in &declared_cols {
-                assert!(live.contains(col_name), "Column {} declared in SCHEMA_SQL for {} but missing from live DB. Live: {:?}", col_name, table_name, live);
+                assert!(
+                    live.contains(col_name),
+                    "Column {} declared in SCHEMA_SQL for {} but missing from live DB. Live: {:?}",
+                    col_name,
+                    table_name,
+                    live
+                );
             }
         }
     }

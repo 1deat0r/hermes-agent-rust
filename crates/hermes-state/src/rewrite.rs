@@ -10,7 +10,6 @@
 use rusqlite::{Connection, OptionalExtension, Row};
 use serde_json::{json, Value};
 
-
 use super::crud::MessageInput;
 use super::state::{SessionDB, WriteError};
 
@@ -78,10 +77,7 @@ impl SessionDB {
         active_only: bool,
     ) -> Result<(), WriteError> {
         let active_clause = if active_only { " AND active = 1" } else { "" };
-        let sql = format!(
-            "DELETE FROM messages WHERE session_id = ?{}",
-            active_clause
-        );
+        let sql = format!("DELETE FROM messages WHERE session_id = ?{}", active_clause);
         let session_id = session_id.to_string();
         let messages = messages.to_vec();
         let f = move |conn: &Connection| -> Result<(), WriteError> {
@@ -89,12 +85,7 @@ impl SessionDB {
                 .query_row(
                     "SELECT ended_at, end_reason FROM sessions WHERE id = ?",
                     rusqlite::params![session_id],
-                    |r| {
-                        Ok((
-                            r.get::<_, Option<f64>>(0)?,
-                            r.get::<_, Option<String>>(1)?,
-                        ))
-                    },
+                    |r| Ok((r.get::<_, Option<f64>>(0)?, r.get::<_, Option<String>>(1)?)),
                 )
                 .optional()?;
             if let Some((ended_at, end_reason)) = session {
@@ -155,12 +146,7 @@ impl SessionDB {
         let model_config_patch = model_config_patch.cloned();
         let f = move |conn: &Connection| -> Result<i64, WriteError> {
             let patched_model_config = match &model_config_patch {
-                Some(patch) => Some(merge_model_config_json(
-                    conn,
-                    &session_id,
-                    patch,
-                    true,
-                )?),
+                Some(patch) => Some(merge_model_config_json(conn, &session_id, patch, true)?),
                 None => None,
             };
             // Soft-archive the live turns (active=0 hides them from the live
@@ -243,10 +229,9 @@ impl SessionDB {
                 )
                 .map_err(WriteError::Sqlite)?;
             let ids: Vec<i64> = stmt
-                .query_map(
-                    rusqlite::params![session_id, target_message_id],
-                    |r| r.get(0),
-                )
+                .query_map(rusqlite::params![session_id, target_message_id], |r| {
+                    r.get(0)
+                })
                 .map_err(WriteError::Sqlite)?
                 .collect::<Result<_, _>>()
                 .map_err(WriteError::Sqlite)?;

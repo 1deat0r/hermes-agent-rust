@@ -136,9 +136,7 @@ fn encode_content(content: Option<&Value>) -> Option<rusqlite::types::Value> {
     match content {
         None | Some(Value::Null) => Some(rusqlite::types::Value::Null),
         Some(Value::String(s)) => Some(rusqlite::types::Value::Text(s.clone())),
-        Some(Value::Bool(b)) => {
-            Some(rusqlite::types::Value::Integer(if *b { 1 } else { 0 }))
-        }
+        Some(Value::Bool(b)) => Some(rusqlite::types::Value::Integer(if *b { 1 } else { 0 })),
         Some(Value::Number(n)) => {
             if let Some(i) = n.as_i64() {
                 Some(rusqlite::types::Value::Integer(i))
@@ -148,9 +146,9 @@ fn encode_content(content: Option<&Value>) -> Option<rusqlite::types::Value> {
                 Some(rusqlite::types::Value::Null)
             }
         }
-        Some(v @ (Value::Array(_) | Value::Object(_))) => {
-            Some(rusqlite::types::Value::Text(format!("{}{}", CONTENT_JSON_PREFIX, v)))
-        }
+        Some(v @ (Value::Array(_) | Value::Object(_))) => Some(rusqlite::types::Value::Text(
+            format!("{}{}", CONTENT_JSON_PREFIX, v),
+        )),
     }
 }
 
@@ -171,7 +169,9 @@ pub(crate) fn decode_content(raw: Option<rusqlite::types::Value>) -> Option<Valu
         Some(rusqlite::types::Value::Integer(i)) => Some(json!(i)),
         Some(rusqlite::types::Value::Real(f)) => Some(json!(f)),
         // Blob or stale NULL: keep None for NULL, stringify blobs loosely.
-        Some(rusqlite::types::Value::Blob(b)) => Some(Value::String(String::from_utf8_lossy(&b).into_owned())),
+        Some(rusqlite::types::Value::Blob(b)) => {
+            Some(Value::String(String::from_utf8_lossy(&b).into_owned()))
+        }
         Some(rusqlite::types::Value::Null) => None,
     }
 }
@@ -281,30 +281,31 @@ fn make_session_row(db: &SessionDB, id: &str) -> rusqlite::Result<Option<Session
 
 // ── sessions CRUD ───────────────────────────────────────────────────────────
 
-impl SessionDB {
-    /// Create a new session record. Returns the session_id.
-    /// PARITY: SessionDB.create_session + _insert_session_row @ b9aa928
-    /// (3304–3308, 3137–3302). The full ON CONFLICT enrichment, parent
-    /// backfill, and compression-fork origin inheritance all run here.
-    pub fn create_session(
-        &self,
-        session_id: &str,
-        source: &str,
-        opts: &NewSession,
-    ) -> Result<String, WriteError> {
-        let f = |conn: &Connection| -> Result<String, WriteError> {
-            let system_prompt_hash = schema::store_system_prompt(
-                conn,
-                opts.system_prompt.clone(),
-            )?;
-            // Python: `json.dumps(model_config) if model_config else None`
-            // (an empty dict is falsy and stores NULL).
-            let model_config = opts
-                .model_config
-                .as_ref()
-                .filter(|v| truthy(Some(*v)))
-                .map(|v| v.to_string());
-            conn.execute(
+// ── session-row upsert (shared by create_session / token accounting) ────────
+
+/// Upsert a session row (mirrors upstream `_insert_session_row`'s `_do`:
+/// INSERT with ON CONFLICT enrichment + parent backfill + compression-fork
+/// origin inheritance). Connection-level so the token writer's dedicated
+/// connection and `update_token_counts` reuse the identical body.
+///
+/// PARITY: hermes_state.py _insert_session_row @ b9aa928 (3137–3302)
+pub(crate) fn insert_session_row_on(
+    conn: &Connection,
+    session_id: &str,
+    source: &str,
+    opts: &NewSession,
+) -> Result<(), WriteError> {
+    let _ = source; // mirror-signature seam: used by callers for the row source
+    {
+        let system_prompt_hash = schema::store_system_prompt(conn, opts.system_prompt.clone())?;
+        // Python: `json.dumps(model_config) if model_config else None`
+        // (an empty dict is falsy and stores NULL).
+        let model_config = opts
+            .model_config
+            .as_ref()
+            .filter(|v| truthy(Some(*v)))
+            .map(|v| v.to_string());
+        conn.execute(
                 "INSERT INTO sessions (
                    id, source, user_id, session_key, chat_id, chat_type, thread_id,
                    model, model_config, system_prompt, system_prompt_hash,
@@ -350,20 +351,20 @@ impl SessionDB {
                     now(),
                 ],
             )?;
-            if system_prompt_hash.is_some() {
-                conn.execute(
-                    "DELETE FROM system_prompts WHERE NOT EXISTS (\
+        if system_prompt_hash.is_some() {
+            conn.execute(
+                "DELETE FROM system_prompts WHERE NOT EXISTS (\
                        SELECT 1 FROM sessions \
                        WHERE sessions.system_prompt_hash = system_prompts.hash\
                      )",
-                    [],
-                )?;
-            }
-            if opts.parent_session_id.is_some() {
-                // Backfill cwd / git_repo_root / git_branch / profile_name
-                // from the parent row (#64709, cross-profile jump bug).
-                conn.execute(
-                    "UPDATE sessions
+                [],
+            )?;
+        }
+        if opts.parent_session_id.is_some() {
+            // Backfill cwd / git_repo_root / git_branch / profile_name
+            // from the parent row (#64709, cross-profile jump bug).
+            conn.execute(
+                "UPDATE sessions
                        SET cwd = COALESCE(sessions.cwd,
                                  (SELECT p.cwd FROM sessions p
                                    WHERE p.id = sessions.parent_session_id)),
@@ -377,12 +378,12 @@ impl SessionDB {
                                           (SELECT p.profile_name FROM sessions p
                                             WHERE p.id = sessions.parent_session_id))
                      WHERE id = ? AND parent_session_id IS NOT NULL",
-                    rusqlite::params![session_id],
-                )?;
-                // Compression-fork origin inheritance (#59527): only when
-                // the parent already ended with end_reason='compression'.
-                conn.execute(
-                    "UPDATE sessions
+                rusqlite::params![session_id],
+            )?;
+            // Compression-fork origin inheritance (#59527): only when
+            // the parent already ended with end_reason='compression'.
+            conn.execute(
+                "UPDATE sessions
                        SET user_id = COALESCE(sessions.user_id,
                                      (SELECT p.user_id FROM sessions p
                                        WHERE p.id = sessions.parent_session_id)),
@@ -410,9 +411,24 @@ impl SessionDB {
                            WHERE p.id = sessions.parent_session_id
                              AND p.end_reason = 'compression'
                        )",
-                    rusqlite::params![session_id],
-                )?;
-            }
+                rusqlite::params![session_id],
+            )?;
+        }
+    }
+    Ok(())
+}
+
+impl SessionDB {
+    /// Create a new session record. Returns the session_id.
+    /// PARITY: SessionDB.create_session @ b9aa928 (3304–3308)
+    pub fn create_session(
+        &self,
+        session_id: &str,
+        source: &str,
+        opts: &NewSession,
+    ) -> Result<String, WriteError> {
+        let f = |conn: &Connection| -> Result<String, WriteError> {
+            insert_session_row_on(conn, session_id, source, opts)?;
             Ok(session_id.to_string())
         };
         // Session-row creation is transcript-critical.
@@ -422,14 +438,19 @@ impl SessionDB {
     /// Get a session by ID (system prompt resolved), or None.
     /// PARITY: SessionDB.get_session @ b9aa928 (5554–5572)
     pub fn get_session(&self, session_id: &str) -> Result<Option<SessionRow>, WriteError> {
-        // Upstream drains queued token deltas here first; the token writer
-        // port supplies that seam. No-op attribute check until then.
+        // Upstream drains queued token deltas here first so readers see
+        // exact totals even while the background writer is mid-backlog
+        // (hermes_state.py get_session @ 5559).
+        let _ = self.flush_token_counts(5.0);
         make_session_row(self, session_id).map_err(WriteError::Sqlite)
     }
 
     /// Resolve an exact or uniquely prefixed session ID.
     /// PARITY: SessionDB.resolve_session_id @ b9aa928 (5573–5598)
-    pub fn resolve_session_id(&self, session_id_or_prefix: &str) -> Result<Option<String>, WriteError> {
+    pub fn resolve_session_id(
+        &self,
+        session_id_or_prefix: &str,
+    ) -> Result<Option<String>, WriteError> {
         if let Some(exact) = self.get_session(session_id_or_prefix)? {
             return Ok(Some(exact.id));
         }
@@ -517,14 +538,23 @@ impl SessionDB {
         let repo_root = git_repo_root.map(str::trim).filter(|r| !r.is_empty());
 
         let mut sets = vec!["cwd = ?".to_string()];
-        let mut params: Vec<rusqlite::types::Value> = vec![rusqlite::types::Value::Text(cwd.to_string())];
+        let mut params: Vec<rusqlite::types::Value> =
+            vec![rusqlite::types::Value::Text(cwd.to_string())];
         if branch.is_some() || replace_git_meta {
             sets.push("git_branch = ?".to_string());
-            params.push(branch.map(|s| rusqlite::types::Value::Text(s.to_string())).unwrap_or(rusqlite::types::Value::Null));
+            params.push(
+                branch
+                    .map(|s| rusqlite::types::Value::Text(s.to_string()))
+                    .unwrap_or(rusqlite::types::Value::Null),
+            );
         }
         if repo_root.is_some() || replace_git_meta {
             sets.push("git_repo_root = ?".to_string());
-            params.push(repo_root.map(|s| rusqlite::types::Value::Text(s.to_string())).unwrap_or(rusqlite::types::Value::Null));
+            params.push(
+                repo_root
+                    .map(|s| rusqlite::types::Value::Text(s.to_string()))
+                    .unwrap_or(rusqlite::types::Value::Null),
+            );
         }
         params.push(rusqlite::types::Value::Text(session_id.to_string()));
 
@@ -567,10 +597,7 @@ impl SessionDB {
             })
             .collect();
         // Collapse internal whitespace runs and strip.
-        let collapsed: String = cleaned
-            .split_whitespace()
-            .collect::<Vec<_>>()
-            .join(" ");
+        let collapsed: String = cleaned.split_whitespace().collect::<Vec<_>>().join(" ");
         if collapsed.is_empty() {
             return Ok(None);
         }
@@ -589,10 +616,7 @@ impl SessionDB {
         ancestor_id: &str,
         descendant_id: &str,
     ) -> rusqlite::Result<bool> {
-        if ancestor_id.is_empty()
-            || descendant_id.is_empty()
-            || ancestor_id == descendant_id
-        {
+        if ancestor_id.is_empty() || descendant_id.is_empty() || ancestor_id == descendant_id {
             return Ok(false);
         }
         let edge = crate::common::_compression_child_sql("child");
@@ -610,7 +634,11 @@ impl SessionDB {
             edge
         );
         let row = conn
-            .query_row(&sql, rusqlite::params![descendant_id, ancestor_id, descendant_id], |_| Ok(()))
+            .query_row(
+                &sql,
+                rusqlite::params![descendant_id, ancestor_id, descendant_id],
+                |_| Ok(()),
+            )
             .optional()?;
         Ok(row.is_some())
     }
@@ -663,11 +691,12 @@ impl SessionDB {
                     }
                 }
             }
-            let predicate = if only_if_empty { " AND title IS NULL" } else { "" };
-            let sql = format!(
-                "UPDATE sessions SET title = ? WHERE id = ?{}",
-                predicate
-            );
+            let predicate = if only_if_empty {
+                " AND title IS NULL"
+            } else {
+                ""
+            };
+            let sql = format!("UPDATE sessions SET title = ? WHERE id = ?{}", predicate);
             let affected = conn.execute(&sql, rusqlite::params![title, session_id])?;
             Ok(affected as i64)
         };
@@ -684,7 +713,11 @@ impl SessionDB {
 
     /// Set an auto-generated title only when the current title is NULL.
     /// PARITY: SessionDB.set_auto_title_if_empty @ b9aa928 (5751–5759)
-    pub fn set_auto_title_if_empty(&self, session_id: &str, title: &str) -> Result<bool, WriteError> {
+    pub fn set_auto_title_if_empty(
+        &self,
+        session_id: &str,
+        title: &str,
+    ) -> Result<bool, WriteError> {
         self.set_session_title_inner(session_id, title, true)
     }
 
@@ -722,8 +755,10 @@ impl SessionDB {
         let escaped = crate::common::escape_like(title);
         let conn = self.writer_conn();
         let mut stmt = conn
-            .prepare("SELECT id, title, started_at FROM sessions \
-                      WHERE title LIKE ? ESCAPE '\\' ORDER BY started_at DESC")
+            .prepare(
+                "SELECT id, title, started_at FROM sessions \
+                      WHERE title LIKE ? ESCAPE '\\' ORDER BY started_at DESC",
+            )
             .map_err(WriteError::Sqlite)?;
         let numbered: Vec<String> = stmt
             .query_map(rusqlite::params![format!("{} #%", escaped)], |r| r.get(0))
@@ -760,7 +795,9 @@ impl SessionDB {
             .prepare("SELECT title FROM sessions WHERE title = ? OR title LIKE ? ESCAPE '\\'")
             .map_err(WriteError::Sqlite)?;
         let existing: Vec<String> = stmt
-            .query_map(rusqlite::params![base, format!("{} #%", escaped)], |r| r.get(0))
+            .query_map(rusqlite::params![base, format!("{} #%", escaped)], |r| {
+                r.get(0)
+            })
             .map_err(WriteError::Sqlite)?
             .collect::<Result<_, _>>()
             .map_err(WriteError::Sqlite)?;
@@ -976,14 +1013,40 @@ impl SessionDB {
         for m in messages {
             let role = m.role.clone();
             let message_timestamp = m.timestamp.unwrap_or(now_ts);
-            let reasoning = if role == "assistant" { scrub_surrogates(m.reasoning.clone()) } else { None };
-            let reasoning_content = if role == "assistant" { scrub_surrogates(m.reasoning_content.clone()) } else { None };
-            let reasoning_details = if role == "assistant" { m.reasoning_details.as_ref() } else { None };
-            let codex_reasoning_items = if role == "assistant" { m.codex_reasoning_items.as_ref() } else { None };
-            let codex_message_items = if role == "assistant" { m.codex_message_items.as_ref() } else { None };
-            let reasoning_details_json = reasoning_details.filter(|v| truthy(Some(*v))).map(|v| v.to_string());
-            let codex_items_json = codex_reasoning_items.filter(|v| truthy(Some(*v))).map(|v| v.to_string());
-            let codex_message_items_json = codex_message_items.filter(|v| truthy(Some(*v))).map(|v| v.to_string());
+            let reasoning = if role == "assistant" {
+                scrub_surrogates(m.reasoning.clone())
+            } else {
+                None
+            };
+            let reasoning_content = if role == "assistant" {
+                scrub_surrogates(m.reasoning_content.clone())
+            } else {
+                None
+            };
+            let reasoning_details = if role == "assistant" {
+                m.reasoning_details.as_ref()
+            } else {
+                None
+            };
+            let codex_reasoning_items = if role == "assistant" {
+                m.codex_reasoning_items.as_ref()
+            } else {
+                None
+            };
+            let codex_message_items = if role == "assistant" {
+                m.codex_message_items.as_ref()
+            } else {
+                None
+            };
+            let reasoning_details_json = reasoning_details
+                .filter(|v| truthy(Some(*v)))
+                .map(|v| v.to_string());
+            let codex_items_json = codex_reasoning_items
+                .filter(|v| truthy(Some(*v)))
+                .map(|v| v.to_string());
+            let codex_message_items_json = codex_message_items
+                .filter(|v| truthy(Some(*v)))
+                .map(|v| v.to_string());
             let tool_calls = parse_tool_calls(m.tool_calls.as_ref()).filter(|v| truthy(Some(v)));
             let tool_calls_json = tool_calls.as_ref().map(|v| v.to_string());
             // platform_message_id (new name) or message_id (yuanbao).
@@ -1047,7 +1110,11 @@ impl SessionDB {
         limit: Option<i64>,
         offset: i64,
     ) -> Result<Vec<StoredMessage>, WriteError> {
-        let active_clause = if include_inactive { "" } else { " AND active = 1" };
+        let active_clause = if include_inactive {
+            ""
+        } else {
+            " AND active = 1"
+        };
         let mut sql = format!(
             "SELECT * FROM messages WHERE session_id = ?{} ORDER BY id",
             active_clause
@@ -1059,49 +1126,50 @@ impl SessionDB {
             params.push(Box::new(offset));
         }
         let conn = self.writer_conn();
-        let mut stmt = conn
-            .prepare(&sql)
-            .map_err(WriteError::Sqlite)?;
+        let mut stmt = conn.prepare(&sql).map_err(WriteError::Sqlite)?;
         let rows = stmt
-            .query_map(rusqlite::params_from_iter(params.iter().map(|x| x as &dyn rusqlite::ToSql)), |r| {
-                let content: Option<rusqlite::types::Value> = r.get("content")?;
-                let tool_calls: Option<String> = r.get("tool_calls")?;
-                let display_metadata: Option<String> = r.get("display_metadata")?;
-                Ok(StoredMessage {
-                    id: r.get("id")?,
-                    session_id: r.get("session_id")?,
-                    role: r.get("role")?,
-                    content: decode_content(content),
-                    tool_call_id: r.get("tool_call_id")?,
-                    tool_calls: match tool_calls.as_deref() {
-                        Some(s) if !s.is_empty() => {
-                            match serde_json::from_str::<Value>(s) {
-                                Ok(v) => Some(v),
-                                // get_messages falls back to [] on decode error
-                                Err(_) => Some(Value::Array(vec![])),
+            .query_map(
+                rusqlite::params_from_iter(params.iter().map(|x| x as &dyn rusqlite::ToSql)),
+                |r| {
+                    let content: Option<rusqlite::types::Value> = r.get("content")?;
+                    let tool_calls: Option<String> = r.get("tool_calls")?;
+                    let display_metadata: Option<String> = r.get("display_metadata")?;
+                    Ok(StoredMessage {
+                        id: r.get("id")?,
+                        session_id: r.get("session_id")?,
+                        role: r.get("role")?,
+                        content: decode_content(content),
+                        tool_call_id: r.get("tool_call_id")?,
+                        tool_calls: match tool_calls.as_deref() {
+                            Some(s) if !s.is_empty() => {
+                                match serde_json::from_str::<Value>(s) {
+                                    Ok(v) => Some(v),
+                                    // get_messages falls back to [] on decode error
+                                    Err(_) => Some(Value::Array(vec![])),
+                                }
                             }
-                        }
-                        _ => None,
-                    },
-                    tool_name: r.get("tool_name")?,
-                    effect_disposition: r.get("effect_disposition")?,
-                    timestamp: r.get("timestamp")?,
-                    token_count: r.get("token_count")?,
-                    finish_reason: r.get("finish_reason")?,
-                    reasoning: r.get("reasoning")?,
-                    reasoning_content: r.get("reasoning_content")?,
-                    reasoning_details: r.get("reasoning_details")?,
-                    codex_reasoning_items: r.get("codex_reasoning_items")?,
-                    codex_message_items: r.get("codex_message_items")?,
-                    platform_message_id: r.get("platform_message_id")?,
-                    observed: r.get::<_, i64>("observed")? != 0,
-                    active: r.get::<_, i64>("active")? != 0,
-                    compacted: r.get::<_, i64>("compacted")? != 0,
-                    api_content: r.get("api_content")?,
-                    display_kind: r.get("display_kind")?,
-                    display_metadata: decode_display_metadata(display_metadata.as_deref()),
-                })
-            })
+                            _ => None,
+                        },
+                        tool_name: r.get("tool_name")?,
+                        effect_disposition: r.get("effect_disposition")?,
+                        timestamp: r.get("timestamp")?,
+                        token_count: r.get("token_count")?,
+                        finish_reason: r.get("finish_reason")?,
+                        reasoning: r.get("reasoning")?,
+                        reasoning_content: r.get("reasoning_content")?,
+                        reasoning_details: r.get("reasoning_details")?,
+                        codex_reasoning_items: r.get("codex_reasoning_items")?,
+                        codex_message_items: r.get("codex_message_items")?,
+                        platform_message_id: r.get("platform_message_id")?,
+                        observed: r.get::<_, i64>("observed")? != 0,
+                        active: r.get::<_, i64>("active")? != 0,
+                        compacted: r.get::<_, i64>("compacted")? != 0,
+                        api_content: r.get("api_content")?,
+                        display_kind: r.get("display_kind")?,
+                        display_metadata: decode_display_metadata(display_metadata.as_deref()),
+                    })
+                },
+            )
             .map_err(WriteError::Sqlite)?
             .collect::<Result<Vec<_>, _>>()
             .map_err(WriteError::Sqlite)?;
@@ -1149,7 +1217,11 @@ impl SessionDB {
 
     /// Role of the active message at *row_id* in *session_id*, or None.
     /// PARITY: SessionDB.get_message_role @ b9aa928 (7056–7073)
-    pub fn get_message_role(&self, session_id: &str, row_id: i64) -> Result<Option<String>, WriteError> {
+    pub fn get_message_role(
+        &self,
+        session_id: &str,
+        row_id: i64,
+    ) -> Result<Option<String>, WriteError> {
         if session_id.is_empty() {
             return Ok(None);
         }
@@ -1185,11 +1257,18 @@ pub(crate) fn fold_session_dict(mut v: serde_json::Value) -> serde_json::Value {
 impl SessionDB {
     /// Full session row as a JSON object with the system prompt resolved —
     /// the exact `get_session` dict shape (`_session_row_dict`).
-    pub fn get_session_dict(&self, session_id: &str) -> Result<Option<serde_json::Value>, WriteError> {
+    pub fn get_session_dict(
+        &self,
+        session_id: &str,
+    ) -> Result<Option<serde_json::Value>, WriteError> {
         let sql = format!("{} WHERE s.id = ?", SESSION_SELECT);
         let conn = self.writer_conn();
         let row = conn
-            .query_row(&sql, rusqlite::params![session_id], super::portability::row_to_value)
+            .query_row(
+                &sql,
+                rusqlite::params![session_id],
+                super::portability::row_to_value,
+            )
             .optional()
             .map_err(WriteError::Sqlite)?;
         Ok(row.map(fold_session_dict))
@@ -1206,7 +1285,11 @@ impl SessionDB {
         limit: Option<i64>,
         offset: i64,
     ) -> Result<Vec<serde_json::Value>, WriteError> {
-        let active_clause = if include_inactive { "" } else { " AND active = 1" };
+        let active_clause = if include_inactive {
+            ""
+        } else {
+            " AND active = 1"
+        };
         let mut sql = format!(
             "SELECT * FROM messages WHERE session_id = ?{} ORDER BY id",
             active_clause

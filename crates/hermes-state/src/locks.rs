@@ -16,13 +16,12 @@ use crate::common;
 use crate::schema;
 use crate::state::now;
 
-use super::state::{SessionDB, WriteError};
 use super::crud::{MessageInput, SessionRow};
+use super::state::{SessionDB, WriteError};
 
 /// `(?:^|:)pid=(\d+)(?::|$)` — the structured holder id convention
 /// (`pid=<n>:...`) used by conversation_compression.
-static HOLDER_PID_RE: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"(?:^|:)pid=(\d+)(?::|$)").unwrap());
+static HOLDER_PID_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"(?:^|:)pid=(\d+)(?::|$)").unwrap());
 
 /// True only when a structured lock holder's local PID is gone.
 ///
@@ -353,9 +352,11 @@ impl SessionDB {
                 filter
             );
             let child: Option<i64> = conn
-                .query_row(&sql, rusqlite::params![session_id, session_id, session_id], |r| {
-                    r.get(0)
-                })
+                .query_row(
+                    &sql,
+                    rusqlite::params![session_id, session_id, session_id],
+                    |r| r.get(0),
+                )
                 .optional()?;
             if child.is_some() {
                 return Ok(false);
@@ -440,18 +441,12 @@ impl SessionDB {
                         "SELECT holder, expires_at FROM compression_locks \
                          WHERE session_id = ?",
                         rusqlite::params![parent_session_id],
-                        |r| {
-                            Ok((
-                                r.get::<_, Option<String>>(0)?,
-                                r.get::<_, Option<f64>>(1)?,
-                            ))
-                        },
+                        |r| Ok((r.get::<_, Option<String>>(0)?, r.get::<_, Option<f64>>(1)?)),
                     )
                     .optional()?;
                 let lease_valid = match lock_row {
                     Some((Some(holder), Some(expires_at))) => {
-                        compression_lock_holder.is_some_and(|h| h == holder)
-                            && expires_at > now()
+                        compression_lock_holder.is_some_and(|h| h == holder) && expires_at > now()
                     }
                     _ => false,
                 };

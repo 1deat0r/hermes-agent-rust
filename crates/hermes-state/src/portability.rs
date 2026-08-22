@@ -253,10 +253,7 @@ impl SessionDB {
 
     /// Distinct non-empty session cwds with usage stats, for repo discovery.
     /// PARITY: hermes_state_portability.py distinct_session_cwds
-    pub fn distinct_session_cwds(
-        &self,
-        include_archived: bool,
-    ) -> Result<Vec<Value>, WriteError> {
+    pub fn distinct_session_cwds(&self, include_archived: bool) -> Result<Vec<Value>, WriteError> {
         let mut where_sql = "cwd IS NOT NULL AND TRIM(cwd) != ''".to_string();
         if !include_archived {
             where_sql += " AND archived = 0";
@@ -319,9 +316,7 @@ impl SessionDB {
             common::_sql_session_last_active("s"),
         );
         let conn = self.writer_conn();
-        let mut stmt = conn
-            .prepare(&sql)
-            .map_err(WriteError::Sqlite)?;
+        let mut stmt = conn.prepare(&sql).map_err(WriteError::Sqlite)?;
         let rows = stmt
             .query_map(
                 rusqlite::params![prefix, prefix_hi, limit, offset],
@@ -346,7 +341,11 @@ impl SessionDB {
         session_ids: &[String],
         compact_rows: bool,
     ) -> Result<HashMap<String, Value>, WriteError> {
-        let ids: Vec<String> = session_ids.iter().filter(|s| !s.is_empty()).cloned().collect();
+        let ids: Vec<String> = session_ids
+            .iter()
+            .filter(|s| !s.is_empty())
+            .cloned()
+            .collect();
         if ids.is_empty() {
             return Ok(HashMap::new());
         }
@@ -388,16 +387,18 @@ impl SessionDB {
         let conn = self.writer_conn();
         let mut stmt = conn.prepare(&sql).map_err(WriteError::Sqlite)?;
         let rows = stmt
-            .query_map(
-                rusqlite::params_from_iter(ids.iter()),
-                shape_envelope,
-            )
+            .query_map(rusqlite::params_from_iter(ids.iter()), shape_envelope)
             .map_err(WriteError::Sqlite)?
             .collect::<Result<Vec<_>, _>>()
             .map_err(WriteError::Sqlite)?;
         let mut result = HashMap::new();
         for e in rows {
-            let id = e._row.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            let id = e
+                ._row
+                .get("id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
             let s = if compact_rows {
                 e._row
             } else {
@@ -438,10 +439,7 @@ impl SessionDB {
         let mut stmt = conn.prepare(sql).map_err(WriteError::Sqlite)?;
         let rows = stmt
             .query_map(
-                rusqlite::params![
-                    crate::skill::SKILL_SCAFFOLD_SQL_LIKE,
-                    limit
-                ],
+                rusqlite::params![crate::skill::SKILL_SCAFFOLD_SQL_LIKE, limit],
                 row_to_value,
             )
             .map_err(WriteError::Sqlite)?
@@ -527,7 +525,10 @@ impl SessionDB {
             })
             .collect();
         base_obj.insert("segments".to_string(), Value::Array(segments));
-        base_obj.insert("lineage_session_ids".to_string(), Value::Array(lineage_session_ids));
+        base_obj.insert(
+            "lineage_session_ids".to_string(),
+            Value::Array(lineage_session_ids),
+        );
         base_obj.insert("message_count".to_string(), json!(total_messages));
         base_obj.insert("messages".to_string(), Value::Array(all_messages));
         Ok(Some(base))
@@ -547,7 +548,9 @@ impl SessionDB {
                 .to_string();
             let mut s = session.clone();
             let messages = self.get_messages_dicts(&sid, false, None, 0)?;
-            s.as_object_mut().unwrap().insert("messages".to_string(), Value::Array(messages));
+            s.as_object_mut()
+                .unwrap()
+                .insert("messages".to_string(), Value::Array(messages));
             results.push(s);
         }
         Ok(results)
@@ -712,13 +715,32 @@ impl SessionDB {
         let mut total_bytes = 0usize;
 
         let session_text_fields = [
-            "source", "user_id", "model", "system_prompt", "end_reason", "cwd",
-            "git_branch", "git_repo_root", "billing_provider", "billing_base_url",
-            "billing_mode", "cost_status", "cost_source", "pricing_version", "title",
+            "source",
+            "user_id",
+            "model",
+            "system_prompt",
+            "end_reason",
+            "cwd",
+            "git_branch",
+            "git_repo_root",
+            "billing_provider",
+            "billing_base_url",
+            "billing_mode",
+            "cost_status",
+            "cost_source",
+            "pricing_version",
+            "title",
         ];
         let message_text_fields = [
-            "role", "tool_call_id", "tool_name", "effect_disposition", "finish_reason",
-            "reasoning", "reasoning_content", "platform_message_id", "message_id",
+            "role",
+            "tool_call_id",
+            "tool_name",
+            "effect_disposition",
+            "finish_reason",
+            "reasoning",
+            "reasoning_content",
+            "platform_message_id",
+            "message_id",
         ];
 
         for (index, raw) in sessions.iter().enumerate() {
@@ -741,7 +763,10 @@ impl SessionDB {
                 errors.push(import_error(index, &session_id, "duplicate session id"));
                 continue;
             }
-            let messages = raw_obj.get("messages").cloned().unwrap_or_else(|| json!([]));
+            let messages = raw_obj
+                .get("messages")
+                .cloned()
+                .unwrap_or_else(|| json!([]));
             let Some(msg_arr) = messages.as_array() else {
                 errors.push(import_error(index, &session_id, "messages must be a list"));
                 continue;
@@ -765,9 +790,7 @@ impl SessionDB {
 
             // session_bytes = len(json.dumps(raw, ensure_ascii=False,
             // separators=(",", ":")).encode("utf-8")) — compact framing.
-            let session_bytes = serde_json::to_string(raw)
-                .map(|s| s.len())
-                .unwrap_or(0);
+            let session_bytes = serde_json::to_string(raw).map(|s| s.len()).unwrap_or(0);
             if session_bytes > IMPORT_MAX_SESSION_BYTES {
                 errors.push(import_error(
                     index,
@@ -813,10 +836,19 @@ impl SessionDB {
                 .collect::<Result<Vec<_>, _>>();
             let session_clean_result = match (model_config_res, parent_res, field_res) {
                 (Ok(mc), Ok(parent), Ok(fields)) => {
-                    clean_obj.insert("model_config".to_string(), mc.map(Value::String).unwrap_or(Value::Null));
-                    clean_obj.insert("parent_session_id".to_string(), parent.map(Value::String).unwrap_or(Value::Null));
+                    clean_obj.insert(
+                        "model_config".to_string(),
+                        mc.map(Value::String).unwrap_or(Value::Null),
+                    );
+                    clean_obj.insert(
+                        "parent_session_id".to_string(),
+                        parent.map(Value::String).unwrap_or(Value::Null),
+                    );
                     for (field, v) in fields {
-                        clean_obj.insert(field.to_string(), v.map(Value::String).unwrap_or(Value::Null));
+                        clean_obj.insert(
+                            field.to_string(),
+                            v.map(Value::String).unwrap_or(Value::Null),
+                        );
                     }
                     Ok(())
                 }
@@ -852,7 +884,10 @@ impl SessionDB {
                             .unwrap_or(Ok(None));
                         match r {
                             Ok(v) => {
-                                mo.insert(field.to_string(), v.map(Value::String).unwrap_or(Value::Null));
+                                mo.insert(
+                                    field.to_string(),
+                                    v.map(Value::String).unwrap_or(Value::Null),
+                                );
                             }
                             Err(e) => return Err(e),
                         }
@@ -939,7 +974,11 @@ impl SessionDB {
                 }
 
                 let started_at = float_or_none(raw_obj.get("started_at")).unwrap_or_else(now);
-                let archived = if truthy_value(raw_obj.get("archived")) { 1 } else { 0 };
+                let archived = if truthy_value(raw_obj.get("archived")) {
+                    1
+                } else {
+                    0
+                };
                 let system_prompt_hash =
                     schema::store_system_prompt(conn, value_text(raw_obj.get("system_prompt")))?;
 
@@ -1024,7 +1063,8 @@ impl SessionDB {
                 imported_ids.push(session_id);
             }
 
-            let mut parent_by_child: HashMap<String, String> = parent_updates.iter().cloned().collect();
+            let mut parent_by_child: HashMap<String, String> =
+                parent_updates.iter().cloned().collect();
 
             fn would_create_cycle(
                 conn: &Connection,
@@ -1069,7 +1109,9 @@ impl SessionDB {
                         |r| r.get(0),
                     )
                     .optional()?;
-                if parent_exists.is_some() && !would_create_cycle(conn, session_id, parent_id, &parent_by_child)? {
+                if parent_exists.is_some()
+                    && !would_create_cycle(conn, session_id, parent_id, &parent_by_child)?
+                {
                     conn.execute(
                         "UPDATE sessions SET parent_session_id = ? WHERE id = ?",
                         rusqlite::params![parent_id, session_id],
@@ -1121,9 +1163,9 @@ fn import_json_object_or_none(value: Value, field: &str) -> Result<Option<String
             Ok(_) => Err(format!("{} must be a JSON object", field)),
             Err(_) => Err(format!("{} must be valid JSON", field)),
         },
-        Value::Object(_) => serde_json::to_string(&value).map(Some).map_err(|_| {
-            format!("{} must be JSON serializable", field)
-        }),
+        Value::Object(_) => serde_json::to_string(&value)
+            .map(Some)
+            .map_err(|_| format!("{} must be JSON serializable", field)),
         _ => Err(format!("{} must be a JSON object", field)),
     }
 }
@@ -1149,11 +1191,12 @@ fn import_int_or_none(value: Value, field: &str) -> Result<Option<i64>, String> 
 }
 
 fn int_or_default(value: Option<&Value>, default: i64) -> i64 {
-    value.and_then(|v| match v {
-        Value::Number(n) => n.as_i64(),
-        _ => None,
-    })
-    .unwrap_or(default)
+    value
+        .and_then(|v| match v {
+            Value::Number(n) => n.as_i64(),
+            _ => None,
+        })
+        .unwrap_or(default)
 }
 
 fn truthy_value(value: Option<&Value>) -> bool {
@@ -1218,15 +1261,15 @@ impl MessageInput {
 /// `_cwd_prefix_clause`: exact cwd match plus LIKE prefixes for subpaths.
 fn cwd_prefix_clause(cwd_prefix: &str) -> (String, Vec<String>) {
     let prefix = cwd_prefix.trim_end_matches(['/', '\\']).to_string();
-    let prefix = if prefix.is_empty() { cwd_prefix.to_string() } else { prefix };
+    let prefix = if prefix.is_empty() {
+        cwd_prefix.to_string()
+    } else {
+        prefix
+    };
     let esc = common::escape_like(&prefix);
     (
         "(s.cwd = ? OR s.cwd LIKE ? ESCAPE '\\' OR s.cwd LIKE ? ESCAPE '\\')".to_string(),
-        vec![
-            prefix,
-            format!("{}/%", esc),
-            format!("{}\\%%", esc),
-        ],
+        vec![prefix, format!("{}/%", esc), format!("{}\\%%", esc)],
     )
 }
 
@@ -1234,7 +1277,11 @@ fn cwd_prefix_clause(cwd_prefix: &str) -> (String, Vec<String>) {
 /// rows that predate per-session git metadata.
 fn workspace_key_clause(key: &str) -> (String, Vec<String>) {
     let prefix = key.trim_end_matches(['/', '\\']).to_string();
-    let prefix = if prefix.is_empty() { key.to_string() } else { prefix };
+    let prefix = if prefix.is_empty() {
+        key.to_string()
+    } else {
+        prefix
+    };
     let (cwd_clause, cwd_params) = cwd_prefix_clause(&prefix);
     let mut params = vec![prefix.clone()];
     params.extend(cwd_params);
