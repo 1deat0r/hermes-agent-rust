@@ -330,12 +330,13 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   golden upstream/golden_redact.json byte-equality; corpus caught one
   real bug (_ENV_ASSIGN_RE must not be IGNORECASE). Workspace tests 189
   green; clippy clean. Evidence: `cargo test --workspace` (unit).
-  REMAINING state subsystem: compression locks (try_acquire/release/
-  refresh), token writer (queue_token_counts/flush), telegram topics,
-  handoffs, prune/archive, replace_messages/rewind, surface read helpers
-  (list_sessions_rich, list_gateway_sessions, counts) then
-  hermes_state_portability + hermes_state_search (FTS rebuild engine,
-  search_messages).
+  REMAINING state subsystem (post-2026-08-22 1g–1j): token writer
+  (queue_token_counts/flush), telegram topics, handoffs, prune/archive,
+  surface read helpers (list_sessions_rich, list_gateway_sessions,
+  counts, search_sessions_by_id — the latter two depend on
+  list_sessions_rich), then the operator-flagged P2/P3 deferreds
+  (apply_ipv4_preference, partial_update_hint, managed-node bootstrap,
+  agent_browser_runnable, resolve_reasoning_config).
 - 2026-08-22 (session 1f): SessionDB CRUD surface landed — sessions,
   messages, titles. create_session (ON CONFLICT COALESCE enrichment,
   parent cwd/git backfill, compression-fork origin inheritance),
