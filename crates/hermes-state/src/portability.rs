@@ -35,7 +35,7 @@ static COMPACT_COLS: OnceLock<String> = OnceLock::new();
 /// Column list for `compact_rows`: every sessions column except prompt
 /// storage internals, aliased with the `s.` prefix.
 // PARITY: hermes_state_portability.py SessionPortabilityMixin._compact_session_cols
-fn compact_session_cols() -> String {
+pub(crate) fn compact_session_cols() -> String {
     COMPACT_COLS
         .get_or_init(|| {
             let declared = schema::parse_schema_columns(crate::common::SCHEMA_SQL);

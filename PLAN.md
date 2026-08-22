@@ -214,7 +214,7 @@ Legend: ✅ done · 🟡 partial · ❌ missing
 | FTS DDL branch (legacy-vs-v23), trigger repair/rebuild, UPDATE OF migration, CJK quarantine | ✅ | schema + state impl |
 | _parse_schema_columns (in-memory SQLite parse) | ✅ | schema::parse_schema_columns |
 
-### hermes_state (upstream: hermes_state.py, 9,996 LOC) — 🟡 partial (foundation)
+### hermes_state (upstream: hermes_state.py, 9,996 LOC) — 🟡 partial (foundation complete; remaining non-foundation surfaces documented in matrix)
 | Function/surface | Status | Rust home |
 |---|---|---|
 | SessionDB open (writable/RO), zeroed-DB quarantine, test-isolation guard, lock-patience open | ✅ | state::{open, open_read_only, open_writable} |
@@ -238,7 +238,7 @@ Legend: ✅ done · 🟡 partial · ❌ missing
 | latest_message_row_id / latest_user_message_row_id / get_message_role | ✅ | crud::{latest_message_row_id, latest_user_message_row_id, get_message_role} |
 | _check_transcript_write_guards + compression-busy short-wait in _execute_write | ✅ | crud::check_transcript_write_guards + state::execute_write |
 | portability mixin (export/import, rich rows) | ✅ | portability |
-| search mixin (search_messages, FTS rebuild engine, anchored views) | ✅ | search (search_sessions_by_id deferred) |
+| search mixin (search_messages, FTS rebuild engine, anchored views) | ✅ | search (search_sessions_by_id landed with surface read helpers) |
 | compression locks (try_acquire/release/refresh, holder-dead reclaim, publish_compression_child, find_live_compression_child, reopen_orphaned_compression_session) | ✅ | locks ((+ _non_continuation_child_filter_sql in common)) |
 | async token accounting (queue/flush/stop writer, update_token_counts, ensure_session, record_auxiliary_usage, per-model usage upsert) | ✅ | token (dedicated writer connection — documented divergence) |
 | telegram topics (migration v1→v2, enable/disable/is_enabled, bind/get/list/delete/is_linked, list_unlinked with preview) | ✅ | topics |
@@ -248,6 +248,15 @@ Legend: ✅ done · 🟡 partial · ❌ missing
 | portability mixin (rich rows, distinct cwds, cron runs, skill-scaffolded, export/import) | ✅ | portability (incl. get_compression_lineage + search_sessions deps) |
 | search mixin (search_messages, FTS rebuild engine, anchored views) | ✅ | search (search_sessions_by_id deferred — needs list_sessions_rich) |
 
+
+| surface read helpers: list_sessions_rich (preview/last-active, session_key, id/search needles, compact_rows, pinned back-fill, read state), list_gateway_sessions (newest per session_key) | ✅ | rich |
+| set_session_read / session_unread (lineage watermark, NULL=read, returns bool) | ✅ | rich::{set_session_read, session_unread} |
+| set_session_pinned (lineage pin, durable keep flag) | ✅ | rich::set_session_pinned |
+| get_compression_tip (chain walk, branch/delegate/tool exclusion, 100-bound) | ✅ | rich::get_compression_tip |
+| touch_session_activity / clear_session_activity_labels / get_session_activity (+ agent/session_activity.py helpers) | ✅ | hermes-state::activity + rich |
+| session_count / session_count_ge / session_count_by_source / count_empty_sessions | ✅ | rich |
+| search_sessions_by_id (exact/prefix/substring ranking via id_query) | ✅ | rich::search_sessions_by_id |
+| REMAINING beyond foundation (documented, not yet ported): gateway routing CRUD (record_gateway_session_peer, save/replace/load/delete entries, set_expiry_finalized, find_session_by_origin, find_latest_gateway_session_for_peer), compression cooldown + fallback-streak counters, session meta/model surfaces (update_session_meta/system_prompt/model, patch_session_model_config, get_session_model_config_value, update_session_runtime_lock, set_session_yolo/session_yolo_enabled, update_session_billing_route), finalize_orphaned_compression_sessions, message reactions + display-kind + api_content surfaces, conversation surface (resolve_resume_session_id, get_messages_as_conversation, get_resume_conversations, get_ancestor_display_prefix, get_conversation_root, restore_rewound), delete surface (clear_messages, delete_session(_if_empty), delete_sessions, delete_empty_sessions, get_session_delete_targets), maintenance (logical_size_bytes, vacuum, maybe_auto_prune_and_vacuum, maybe_auto_archive, message_count, has_platform_message_id, purge_stale_tool_call_markers, retag_kanban_worker_sessions) | ❌ | — (scheduled with P2/P3 consumers) |
 ### agent/redact (upstream: agent/redact.py, 1,197 LOC) — ✅ complete (homed in hermes-logging)
 | Function/surface | Status | Rust home |
 |---|---|---|
@@ -280,12 +289,44 @@ oracle tests). Upstream oracle files currently mirrored:
 - `tests/test_hermes_state.py` TestConnectionLifecycle/TestSchemaInit subset → `crates/hermes-state/tests/parity_state_lifecycle.rs`
 - `tests/test_hermes_state.py` SessionLifecycle/MessageStorage/TimestampPreservation/Title families + `tests/hermes_state/test_append_messages_batch.py` → `crates/hermes-state/tests/parity_state_crud.rs`
 - `agent/redact.py` → `crates/hermes-logging/src/redact.rs` (golden `upstream/golden_redact.json`)
+- `tests/hermes_state/test_session_read_state.py` + TestCounts / TestExcludeSources / TestCompressionChainProjection / TestSessionPinAndStaleArchive / TestSessionIdSearch / gateway-listing subset → `crates/hermes-state/tests/parity_state_rich.rs`
+- `agent/session_activity.py` → `crates/hermes-state/src/activity.rs` (bound/normalize/build helpers; Python `round(x,1)` tie-to-even rounding)
 
 Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 + the exact command, e.g. `cargo test -p hermes-time (unit)`.
 
 ## 7. Session log
 
+- 2026-08-22 (session 1o): Surface read helpers landed — rich.rs + activity.rs.
+  list_sessions_rich (preview/last-active, source/sources/exclude_sources,
+  session_key, cwd_prefix, min_message_count, include/archived_only,
+  order_by_last_active CTE with id/search needles over the forward
+  compression chain, compact_rows projection, include_pinned back-fill
+  before projection, compression-root→tip projection with 13 merge keys +
+  _lineage_root_id, derived unread), list_gateway_sessions (newest row per
+  session_key, platform + active_only, activity-heartbeat last_active),
+  set_session_read/session_unread (lineage watermark, NULL=read),
+  set_session_pinned (lineage pin), get_compression_tip (chain walk,
+  branch/delegate/tool exclusion, 100-bound), session_count /
+  session_count_ge / session_count_by_source / count_empty_sessions,
+  search_sessions_by_id (id_query-bounded candidates, exact/prefix/
+  substring ranking), touch_session_activity / clear_session_activity_
+  labels / get_session_activity (activity.rs mirrors agent/session_activity
+  .py: ActivityProvenance, bound/normalize/build + Python round(x,1)
+  tie-to-even). Fixes the mid-edit rich.rs that didn't compile (cloneable P
+  param enum replaces Box<dyn ToSql> doubling). DIVERGENCE (documented in
+  rich.rs): get_session_activity reads the three activity columns directly
+  instead of via get_session dict; set_session_read uses state::now()
+  (time.time equivalent). Oracle: test_session_read_state.py (6), TestCounts
+  (2 + grouping), gateway heartbeat + newest-per-key, session_key filter +
+  search-scoped projection, compression-chain walk + tip projection +
+  two-chain batching, exclude-tool, pin roundtrip + limit-window back-fill,
+  id search exact/prefix; 24 parity tests in parity_state_rich.rs; workspace
+  348 tests green; clippy clean. Evidence: `cargo test --workspace` (unit).
+  REMAINING hermes_state (beyond foundation, P2/P3 consumers): gateway
+  routing CRUD, compression cooldown/streak counters, session
+  meta/model surfaces, finalize_orphaned_compression_sessions, message
+  reactions, conversation surface, delete surface, maintenance helpers.
 - 2026-08-22 (session 1n): Space reclamation landed — prune.rs.
   set_session_archived (recursive lineage CTE archives the whole compression
   chain as a unit, tips+roots), _prune_filter_where full filter surface
@@ -403,12 +444,13 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   golden upstream/golden_redact.json byte-equality; corpus caught one
   real bug (_ENV_ASSIGN_RE must not be IGNORECASE). Workspace tests 189
   green; clippy clean. Evidence: `cargo test --workspace` (unit).
-  REMAINING state subsystem (post-2026-08-22 1n): surface read
-  helpers (list_sessions_rich,
-  list_gateway_sessions, counts, search_sessions_by_id — the latter two
-  depend on list_sessions_rich), then the operator-flagged P2/P3 deferreds
-  (apply_ipv4_preference, partial_update_hint, managed-node bootstrap,
-  agent_browser_runnable, resolve_reasoning_config).
+  REMAINING state subsystem (post-2026-08-22 1n): surface read helpers
+  landed in session 1o (rich.rs + activity.rs). Beyond foundation, the
+  operator-flagged P2/P3 deferreds re main: (apply_ipv4_preference,
+  partial_update_hint, managed-node bootstrap, agent_browser_runnable,
+  resolve_reasoning_config), plus the non-foundation hermes_state surfaces
+  listed in the parity matrix (gateway routing, reactions, conversations,
+  delete surface, maintenance, meta/model, cooldown counters).
 - 2026-08-22 (session 1f): SessionDB CRUD surface landed — sessions,
   messages, titles. create_session (ON CONFLICT COALESCE enrichment,
   parent cwd/git backfill, compression-fork origin inheritance),

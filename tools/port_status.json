@@ -10,5 +10,20 @@
   },
   "utils": {
     "status": "done"
+  },
+  "hermes_state": {
+    "status": "partial"
+  },
+  "hermes_state_search": {
+    "status": "partial"
+  },
+  "hermes_state_schema": {
+    "status": "partial"
+  },
+  "hermes_state_portability": {
+    "status": "partial"
+  },
+  "hermes_state_common": {
+    "status": "partial"
   }
 }

@@ -1,6 +1,6 @@
 {
  "generated_from": "/home/mustbearn/Projects/Research/hermes-agent-repo",
- "generated_at": "2026-08-22T13:15:18",
+ "generated_at": "2026-08-22T15:01:27",
  "summary": {
   "modules": 3882,
   "total_lines": 1510733,
@@ -8,13 +8,13 @@
   "production_lines": 843792,
   "status_counts": {
    "done": 3,
-   "partial": 1,
-   "missing": 3878
+   "partial": 6,
+   "missing": 3873
   },
   "prod_status_counts": {
    "done": 3,
-   "partial": 1,
-   "missing": 1099
+   "partial": 6,
+   "missing": 1094
   },
   "packages": {
    "gateway": {
@@ -70,7 +70,8 @@
     "lines": 9996,
     "modules": 1,
     "status": {
-     "missing": 1
+     "missing": 0,
+     "partial": 1
     }
    },
    "run_agent": {
@@ -161,7 +162,8 @@
     "lines": 2305,
     "modules": 1,
     "status": {
-     "missing": 1
+     "missing": 0,
+     "partial": 1
     }
    },
    "tests.cron": {
@@ -281,7 +283,8 @@
     "lines": 1126,
     "modules": 1,
     "status": {
-     "missing": 1
+     "missing": 0,
+     "partial": 1
     }
    },
    "scripts.ci": {
@@ -394,7 +397,8 @@
     "lines": 714,
     "modules": 1,
     "status": {
-     "missing": 1
+     "missing": 0,
+     "partial": 1
     }
    },
    "skills.research": {
@@ -451,7 +455,8 @@
     "lines": 614,
     "modules": 1,
     "status": {
-     "missing": 1
+     "missing": 0,
+     "partial": 1
     }
    },
    "tests.test_minimax_oauth": {
@@ -2037,7 +2042,7 @@
     "hermes_state_portability",
     "hermes_state_search"
    ],
-   "port_status": "missing",
+   "port_status": "partial",
    "is_test": false
   },
   "hermes_cli.auth": {
@@ -2673,7 +2678,7 @@
   "hermes_state_search": {
    "lines": 2305,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "partial",
    "is_test": false
   },
   "hermes_cli.runtime_provider": {
@@ -3771,7 +3776,7 @@
     "hermes_constants",
     "hermes_state_common"
    ],
-   "port_status": "missing",
+   "port_status": "partial",
    "is_test": false
   },
   "hermes_cli.service_manager": {
@@ -4982,7 +4987,7 @@
   "hermes_state_portability": {
    "lines": 714,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "partial",
    "is_test": false
   },
   "tests.tools.test_wake_word": {
@@ -5560,7 +5565,7 @@
   "hermes_state_common": {
    "lines": 614,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "partial",
    "is_test": false
   },
   "tests.hermes_cli.test_auth_codex_provider": {
