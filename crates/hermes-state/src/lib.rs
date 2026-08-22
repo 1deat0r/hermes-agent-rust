@@ -13,6 +13,7 @@ pub mod locks;
 pub mod meta;
 pub mod portability;
 pub mod prune;
+pub mod reactions;
 pub mod rewrite;
 pub mod routing;
 pub mod rich;

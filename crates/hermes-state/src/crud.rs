@@ -129,7 +129,7 @@ pub struct StoredMessage {
 
 pub(crate) const CONTENT_JSON_PREFIX: &str = "\u{0}json:";
 
-fn encode_content(content: Option<&Value>) -> Option<rusqlite::types::Value> {
+pub(crate) fn encode_content(content: Option<&Value>) -> Option<rusqlite::types::Value> {
     // Returns the sqlite-bindable value: strings pass through (Rust strings
     // are already surrogate-free — the Python surrogate scrub is a no-op),
     // numbers pass through, structured values become the sentinel JSON form.
@@ -177,7 +177,7 @@ pub(crate) fn decode_content(raw: Option<rusqlite::types::Value>) -> Option<Valu
     }
 }
 
-fn encode_display_metadata(display_metadata: Option<&Value>) -> Option<String> {
+pub(crate) fn encode_display_metadata(display_metadata: Option<&Value>) -> Option<String> {
     match display_metadata {
         None | Some(Value::Null) => None,
         Some(Value::String(s)) => match serde_json::from_str::<Value>(s) {
@@ -189,7 +189,7 @@ fn encode_display_metadata(display_metadata: Option<&Value>) -> Option<String> {
     }
 }
 
-fn decode_display_metadata(raw: Option<&str>) -> Option<Value> {
+pub(crate) fn decode_display_metadata(raw: Option<&str>) -> Option<Value> {
     match raw {
         None => None,
         Some(s) => {
@@ -230,7 +230,7 @@ pub(crate) fn truthy(value: Option<&Value>) -> bool {
     }
 }
 
-fn scrub_surrogates(s: Option<String>) -> Option<String> {
+pub(crate) fn scrub_surrogates(s: Option<String>) -> Option<String> {
     // Upstream replaces lone UTF-16 surrogates with U+FFFD before binding.
     // Rust strings are always valid UTF-8, so this is a no-op; kept as a
     // named seam for parity-reading.
