@@ -241,7 +241,7 @@ Legend: ✅ done · 🟡 partial · ❌ missing
 | search mixin (search_messages, FTS rebuild engine, anchored views) | ✅ | search (search_sessions_by_id deferred) |
 | compression locks (try_acquire/release/refresh, holder-dead reclaim, publish_compression_child, find_live_compression_child, reopen_orphaned_compression_session) | ✅ | locks ((+ _non_continuation_child_filter_sql in common)) |
 | async token accounting (queue/flush/stop writer, update_token_counts, ensure_session, record_auxiliary_usage, per-model usage upsert) | ✅ | token (dedicated writer connection — documented divergence) |
-| telegram topics | ❌ next unit | — |
+| telegram topics (migration v1→v2, enable/disable/is_enabled, bind/get/list/delete/is_linked, list_unlinked with preview) | ✅ | topics |
 | handoffs | ❌ next | — |
 | prune/archive | ❌ next | — |
 | replace_messages (active_only) / has_archived_messages / archive_and_compact (+ _merge_model_config_json) / rewind_to_message | ✅ | rewrite |
@@ -286,6 +286,22 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 ## 7. Session log
 
+- 2026-08-22 (session 1l): Telegram DM topics landed — topics.rs.
+  apply_telegram_topic_migration (explicit opt-in only: mode + bindings
+  tables, unique/idx, v1→v2 FK rebuild gate pinned by state_meta version),
+  enable/disable/is_telegram_topic_mode_enabled (capability flag ints),
+  bind_telegram_topic (idempotent same-topic upsert; ValueError on
+  re-link), get/list/get_by_session topic bindings, delete_telegram_topic_
+  binding (rowcount; last-binding prune flips mode.enabled=0 in the same
+  txn; missing tables are silent no-ops — #31501 contract),
+  is_telegram_session_linked_to_topic, list_unlinked_telegram_sessions_
+  for_user (preview shaping via common::_preview_raw_select/_shape_preview,
+  last-active, absent-tables fallback without the NOT EXISTS clause; rows
+  shaped via fold_session_dict). Oracle: test_hermes_state.py topic
+  roundtrip + tests/gateway/test_telegram_prune_stale_topic_binding_31501
+  (SessionDB subset) + v1→v2 migration gate; 10 parity tests in
+  parity_state_topics.rs; workspace 301 tests green; clippy clean. Evidence:
+  `cargo test --workspace` (unit).
 - 2026-08-22 (session 1k): Async token accounting landed — token.rs.
   Background writer queue (dedicated writer thread + condvar): queue_token_
   counts (append+notify, dead-thread respawn, sync fallback after close),
@@ -360,8 +376,8 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   golden upstream/golden_redact.json byte-equality; corpus caught one
   real bug (_ENV_ASSIGN_RE must not be IGNORECASE). Workspace tests 189
   green; clippy clean. Evidence: `cargo test --workspace` (unit).
-  REMAINING state subsystem (post-2026-08-22 1k): telegram topics,
-  handoffs, prune/archive, surface read helpers (list_sessions_rich,
+  REMAINING state subsystem (post-2026-08-22 1l): handoffs,
+  prune/archive, surface read helpers (list_sessions_rich,
   list_gateway_sessions, counts, search_sessions_by_id — the latter two
   depend on list_sessions_rich), then the operator-flagged P2/P3 deferreds
   (apply_ipv4_preference, partial_update_hint, managed-node bootstrap,

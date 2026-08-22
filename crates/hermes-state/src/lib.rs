@@ -14,4 +14,5 @@ pub mod search;
 pub mod skill;
 pub mod state;
 pub mod token;
+pub mod topics;
 pub mod wal;
