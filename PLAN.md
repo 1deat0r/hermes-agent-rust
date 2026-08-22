@@ -242,6 +242,7 @@ Legend: ✅ done · 🟡 partial · ❌ missing
 | compression locks (try_acquire/release/refresh, holder-dead reclaim, publish_compression_child, find_live_compression_child, reopen_orphaned_compression_session) | ✅ | locks ((+ _non_continuation_child_filter_sql in common)) |
 | token writer / telegram topics / handoffs / prune/archive | ❌ next units | — |
 | replace_messages (active_only) / has_archived_messages / archive_and_compact (+ _merge_model_config_json) / rewind_to_message | ✅ | rewrite |
+| portability mixin (rich rows, distinct cwds, cron runs, skill-scaffolded, export/import) | ✅ | portability (incl. get_compression_lineage + search_sessions deps) |
 
 ### agent/redact (upstream: agent/redact.py, 1,197 LOC) — ✅ complete (homed in hermes-logging)
 | Function/surface | Status | Rust home |
@@ -391,3 +392,26 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   siblings.py, gateway rewind DB contract; 13 parity tests; workspace
   246 tests green; clippy clean. Evidence: `cargo test --workspace`
   (unit).
+
+- 2026-08-22 (session 1i): Portability mixin landed — portability.rs.
+  _compact_session_cols (schema-derived, cached, excludes system_prompt*),
+  distinct_session_cwds, list_cron_job_runs (id prefix range scan, newest
+  first, preview+last_active enriched), _get_session_rich_rows_batch
+  (900-chunked IN; single-row + public wrappers; compact_rows projection),
+  list_skill_scaffolded_sessions, get_first_assistant_text,
+  export_session / export_session_lineage / export_all (+ get_compression_
+  lineage + _is_explicit/_is_compression_child_row), search_sessions
+  (+ workspace-key/cwd-prefix clauses), import_sessions (full validation:
+  size limits char→byte-str exact, text-field coercions, reasoning JSON
+  round-trip, parent wiring with cycle detection that pops the broken
+  edge, atomic single-txn import; shared-prompt dedup). New crud helpers:
+  get_session_dict (full-row JSON dict), get_messages_dicts (decoded rows,
+  0/1 ints), CONTENT_JSON_PREFIX pub(crate). K NOWN: pre-existing
+  hermes-constants flake (paths::display_shorthand_under_home /
+  home::profile_fallback_no_warning_for_default race their own cached
+  home/env statics under full-workspace parallelism; unrelated to state
+  port — scheduled-outside scope). Oracle: TestListCronJobRuns,
+  TestCompactRows rich-row shapes, TestDeleteAndExport import guards,
+  test_session_system_prompt_dedup import dedup, lineage walk
+  (get_compression_lineage hand-mirror); 13 parity tests; workspace 259
+  tests green; clippy clean. Evidence: `cargo test --workspace` (unit).

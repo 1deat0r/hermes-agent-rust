@@ -126,7 +126,7 @@ pub struct StoredMessage {
 
 // ── content JSON framing (mirrors _encode_content/_decode_content) ─────────
 
-const CONTENT_JSON_PREFIX: &str = "\u{0}json:";
+pub(crate) const CONTENT_JSON_PREFIX: &str = "\u{0}json:";
 
 fn encode_content(content: Option<&Value>) -> Option<rusqlite::types::Value> {
     // Returns the sqlite-bindable value: strings pass through (Rust strings
@@ -1163,5 +1163,70 @@ impl SessionDB {
             .optional()
             .map_err(WriteError::Sqlite)?;
         Ok(row)
+    }
+}
+
+// ── dict-shaped rows (export/portability) ───────────────────────────────────
+
+/// Full sessions row as a JSON object (all columns; `_system_prompt_resolved`
+/// folded into `system_prompt`), mirroring `_session_row_dict`.
+pub(crate) fn fold_session_dict(mut v: serde_json::Value) -> serde_json::Value {
+    if let Some(resolved) = v.get("_system_prompt_resolved").cloned() {
+        v.as_object_mut().unwrap().remove("_system_prompt_resolved");
+        if let Some(obj) = v.as_object_mut() {
+            if obj.contains_key("system_prompt") {
+                obj.insert("system_prompt".to_string(), resolved);
+            }
+        }
+    }
+    v
+}
+
+impl SessionDB {
+    /// Full session row as a JSON object with the system prompt resolved —
+    /// the exact `get_session` dict shape (`_session_row_dict`).
+    pub fn get_session_dict(&self, session_id: &str) -> Result<Option<serde_json::Value>, WriteError> {
+        let sql = format!("{} WHERE s.id = ?", SESSION_SELECT);
+        let conn = self.writer_conn();
+        let row = conn
+            .query_row(&sql, rusqlite::params![session_id], super::portability::row_to_value)
+            .optional()
+            .map_err(WriteError::Sqlite)?;
+        Ok(row.map(fold_session_dict))
+    }
+
+    /// Messages rows as JSON objects exactly like `get_messages` returns
+    /// them upstream (decoded content/tool_calls/display_metadata; raw
+    /// 0/1 ints for observed/active/compacted), used by export/portability.
+    /// PARITY: hermes_state.py SessionDB.get_messages @ b9aa928 (7349–7401)
+    pub fn get_messages_dicts(
+        &self,
+        session_id: &str,
+        include_inactive: bool,
+        limit: Option<i64>,
+        offset: i64,
+    ) -> Result<Vec<serde_json::Value>, WriteError> {
+        let active_clause = if include_inactive { "" } else { " AND active = 1" };
+        let mut sql = format!(
+            "SELECT * FROM messages WHERE session_id = ?{} ORDER BY id",
+            active_clause
+        );
+        let mut params: Vec<Box<dyn rusqlite::ToSql>> = vec![Box::new(session_id.to_string())];
+        if limit.is_some() || offset != 0 {
+            sql += " LIMIT ? OFFSET ?";
+            params.push(Box::new(limit.unwrap_or(-1)));
+            params.push(Box::new(offset));
+        }
+        let conn = self.writer_conn();
+        let mut stmt = conn.prepare(&sql).map_err(WriteError::Sqlite)?;
+        let rows = stmt
+            .query_map(
+                rusqlite::params_from_iter(params.iter().map(|x| x as &dyn rusqlite::ToSql)),
+                super::portability::message_row_to_value,
+            )
+            .map_err(WriteError::Sqlite)?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(WriteError::Sqlite)?;
+        Ok(rows)
     }
 }
