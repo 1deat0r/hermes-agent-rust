@@ -12,6 +12,7 @@ pub mod locks;
 pub mod portability;
 pub mod prune;
 pub mod rewrite;
+pub mod routing;
 pub mod rich;
 pub mod schema;
 pub mod search;

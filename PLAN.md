@@ -256,7 +256,8 @@ Legend: ✅ done · 🟡 partial · ❌ missing
 | touch_session_activity / clear_session_activity_labels / get_session_activity (+ agent/session_activity.py helpers) | ✅ | hermes-state::activity + rich |
 | session_count / session_count_ge / session_count_by_source / count_empty_sessions | ✅ | rich |
 | search_sessions_by_id (exact/prefix/substring ranking via id_query) | ✅ | rich::search_sessions_by_id |
-| REMAINING beyond foundation (documented, not yet ported): gateway routing CRUD (record_gateway_session_peer, save/replace/load/delete entries, set_expiry_finalized, find_session_by_origin, find_latest_gateway_session_for_peer), compression cooldown + fallback-streak counters, session meta/model surfaces (update_session_meta/system_prompt/model, patch_session_model_config, get_session_model_config_value, update_session_runtime_lock, set_session_yolo/session_yolo_enabled, update_session_billing_route), finalize_orphaned_compression_sessions, message reactions + display-kind + api_content surfaces, conversation surface (resolve_resume_session_id, get_messages_as_conversation, get_resume_conversations, get_ancestor_display_prefix, get_conversation_root, restore_rewound), delete surface (clear_messages, delete_session(_if_empty), delete_sessions, delete_empty_sessions, get_session_delete_targets), maintenance (logical_size_bytes, vacuum, maybe_auto_prune_and_vacuum, maybe_auto_archive, message_count, has_platform_message_id, purge_stale_tool_call_markers, retag_kanban_worker_sessions) | ❌ | — (scheduled with P2/P3 consumers) |
+| gateway routing CRUD: record_gateway_session_peer (peer metadata, COALESCE display_name/origin_json, compression-lineage option), set_expiry_finalized, save/replace/load/delete_gateway_routing_entries (scoped index), find_session_by_origin (exact-user wins, distinct-user contamination guard, thread filter), find_latest_gateway_session_for_peer (recoverable ends, peer-tuple fallback) | ✅ | routing |
+| REMAINING beyond foundation (documented, not yet ported): compression cooldown + fallback-streak counters, session meta/model surfaces (update_session_meta/system_prompt/model, patch_session_model_config, get_session_model_config_value, update_session_runtime_lock, set_session_yolo/session_yolo_enabled, update_session_billing_route), finalize_orphaned_compression_sessions, message reactions + display-kind + api_content surfaces, conversation surface (resolve_resume_session_id, get_messages_as_conversation, get_resume_conversations, get_ancestor_display_prefix, get_conversation_root, restore_rewound), delete surface (clear_messages, delete_session(_if_empty), delete_sessions, delete_empty_sessions, get_session_delete_targets), maintenance (logical_size_bytes, vacuum, maybe_auto_prune_and_vacuum, maybe_auto_archive, message_count, has_platform_message_id, purge_stale_tool_call_markers, retag_kanban_worker_sessions) | ❌ | — (scheduled with P2/P3 consumers) |
 ### agent/redact (upstream: agent/redact.py, 1,197 LOC) — ✅ complete (homed in hermes-logging)
 | Function/surface | Status | Rust home |
 |---|---|---|
@@ -297,6 +298,21 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 ## 7. Session log
 
+- 2026-08-22 (session 1p): Gateway routing surface landed — routing.rs.
+  record_gateway_session_peer (COALESCE display_name/origin_json, optional
+  compression-lineage CTE stamping the whole ancestor chain),
+  set_expiry_finalized, save_gateway_routing_entry (single-row UPSERT on
+  (scope, session_key), updated_at bump), replace_gateway_routing_entries
+  (atomic per-scope full rewrite), load_gateway_routing_entries,
+  delete_gateway_routing_entries, find_session_by_origin (live-only,
+  exact-user preferred, multi-user contamination guard, thread filter),
+  find_latest_gateway_session_for_peer (recoverable-ended rows only:
+  agent_close/ws_orphan_reap, message-count guard, peer-tuple fallback when
+  exact session_key missing). Oracle: test_gateway_session_peer_round_trip_
+  and_recovery + test_find_session_by_origin_matching_rules +
+  gateway SessionStore routing-index roundtrips; 6 parity tests in
+  parity_state_routing.rs; workspace 354 tests green; clippy clean.
+  Evidence: `cargo test --workspace` (unit).
 - 2026-08-22 (session 1o): Surface read helpers landed — rich.rs + activity.rs.
   list_sessions_rich (preview/last-active, source/sources/exclude_sources,
   session_key, cwd_prefix, min_message_count, include/archived_only,
