@@ -1259,7 +1259,7 @@ impl MessageInput {
 }
 
 /// `_cwd_prefix_clause`: exact cwd match plus LIKE prefixes for subpaths.
-fn cwd_prefix_clause(cwd_prefix: &str) -> (String, Vec<String>) {
+pub(crate) fn cwd_prefix_clause(cwd_prefix: &str) -> (String, Vec<String>) {
     let prefix = cwd_prefix.trim_end_matches(['/', '\\']).to_string();
     let prefix = if prefix.is_empty() {
         cwd_prefix.to_string()

@@ -9,6 +9,7 @@ pub mod crud;
 pub mod handoff;
 pub mod locks;
 pub mod portability;
+pub mod prune;
 pub mod rewrite;
 pub mod schema;
 pub mod search;

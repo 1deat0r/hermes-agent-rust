@@ -243,7 +243,7 @@ Legend: ✅ done · 🟡 partial · ❌ missing
 | async token accounting (queue/flush/stop writer, update_token_counts, ensure_session, record_auxiliary_usage, per-model usage upsert) | ✅ | token (dedicated writer connection — documented divergence) |
 | telegram topics (migration v1→v2, enable/disable/is_enabled, bind/get/list/delete/is_linked, list_unlinked with preview) | ✅ | topics |
 | handoffs (request/get/list_pending/claim/complete/fail, 500-char error truncation) | ✅ | handoff |
-| prune/archive | ❌ next | — |
+| prune/archive (set_session_archived lineage CTE, _prune_filter_where full surface, list_prune_candidates, archive_sessions, archive_stale_sessions, prune_sessions, prune_empty_ghost_sessions, on-disk file cleanup) | ✅ | prune |
 | replace_messages (active_only) / has_archived_messages / archive_and_compact (+ _merge_model_config_json) / rewind_to_message | ✅ | rewrite |
 | portability mixin (rich rows, distinct cwds, cron runs, skill-scaffolded, export/import) | ✅ | portability (incl. get_compression_lineage + search_sessions deps) |
 | search mixin (search_messages, FTS rebuild engine, anchored views) | ✅ | search (search_sessions_by_id deferred — needs list_sessions_rich) |
@@ -286,6 +286,23 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 ## 7. Session log
 
+- 2026-08-22 (session 1n): Space reclamation landed — prune.rs.
+  set_session_archived (recursive lineage CTE archives the whole compression
+  chain as a unit, tips+roots), _prune_filter_where full filter surface
+  (bounds, LIKE+escape_like literal `_`/`%`, provider case-insensitive,
+  cwd_prefix shared with portability, tri-state archived), list_prune_
+  candidates (dry-run rows oldest-first), archive_sessions (archived=False
+  default → idempotent, per-row lineage archive), archive_stale_sessions
+  (real-recentcy cutoff, pinned guard, lineage tips only), prune_sessions
+  (ended-only, orphan children, messages cascade, system-prompt GC, on-disk
+  file cleanup outside the txn), prune_empty_ghost_sessions (>24h empty tui
+  ghosts). SessionRow gained `archived` so get_session reports the flag;
+  _delete_unreferenced_system_prompts factored into crud and reused.
+  Oracle: TestPruneSessions + TestPruneSessionFilters +
+  tests/hermes_state/test_session_archiving.py (lineage flip subset;
+  list_sessions_rich projections deferred to the surface helpers unit);
+  14 parity tests in parity_state_prune.rs; workspace 321 tests green;
+  clippy clean. Evidence: `cargo test --workspace` (unit).
 - 2026-08-22 (session 1m): Cross-platform handoff state machine landed —
   handoff.rs. request_handoff (pending only from None/completed/failed),
   get_handoff_state (fail-open None), list_pending_handoffs (session dicts
@@ -386,8 +403,8 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   golden upstream/golden_redact.json byte-equality; corpus caught one
   real bug (_ENV_ASSIGN_RE must not be IGNORECASE). Workspace tests 189
   green; clippy clean. Evidence: `cargo test --workspace` (unit).
-  REMAINING state subsystem (post-2026-08-22 1m): prune/archive,
-  surface read helpers (list_sessions_rich,
+  REMAINING state subsystem (post-2026-08-22 1n): surface read
+  helpers (list_sessions_rich,
   list_gateway_sessions, counts, search_sessions_by_id — the latter two
   depend on list_sessions_rich), then the operator-flagged P2/P3 deferreds
   (apply_ipv4_preference, partial_update_hint, managed-node bootstrap,

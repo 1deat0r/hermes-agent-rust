@@ -94,6 +94,7 @@ pub struct SessionRow {
     pub git_repo_root: Option<String>,
     pub title: Option<String>,
     pub profile_name: Option<String>,
+    pub archived: bool,
 }
 
 /// A messages row as `get_messages` returns it (decoded).
@@ -267,6 +268,7 @@ pub(crate) fn session_row(row: &Row<'_>) -> rusqlite::Result<SessionRow> {
         git_repo_root: row.get("git_repo_root")?,
         title: row.get("title")?,
         profile_name: row.get("profile_name")?,
+        archived: row.get::<_, i64>("archived")? != 0,
     })
 }
 
@@ -280,6 +282,24 @@ fn make_session_row(db: &SessionDB, id: &str) -> rusqlite::Result<Option<Session
 }
 
 // ── sessions CRUD ───────────────────────────────────────────────────────────
+
+// ── helper: referenced system-prompt cleanup ────────────────────────────────
+
+/// Delete stored system prompts no session references anymore.
+///
+/// PARITY: hermes_state.py _delete_unreferenced_system_prompts @ b9aa928
+/// (2189–2196)
+pub(crate) fn delete_unreferenced_system_prompts(conn: &Connection) -> rusqlite::Result<()> {
+    conn.execute(
+        "DELETE FROM system_prompts \
+         WHERE NOT EXISTS (\
+             SELECT 1 FROM sessions \
+             WHERE sessions.system_prompt_hash = system_prompts.hash\
+         )",
+        [],
+    )?;
+    Ok(())
+}
 
 // ── session-row upsert (shared by create_session / token accounting) ────────
 
@@ -352,13 +372,7 @@ pub(crate) fn insert_session_row_on(
                 ],
             )?;
         if system_prompt_hash.is_some() {
-            conn.execute(
-                "DELETE FROM system_prompts WHERE NOT EXISTS (\
-                       SELECT 1 FROM sessions \
-                       WHERE sessions.system_prompt_hash = system_prompts.hash\
-                     )",
-                [],
-            )?;
+            delete_unreferenced_system_prompts(conn)?;
         }
         if opts.parent_session_id.is_some() {
             // Backfill cwd / git_repo_root / git_branch / profile_name
