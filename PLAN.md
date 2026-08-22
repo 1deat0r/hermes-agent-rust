@@ -318,6 +318,18 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 ## 7. Session log
 
+- 2026-08-22 (session 2a): First tool-file port — tools/clarify_tool.py →
+  hermes-tools/src/clarify.rs (@ b9aa928, 266 LOC). clarify_tool
+  (question validation, choices flatten + trim to MAX_CHOICES, empty→open-
+  ended, multi-select parse: list / JSON-array / comma-separated),
+  _flatten_choice (label→description→text→title unwrap; name/value
+  excluded), platform callback via a thread-local injection slot (mirrors
+  runner-provided callback= kwargs seam), check_clarify_requirements,
+  CLARIFY_SCHEMA const, registry.register with ❓ emoji. Handler reads the
+  thread-local callback at dispatch time; no callback → the upstream error
+  JSON. Oracle: tests/tools/test_clarify_tool.py (13 tests); workspace 494
+  tests green; clippy clean. Evidence: `cargo test --workspace` (unit).
+  Registry now hosts the first real tool file; tool-file ports continue.
 - 2026-08-22 (session 1z): tools/schema_sanitizer.py ported —
   hermes-tools src/schema_sanitizer.rs (@ b9aa928, 687 LOC). Deep-copy
   schema sanitization for strict backends: property-key renames

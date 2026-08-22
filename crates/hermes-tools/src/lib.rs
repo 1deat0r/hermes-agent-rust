@@ -19,6 +19,7 @@
 //! - `discover_builtin_tools` (Python AST scan) is a seam returning the
 //!   tool-catalog list once the tool renderers land.
 
+pub mod clarify;
 pub mod registry;
 pub mod schema_sanitizer;
 
@@ -26,6 +27,7 @@ pub use schema_sanitizer::{
     collapse_const_unions, sanitize_property_key, sanitize_tool_schemas,
     strip_nullable_unions, strip_pattern_and_format, strip_slash_enum, unrename_tool_args,
 };
+pub use clarify::{register_clarify, set_clarify_callback};
 pub use registry::{
     registry, tool_error, tool_result, CheckFnCache, ToolEntry, ToolHandler,
     ToolRegistry, ToolResult,
