@@ -261,7 +261,8 @@ Legend: ✅ done · 🟡 partial · ❌ missing
 | session meta/model surfaces: update_session_meta (COALESCE model), update_system_prompt (hash-table canonical prompt), update_session_model (json_remove browser_model_lock, preserves lineage, nulls prompt), patch_session_model_config (None deletes keys, no-op missing), get_session_model_config_value (tolerant read), update_session_runtime_lock (browser_model_lock merge + prompt null), set_session_yolo / session_yolo_enabled (lineage-preserving yolo_mode, False on parse failure), update_session_billing_route (unconditional billing fields + prompt null) | ✅ | meta |
 | session meta/model surfaces: update_session_meta (COALESCE model), update_system_prompt (hash-table canonical prompt), update_session_model (json_remove browser_model_lock, preserves lineage, nulls prompt), patch_session_model_config (None deletes keys, no-op missing), get_session_model_config_value (tolerant read), update_session_runtime_lock (browser_model_lock merge + prompt null), set_session_yolo / session_yolo_enabled (lineage-preserving yolo_mode, False on parse failure), update_session_billing_route (unconditional billing fields + prompt null) | ✅ | meta |
 | message reactions + display-kind + api_content surfaces: set_latest_matching_message_display_kind (turn stamp), set_message_reaction (tapback toggle/replace, per-author), get_message_reactions, take_unseen_reactions (seen stamp, exactly-once announce, author filter), set_latest_user_api_content (defensive content guard) | ✅ | reactions |
-| REMAINING beyond foundation (documented, not yet ported): finalize_orphaned_compression_sessions, conversation surface (resolve_resume_session_id, get_messages_as_conversation, get_resume_conversations, get_ancestor_display_prefix, get_conversation_root, restore_rewound), delete surface (clear_messages, delete_session(_if_empty), delete_sessions, delete_empty_sessions, get_session_delete_targets), maintenance (logical_size_bytes, vacuum, maybe_auto_prune_and_vacuum, maybe_auto_archive, message_count, has_platform_message_id, purge_stale_tool_call_markers, retag_kanban_worker_sessions) | ❌ | — (scheduled with P2/P3 consumers) |
+| conversation surface: resolve_resume_session_id (compression-tip first, empty-head walk, fork picks newest child), get_messages_as_conversation (OpenAI format, include_ancestors/inactive, row ids, api_content verbatim, sanitize_context, harness/stale-marker strip, repair_alternation), get_resume_conversations (model/display one-SELECT split, verification-candidate collapse in model history), get_ancestor_display_prefix (non-tip rows only), get_conversation_root (stable conversation id), session_lineage_root_to_tip, duplicate-replayed-user dedup, restore_rewound; helpers sanitize_context / repair_message_sequence / strip harness + stale markers | ✅ | conversation |
+| REMAINING beyond foundation (documented, not yet ported): delete surface (clear_messages, delete_session(_if_empty), delete_sessions, delete_empty_sessions, get_session_delete_targets), maintenance (logical_size_bytes, vacuum, maybe_auto_prune_and_vacuum, maybe_auto_archive, message_count, has_platform_message_id, purge_stale_tool_call_markers, retag_kanban_worker_sessions) | ❌ | — (scheduled with P2/P3 consumers) |
 ### agent/redact (upstream: agent/redact.py, 1,197 LOC) — ✅ complete (homed in hermes-logging)
 | Function/surface | Status | Rust home |
 |---|---|---|
@@ -302,6 +303,26 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 ## 7. Session log
 
+- 2026-08-22 (session 1t): Conversation projection surface landed —
+  conversation.rs. resolve_resume_session_id (get_compression_tip first so a
+  long-lived parent with rows still redirects to the continuation; then the
+  empty-head walk over non-branch children, newest-first, depth-capped 32),
+  get_messages_as_conversation (ORDER BY id, optional ancestors/inactive,
+  sanitize_context scrub, harness-turn + stale-tool-marker strips, optional
+  repair_alternation), get_resume_conversations (one lineage SELECT feeds
+  both the alternation-repaired model history and verbatim lineage display,
+  both with _row_id), get_ancestor_display_prefix (non-tip rows only,
+  #65919), get_conversation_root, session_lineage_root_to_tip, duplicate-
+  replayed-user dedup, restore_rewound; ported helpers: sanitize_context
+  (3 memory-context regexes), repair_message_sequence (pass 0 assistant
+  merge + verification-candidate replace + codex interim exemption; pass 1
+  stray-tool drop with id/call_id superset; pass 2 user merge with
+  api_content invalidation), background-review harness + stale-marker
+  strips. Oracle: test_resolve_resume_session_id, test_conversation_root,
+  memory-context strip + reasoning/tool_calls restore, resume
+  verification-candidate split, repair contracts; 20 parity tests in
+  parity_state_conversation.rs; workspace 403 tests green; clippy clean.
+  Evidence: `cargo test --workspace` (unit).
 - 2026-08-22 (session 1s): Message presentation + reactions landed —
   reactions.rs. set_latest_matching_message_display_kind (stamps the freshly
   persisted turn row by session+role+content), set_message_reaction (one

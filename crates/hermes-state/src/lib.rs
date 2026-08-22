@@ -6,6 +6,7 @@ pub mod activity;
 pub mod cfg;
 pub mod common;
 pub mod compression_prefix;
+pub mod conversation;
 pub mod cooldown;
 pub mod crud;
 pub mod handoff;
