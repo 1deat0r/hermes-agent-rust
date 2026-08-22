@@ -27,6 +27,8 @@ pub mod path_security;
 pub mod read_extract;
 pub mod budget_config;
 pub mod tool_result_storage;
+pub mod html5_entities;
+pub mod tts_text_normalize;
 
 /// Availability helper for session_search's check_fn (hermes_state db home).
 pub fn session_search_check_expr() -> bool {
@@ -53,6 +55,7 @@ pub use path_security::validate_within_dir;
 pub use read_extract::{extract_document_text, is_extractable_document, ExtractionError};
 pub use budget_config::{budget_for_context_window, BudgetConfig, BudgetThreshold};
 pub use tool_result_storage::{enforce_turn_budget, generate_preview, maybe_persist_tool_result};
+pub use tts_text_normalize::{normalize_symbols_for_tts, prepare_spoken_text, smooth_whitespace_for_tts, strip_markdown_for_tts, strip_nonspoken_blocks};
 pub use clarify::{register_clarify, set_clarify_callback};
 pub use session_search::{register_session_search, session_search};
 pub use registry::{

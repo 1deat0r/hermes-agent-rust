@@ -92,7 +92,7 @@ Hermes-Agent-Rust/
     hermes-state/          # hermes_state{,_schema,_common,_portability,_search}.py  (Phase 1, open — common/schema/lifecycle landed)
     hermes-toolsets/       # toolsets.py ✅, toolset_distributions.py ✅, model_tools.py 🟡 (schema/coercion surface landed; handle_function_call deferred with agent loop)   (Phase 2)
     hermes-agent/          # run_agent.py + agent/            (Phase 2, next after toolsets)
-    hermes-tools/          # tools/ (✅ registry, schema_sanitizer, ansi_strip, clarify_tool, session_search_tool — more tool files scheduled)   (Phase 2)
+    hermes-tools/          # tools/ (✅ registry, schema_sanitizer, ansi_strip, clarify_tool, session_search_tool, file_safety, read_extract, file_state, path_security, binary_extensions, budget_config, tool_result_storage, tts_text_normalize)   (Phase 2)
     hermes-batch/          # batch_runner.py, trajectory_compressor.py, mini_swe_runner.py (Phase 2)
     hermes-cli/            # cli.py + hermes_cli/             (Phase 3, bin `hermes`)
     hermes-gateway/        # gateway/                         (Phase 4)
@@ -335,6 +335,37 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   env-binary tests (HERMES_HOME / HERMES_WRITE_SAFE_ROOT are process-
   global, isolated like the file-state kill switch); workspace 555 tests
   green; clippy clean. Evidence: `cargo test --workspace` (unit).
+- 2026-08-22 (session 3d): tools/tts_text_normalize.py ported — hermes-tools
+  src/tts_text_normalize.rs (@ b9aa928, 278 LOC). Full spoken-text pipeline:
+  strip_nonspoken_blocks (think/</think> blocks #34213 + unterminated
+  thinking stream, file-mutation verifier footer #40772), strip_markdown_for_tts
+  (code/link/image/inline/bold/italic/strike/heading/blockquote/list/hr/table
+  pipe; bold/italic/strike compiled with DOTALL like upstream re.DOTALL),
+  normalize_symbols_for_tts (nbsp/minus/ellipsis, temp ranges 11–17°C → 11 to 17
+  degrees Celsius, km/h-mm/cm/m, numeric rates, NZ/AU/US$/€/£/$ money, percent,
+  & → and, bullets, arrows, variation selectors, emoji strip),
+  smooth_whitespace_for_tts (heading fold + sentence pauses),
+  flatten_newlines_for_payload (#9004 Kokoro), prepare_spoken_text (default
+  max_chars caller-side Some(4000); truncation trims trailing whitespace).
+  REGEX FIXES vs first draft: think-block closing tag is ` response`
+  (no space) and verifier footer warns ⚠ U+26A0 + optional variation selector
+  U+FE0F — both were corrupted to space-less variants by an HTML renderer;
+  written back as \x3c/\u{fe0f} escapes so they cannot regress.
+  html.unescape: replaced a 7-entity table with a faithful CPython
+  html.unescape port (tools/gen_html5_entities.py → src/html5_entities.rs,
+  2,231 HTML5 named refs incl. 93 multi-codepoint + legacy semicolon-less +
+  _invalid_charrefs C1 map + _invalid_codepoints) — semicolon-less legacy
+  (&lt, &copy, &amp), longest-match invalid refs (&notit; → ¬it;),
+  &#x110000;/&#xD800; → U+FFFD, &#13; CR and &#0; ✓ byte-parity. Oracle:
+  tests/tools/test_tts_text_normalize.py + test_tts_prepare_spoken.py (share-
+  cleaner wiring cases deferred with gateway/tts_tool) → 14 parity tests in
+  parity_tts_normalize.rs + upstream/golden_tts_text_normalize.json (36-case
+  stage-by-stage byte corpus incl. entity edge classes and multi-line
+  bold/italic/strike). FIXED pre-existing hermes-toolsets flake
+  (resolve_special_all_alias intermittently raced the process-global registry
+  vs registry_tools_merge_into_builtin_toolset; tests now serialize via a
+  REGISTRY_TEST_LOCK). Workspace 569 tests green; clippy clean. Evidence:
+  `cargo test --workspace` (unit).
 - 2026-08-22 (session 3b): Stdlib document extraction landed — hermes-tools
   src/read_extract.rs (@ b9aa928, 346 LOC). .ipynb (cells in order,
   markdown/code labels + numbering, output payloads never leak, legacy

@@ -1,0 +1,362 @@
+{
+ "TestThinkBlockStrip.test_think_block_removed": {
+  "raw": "PHRoaW5rPgpzZWNyZXQgcmVhc29uaW5nIGhlcmUKPC90aGluaz4KVGhlIGFuc3dlciBpcyA0Mi4=",
+  "strip_nonspoken_blocks": "IApUaGUgYW5zd2VyIGlzIDQyLg==",
+  "strip_markdown_for_tts": "IApUaGUgYW5zd2VyIGlzIDQyLg==",
+  "normalize_symbols_for_tts": "IApUaGUgYW5zd2VyIGlzIDQyLg==",
+  "smooth_whitespace_for_tts": "VGhlIGFuc3dlciBpcyA0Mi4=",
+  "flatten_newlines_for_payload": "VGhlIGFuc3dlciBpcyA0Mi4=",
+  "prepare_spoken_text": "VGhlIGFuc3dlciBpcyA0Mi4=",
+  "prepare_spoken_text_40": "VGhlIGFuc3dlciBpcyA0Mi4="
+ },
+ "TestThinkBlockStrip.test_think_block_with_attributes_removed": {
+  "raw": "PHRoaW5rIGJ1ZGdldD1oaWdoPmNoYWluIG9mIHRob3VnaHQ8L3RoaW5rPlZpc2libGUu",
+  "strip_nonspoken_blocks": "IFZpc2libGUu",
+  "strip_markdown_for_tts": "IFZpc2libGUu",
+  "normalize_symbols_for_tts": "IFZpc2libGUu",
+  "smooth_whitespace_for_tts": "VmlzaWJsZS4=",
+  "flatten_newlines_for_payload": "VmlzaWJsZS4=",
+  "prepare_spoken_text": "VmlzaWJsZS4=",
+  "prepare_spoken_text_40": "VmlzaWJsZS4="
+ },
+ "TestThinkBlockStrip.test_unterminated_think_block_removed": {
+  "raw": "QW5zd2VyIGZpcnN0LiA8dGhpbms+CnRydW5jYXRlZCByZWFzb25pbmcgc3RyZWFt",
+  "strip_nonspoken_blocks": "QW5zd2VyIGZpcnN0LiAg",
+  "strip_markdown_for_tts": "QW5zd2VyIGZpcnN0LiAg",
+  "normalize_symbols_for_tts": "QW5zd2VyIGZpcnN0LiAg",
+  "smooth_whitespace_for_tts": "QW5zd2VyIGZpcnN0Lg==",
+  "flatten_newlines_for_payload": "QW5zd2VyIGZpcnN0Lg==",
+  "prepare_spoken_text": "QW5zd2VyIGZpcnN0Lg==",
+  "prepare_spoken_text_40": "QW5zd2VyIGZpcnN0Lg=="
+ },
+ "TestThinkBlockStrip.test_multiple_think_blocks": {
+  "raw": "PHRoaW5rPmE8L3RoaW5rPm9uZTx0aGluaz5iPC90aGluaz4gdHdv",
+  "strip_nonspoken_blocks": "IG9uZSAgdHdv",
+  "strip_markdown_for_tts": "IG9uZSAgdHdv",
+  "normalize_symbols_for_tts": "IG9uZSAgdHdv",
+  "smooth_whitespace_for_tts": "b25lIHR3bw==",
+  "flatten_newlines_for_payload": "b25lIHR3bw==",
+  "prepare_spoken_text": "b25lIHR3bw==",
+  "prepare_spoken_text_40": "b25lIHR3bw=="
+ },
+ "TestVerifierFooterStrip.test_text_without_footer_untouched": {
+  "raw": "SnVzdCBhIG5vcm1hbCByZXBseSBhYm91dCBmaWxlcy4=",
+  "strip_nonspoken_blocks": "SnVzdCBhIG5vcm1hbCByZXBseSBhYm91dCBmaWxlcy4=",
+  "strip_markdown_for_tts": "SnVzdCBhIG5vcm1hbCByZXBseSBhYm91dCBmaWxlcy4=",
+  "normalize_symbols_for_tts": "SnVzdCBhIG5vcm1hbCByZXBseSBhYm91dCBmaWxlcy4=",
+  "smooth_whitespace_for_tts": "SnVzdCBhIG5vcm1hbCByZXBseSBhYm91dCBmaWxlcy4=",
+  "flatten_newlines_for_payload": "SnVzdCBhIG5vcm1hbCByZXBseSBhYm91dCBmaWxlcy4=",
+  "prepare_spoken_text": "SnVzdCBhIG5vcm1hbCByZXBseSBhYm91dCBmaWxlcy4=",
+  "prepare_spoken_text_40": "SnVzdCBhIG5vcm1hbCByZXBseSBhYm91dCBmaWxlcy4="
+ },
+ "TestNewlineFlattening.test_no_newlines_in_output": {
+  "raw": "Rmlyc3QgbGluZQpTZWNvbmQgbGluZQoKVGhpcmQgcGFyYWdyYXBo",
+  "strip_nonspoken_blocks": "Rmlyc3QgbGluZQpTZWNvbmQgbGluZQoKVGhpcmQgcGFyYWdyYXBo",
+  "strip_markdown_for_tts": "Rmlyc3QgbGluZQpTZWNvbmQgbGluZQoKVGhpcmQgcGFyYWdyYXBo",
+  "normalize_symbols_for_tts": "Rmlyc3QgbGluZQpTZWNvbmQgbGluZQoKVGhpcmQgcGFyYWdyYXBo",
+  "smooth_whitespace_for_tts": "Rmlyc3QgbGluZS4KU2Vjb25kIGxpbmUuCgpUaGlyZCBwYXJhZ3JhcGgu",
+  "flatten_newlines_for_payload": "Rmlyc3QgbGluZS4gU2Vjb25kIGxpbmUuIFRoaXJkIHBhcmFncmFwaC4=",
+  "prepare_spoken_text": "Rmlyc3QgbGluZS4gU2Vjb25kIGxpbmUuIFRoaXJkIHBhcmFncmFwaC4=",
+  "prepare_spoken_text_40": "Rmlyc3QgbGluZS4gU2Vjb25kIGxpbmUuIFRoaXJkIHBhcmFncmFwaA=="
+ },
+ "FOOTER": {
+  "raw": "4pqg77iPIEZpbGUtbXV0YXRpb24gdmVyaWZpZXI6IDIgZmlsZShzKSB3ZXJlIE5PVCBtb2RpZmllZCB0aGlzIHR1cm4gZGVzcGl0ZSBhbnkgd29yZGluZyBhYm92ZSB0aGF0IG1heSBzdWdnZXN0IG90aGVyd2lzZS4gUnVuIGBnaXQgc3RhdHVzYCBvciBgcmVhZF9maWxlYCB0byBjb25maXJtLgogIOKAoiBgdG9vbHMvZm9vLnB5YCDigJQgW3BhdGNoXSBvbGRfc3RyaW5nIG5vdCBmb3VuZAogIOKAoiBgYmFyLm1kYCDigJQgW3dyaXRlX2ZpbGVdIGZhaWxlZA==",
+  "strip_nonspoken_blocks": "IA==",
+  "strip_markdown_for_tts": "IA==",
+  "normalize_symbols_for_tts": "IA==",
+  "smooth_whitespace_for_tts": "",
+  "flatten_newlines_for_payload": "",
+  "prepare_spoken_text": "",
+  "prepare_spoken_text_40": ""
+ },
+ "t_footer": {
+  "raw": "SSBmaXhlZCB0aGUgZmlsZS4KCuKaoO+4jyBGaWxlLW11dGF0aW9uIHZlcmlmaWVyOiAyIGZpbGUocykgd2VyZSBOT1QgbW9kaWZpZWQgdGhpcyB0dXJuIGRlc3BpdGUgYW55IHdvcmRpbmcgYWJvdmUgdGhhdCBtYXkgc3VnZ2VzdCBvdGhlcndpc2UuIFJ1biBgZ2l0IHN0YXR1c2Agb3IgYHJlYWRfZmlsZWAgdG8gY29uZmlybS4KICDigKIgYHRvb2xzL2Zvby5weWAg4oCUIFtwYXRjaF0gb2xkX3N0cmluZyBub3QgZm91bmQKICDigKIgYGJhci5tZGAg4oCUIFt3cml0ZV9maWxlXSBmYWlsZWQ=",
+  "strip_nonspoken_blocks": "SSBmaXhlZCB0aGUgZmlsZS4KIA==",
+  "strip_markdown_for_tts": "SSBmaXhlZCB0aGUgZmlsZS4KIA==",
+  "normalize_symbols_for_tts": "SSBmaXhlZCB0aGUgZmlsZS4KIA==",
+  "smooth_whitespace_for_tts": "SSBmaXhlZCB0aGUgZmlsZS4=",
+  "flatten_newlines_for_payload": "SSBmaXhlZCB0aGUgZmlsZS4=",
+  "prepare_spoken_text": "SSBmaXhlZCB0aGUgZmlsZS4=",
+  "prepare_spoken_text_40": "SSBmaXhlZCB0aGUgZmlsZS4="
+ },
+ "t_weather": {
+  "raw": "IyMgQ2hyaXN0Y2h1cmNoIHRvZGF5CgotICoqTm93OioqIGFib3V0ICoqMTTCsEMqKiwgZmVlbHMgbGlrZSAqKjE0wrBDKioKLSAqKldpbmQ6KiogOSBrbS9oCi0gKipSYWluOioqIDEuMyBtbQotICoqUmFuZ2U6KiogMTHigJMxN8KwQwo=",
+  "strip_nonspoken_blocks": "IyMgQ2hyaXN0Y2h1cmNoIHRvZGF5CgotICoqTm93OioqIGFib3V0ICoqMTTCsEMqKiwgZmVlbHMgbGlrZSAqKjE0wrBDKioKLSAqKldpbmQ6KiogOSBrbS9oCi0gKipSYWluOioqIDEuMyBtbQotICoqUmFuZ2U6KiogMTHigJMxN8KwQwo=",
+  "strip_markdown_for_tts": "Q2hyaXN0Y2h1cmNoIHRvZGF5AApOb3c6IGFib3V0IDE0wrBDLCBmZWVscyBsaWtlIDE0wrBDCldpbmQ6IDkga20vaApSYWluOiAxLjMgbW0KUmFuZ2U6IDEx4oCTMTfCsEMK",
+  "normalize_symbols_for_tts": "Q2hyaXN0Y2h1cmNoIHRvZGF5AApOb3c6IGFib3V0IDE0IGRlZ3JlZXMgQ2Vsc2l1cywgZmVlbHMgbGlrZSAxNCBkZWdyZWVzIENlbHNpdXMKV2luZDogOSBraWxvbWV0cmVzIHBlciBob3VyClJhaW46IDEuMyBtaWxsaW1ldHJlcwpSYW5nZTogMTEgdG8gMTcgZGVncmVlcyBDZWxzaXVzCg==",
+  "smooth_whitespace_for_tts": "Q2hyaXN0Y2h1cmNoIHRvZGF5LCBOb3c6IGFib3V0IDE0IGRlZ3JlZXMgQ2Vsc2l1cywgZmVlbHMgbGlrZSAxNCBkZWdyZWVzIENlbHNpdXMuCldpbmQ6IDkga2lsb21ldHJlcyBwZXIgaG91ci4KUmFpbjogMS4zIG1pbGxpbWV0cmVzLgpSYW5nZTogMTEgdG8gMTcgZGVncmVlcyBDZWxzaXVzLg==",
+  "flatten_newlines_for_payload": "Q2hyaXN0Y2h1cmNoIHRvZGF5LCBOb3c6IGFib3V0IDE0IGRlZ3JlZXMgQ2Vsc2l1cywgZmVlbHMgbGlrZSAxNCBkZWdyZWVzIENlbHNpdXMuIFdpbmQ6IDkga2lsb21ldHJlcyBwZXIgaG91ci4gUmFpbjogMS4zIG1pbGxpbWV0cmVzLiBSYW5nZTogMTEgdG8gMTcgZGVncmVlcyBDZWxzaXVzLg==",
+  "prepare_spoken_text": "Q2hyaXN0Y2h1cmNoIHRvZGF5LCBOb3c6IGFib3V0IDE0IGRlZ3JlZXMgQ2Vsc2l1cywgZmVlbHMgbGlrZSAxNCBkZWdyZWVzIENlbHNpdXMuIFdpbmQ6IDkga2lsb21ldHJlcyBwZXIgaG91ci4gUmFpbjogMS4zIG1pbGxpbWV0cmVzLiBSYW5nZTogMTEgdG8gMTcgZGVncmVlcyBDZWxzaXVzLg==",
+  "prepare_spoken_text_40": "Q2hyaXN0Y2h1cmNoIHRvZGF5LCBOb3c6IGFib3V0IDE0IGRlZ3JlZQ=="
+ },
+ "t_heading": {
+  "raw": "IyMgV2VhdGhlcgpJdCB3aWxsIGJlIHN1bm55",
+  "strip_nonspoken_blocks": "IyMgV2VhdGhlcgpJdCB3aWxsIGJlIHN1bm55",
+  "strip_markdown_for_tts": "V2VhdGhlcgAKSXQgd2lsbCBiZSBzdW5ueQ==",
+  "normalize_symbols_for_tts": "V2VhdGhlcgAKSXQgd2lsbCBiZSBzdW5ueQ==",
+  "smooth_whitespace_for_tts": "V2VhdGhlciwgSXQgd2lsbCBiZSBzdW5ueS4=",
+  "flatten_newlines_for_payload": "V2VhdGhlciwgSXQgd2lsbCBiZSBzdW5ueS4=",
+  "prepare_spoken_text": "V2VhdGhlciwgSXQgd2lsbCBiZSBzdW5ueS4=",
+  "prepare_spoken_text_40": "V2VhdGhlciwgSXQgd2lsbCBiZSBzdW5ueS4="
+ },
+ "t_bare_degree": {
+  "raw": "bWVhc3VyZWQgaW4gwrBD",
+  "strip_nonspoken_blocks": "bWVhc3VyZWQgaW4gwrBD",
+  "strip_markdown_for_tts": "bWVhc3VyZWQgaW4gwrBD",
+  "normalize_symbols_for_tts": "bWVhc3VyZWQgaW4gZGVncmVlcyBDZWxzaXVz",
+  "smooth_whitespace_for_tts": "bWVhc3VyZWQgaW4gZGVncmVlcyBDZWxzaXVz",
+  "flatten_newlines_for_payload": "bWVhc3VyZWQgaW4gZGVncmVlcyBDZWxzaXVz",
+  "prepare_spoken_text": "bWVhc3VyZWQgaW4gZGVncmVlcyBDZWxzaXVz",
+  "prepare_spoken_text_40": "bWVhc3VyZWQgaW4gZGVncmVlcyBDZWxzaXVz"
+ },
+ "t_us_money": {
+  "raw": "VVMkMzAwLCBuZXh0",
+  "strip_nonspoken_blocks": "VVMkMzAwLCBuZXh0",
+  "strip_markdown_for_tts": "VVMkMzAwLCBuZXh0",
+  "normalize_symbols_for_tts": "MzAwIFVTIGRvbGxhcnMsIG5leHQ=",
+  "smooth_whitespace_for_tts": "MzAwIFVTIGRvbGxhcnMsIG5leHQ=",
+  "flatten_newlines_for_payload": "MzAwIFVTIGRvbGxhcnMsIG5leHQ=",
+  "prepare_spoken_text": "MzAwIFVTIGRvbGxhcnMsIG5leHQ=",
+  "prepare_spoken_text_40": "MzAwIFVTIGRvbGxhcnMsIG5leHQ="
+ },
+ "t_rate": {
+  "raw": "JDUvbW9udGg=",
+  "strip_nonspoken_blocks": "JDUvbW9udGg=",
+  "strip_markdown_for_tts": "JDUvbW9udGg=",
+  "normalize_symbols_for_tts": "NSBkb2xsYXJzIHBlciBtb250aA==",
+  "smooth_whitespace_for_tts": "NSBkb2xsYXJzIHBlciBtb250aA==",
+  "flatten_newlines_for_payload": "NSBkb2xsYXJzIHBlciBtb250aA==",
+  "prepare_spoken_text": "NSBkb2xsYXJzIHBlciBtb250aA==",
+  "prepare_spoken_text_40": "NSBkb2xsYXJzIHBlciBtb250aA=="
+ },
+ "t_and_or": {
+  "raw": "Y2hvb3NlIGFuZC9vciBvcHRpb24=",
+  "strip_nonspoken_blocks": "Y2hvb3NlIGFuZC9vciBvcHRpb24=",
+  "strip_markdown_for_tts": "Y2hvb3NlIGFuZC9vciBvcHRpb24=",
+  "normalize_symbols_for_tts": "Y2hvb3NlIGFuZC9vciBvcHRpb24=",
+  "smooth_whitespace_for_tts": "Y2hvb3NlIGFuZC9vciBvcHRpb24=",
+  "flatten_newlines_for_payload": "Y2hvb3NlIGFuZC9vciBvcHRpb24=",
+  "prepare_spoken_text": "Y2hvb3NlIGFuZC9vciBvcHRpb24=",
+  "prepare_spoken_text_40": "Y2hvb3NlIGFuZC9vciBvcHRpb24="
+ },
+ "t_na": {
+  "raw": "c3RhdHVzIE4vQSBoZXJl",
+  "strip_nonspoken_blocks": "c3RhdHVzIE4vQSBoZXJl",
+  "strip_markdown_for_tts": "c3RhdHVzIE4vQSBoZXJl",
+  "normalize_symbols_for_tts": "c3RhdHVzIE4vQSBoZXJl",
+  "smooth_whitespace_for_tts": "c3RhdHVzIE4vQSBoZXJl",
+  "flatten_newlines_for_payload": "c3RhdHVzIE4vQSBoZXJl",
+  "prepare_spoken_text": "c3RhdHVzIE4vQSBoZXJl",
+  "prepare_spoken_text_40": "c3RhdHVzIE4vQSBoZXJl"
+ },
+ "t_date": {
+  "raw": "ZHVlIDIwMjYvMDYvMDIgb2s=",
+  "strip_nonspoken_blocks": "ZHVlIDIwMjYvMDYvMDIgb2s=",
+  "strip_markdown_for_tts": "ZHVlIDIwMjYvMDYvMDIgb2s=",
+  "normalize_symbols_for_tts": "ZHVlIDIwMjYvMDYvMDIgb2s=",
+  "smooth_whitespace_for_tts": "ZHVlIDIwMjYvMDYvMDIgb2s=",
+  "flatten_newlines_for_payload": "ZHVlIDIwMjYvMDYvMDIgb2s=",
+  "prepare_spoken_text": "ZHVlIDIwMjYvMDYvMDIgb2s=",
+  "prepare_spoken_text_40": "ZHVlIDIwMjYvMDYvMDIgb2s="
+ },
+ "t_emoji": {
+  "raw": "RG9uZSEg8J+OifCfmoAgQWxsIHRlc3RzIHBhc3Mg4pyF",
+  "strip_nonspoken_blocks": "RG9uZSEg8J+OifCfmoAgQWxsIHRlc3RzIHBhc3Mg4pyF",
+  "strip_markdown_for_tts": "RG9uZSEg8J+OifCfmoAgQWxsIHRlc3RzIHBhc3Mg4pyF",
+  "normalize_symbols_for_tts": "RG9uZSEgIEFsbCB0ZXN0cyBwYXNzIA==",
+  "smooth_whitespace_for_tts": "RG9uZSEgQWxsIHRlc3RzIHBhc3M=",
+  "flatten_newlines_for_payload": "RG9uZSEgQWxsIHRlc3RzIHBhc3M=",
+  "prepare_spoken_text": "RG9uZSEgQWxsIHRlc3RzIHBhc3M=",
+  "prepare_spoken_text_40": "RG9uZSEgQWxsIHRlc3RzIHBhc3M="
+ },
+ "t_newlines": {
+  "raw": "Rmlyc3QgbGluZQpTZWNvbmQgbGluZQoKVGhpcmQgcGFyYWdyYXBo",
+  "strip_nonspoken_blocks": "Rmlyc3QgbGluZQpTZWNvbmQgbGluZQoKVGhpcmQgcGFyYWdyYXBo",
+  "strip_markdown_for_tts": "Rmlyc3QgbGluZQpTZWNvbmQgbGluZQoKVGhpcmQgcGFyYWdyYXBo",
+  "normalize_symbols_for_tts": "Rmlyc3QgbGluZQpTZWNvbmQgbGluZQoKVGhpcmQgcGFyYWdyYXBo",
+  "smooth_whitespace_for_tts": "Rmlyc3QgbGluZS4KU2Vjb25kIGxpbmUuCgpUaGlyZCBwYXJhZ3JhcGgu",
+  "flatten_newlines_for_payload": "Rmlyc3QgbGluZS4gU2Vjb25kIGxpbmUuIFRoaXJkIHBhcmFncmFwaC4=",
+  "prepare_spoken_text": "Rmlyc3QgbGluZS4gU2Vjb25kIGxpbmUuIFRoaXJkIHBhcmFncmFwaC4=",
+  "prepare_spoken_text_40": "Rmlyc3QgbGluZS4gU2Vjb25kIGxpbmUuIFRoaXJkIHBhcmFncmFwaA=="
+ },
+ "t_punct": {
+  "raw": "QWxwaGEuCkJldGEh",
+  "strip_nonspoken_blocks": "QWxwaGEuCkJldGEh",
+  "strip_markdown_for_tts": "QWxwaGEuCkJldGEh",
+  "normalize_symbols_for_tts": "QWxwaGEuCkJldGEh",
+  "smooth_whitespace_for_tts": "QWxwaGEuCkJldGEh",
+  "flatten_newlines_for_payload": "QWxwaGEuIEJldGEh",
+  "prepare_spoken_text": "QWxwaGEuIEJldGEh",
+  "prepare_spoken_text_40": "QWxwaGEuIEJldGEh"
+ },
+ "t_plain": {
+  "raw": "SnVzdCBhIG5vcm1hbCByZXBseSBhYm91dCBmaWxlcy4=",
+  "strip_nonspoken_blocks": "SnVzdCBhIG5vcm1hbCByZXBseSBhYm91dCBmaWxlcy4=",
+  "strip_markdown_for_tts": "SnVzdCBhIG5vcm1hbCByZXBseSBhYm91dCBmaWxlcy4=",
+  "normalize_symbols_for_tts": "SnVzdCBhIG5vcm1hbCByZXBseSBhYm91dCBmaWxlcy4=",
+  "smooth_whitespace_for_tts": "SnVzdCBhIG5vcm1hbCByZXBseSBhYm91dCBmaWxlcy4=",
+  "flatten_newlines_for_payload": "SnVzdCBhIG5vcm1hbCByZXBseSBhYm91dCBmaWxlcy4=",
+  "prepare_spoken_text": "SnVzdCBhIG5vcm1hbCByZXBseSBhYm91dCBmaWxlcy4=",
+  "prepare_spoken_text_40": "SnVzdCBhIG5vcm1hbCByZXBseSBhYm91dCBmaWxlcy4="
+ },
+ "t_maxchars": {
+  "raw": "QSB2ZXJ5IGxvbmcgc2VudGVuY2UgdGhhdCBnb2VzIG9uIGFuZCBvbiBhbmQgb24gYW5kIG9uIGFuZCBvbiBhbmQgb24gYW5kIG9uIGFuZCBvbiBhbmQgb24gYW5kIG9uIGFuZCBvbiBhbmQgb24gYW5kIG9uIGFuZCBvbiBhbmQgb24u",
+  "strip_nonspoken_blocks": "QSB2ZXJ5IGxvbmcgc2VudGVuY2UgdGhhdCBnb2VzIG9uIGFuZCBvbiBhbmQgb24gYW5kIG9uIGFuZCBvbiBhbmQgb24gYW5kIG9uIGFuZCBvbiBhbmQgb24gYW5kIG9uIGFuZCBvbiBhbmQgb24gYW5kIG9uIGFuZCBvbiBhbmQgb24u",
+  "strip_markdown_for_tts": "QSB2ZXJ5IGxvbmcgc2VudGVuY2UgdGhhdCBnb2VzIG9uIGFuZCBvbiBhbmQgb24gYW5kIG9uIGFuZCBvbiBhbmQgb24gYW5kIG9uIGFuZCBvbiBhbmQgb24gYW5kIG9uIGFuZCBvbiBhbmQgb24gYW5kIG9uIGFuZCBvbiBhbmQgb24u",
+  "normalize_symbols_for_tts": "QSB2ZXJ5IGxvbmcgc2VudGVuY2UgdGhhdCBnb2VzIG9uIGFuZCBvbiBhbmQgb24gYW5kIG9uIGFuZCBvbiBhbmQgb24gYW5kIG9uIGFuZCBvbiBhbmQgb24gYW5kIG9uIGFuZCBvbiBhbmQgb24gYW5kIG9uIGFuZCBvbiBhbmQgb24u",
+  "smooth_whitespace_for_tts": "QSB2ZXJ5IGxvbmcgc2VudGVuY2UgdGhhdCBnb2VzIG9uIGFuZCBvbiBhbmQgb24gYW5kIG9uIGFuZCBvbiBhbmQgb24gYW5kIG9uIGFuZCBvbiBhbmQgb24gYW5kIG9uIGFuZCBvbiBhbmQgb24gYW5kIG9uIGFuZCBvbiBhbmQgb24u",
+  "flatten_newlines_for_payload": "QSB2ZXJ5IGxvbmcgc2VudGVuY2UgdGhhdCBnb2VzIG9uIGFuZCBvbiBhbmQgb24gYW5kIG9uIGFuZCBvbiBhbmQgb24gYW5kIG9uIGFuZCBvbiBhbmQgb24gYW5kIG9uIGFuZCBvbiBhbmQgb24gYW5kIG9uIGFuZCBvbiBhbmQgb24u",
+  "prepare_spoken_text": "QSB2ZXJ5IGxvbmcgc2VudGVuY2UgdGhhdCBnb2VzIG9uIGFuZCBvbiBhbmQgb24gYW5kIG9uIGFuZCBvbiBhbmQgb24gYW5kIG9uIGFuZCBvbiBhbmQgb24gYW5kIG9uIGFuZCBvbiBhbmQgb24gYW5kIG9uIGFuZCBvbiBhbmQgb24u",
+  "prepare_spoken_text_40": "QSB2ZXJ5IGxvbmcgc2VudGVuY2UgdGhhdCBnb2VzIG9uIGFuZCBvbg=="
+ },
+ "t_url": {
+  "raw": "U2VlIGh0dHBzOi8vZXhhbXBsZS5jb20vcGF0aD9xPTEgZm9yIGRldGFpbHMsIGBjb2RlYCBoZXJlLCBhbmQgKipib2xkKiogc3R1ZmYu",
+  "strip_nonspoken_blocks": "U2VlIGh0dHBzOi8vZXhhbXBsZS5jb20vcGF0aD9xPTEgZm9yIGRldGFpbHMsIGBjb2RlYCBoZXJlLCBhbmQgKipib2xkKiogc3R1ZmYu",
+  "strip_markdown_for_tts": "U2VlICBmb3IgZGV0YWlscywgY29kZSBoZXJlLCBhbmQgYm9sZCBzdHVmZi4=",
+  "normalize_symbols_for_tts": "U2VlICBmb3IgZGV0YWlscywgY29kZSBoZXJlLCBhbmQgYm9sZCBzdHVmZi4=",
+  "smooth_whitespace_for_tts": "U2VlIGZvciBkZXRhaWxzLCBjb2RlIGhlcmUsIGFuZCBib2xkIHN0dWZmLg==",
+  "flatten_newlines_for_payload": "U2VlIGZvciBkZXRhaWxzLCBjb2RlIGhlcmUsIGFuZCBib2xkIHN0dWZmLg==",
+  "prepare_spoken_text": "U2VlIGZvciBkZXRhaWxzLCBjb2RlIGhlcmUsIGFuZCBib2xkIHN0dWZmLg==",
+  "prepare_spoken_text_40": "U2VlIGZvciBkZXRhaWxzLCBjb2RlIGhlcmUsIGFuZCBib2xkIHN0dQ=="
+ },
+ "t_table": {
+  "raw": "fCBBIHwgQiB8CnwtLS18LS0tfAp8IDEgfCAyIHw=",
+  "strip_nonspoken_blocks": "fCBBIHwgQiB8CnwtLS18LS0tfAp8IDEgfCAyIHw=",
+  "strip_markdown_for_tts": "OyBBOyBCOyA7IC0tLTsgLS0tOyA7IDE7IDI7IA==",
+  "normalize_symbols_for_tts": "OyBBOyBCOyA7IC0tLTsgLS0tOyA7IDE7IDI7IA==",
+  "smooth_whitespace_for_tts": "OyBBOyBCOzsgLS0tOyAtLS07OyAxOyAyOw==",
+  "flatten_newlines_for_payload": "OyBBOyBCOzsgLS0tOyAtLS07OyAxOyAyOw==",
+  "prepare_spoken_text": "OyBBOyBCOzsgLS0tOyAtLS07OyAxOyAyOw==",
+  "prepare_spoken_text_40": "OyBBOyBCOzsgLS0tOyAtLS07OyAxOyAyOw=="
+ },
+ "t_heading2": {
+  "raw": "IyMgU29tZSBUaXRsZSAjIwpCb2R5IHRleHQgaGVyZS4=",
+  "strip_nonspoken_blocks": "IyMgU29tZSBUaXRsZSAjIwpCb2R5IHRleHQgaGVyZS4=",
+  "strip_markdown_for_tts": "U29tZSBUaXRsZQAKQm9keSB0ZXh0IGhlcmUu",
+  "normalize_symbols_for_tts": "U29tZSBUaXRsZQAKQm9keSB0ZXh0IGhlcmUu",
+  "smooth_whitespace_for_tts": "U29tZSBUaXRsZSwgQm9keSB0ZXh0IGhlcmUu",
+  "flatten_newlines_for_payload": "U29tZSBUaXRsZSwgQm9keSB0ZXh0IGhlcmUu",
+  "prepare_spoken_text": "U29tZSBUaXRsZSwgQm9keSB0ZXh0IGhlcmUu",
+  "prepare_spoken_text_40": "U29tZSBUaXRsZSwgQm9keSB0ZXh0IGhlcmUu"
+ },
+ "t_multiline_bold": {
+  "raw": "TXVsdGkKKipib2xkCnNwYW5uaW5nKiogbGluZS4=",
+  "strip_nonspoken_blocks": "TXVsdGkKKipib2xkCnNwYW5uaW5nKiogbGluZS4=",
+  "strip_markdown_for_tts": "TXVsdGkKYm9sZApzcGFubmluZyBsaW5lLg==",
+  "normalize_symbols_for_tts": "TXVsdGkKYm9sZApzcGFubmluZyBsaW5lLg==",
+  "smooth_whitespace_for_tts": "TXVsdGkuCmJvbGQuCnNwYW5uaW5nIGxpbmUu",
+  "flatten_newlines_for_payload": "TXVsdGkuIGJvbGQuIHNwYW5uaW5nIGxpbmUu",
+  "prepare_spoken_text": "TXVsdGkuIGJvbGQuIHNwYW5uaW5nIGxpbmUu",
+  "prepare_spoken_text_40": "TXVsdGkuIGJvbGQuIHNwYW5uaW5nIGxpbmUu"
+ },
+ "t_multiline_italic": {
+  "raw": "Kml0YWxpYwpzcGFuKiB0ZXh0",
+  "strip_nonspoken_blocks": "Kml0YWxpYwpzcGFuKiB0ZXh0",
+  "strip_markdown_for_tts": "aXRhbGljCnNwYW4gdGV4dA==",
+  "normalize_symbols_for_tts": "aXRhbGljCnNwYW4gdGV4dA==",
+  "smooth_whitespace_for_tts": "aXRhbGljLgpzcGFuIHRleHQu",
+  "flatten_newlines_for_payload": "aXRhbGljLiBzcGFuIHRleHQu",
+  "prepare_spoken_text": "aXRhbGljLiBzcGFuIHRleHQu",
+  "prepare_spoken_text_40": "aXRhbGljLiBzcGFuIHRleHQu"
+ },
+ "t_multiline_underscore": {
+  "raw": "X191bmRlciBib2xkCnNwYW5fXyBoZXJl",
+  "strip_nonspoken_blocks": "X191bmRlciBib2xkCnNwYW5fXyBoZXJl",
+  "strip_markdown_for_tts": "dW5kZXIgYm9sZApzcGFuIGhlcmU=",
+  "normalize_symbols_for_tts": "dW5kZXIgYm9sZApzcGFuIGhlcmU=",
+  "smooth_whitespace_for_tts": "dW5kZXIgYm9sZC4Kc3BhbiBoZXJlLg==",
+  "flatten_newlines_for_payload": "dW5kZXIgYm9sZC4gc3BhbiBoZXJlLg==",
+  "prepare_spoken_text": "dW5kZXIgYm9sZC4gc3BhbiBoZXJlLg==",
+  "prepare_spoken_text_40": "dW5kZXIgYm9sZC4gc3BhbiBoZXJlLg=="
+ },
+ "t_multiline_strike": {
+  "raw": "fn5zdHJ1Y2sKb3ZlciB0d29+fiBsaW5lcw==",
+  "strip_nonspoken_blocks": "fn5zdHJ1Y2sKb3ZlciB0d29+fiBsaW5lcw==",
+  "strip_markdown_for_tts": "c3RydWNrCm92ZXIgdHdvIGxpbmVz",
+  "normalize_symbols_for_tts": "c3RydWNrCm92ZXIgdHdvIGxpbmVz",
+  "smooth_whitespace_for_tts": "c3RydWNrLgpvdmVyIHR3byBsaW5lcy4=",
+  "flatten_newlines_for_payload": "c3RydWNrLiBvdmVyIHR3byBsaW5lcy4=",
+  "prepare_spoken_text": "c3RydWNrLiBvdmVyIHR3byBsaW5lcy4=",
+  "prepare_spoken_text_40": "c3RydWNrLiBvdmVyIHR3byBsaW5lcy4="
+ },
+ "t_multiline_under_italic": {
+  "raw": "X3VuZGVyIGl0YWxpYwpzcGFuXyBvaw==",
+  "strip_nonspoken_blocks": "X3VuZGVyIGl0YWxpYwpzcGFuXyBvaw==",
+  "strip_markdown_for_tts": "dW5kZXIgaXRhbGljCnNwYW4gb2s=",
+  "normalize_symbols_for_tts": "dW5kZXIgaXRhbGljCnNwYW4gb2s=",
+  "smooth_whitespace_for_tts": "dW5kZXIgaXRhbGljLgpzcGFuIG9rLg==",
+  "flatten_newlines_for_payload": "dW5kZXIgaXRhbGljLiBzcGFuIG9rLg==",
+  "prepare_spoken_text": "dW5kZXIgaXRhbGljLiBzcGFuIG9rLg==",
+  "prepare_spoken_text_40": "dW5kZXIgaXRhbGljLiBzcGFuIG9rLg=="
+ },
+ "t_code_block_multiline": {
+  "raw": "YGBgCmNvZGUKYmxvY2sKYGBgdGFpbA==",
+  "strip_nonspoken_blocks": "YGBgCmNvZGUKYmxvY2sKYGBgdGFpbA==",
+  "strip_markdown_for_tts": "IHRhaWw=",
+  "normalize_symbols_for_tts": "IHRhaWw=",
+  "smooth_whitespace_for_tts": "dGFpbA==",
+  "flatten_newlines_for_payload": "dGFpbA==",
+  "prepare_spoken_text": "dGFpbA==",
+  "prepare_spoken_text_40": "dGFpbA=="
+ },
+ "t_entities1": {
+  "raw": "UHJpY2U6ICZldXJvOzEwMCAmYW1wOyAmcG91bmQ7NSAmY29weTsgMjAyNiAmcmFycjsgb2s=",
+  "strip_nonspoken_blocks": "UHJpY2U6ICZldXJvOzEwMCAmYW1wOyAmcG91bmQ7NSAmY29weTsgMjAyNiAmcmFycjsgb2s=",
+  "strip_markdown_for_tts": "UHJpY2U6IOKCrDEwMCAmIMKjNSDCqSAyMDI2IOKGkiBvaw==",
+  "normalize_symbols_for_tts": "UHJpY2U6IDEwMCBldXJvcyAgYW5kICA1IHBvdW5kcyDCqSAyMDI2ICB0byAgb2s=",
+  "smooth_whitespace_for_tts": "UHJpY2U6IDEwMCBldXJvcyBhbmQgNSBwb3VuZHMgwqkgMjAyNiB0byBvaw==",
+  "flatten_newlines_for_payload": "UHJpY2U6IDEwMCBldXJvcyBhbmQgNSBwb3VuZHMgwqkgMjAyNiB0byBvaw==",
+  "prepare_spoken_text": "UHJpY2U6IDEwMCBldXJvcyBhbmQgNSBwb3VuZHMgwqkgMjAyNiB0byBvaw==",
+  "prepare_spoken_text_40": "UHJpY2U6IDEwMCBldXJvcyBhbmQgNSBwb3VuZHMgwqkgMjAyNiB0bw=="
+ },
+ "t_entities2": {
+  "raw": "JiMzOTtxdW90ZWQmIzM5OyAmcXVvdDtoaSZxdW90OyAmbmJzcDsmbmJzcDsgJm1kYXNoOyZuZGFzaDsmaGVsbGlwOw==",
+  "strip_nonspoken_blocks": "JiMzOTtxdW90ZWQmIzM5OyAmcXVvdDtoaSZxdW90OyAmbmJzcDsmbmJzcDsgJm1kYXNoOyZuZGFzaDsmaGVsbGlwOw==",
+  "strip_markdown_for_tts": "J3F1b3RlZCcgImhpIiDCoMKgIOKAlOKAk+KApg==",
+  "normalize_symbols_for_tts": "J3F1b3RlZCcgImhpIiAgICDigJTigJMuLi4=",
+  "smooth_whitespace_for_tts": "J3F1b3RlZCcgImhpIiDigJTigJMuLi4=",
+  "flatten_newlines_for_payload": "J3F1b3RlZCcgImhpIiDigJTigJMuLg==",
+  "prepare_spoken_text": "J3F1b3RlZCcgImhpIiDigJTigJMuLg==",
+  "prepare_spoken_text_40": "J3F1b3RlZCcgImhpIiDigJTigJMuLg=="
+ },
+ "t_entities3": {
+  "raw": "Jmx0IG5vLXNlbWkgJmFtcCBuby1zZW1pICZjb3B5IG5vLXNlbWkgJm5vdGl0OyAmbm90aW4gJk5vdEVxdWFsVGlsZGU7",
+  "strip_nonspoken_blocks": "Jmx0IG5vLXNlbWkgJmFtcCBuby1zZW1pICZjb3B5IG5vLXNlbWkgJm5vdGl0OyAmbm90aW4gJk5vdEVxdWFsVGlsZGU7",
+  "strip_markdown_for_tts": "PCBuby1zZW1pICYgbm8tc2VtaSDCqSBuby1zZW1pIMKsaXQ7IMKsaW4g4omCzLg=",
+  "normalize_symbols_for_tts": "PCBuby1zZW1pICBhbmQgIG5vLXNlbWkgwqkgbm8tc2VtaSDCrGl0OyDCrGluIOKJgsy4",
+  "smooth_whitespace_for_tts": "PCBuby1zZW1pIGFuZCBuby1zZW1pIMKpIG5vLXNlbWkgwqxpdDsgwqxpbiDiiYLMuA==",
+  "flatten_newlines_for_payload": "PCBuby1zZW1pIGFuZCBuby1zZW1pIMKpIG5vLXNlbWkgwqxpdDsgwqxpbiDiiYLMuA==",
+  "prepare_spoken_text": "PCBuby1zZW1pIGFuZCBuby1zZW1pIMKpIG5vLXNlbWkgwqxpdDsgwqxpbiDiiYLMuA==",
+  "prepare_spoken_text_40": "PCBuby1zZW1pIGFuZCBuby1zZW1pIMKpIG5vLXNlbWkgwqxpdDsgwqxpbg=="
+ },
+ "t_entities4": {
+  "raw": "JiM2NTsgJiN4NDEgJiN4MUY2MDAgJiN4MTEwMDAwOyAmI3hEODAwOyAmIzA7ICYjeDgwOyAmIzEzOw==",
+  "strip_nonspoken_blocks": "JiM2NTsgJiN4NDEgJiN4MUY2MDAgJiN4MTEwMDAwOyAmI3hEODAwOyAmIzA7ICYjeDgwOyAmIzEzOw==",
+  "strip_markdown_for_tts": "QSBBIPCfmIAg77+9IO+/vSDvv70g4oKsIA0=",
+  "normalize_symbols_for_tts": "QSBBICDvv70g77+9IO+/vSDigqwgDQ==",
+  "smooth_whitespace_for_tts": "QSBBIO+/vSDvv70g77+9IOKCrA==",
+  "flatten_newlines_for_payload": "QSBBIO+/vSDvv70g77+9IOKCrA==",
+  "prepare_spoken_text": "QSBBIO+/vSDvv70g77+9IOKCrA==",
+  "prepare_spoken_text_40": "QSBBIO+/vSDvv70g77+9IOKCrA=="
+ },
+ "t_entities5": {
+  "raw": "JmFtcDtsdDsgc3RheXMgc2luZ2xlLXBhc3MgJmNvcHk7KyAmI3gxRjFFNjsmI3gxRjFFNzs=",
+  "strip_nonspoken_blocks": "JmFtcDtsdDsgc3RheXMgc2luZ2xlLXBhc3MgJmNvcHk7KyAmI3gxRjFFNjsmI3gxRjFFNzs=",
+  "strip_markdown_for_tts": "Jmx0OyBzdGF5cyBzaW5nbGUtcGFzcyDCqSsg8J+HpvCfh6c=",
+  "normalize_symbols_for_tts": "IGFuZCBsdDsgc3RheXMgc2luZ2xlLXBhc3MgwqkrIA==",
+  "smooth_whitespace_for_tts": "YW5kIGx0OyBzdGF5cyBzaW5nbGUtcGFzcyDCqSs=",
+  "flatten_newlines_for_payload": "YW5kIGx0OyBzdGF5cyBzaW5nbGUtcGFzcyDCqSs=",
+  "prepare_spoken_text": "YW5kIGx0OyBzdGF5cyBzaW5nbGUtcGFzcyDCqSs=",
+  "prepare_spoken_text_40": "YW5kIGx0OyBzdGF5cyBzaW5nbGUtcGFzcyDCqSs="
+ },
+ "t_entities6": {
+  "raw": "cGxhaW4gdGV4dCB3aXRoIG5vIGFtcGVyc2FuZHMgYXQgYWxs",
+  "strip_nonspoken_blocks": "cGxhaW4gdGV4dCB3aXRoIG5vIGFtcGVyc2FuZHMgYXQgYWxs",
+  "strip_markdown_for_tts": "cGxhaW4gdGV4dCB3aXRoIG5vIGFtcGVyc2FuZHMgYXQgYWxs",
+  "normalize_symbols_for_tts": "cGxhaW4gdGV4dCB3aXRoIG5vIGFtcGVyc2FuZHMgYXQgYWxs",
+  "smooth_whitespace_for_tts": "cGxhaW4gdGV4dCB3aXRoIG5vIGFtcGVyc2FuZHMgYXQgYWxs",
+  "flatten_newlines_for_payload": "cGxhaW4gdGV4dCB3aXRoIG5vIGFtcGVyc2FuZHMgYXQgYWxs",
+  "prepare_spoken_text": "cGxhaW4gdGV4dCB3aXRoIG5vIGFtcGVyc2FuZHMgYXQgYWxs",
+  "prepare_spoken_text_40": "cGxhaW4gdGV4dCB3aXRoIG5vIGFtcGVyc2FuZHMgYXQgYWxs"
+ }
+}

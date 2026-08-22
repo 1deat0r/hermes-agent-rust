@@ -1,56 +1,41 @@
 {
+  "agent.file_safety": {
+    "status": "done"
+  },
   "hermes_constants": {
     "status": "partial"
   },
-  "hermes_time": {
-    "status": "done"
-  },
   "hermes_logging": {
-    "status": "done"
-  },
-  "utils": {
     "status": "done"
   },
   "hermes_state": {
     "status": "done"
   },
-  "hermes_state_search": {
-    "status": "done"
-  },
-  "hermes_state_schema": {
+  "hermes_state_common": {
     "status": "done"
   },
   "hermes_state_portability": {
     "status": "done"
   },
-  "hermes_state_common": {
+  "hermes_state_schema": {
     "status": "done"
   },
-  "toolsets": {
+  "hermes_state_search": {
     "status": "done"
   },
-  "toolset_distributions": {
-    "status": "done"
-  },
-  "tools.registry": {
-    "status": "done"
-  },
-  "tools.schema_sanitizer": {
-    "status": "done"
-  },
-  "tools.clarify_tool": {
-    "status": "done"
-  },
-  "tools.session_search_tool": {
+  "hermes_time": {
     "status": "done"
   },
   "tools.ansi_strip": {
     "status": "done"
   },
-  "tools.tool_result_storage": {
+  "tools.binary_extensions": {
     "status": "done"
   },
   "tools.budget_config": {
+    "status": "done"
+  },
+  "tools.clarify_tool": {
     "status": "done"
   },
   "tools.file_state": {
@@ -59,13 +44,31 @@
   "tools.path_security": {
     "status": "done"
   },
-  "tools.binary_extensions": {
-    "status": "done"
-  },
   "tools.read_extract": {
     "status": "done"
   },
-  "agent.file_safety": {
+  "tools.registry": {
+    "status": "done"
+  },
+  "tools.schema_sanitizer": {
+    "status": "done"
+  },
+  "tools.session_search_tool": {
+    "status": "done"
+  },
+  "tools.tool_result_storage": {
+    "status": "done"
+  },
+  "tools.tts_text_normalize": {
+    "status": "done"
+  },
+  "toolset_distributions": {
+    "status": "done"
+  },
+  "toolsets": {
+    "status": "done"
+  },
+  "utils": {
     "status": "done"
   }
 }

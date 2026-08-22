@@ -4,10 +4,13 @@ version = "0.1.0"
 edition.workspace = true
 
 [dev-dependencies]
+base64 = "0.22"
+serde_json = "1"
 tempfile = "3"
 
 [dependencies]
 chrono = { workspace = true }
+fancy-regex = "0.14"
 hermes-constants = { path = "../hermes-constants" }
 shellexpand = "3"
 roxmltree = "0.20"

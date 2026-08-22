@@ -1,20 +1,20 @@
 {
  "generated_from": "/home/mustbearn/Projects/Research/hermes-agent-repo",
- "generated_at": "2026-08-22T18:00:31",
+ "generated_at": "2026-08-22T18:33:34",
  "summary": {
   "modules": 3882,
   "total_lines": 1510733,
   "production_modules": 1103,
   "production_lines": 843792,
   "status_counts": {
-   "done": 22,
+   "done": 23,
    "partial": 1,
-   "missing": 3859
+   "missing": 3858
   },
   "prod_status_counts": {
-   "done": 22,
+   "done": 23,
    "partial": 1,
-   "missing": 1080
+   "missing": 1079
   },
   "packages": {
    "gateway": {
@@ -86,8 +86,8 @@
     "lines": 123020,
     "modules": 131,
     "status": {
-     "missing": 120,
-     "done": 11
+     "missing": 119,
+     "done": 12
     }
    },
    "tests.run_agent": {
@@ -10073,7 +10073,7 @@
   "tools.tts_text_normalize": {
    "lines": 278,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "tests.plugins.platforms.photon.test_spectrum_patch": {
