@@ -8,6 +8,8 @@ tempfile = "3"
 
 [dependencies]
 chrono = { workspace = true }
+roxmltree = "0.20"
+zip = { version = "2", default-features = false, features = ["deflate"] }
 regex = "1"
 rusqlite = { version = "0.37", features = ["bundled"] }
 hermes-state = { path = "../hermes-state" }

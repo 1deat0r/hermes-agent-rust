@@ -138,18 +138,6 @@ fn known_reads_returns_paths() {
 }
 
 #[test]
-fn kill_switch_env_disables() {
-    // Set the env var for the duration (registry reads it per call).
-    std::env::set_var("HERMES_DISABLE_FILE_STATE_GUARD", "1");
-    let p = tmp_file("x\n");
-    record_read("A", &p, false);
-    note_write("B", &p);
-    assert!(check_stale("A", &p).is_none());
-    std::env::remove_var("HERMES_DISABLE_FILE_STATE_GUARD");
-    std::fs::remove_file(&p).ok();
-}
-
-#[test]
 fn docs_style_clear_resets() {
     let reg = FileStateRegistry::new();
     let p = tmp_file("x\n");

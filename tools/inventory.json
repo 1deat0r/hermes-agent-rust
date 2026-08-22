@@ -1,20 +1,20 @@
 {
  "generated_from": "/home/mustbearn/Projects/Research/hermes-agent-repo",
- "generated_at": "2026-08-22T17:37:23",
+ "generated_at": "2026-08-22T17:50:21",
  "summary": {
   "modules": 3882,
   "total_lines": 1510733,
   "production_modules": 1103,
   "production_lines": 843792,
   "status_counts": {
-   "done": 20,
+   "done": 21,
    "partial": 1,
-   "missing": 3861
+   "missing": 3860
   },
   "prod_status_counts": {
-   "done": 20,
+   "done": 21,
    "partial": 1,
-   "missing": 1082
+   "missing": 1081
   },
   "packages": {
    "gateway": {
@@ -85,8 +85,8 @@
     "lines": 123020,
     "modules": 131,
     "status": {
-     "missing": 121,
-     "done": 10
+     "missing": 120,
+     "done": 11
     }
    },
    "tests.run_agent": {
@@ -8171,7 +8171,7 @@
   "tools.read_extract": {
    "lines": 346,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "tests.tui_gateway.test_custom_provider_session_persistence": {

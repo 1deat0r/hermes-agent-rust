@@ -61,5 +61,8 @@
   },
   "tools.binary_extensions": {
     "status": "done"
+  },
+  "tools.read_extract": {
+    "status": "done"
   }
 }

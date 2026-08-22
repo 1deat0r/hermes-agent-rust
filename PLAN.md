@@ -318,6 +318,22 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 ## 7. Session log
 
+- 2026-08-22 (session 3b): Stdlib document extraction landed — hermes-tools
+  src/read_extract.rs (@ b9aa928, 346 LOC). .ipynb (cells in order,
+  markdown/code labels + numbering, output payloads never leak, legacy
+  worksheets fallback), .docx (paragraphs/runs with w:t/tab/br/cr
+  handling), .xlsx (visible-sheet iteration, shared strings, cell types
+  s/inlineStr/b/e/plain, column-letter index, 5000-row/256-col caps,
+  empty-tail row pruning, hidden-sheet omission). `zip` + `roxmltree`
+  deps; anydoc converter is a deferred seam (absent -> unsupported,
+  matching the no-package import path). Oracle: tests/tools/test_read_
+  extract.py fixture builders + cases (extension gate, notebook order/
+  empty, docx paragraphs/missing xml, xlsx visible content/hidden
+  omission/not-a-zip); 9 parity tests in parity_read_extract.rs (+4
+  unit tests); workspace 548 tests green; clippy clean. Fixed the file_
+  state kill-switch test race by splitting it into an isolated binary
+  (the env var is process-global). Evidence: `cargo test --workspace`
+  (unit).
 - 2026-08-22 (session 3a): File-tool support cluster landed — hermes-tools
   src/file_state.rs + path_security.rs + binary_extensions.rs (@ b9aa928).
   file_state: process-wide FileStateRegistry (read stamps mtime/read_ts/
