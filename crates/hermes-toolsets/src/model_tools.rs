@@ -329,6 +329,11 @@ pub fn compute_tool_definitions(
         }
     }
 
+    // Sanitize schemas for broad backend compatibility (llama.cpp GBNF
+    // converter, strict OpenAI-compatible providers). No-op for schemas
+    // already well-formed.
+    filtered = hermes_tools::schema_sanitizer::sanitize_tool_schemas(&filtered);
+
     set_last_resolved(&filtered);
     if !quiet_mode {
         if filtered.is_empty() {

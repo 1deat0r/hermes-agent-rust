@@ -69,8 +69,8 @@ fn coerces_number_and_boolean() {
             "done": {"type": "boolean"},
         })),
     );
-    let args = coerce_tool_args("coerce_num_bool", json!({"score": "3.14", "done": "true"}));
-    assert_eq!(args["score"], json!(3.14));
+    let args = coerce_tool_args("coerce_num_bool", json!({"score": "2.25", "done": "true"}));
+    assert_eq!(args["score"], json!(2.25));
     assert_eq!(args["done"], json!(true));
 }
 

@@ -34,5 +34,8 @@
   },
   "tools.registry": {
     "status": "done"
+  },
+  "tools.schema_sanitizer": {
+    "status": "done"
   }
 }

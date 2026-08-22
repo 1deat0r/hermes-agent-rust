@@ -92,7 +92,7 @@ Hermes-Agent-Rust/
     hermes-state/          # hermes_state{,_schema,_common,_portability,_search}.py  (Phase 1, open — common/schema/lifecycle landed)
     hermes-toolsets/       # toolsets.py ✅, toolset_distributions.py ✅, model_tools.py 🟡 (schema/coercion surface landed; handle_function_call deferred with agent loop)   (Phase 2)
     hermes-agent/          # run_agent.py + agent/            (Phase 2, next after toolsets)
-    hermes-tools/          # tools/ (✅ registry.py open — tool files scheduled)   (Phase 2)
+    hermes-tools/          # tools/ (✅ registry.py + schema_sanitizer.py — tool files scheduled)   (Phase 2)
     hermes-batch/          # batch_runner.py, trajectory_compressor.py, mini_swe_runner.py (Phase 2)
     hermes-cli/            # cli.py + hermes_cli/             (Phase 3, bin `hermes`)
     hermes-gateway/        # gateway/                         (Phase 4)
@@ -318,6 +318,20 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 ## 7. Session log
 
+- 2026-08-22 (session 1z): tools/schema_sanitizer.py ported —
+  hermes-tools src/schema_sanitizer.rs (@ b9aa928, 687 LOC). Deep-copy
+  schema sanitization for strict backends: property-key renames
+  (`[a-zA-Z0-9_.-]{1,64}` + collision suffixes + required remap + dispatch
+  reverse-map unrename_tool_args), bare-string schema replacement, object
+  empty-properties injection, `type: [X, "null"]` collapse + multi-type →
+  anyOf, nullable-union collapse (keep_nullable_hint), const-union → enum
+  (MCP path), top-level combinator strip (Codex), `$ref` sibling strip
+  (Fireworks), required pruning, reactive strip_pattern_and_format (llama
+  .cpp recovery) + strip_slash_enum (xAI Responses). Wired into
+  model_tools::compute_tool_definitions before tool-search assembly (the
+  previous seam). Unit tests in-module + existing coverage through the
+  pipeline; workspace 481 tests green; clippy clean. Evidence:
+  `cargo test --workspace` (unit).
 - 2026-08-22 (session 1y): model_tools surface landed — hermes-toolsets
   src/model_tools.rs. get_tool_definitions + _compute_tool_definitions
   (enabled/disabled/legacy toolset resolution, kanban worker auto-append,
