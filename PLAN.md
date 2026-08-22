@@ -214,7 +214,7 @@ Legend: ✅ done · 🟡 partial · ❌ missing
 | FTS DDL branch (legacy-vs-v23), trigger repair/rebuild, UPDATE OF migration, CJK quarantine | ✅ | schema + state impl |
 | _parse_schema_columns (in-memory SQLite parse) | ✅ | schema::parse_schema_columns |
 
-### hermes_state (upstream: hermes_state.py, 9,996 LOC) — 🟡 partial (foundation complete; remaining non-foundation surfaces documented in matrix)
+### hermes_state (upstream: hermes_state.py, 9,996 LOC) — ✅ complete (all 176 SessionDB methods ported)
 | Function/surface | Status | Rust home |
 |---|---|---|
 | SessionDB open (writable/RO), zeroed-DB quarantine, test-isolation guard, lock-patience open | ✅ | state::{open, open_read_only, open_writable} |
@@ -262,7 +262,12 @@ Legend: ✅ done · 🟡 partial · ❌ missing
 | session meta/model surfaces: update_session_meta (COALESCE model), update_system_prompt (hash-table canonical prompt), update_session_model (json_remove browser_model_lock, preserves lineage, nulls prompt), patch_session_model_config (None deletes keys, no-op missing), get_session_model_config_value (tolerant read), update_session_runtime_lock (browser_model_lock merge + prompt null), set_session_yolo / session_yolo_enabled (lineage-preserving yolo_mode, False on parse failure), update_session_billing_route (unconditional billing fields + prompt null) | ✅ | meta |
 | message reactions + display-kind + api_content surfaces: set_latest_matching_message_display_kind (turn stamp), set_message_reaction (tapback toggle/replace, per-author), get_message_reactions, take_unseen_reactions (seen stamp, exactly-once announce, author filter), set_latest_user_api_content (defensive content guard) | ✅ | reactions |
 | conversation surface: resolve_resume_session_id (compression-tip first, empty-head walk, fork picks newest child), get_messages_as_conversation (OpenAI format, include_ancestors/inactive, row ids, api_content verbatim, sanitize_context, harness/stale-marker strip, repair_alternation), get_resume_conversations (model/display one-SELECT split, verification-candidate collapse in model history), get_ancestor_display_prefix (non-tip rows only), get_conversation_root (stable conversation id), session_lineage_root_to_tip, duplicate-replayed-user dedup, restore_rewound; helpers sanitize_context / repair_message_sequence / strip harness + stale markers | ✅ | conversation |
-| REMAINING beyond foundation (documented, not yet ported): delete surface (clear_messages, delete_session(_if_empty), delete_sessions, delete_empty_sessions, get_session_delete_targets), maintenance (logical_size_bytes, vacuum, maybe_auto_prune_and_vacuum, maybe_auto_archive, message_count, has_platform_message_id, purge_stale_tool_call_markers, retag_kanban_worker_sessions) | ❌ | — (scheduled with P2/P3 consumers) |
+| delete surface: clear_messages, get_session_delete_targets (delegate-child collection), delete_session (delegate cascade + branch orphan + expected-set TOCTOU guard + on-disk cleanup), delete_session_if_empty (title/messages/children guard), delete_sessions (bulk, dedup, per-row contract), delete_empty_sessions (empty+ended+non-archived), finalize_orphaned_compression_sessions (#20001, 7-day cutoff) | ✅ | delete (+locks finalize) |
+| maintenance: message_count, has_platform_message_id, purge_stale_tool_call_markers (dry-run/backup VACUUM INTO), retag_kanban_worker_sessions (per-root gate), logical_size_bytes, vacuum (FTS-merge then checkpoint then VACUUM), maybe_auto_prune_and_vacuum (interval gate + last_vacuum throttle), maybe_auto_archive (interval gate) | ✅ | delete |
+
+**hermes_state.py surface: ✅ COMPLETE** — every SessionDB method ported across
+crud/schema/search/portability/locks/token/topics/handoff/prune/rewrite/
+rich/routing/cooldown/meta/reactions/conversation/delete modules.
 ### agent/redact (upstream: agent/redact.py, 1,197 LOC) — ✅ complete (homed in hermes-logging)
 | Function/surface | Status | Rust home |
 |---|---|---|
@@ -303,6 +308,29 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 ## 7. Session log
 
+- 2026-08-22 (session 1u): Delete + maintenance surfaces landed —
+  delete.rs (plus finalize_orphaned_compression_sessions in locks.rs).
+  message_count, has_platform_message_id, clear_messages, module helpers
+  collect_delegate_child_ids / delete_delegate_children (chain-walking
+  _delegate_from markers, parent-cycle guard #49148), get_session_delete_
+  targets, delete_session (delegate cascade, branch/compression orphan via
+  parent NULL, expected_delete_ids TOCTOU fail-closed, on-disk file
+  cleanup), delete_session_if_empty (title/messages/children guard, one
+  txn), delete_sessions (bulk, dedup, silent-skip unknown), delete_empty_
+  sessions, finalize_orphaned_compression_sessions (#20001, 7-day cutoff,
+  api_call_count=0 + ended-parent + has-messages guard),
+  purge_stale_tool_call_markers (dry-run, VACUUM INTO backup, marker-re
+  content clear), retag_kanban_worker_sessions (per-workspace state_meta
+  gate), logical_size_bytes (page_count*page_size), vacuum (FTS optimize +
+  TRUNCATE checkpoint + VACUUM), maybe_auto_prune_and_vacuum (interval
+  gate + last_vacuum throttle, never raises), maybe_auto_archive (interval
+  gate, archive_stale_sessions drive). This closes the hermes_state.py
+  surface: ALL 176 SessionDB methods ported; inventory marks hermes_state
+  done. Oracle: TestCounts.message_count, TestDeleteAndExport.delete_session
+  + expected-targets fail-closed, delete-empty reap, purge/retag contracts,
+  auto-maintenance idempotency; 15 parity tests in parity_state_delete.rs;
+  workspace 418 tests green; clippy clean. Evidence:
+  `cargo test --workspace` (unit).
 - 2026-08-22 (session 1t): Conversation projection surface landed —
   conversation.rs. resolve_resume_session_id (get_compression_tip first so a
   long-lived parent with rows still redirects to the continuation; then the

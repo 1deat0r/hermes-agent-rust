@@ -561,3 +561,43 @@ fn log_warn(msg: &str) {
     // diagnostics to eprintln until the logging seam is wired in P2.
     eprintln!("[hermes-state] WARN: {}", msg);
 }
+
+// ── orphaned-compression finalization (#20001) ─────────────────────────────
+
+impl SessionDB {
+    /// Mark orphaned compression continuation sessions as ended. Child
+    /// sessions that were never finalized (parent ended with 'compression',
+    /// child has messages but no end_reason/ended_at and api_call_count=0)
+    /// get end_reason='orphaned_compression'. Non-destructive.
+    ///
+    /// PARITY: SessionDB.finalize_orphaned_compression_sessions @ b9aa928
+    /// (5515–5550)
+    pub fn finalize_orphaned_compression_sessions(&self) -> Result<i64, WriteError> {
+        let cutoff = crate::state::now() - 604800.0; // 7 days
+        let f = |conn: &rusqlite::Connection| -> Result<i64, WriteError> {
+            let now = crate::state::now();
+            let rowcount = conn.execute(
+                "UPDATE sessions \
+                 SET ended_at = ?, end_reason = 'orphaned_compression' \
+                 WHERE api_call_count = 0 \
+                   AND end_reason IS NULL \
+                   AND ended_at IS NULL \
+                   AND started_at < ? \
+                   AND parent_session_id IS NOT NULL \
+                   AND EXISTS ( \
+                       SELECT 1 FROM sessions p \
+                       WHERE p.id = sessions.parent_session_id \
+                         AND p.end_reason = 'compression' \
+                         AND p.ended_at IS NOT NULL \
+                   ) \
+                   AND EXISTS ( \
+                       SELECT 1 FROM messages m \
+                       WHERE m.session_id = sessions.id \
+                   )",
+                rusqlite::params![now, cutoff],
+            )?;
+            Ok(rowcount as i64)
+        };
+        self.execute_write(&f, None)
+    }
+}

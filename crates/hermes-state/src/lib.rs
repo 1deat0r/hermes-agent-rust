@@ -9,6 +9,7 @@ pub mod compression_prefix;
 pub mod conversation;
 pub mod cooldown;
 pub mod crud;
+pub mod delete;
 pub mod handoff;
 pub mod locks;
 pub mod meta;
