@@ -10,6 +10,7 @@ pub mod cooldown;
 pub mod crud;
 pub mod handoff;
 pub mod locks;
+pub mod meta;
 pub mod portability;
 pub mod prune;
 pub mod rewrite;
