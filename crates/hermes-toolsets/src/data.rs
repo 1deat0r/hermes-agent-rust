@@ -8,6 +8,7 @@ pub struct ToolsetDef {
     pub description: &'static str,
     pub tools: &'static [&'static str],
     pub includes: &'static [&'static str],
+    pub posture: bool,
 }
 pub const HERMES_CORE_TOOLS: &[&str] = &[
         "web_search",
@@ -83,6 +84,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("search", ToolsetDef {
         description: "Web search only (no content extraction/scraping)",
@@ -91,6 +93,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("x_search", ToolsetDef {
         description: "Search X (Twitter) posts and threads via xAI's built-in x_search Responses tool. Read-only public X discovery; use the xurl skill for authenticated X API reads and account actions. Available when xAI credentials are configured (SuperGrok OAuth or XAI_API_KEY). Off by default; enable in `hermes tools` → X (Twitter) Search.",
@@ -99,6 +102,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("vision", ToolsetDef {
         description: "Image analysis and vision tools",
@@ -107,6 +111,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("video", ToolsetDef {
         description: "Video analysis and understanding tools (opt-in, not in default toolset)",
@@ -115,6 +120,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("image_gen", ToolsetDef {
         description: "Creative generation tools (images)",
@@ -123,6 +129,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("video_gen", ToolsetDef {
         description: "Video generation tools. Single ``video_generate`` tool covers text-to-video (prompt only) and image-to-video (prompt + image_url), plus reference-to-video. Provider-specific edit/extend workflows may appear as separate tools. Configure via ``hermes tools`` → Video Generation.",
@@ -133,6 +140,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("bfl", ToolsetDef {
         description: "Black Forest Labs FLUX 3 video generation through the Nous tool gateway: per-mode submit tools (text, image, keyframes, continuation), a poll tool, and a prompting guide. Generations take minutes, so submit returns a job id and the model polls for the result.",
@@ -146,6 +154,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("computer_use", ToolsetDef {
         description: "Background desktop control via cua-driver (macOS/Windows/Linux) — screenshots, mouse, keyboard, scroll, drag. Does NOT steal the user's cursor or keyboard focus. Works with any tool-capable model.",
@@ -154,6 +163,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("terminal", ToolsetDef {
         description: "Terminal/command execution and process management tools",
@@ -163,6 +173,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("skills", ToolsetDef {
         description: "Access, create, edit, and manage skill documents with specialized instructions and knowledge",
@@ -173,6 +184,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("browser", ToolsetDef {
         description: "Browser automation for web interaction (navigate, click, type, scroll, iframes, hold-click) with web search for finding URLs",
@@ -193,6 +205,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("cronjob", ToolsetDef {
         description: "Cronjob management tool - create, list, update, pause, resume, remove, and trigger scheduled tasks",
@@ -201,6 +214,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("file", ToolsetDef {
         description: "File manipulation tools: read, write, patch (with fuzzy matching), and search (content + files)",
@@ -212,6 +226,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("tts", ToolsetDef {
         description: "Text-to-speech: convert text to audio with Edge TTS (free), ElevenLabs, OpenAI, or xAI",
@@ -220,6 +235,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("todo", ToolsetDef {
         description: "Task planning and tracking for multi-step work",
@@ -228,6 +244,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("memory", ToolsetDef {
         description: "Persistent memory across sessions (personal notes + user profile)",
@@ -236,6 +253,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("context_engine", ToolsetDef {
         description: "Runtime tools exposed by the active context engine",
@@ -243,6 +261,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("session_search", ToolsetDef {
         description: "Search and recall past conversations with summarization",
@@ -251,6 +270,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("project", ToolsetDef {
         description: "Desktop Projects — create/switch named workspaces (GUI sessions only)",
@@ -261,6 +281,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("desktop_ui", ToolsetDef {
         description: "Desktop GUI affordances — in-app terminal/browser panes, pane focus, reactions (GUI sessions only)",
@@ -274,6 +295,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("clarify", ToolsetDef {
         description: "Ask the user clarifying questions (multiple-choice or open-ended)",
@@ -282,6 +304,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("code_execution", ToolsetDef {
         description: "Run Python scripts that call tools programmatically (reduces LLM round trips)",
@@ -290,6 +313,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("delegation", ToolsetDef {
         description: "Spawn subagents with isolated context for complex subtasks",
@@ -298,6 +322,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("homeassistant", ToolsetDef {
         description: "Home Assistant smart home control and monitoring",
@@ -309,6 +334,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("kanban", ToolsetDef {
         description: "Kanban multi-agent coordination — only active when the agent is spawned by the kanban dispatcher (HERMES_KANBAN_TASK env set). The dispatcher runs inside the gateway by default; see `kanban.dispatch_in_gateway` in config.yaml. Lets workers mark tasks done with structured handoffs, block for human input, heartbeat during long ops, comment on threads, attach files, and (for orchestrators) list, unblock, and fan out tasks.",
@@ -328,6 +354,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("discord", ToolsetDef {
         description: "Discord read and participate tools (fetch messages, search members, create threads)",
@@ -336,6 +363,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("discord_admin", ToolsetDef {
         description: "Discord server management (list channels/roles, pin messages, assign roles)",
@@ -344,6 +372,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("yuanbao", ToolsetDef {
         description: "Yuanbao platform tools - group info, member queries, DM, stickers",
@@ -356,6 +385,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("feishu_doc", ToolsetDef {
         description: "Read Feishu/Lark document content",
@@ -364,6 +394,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("feishu_drive", ToolsetDef {
         description: "Feishu/Lark document comment operations (list, reply, add)",
@@ -375,6 +406,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("spotify", ToolsetDef {
         description: "Native Spotify playback, search, playlist, album, and library tools",
@@ -389,6 +421,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("debugging", ToolsetDef {
         description: "Debugging and troubleshooting toolkit",
@@ -400,6 +433,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
         "web",
         "file",
     ],
+        posture: false,
     }),
     ("safe", ToolsetDef {
         description: "Safe toolkit without terminal access",
@@ -410,6 +444,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
         "vision",
         "image_gen",
     ],
+        posture: false,
     }),
     ("coding", ToolsetDef {
         description: "Coding-focused toolset: files, terminal, search, web docs, skills, todo, delegate, vision, browser",
@@ -447,6 +482,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: true,
     }),
     ("hermes-acp", ToolsetDef {
         description: "Editor integration (VS Code, Zed, JetBrains) — coding-focused tools without messaging, audio, or clarify UI",
@@ -483,6 +519,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("hermes-api-server", ToolsetDef {
         description: "OpenAI-compatible API server — full agent tools accessible via HTTP (no interactive UI tools like clarify or send_message)",
@@ -531,6 +568,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("hermes-cli", ToolsetDef {
         description: "Full interactive CLI toolset - all default tools plus cronjob management",
@@ -594,6 +632,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("hermes-cron", ToolsetDef {
         description: "Default cron toolset - same core tools as hermes-cli; gated by `hermes tools`",
@@ -657,6 +696,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("hermes-telegram", ToolsetDef {
         description: "Telegram bot toolset - full access for personal use (terminal has safety checks)",
@@ -720,6 +760,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("hermes-discord", ToolsetDef {
         description: "Discord bot toolset - full access (terminal has safety checks via dangerous command approval)",
@@ -785,6 +826,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("hermes-whatsapp", ToolsetDef {
         description: "WhatsApp bot toolset - similar to Telegram (personal messaging, more trusted)",
@@ -848,6 +890,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("hermes-slack", ToolsetDef {
         description: "Slack bot toolset - full access for workspace use (terminal has safety checks)",
@@ -911,6 +954,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("hermes-signal", ToolsetDef {
         description: "Signal bot toolset - encrypted messaging platform (full access)",
@@ -974,6 +1018,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("hermes-bluebubbles", ToolsetDef {
         description: "BlueBubbles iMessage bot toolset - Apple iMessage via local BlueBubbles server",
@@ -1037,6 +1082,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("hermes-homeassistant", ToolsetDef {
         description: "Home Assistant bot toolset - smart home event monitoring and control",
@@ -1100,6 +1146,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("hermes-email", ToolsetDef {
         description: "Email bot toolset - interact with Hermes via email (IMAP/SMTP)",
@@ -1163,6 +1210,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("hermes-mattermost", ToolsetDef {
         description: "Mattermost bot toolset - self-hosted team messaging (full access)",
@@ -1226,6 +1274,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("hermes-matrix", ToolsetDef {
         description: "Matrix bot toolset - decentralized encrypted messaging (full access)",
@@ -1289,6 +1338,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("hermes-dingtalk", ToolsetDef {
         description: "DingTalk bot toolset - enterprise messaging platform (full access)",
@@ -1352,6 +1402,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("hermes-feishu", ToolsetDef {
         description: "Feishu/Lark bot toolset - enterprise messaging via Feishu/Lark (full access)",
@@ -1420,6 +1471,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("hermes-weixin", ToolsetDef {
         description: "Weixin bot toolset - personal WeChat messaging via iLink (full access)",
@@ -1483,6 +1535,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("hermes-qqbot", ToolsetDef {
         description: "QQBot toolset - QQ messaging via Official Bot API v2 (full access)",
@@ -1546,6 +1599,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("hermes-wecom", ToolsetDef {
         description: "WeCom bot toolset - enterprise WeChat messaging (full access)",
@@ -1609,6 +1663,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("hermes-wecom-callback", ToolsetDef {
         description: "WeCom callback toolset - enterprise self-built app messaging (full access)",
@@ -1672,6 +1727,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("hermes-yuanbao", ToolsetDef {
         description: "Yuanbao Bot 元宝消息平台工具集 - 群信息、成员查询、私聊、贴纸表情",
@@ -1740,6 +1796,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("hermes-sms", ToolsetDef {
         description: "SMS bot toolset - interact with Hermes via SMS (Twilio)",
@@ -1803,6 +1860,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("hermes-webhook", ToolsetDef {
         description: "Webhook toolset - receive and process external webhook events",
@@ -1814,6 +1872,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
     ],
         includes: &[
     ],
+        posture: false,
     }),
     ("hermes-gateway", ToolsetDef {
         description: "Gateway toolset - union of all messaging platform tools",
@@ -1840,6 +1899,7 @@ pub static TOOLSETS: &[(&str, ToolsetDef)] = &[
         "hermes-webhook",
         "hermes-yuanbao",
     ],
+        posture: false,
     }),
 ];
 

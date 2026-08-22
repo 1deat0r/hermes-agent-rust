@@ -90,7 +90,7 @@ Hermes-Agent-Rust/
     hermes-utils/          # utils.py                         (Phase 1)
     hermes-logging/        # hermes_logging.py                (Phase 1)
     hermes-state/          # hermes_state{,_schema,_common,_portability,_search}.py  (Phase 1, open — common/schema/lifecycle landed)
-    hermes-toolsets/       # toolsets.py, toolset_distributions.py (✅ open — model_tools.py deferred with tools registry), model_tools.py   (Phase 2)
+    hermes-toolsets/       # toolsets.py ✅, toolset_distributions.py ✅, model_tools.py 🟡 (schema/coercion surface landed; handle_function_call deferred with agent loop)   (Phase 2)
     hermes-agent/          # run_agent.py + agent/            (Phase 2, next after toolsets)
     hermes-tools/          # tools/ (✅ registry.py open — tool files scheduled)   (Phase 2)
     hermes-batch/          # batch_runner.py, trajectory_compressor.py, mini_swe_runner.py (Phase 2)
@@ -318,6 +318,26 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 ## 7. Session log
 
+- 2026-08-22 (session 1y): model_tools surface landed — hermes-toolsets
+  src/model_tools.rs. get_tool_definitions + _compute_tool_definitions
+  (enabled/disabled/legacy toolset resolution, kanban worker auto-append,
+  platform-bundle + posture delta subtraction, browser_navigate
+  cross-reference strip, quiet-mode memo cache bounded at 8 with
+  generation/config-key bytes, _last_resolved_tool_names),
+  coerce_tool_args + coercion helpers (string→int/number/bool, union
+  types, bare-value array wrap, JSON-encoded list/object parse, nested
+  element/field normalization, nullable null preservation),
+  sanitize_tool_error (role-tag/fence/CDATA strip + 2000-char cap),
+  toolset query shims. REGEN: gen_toolsets.py now records the `posture`
+  flag (coding=True) and data.rs carries it. FIXES: get_toolset now
+  synthesizes registry-only (plugin/MCP) toolsets like upstream.
+  DEFERRED (documented): handle_function_call + hooks + rewind +
+  coordinator middleware (agent loop), execute_code/discord dynamic
+  schema rebuilds, schema_sanitizer, tool_search assembly,
+  _resolve_active_context_length. Oracle: run_agent/test_tool_arg_
+  coercion.py + test_sanitize_tool_error.py + get_tool_definitions
+  behaviors; 20 parity tests in parity_model_tools.rs; workspace 470
+  tests green; clippy clean. Evidence: `cargo test --workspace` (unit).
 - 2026-08-22 (session 1x): Registry seam wired — hermes-toolsets now
   depends on hermes-tools and reads the live registry singleton.
   get_toolset(include_registry=true) merges registry tools into builtin

@@ -59,6 +59,7 @@ fn static_toolset(name: &str) -> Option<ToolsetDef> {
             description: def.description,
             tools: def.tools,
             includes: def.includes,
+            posture: def.posture,
         })
 }
 
@@ -95,30 +96,44 @@ fn toolset_all(name: &str) -> Option<(String, Vec<String>, Vec<String>)> {
 /// `include_registry=True` is deferred until the tools crate lands — the
 /// parameter is accepted for call-site parity and behaves statically.
 pub fn get_toolset(name: &str, include_registry: bool) -> Option<serde_json::Value> {
-    let (description, tools, includes) = toolset_all(name)?;
+    let registry = registry_lookup();
+    let static_view = toolset_all(name);
     if !include_registry {
+        // Static view only: built-in/custom definitions. Registry/MCP-only
+        // toolsets have no static counterpart -> None.
+        let (description, tools, includes) = static_view?;
         return Some(serde_json::json!({
             "description": description,
             "tools": tools,
             "includes": includes,
         }));
     }
-    // Registry-merged view: overlay tools plugins registered into this
-    // toolset onto the static definition.
-    let registry = registry_lookup();
-    let mut merged: Vec<String> = tools.into_iter().collect();
-    if let Some(extra) = registry.names_for_toolset.get(name) {
-        for t in extra {
-            if !merged.contains(t) {
-                merged.push(t.clone());
+    if let Some((description, tools, includes)) = static_view {
+        // Registry-merged view: overlay tools plugins registered into this
+        // toolset onto the static definition.
+        let mut merged: Vec<String> = tools.into_iter().collect();
+        if let Some(extra) = registry.names_for_toolset.get(name) {
+            for t in extra {
+                if !merged.contains(t) {
+                    merged.push(t.clone());
+                }
             }
         }
+        merged.sort();
+        return Some(serde_json::json!({
+            "description": description,
+            "tools": merged,
+            "includes": includes,
+        }));
     }
-    merged.sort();
+    // Registry-only toolset (plugin / MCP): synthesize the upstream shape.
+    let names = registry.names_for_toolset.get(name)?.clone();
+    let mut names = names;
+    names.sort();
     Some(serde_json::json!({
-        "description": description,
-        "tools": merged,
-        "includes": includes,
+        "description": format!("Plugin toolset: {name}"),
+        "tools": names,
+        "includes": [],
     }))
 }
 

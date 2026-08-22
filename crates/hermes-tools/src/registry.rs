@@ -233,6 +233,11 @@ impl ToolRegistry {
         }
     }
 
+    /// Generation counter for cache-keying (registry mutations bump it).
+    pub fn generation_public(&self) -> u64 {
+        self.inner.read().expect("lock").generation
+    }
+
     fn snapshot_entries(&self) -> Vec<Arc<ToolEntry>> {
         let inner = self.inner.read().expect("lock");
         let mut entries: Vec<Arc<ToolEntry>> = inner.tools.values().cloned().collect();

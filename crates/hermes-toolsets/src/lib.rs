@@ -14,9 +14,14 @@
 //! without touching callers.
 
 pub mod data;
+pub mod model_tools;
 pub mod distributions;
 pub mod toolsets;
 
+pub use model_tools::{
+    clear_tool_defs_cache, coerce_tool_args, compute_tool_definitions, get_tool_definitions,
+    last_resolved_tool_names, sanitize_tool_error,
+};
 pub use distributions::{
     get_distribution, list_distributions, sample_toolsets_from_distribution,
     validate_distribution,

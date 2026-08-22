@@ -353,6 +353,8 @@ name = "hermes-toolsets"
 version = "0.1.0"
 dependencies = [
  "hermes-tools",
+ "once_cell",
+ "regex",
  "serde_json",
 ]
 
