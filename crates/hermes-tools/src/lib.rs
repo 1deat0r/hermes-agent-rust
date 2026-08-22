@@ -29,6 +29,25 @@ pub mod budget_config;
 pub mod tool_result_storage;
 pub mod html5_entities;
 pub mod tts_text_normalize;
+pub mod audio_container;
+pub mod blueprints;
+pub mod daemon_pool;
+pub mod debug_helpers;
+pub mod delegation_output_schema;
+pub mod env_probe;
+pub mod fal_common;
+pub mod interrupt;
+pub mod read_preview_tool;
+pub mod read_terminal_tool;
+pub mod skill_provenance;
+pub mod slash_confirm;
+pub mod terminal_hints;
+pub mod thread_context;
+pub mod threat_patterns;
+pub mod tool_backend_helpers;
+pub mod tool_output_limits;
+pub mod website_policy;
+pub mod working_diff;
 
 /// Availability helper for session_search's check_fn (hermes_state db home).
 pub fn session_search_check_expr() -> bool {
