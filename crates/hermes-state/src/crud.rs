@@ -1230,3 +1230,88 @@ impl SessionDB {
         Ok(rows)
     }
 }
+
+impl SessionDB {
+    /// Load a window of messages anchored on a specific message id.
+    ///
+    /// PARITY: hermes_state.py SessionDB.get_messages_around @ b9aa928
+    /// (7401–7474). Returns `{window, messages_before, messages_after}`;
+    /// empty window when the anchor is not a real id in the session.
+    pub fn get_messages_around(
+        &self,
+        session_id: &str,
+        around_message_id: i64,
+        window: i64,
+    ) -> Result<serde_json::Value, WriteError> {
+        let window = window.max(0);
+        let conn = self.writer_conn();
+        let anchor_exists: Option<i64> = conn
+            .query_row(
+                "SELECT 1 FROM messages WHERE id = ? AND session_id = ? LIMIT 1",
+                rusqlite::params![around_message_id, session_id],
+                |r| r.get(0),
+            )
+            .optional()
+            .map_err(WriteError::Sqlite)?;
+        if anchor_exists.is_none() {
+            return Ok(serde_json::json!({
+                "window": [],
+                "messages_before": 0,
+                "messages_after": 0,
+            }));
+        }
+        // before: id <= anchor DESC limit window+1; after: id > anchor ASC
+        // limit window. Final order id ASC.
+        let mut before_stmt = conn
+            .prepare(
+                "SELECT * FROM messages WHERE session_id = ? AND id <= ? ORDER BY id DESC LIMIT ?",
+            )
+            .map_err(WriteError::Sqlite)?;
+        let before = before_stmt
+            .query_map(
+                rusqlite::params![session_id, around_message_id, window + 1],
+                super::portability::message_row_to_value,
+            )
+            .map_err(WriteError::Sqlite)?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(WriteError::Sqlite)?;
+        let mut after_stmt = conn
+            .prepare(
+                "SELECT * FROM messages WHERE session_id = ? AND id > ? ORDER BY id ASC LIMIT ?",
+            )
+            .map_err(WriteError::Sqlite)?;
+        let after = after_stmt
+            .query_map(
+                rusqlite::params![session_id, around_message_id, window],
+                super::portability::message_row_to_value,
+            )
+            .map_err(WriteError::Sqlite)?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(WriteError::Sqlite)?;
+        // before is DESC (window+1 rows incl. the anchor); reverse to ASC and
+        // concatenate after rows. The result is the full anchored window.
+        let mut rows = before;
+        rows.reverse();
+        let before_rows = rows.len();
+        rows.extend(after);
+        let after_rows_selected = rows.len() - before_rows;
+        // Counts mirror upstream's LIMIT-cap semantics: messages_before is
+        // `window` unless the anchor sits near the session head; likewise
+        // messages_after near the tail.
+        let messages_before = if before_rows >= (window as usize + 1) {
+            window
+        } else {
+            (before_rows as i64) - 1 // minus the anchor itself
+        };
+        let messages_after = if after_rows_selected >= window as usize {
+            window
+        } else {
+            after_rows_selected as i64
+        };
+        Ok(serde_json::json!({
+            "window": rows,
+            "messages_before": messages_before.max(0),
+            "messages_after": messages_after.max(0),
+        }))
+    }
+}

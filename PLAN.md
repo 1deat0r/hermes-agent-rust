@@ -237,12 +237,13 @@ Legend: ✅ done · 🟡 partial · ❌ missing
 | get_messages (active filter, limit/offset, content/tool_calls/display_metadata decode) | ✅ | crud::get_messages |
 | latest_message_row_id / latest_user_message_row_id / get_message_role | ✅ | crud::{latest_message_row_id, latest_user_message_row_id, get_message_role} |
 | _check_transcript_write_guards + compression-busy short-wait in _execute_write | ✅ | crud::check_transcript_write_guards + state::execute_write |
-| portability mixin (export/import, rich rows) | ❌ (hermes_state_portability.py, 714 LOC) | — |
-| search mixin (search_messages, FTS rebuild engine, anchored views) | ❌ (hermes_state_search.py, 2,305 LOC) | — |
+| portability mixin (export/import, rich rows) | ✅ | portability |
+| search mixin (search_messages, FTS rebuild engine, anchored views) | ✅ | search (search_sessions_by_id deferred) |
 | compression locks (try_acquire/release/refresh, holder-dead reclaim, publish_compression_child, find_live_compression_child, reopen_orphaned_compression_session) | ✅ | locks ((+ _non_continuation_child_filter_sql in common)) |
 | token writer / telegram topics / handoffs / prune/archive | ❌ next units | — |
 | replace_messages (active_only) / has_archived_messages / archive_and_compact (+ _merge_model_config_json) / rewind_to_message | ✅ | rewrite |
 | portability mixin (rich rows, distinct cwds, cron runs, skill-scaffolded, export/import) | ✅ | portability (incl. get_compression_lineage + search_sessions deps) |
+| search mixin (search_messages, FTS rebuild engine, anchored views) | ✅ | search (search_sessions_by_id deferred — needs list_sessions_rich) |
 
 ### agent/redact (upstream: agent/redact.py, 1,197 LOC) — ✅ complete (homed in hermes-logging)
 | Function/surface | Status | Rust home |
@@ -415,3 +416,33 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   test_session_system_prompt_dedup import dedup, lineage walk
   (get_compression_lineage hand-mirror); 13 parity tests; workspace 259
   tests green; clippy clean. Evidence: `cargo test --workspace` (unit).
+
+- 2026-08-22 (session 1j): Search mixin landed — search.rs (largest state
+  surface, 2,305 upstream LOC). search_messages full routing: unicode61
+  FTS5 → CJK-bigram (when available) → trigram (>=3 CJK chars/token,
+  tokenizer present) → LIKE substring (short CJK, lone 1-char runs,
+  role='tool' queries), with sort newest/oldest, include_inactive
+  (rewound hidden / compacted-archived discoverable #38763), source/
+  exclude/role filters, fields projection (context-aware enrichment),
+  context (1-before/after WITH TARGET), deferred-rebuild unindexed-gap
+  supplement, pure-Latin-miss bigram/trigram recovery (#54242), slow-
+  search log (HERMES_SEARCH_SLOW_MS). sanitize_fts5_query (linear quote
+  scan, special-char strip, collapse, dangling-operator prune, dotted/
+  hyphen quoting; unit parity). FTS engine: fts_rebuild_status/step/
+  finish + CJK counterparts, chunked trash teardown (PK high-water),
+  marker seeding, repair-bookkeeping, fts_optimize_available,
+  _demote_legacy_fts_to_trash, optimize_fts_storage (throttled chunks +
+  settle + vacuum + layout stamp), optimize_fts, rebuild_fts,
+  _merge_fts_incrementally (usermerge floor + bounded merge in
+  try_incremental_merge_fts cadence), runtime corruption self-heal
+  (_try_runtime_fts_rebuild). get_anchored_view + get_messages_around,
+  list_recent_user_messages (display_kind exclusion, vendored
+  compression-handoff prefixes via tools/gen_compression_prefixes.py →
+  golden_compression_prefixes.json). search_sessions_by_id DEFERRED
+  (depends on list_sessions_rich, "surface read helpers" unit).
+  Oracle: TestFTS5Search sanitizer/projection/context, TestCJK
+  SearchFallback (ranges, mixed CJK+EN, %-escape), exclude-sources +
+  tool-visibility regressions, test_get_anchored_view, rebuild chunk
+  loop (30 msgs), fresh-DB optimize settle; 15 parity tests; workspace
+  274 tests green; clippy clean. Evidence: `cargo test --workspace`
+  (unit).

@@ -644,9 +644,14 @@ impl SessionDB {
     }
 
     /// Hook for the FTS bounded-merge cadence (search port provides the real
-    /// implementation; no-op until then — mirrors a bare bones default).
+    /// implementation via SessionDB::_merge_fts_incrementally).
     pub fn try_incremental_merge_fts(&self) -> Result<(), String> {
-        Ok(())
+        if !self.fts_enabled() {
+            return Ok(());
+        }
+        self._merge_fts_incrementally(crate::search::FTS_MERGE_MAX_PAGES_PER_INDEX, None)
+            .map(|_| ())
+            .map_err(|e| e.to_string())
     }
 
     pub fn get_meta(&self, key: &str) -> Option<String> {
