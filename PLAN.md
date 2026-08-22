@@ -259,7 +259,9 @@ Legend: ✅ done · 🟡 partial · ❌ missing
 | gateway routing CRUD: record_gateway_session_peer (peer metadata, COALESCE display_name/origin_json, compression-lineage option), set_expiry_finalized, save/replace/load/delete_gateway_routing_entries (scoped index), find_session_by_origin (exact-user wins, distinct-user contamination guard, thread filter), find_latest_gateway_session_for_peer (recoverable ends, peer-tuple fallback) | ✅ | routing |
 | compression cooldown + anti-thrash counters: record/get/get_row/restore/clear_compression_failure_cooldown (active-vs-raw row APIs, rollback verification, fail-open record/clear), get/set_compression_fallback_streak, get/set_compression_ineffective_count (≥0 clamped) | ✅ | cooldown |
 | session meta/model surfaces: update_session_meta (COALESCE model), update_system_prompt (hash-table canonical prompt), update_session_model (json_remove browser_model_lock, preserves lineage, nulls prompt), patch_session_model_config (None deletes keys, no-op missing), get_session_model_config_value (tolerant read), update_session_runtime_lock (browser_model_lock merge + prompt null), set_session_yolo / session_yolo_enabled (lineage-preserving yolo_mode, False on parse failure), update_session_billing_route (unconditional billing fields + prompt null) | ✅ | meta |
-| REMAINING beyond foundation (documented, not yet ported): finalize_orphaned_compression_sessions, message reactions + display-kind + api_content surfaces, (update_session_meta/system_prompt/model, patch_session_model_config, get_session_model_config_value, update_session_runtime_lock, set_session_yolo/session_yolo_enabled, update_session_billing_route), finalize_orphaned_compression_sessions, message reactions + display-kind + api_content surfaces, conversation surface (resolve_resume_session_id, get_messages_as_conversation, get_resume_conversations, get_ancestor_display_prefix, get_conversation_root, restore_rewound), delete surface (clear_messages, delete_session(_if_empty), delete_sessions, delete_empty_sessions, get_session_delete_targets), maintenance (logical_size_bytes, vacuum, maybe_auto_prune_and_vacuum, maybe_auto_archive, message_count, has_platform_message_id, purge_stale_tool_call_markers, retag_kanban_worker_sessions) | ❌ | — (scheduled with P2/P3 consumers) |
+| session meta/model surfaces: update_session_meta (COALESCE model), update_system_prompt (hash-table canonical prompt), update_session_model (json_remove browser_model_lock, preserves lineage, nulls prompt), patch_session_model_config (None deletes keys, no-op missing), get_session_model_config_value (tolerant read), update_session_runtime_lock (browser_model_lock merge + prompt null), set_session_yolo / session_yolo_enabled (lineage-preserving yolo_mode, False on parse failure), update_session_billing_route (unconditional billing fields + prompt null) | ✅ | meta |
+| message reactions + display-kind + api_content surfaces: set_latest_matching_message_display_kind (turn stamp), set_message_reaction (tapback toggle/replace, per-author), get_message_reactions, take_unseen_reactions (seen stamp, exactly-once announce, author filter), set_latest_user_api_content (defensive content guard) | ✅ | reactions |
+| REMAINING beyond foundation (documented, not yet ported): finalize_orphaned_compression_sessions, conversation surface (resolve_resume_session_id, get_messages_as_conversation, get_resume_conversations, get_ancestor_display_prefix, get_conversation_root, restore_rewound), delete surface (clear_messages, delete_session(_if_empty), delete_sessions, delete_empty_sessions, get_session_delete_targets), maintenance (logical_size_bytes, vacuum, maybe_auto_prune_and_vacuum, maybe_auto_archive, message_count, has_platform_message_id, purge_stale_tool_call_markers, retag_kanban_worker_sessions) | ❌ | — (scheduled with P2/P3 consumers) |
 ### agent/redact (upstream: agent/redact.py, 1,197 LOC) — ✅ complete (homed in hermes-logging)
 | Function/surface | Status | Rust home |
 |---|---|---|
@@ -300,6 +302,20 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 ## 7. Session log
 
+- 2026-08-22 (session 1s): Message presentation + reactions landed —
+  reactions.rs. set_latest_matching_message_display_kind (stamps the freshly
+  persisted turn row by session+role+content), set_message_reaction (one
+  reaction per author per message; same-emoji retract; different-emoji
+  replace; emoji=None clear; reactions live under display_metadata.reactions
+  so rewind/compaction row rewrites keep them), get_message_reactions
+  (never None), take_unseen_reactions (marks seen exactly-once, author
+  filtered, decoded text), set_latest_user_api_content (backfills the
+  api_content sidecar on the newest ACTIVE user row with a defensive
+  content-match guard). Oracle: tests/test_message_reactions.py (tapback +
+  seen-exactly-once + author independence + cache safety) + redisplay-kind
+  turn-stamp + api_content lone-surrogate guard; 12 parity tests in
+  parity_state_reactions.rs; workspace 383 tests green; clippy clean.
+  Evidence: `cargo test --workspace` (unit).
 - 2026-08-22 (session 1r): Session meta/model surfaces landed — meta.rs.
   update_session_meta (model COALESCE), update_system_prompt (canonical
   hash-table prompt + unreferenced-prompt GC), update_session_model
