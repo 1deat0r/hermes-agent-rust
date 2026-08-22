@@ -52,5 +52,14 @@
   },
   "tools.budget_config": {
     "status": "done"
+  },
+  "tools.file_state": {
+    "status": "done"
+  },
+  "tools.path_security": {
+    "status": "done"
+  },
+  "tools.binary_extensions": {
+    "status": "done"
   }
 }

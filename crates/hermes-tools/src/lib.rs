@@ -20,6 +20,9 @@
 //!   tool-catalog list once the tool renderers land.
 
 pub mod ansi_strip;
+pub mod binary_extensions;
+pub mod file_state;
+pub mod path_security;
 pub mod budget_config;
 pub mod tool_result_storage;
 
@@ -39,6 +42,9 @@ pub use schema_sanitizer::{
     strip_nullable_unions, strip_pattern_and_format, strip_slash_enum, unrename_tool_args,
 };
 pub use ansi_strip::{sanitize_display_text, strip_ansi};
+pub use binary_extensions::{is_binary_extension, BINARY_EXTENSIONS};
+pub use file_state::{check_stale, get_registry, known_reads, note_write, record_read, writes_since, FileStateRegistry};
+pub use path_security::validate_within_dir;
 pub use budget_config::{budget_for_context_window, BudgetConfig, BudgetThreshold};
 pub use tool_result_storage::{enforce_turn_budget, generate_preview, maybe_persist_tool_result};
 pub use clarify::{register_clarify, set_clarify_callback};

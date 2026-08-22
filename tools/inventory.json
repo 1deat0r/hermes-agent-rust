@@ -1,20 +1,20 @@
 {
  "generated_from": "/home/mustbearn/Projects/Research/hermes-agent-repo",
- "generated_at": "2026-08-22T17:31:34",
+ "generated_at": "2026-08-22T17:37:23",
  "summary": {
   "modules": 3882,
   "total_lines": 1510733,
   "production_modules": 1103,
   "production_lines": 843792,
   "status_counts": {
-   "done": 17,
+   "done": 20,
    "partial": 1,
-   "missing": 3864
+   "missing": 3861
   },
   "prod_status_counts": {
-   "done": 17,
+   "done": 20,
    "partial": 1,
-   "missing": 1085
+   "missing": 1082
   },
   "packages": {
    "gateway": {
@@ -85,8 +85,8 @@
     "lines": 123020,
     "modules": 131,
     "status": {
-     "missing": 124,
-     "done": 7
+     "missing": 121,
+     "done": 10
     }
    },
    "tests.run_agent": {
@@ -8447,7 +8447,7 @@
   "tools.file_state": {
    "lines": 332,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "tests.test_sqlite_lock_safe_inspection": {
@@ -25432,7 +25432,7 @@
   "tools.path_security": {
    "lines": 43,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "tests.agent.test_compression_orphan_recovery": {
@@ -25532,7 +25532,7 @@
   "tools.binary_extensions": {
    "lines": 42,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "tools.computer_use_tool": {

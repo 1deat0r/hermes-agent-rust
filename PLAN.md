@@ -318,6 +318,24 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 ## 7. Session log
 
+- 2026-08-22 (session 3a): File-tool support cluster landed — hermes-tools
+  src/file_state.rs + path_security.rs + binary_extensions.rs (@ b9aa928).
+  file_state: process-wide FileStateRegistry (read stamps mtime/read_ts/
+  partial, global last-writer map, bounded caps 4096, sibling-staleness
+  warnings by severity class, partial-read and external-drift detectors,
+  writes_since for delegate reminders, known_reads, HERMES_DISABLE_FILE_
+  STATE_GUARD kill switch). path_security: validate_within_dir with a
+  Python-resolve-equivalent (canonicalize deepest ancestor + append missing
+  components so non-existent targets normalize safely). binary_extensions:
+  the full ~60-entry binary-extension set + is_binary_extension.
+  DIVERGENCE (documented): HashMap lacks Python's insertion-order eviction,
+  so cap trimming drops arbitrary keys; per-path lock_path is a caller-side
+  critical-section concern (registry maps are under one Mutex) until the
+  executor task-concurrency layer lands. Oracle: test_file_state_registry
+  .py unit subset (staleness classes, sibling flags, kill switch,
+  writes_since, known_reads); 11 parity tests + 2 path_security unit tests
+  + ansi unit; workspace 534 tests green; clippy clean. Evidence:
+  `cargo test --workspace` (unit).
 - 2026-08-22 (session 2c): Tool result persistence + budgets landed —
   hermes-tools src/budget_config.rs + src/tool_result_storage.rs
   (@ b9aa928). budget_config: BudgetConfig (frozen defaults 100K/200K/
