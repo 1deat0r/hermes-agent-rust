@@ -6,6 +6,15 @@
 //! aliases) are deferred with the tools crate and marked as such.
 
 use std::collections::HashSet;
+use std::sync::Mutex;
+
+/// Serializes tests that read/mutate the process-global tool registry against
+/// each other. The registry is a shared OnceLock behind a Mutex in
+/// hermes-tools::registry; without this, `registry_tools_merge_into_builtin_toolset`
+/// can register `plugin_search_x` while `resolve_special_all_alias` snapshots
+/// the "all" view, producing an intermittent "missing from all" failure even
+/// though each test is individually correct.
+static REGISTRY_TEST_LOCK: Mutex<()> = Mutex::new(());
 
 use hermes_toolsets::{
     bundle_non_core_tools, create_custom_toolset, get_all_toolsets, get_distribution,
@@ -62,6 +71,7 @@ fn combines_and_deduplicates() {
 
 #[test]
 fn resolve_special_all_alias() {
+    let _guard = REGISTRY_TEST_LOCK.lock().unwrap();
     let all_tools = resolve_toolset("all", None, true);
     for name in get_toolset_names() {
         for tool in resolve_toolset(&name, None, true) {
@@ -229,6 +239,7 @@ fn register_tool(name: &str, toolset: &str) {
 
 #[test]
 fn registry_tools_merge_into_builtin_toolset() {
+    let _guard = REGISTRY_TEST_LOCK.lock().unwrap();
     register_tool("plugin_search_x", "web");
     // get_toolset with registry merges sorted union.
     let web = get_toolset("web", true).expect("web");
@@ -243,6 +254,7 @@ fn registry_tools_merge_into_builtin_toolset() {
 
 #[test]
 fn registry_alias_validates() {
+    let _guard = REGISTRY_TEST_LOCK.lock().unwrap();
     hermes_tools::registry::registry().register_toolset_alias("mcp-smart", "web");
     assert!(validate_toolset("mcp-smart"));
 }
