@@ -222,7 +222,21 @@ Legend: ✅ done · 🟡 partial · ❌ missing
 | _execute_write (BEGIN IMMEDIATE + jitter retry, checkpoint cadence) | ✅ | state::execute_write |
 | close (TRUNCATE checkpoint writable-only) | ✅ | state::close |
 | get_meta / set_meta / _store_system_prompt / system_prompt_hash | ✅ | state |
-| create_session / append_message / get_messages / messages CRUD | ❌ next unit | — |
+| create_session (+_insert_session_row ON CONFLICT enrichment, parent backfill, compression-fork origin inheritance) | ✅ | crud::create_session |
+| get_session / _session_row_dict (system-prompt resolution) | ✅ | crud::get_session + SESSION_SELECT |
+| resolve_session_id (exact/prefix, LIKE-escaped) | ✅ | crud::resolve_session_id |
+| end_session / reopen_session / promote_to_session_reset | ✅ | crud::{end_session, reopen_session, promote_to_session_reset} |
+| update_session_cwd (git_branch/git_repo_root, replace_git_meta) | ✅ | crud::update_session_cwd |
+| MAX_TITLE_LENGTH / sanitize_title (control-char strip, collapse, length ValueError) | ✅ | crud::sanitize_title |
+| set_session_title / set_auto_title_if_empty (+ compression-ancestor title transfer, ValueError conflict) | ✅ | crud::set_session_title / set_auto_title_if_empty |
+| get_session_title / get_session_by_title / resolve_session_by_title | ✅ | crud::{get_session_title, get_session_by_title, resolve_session_by_title} |
+| get_next_title_in_lineage (#N suffix lineage) | ✅ | crud::get_next_title_in_lineage |
+| append_message (full kwargs, JSON framing, timestamp, counters, transcript guards, long patience) | ✅ | crud::append_message |
+| append_messages_batch (atomic, guards, chunk_rows, aggregated counters) | ✅ | crud::append_messages_batch |
+| _insert_message_rows (role-gated reasoning, platform/message_id, monotonic ts) | ✅ | crud::insert_message_rows |
+| get_messages (active filter, limit/offset, content/tool_calls/display_metadata decode) | ✅ | crud::get_messages |
+| latest_message_row_id / latest_user_message_row_id / get_message_role | ✅ | crud::{latest_message_row_id, latest_user_message_row_id, get_message_role} |
+| _check_transcript_write_guards + compression-busy short-wait in _execute_write | ✅ | crud::check_transcript_write_guards + state::execute_write |
 | portability mixin (export/import, rich rows) | ❌ (hermes_state_portability.py, 714 LOC) | — |
 | search mixin (search_messages, FTS rebuild engine, anchored views) | ❌ (hermes_state_search.py, 2,305 LOC) | — |
 | compression locks / token writer / telegram topics / handoffs / prune/archive | ❌ next units | — |
@@ -257,6 +271,7 @@ oracle tests). Upstream oracle files currently mirrored:
   → deferred until reasoning-config crate lands
 - `hermes_state_common.py` → `crates/hermes-state/src/common.rs` (golden `upstream/golden_state_common.json`)
 - `tests/test_hermes_state.py` TestConnectionLifecycle/TestSchemaInit subset → `crates/hermes-state/tests/parity_state_lifecycle.rs`
+- `tests/test_hermes_state.py` SessionLifecycle/MessageStorage/TimestampPreservation/Title families + `tests/hermes_state/test_append_messages_batch.py` → `crates/hermes-state/tests/parity_state_crud.rs`
 - `agent/redact.py` → `crates/hermes-logging/src/redact.rs` (golden `upstream/golden_redact.json`)
 
 Evidence format: every claim in this file must cite `unit` | `mock` | `live`
@@ -311,9 +326,29 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   golden upstream/golden_redact.json byte-equality; corpus caught one
   real bug (_ENV_ASSIGN_RE must not be IGNORECASE). Workspace tests 189
   green; clippy clean. Evidence: `cargo test --workspace` (unit).
-  REMAINING state subsystem: SessionDB CRUD surface (create_session,
-  append_message, message reads, titles, prune/archive, compression
-  locks, token writer, telegram topics, handoffs, meta surfaces) then
+  REMAINING state subsystem: compression locks (try_acquire/release/
+  refresh), token writer (queue_token_counts/flush), telegram topics,
+  handoffs, prune/archive, replace_messages/rewind, surface read helpers
+  (list_sessions_rich, list_gateway_sessions, counts) then
   hermes_state_portability + hermes_state_search (FTS rebuild engine,
-  search_messages). Inventory: 6 done / 2 partial (hermes_constants
-  deferred node/networking; hermes_state foundation-only) / 1,095 missing.
+  search_messages).
+- 2026-08-22 (session 1f): SessionDB CRUD surface landed — sessions,
+  messages, titles. create_session (ON CONFLICT COALESCE enrichment,
+  parent cwd/git backfill, compression-fork origin inheritance),
+  get_session with resolved system_prompt, resolve_session_id,
+  end/reopen/promote_to_session_reset, update_session_cwd;
+  sanitize_title + set/auto/get title + lineage + title-transfer off
+  compression ancestors + ValueError conflicts; append_message (full
+  21-column insert, JSON framing sentinel, explicit timestamps,
+  message_count/tool_call_count counters, transcript guards,
+  TRANSCRIPT_WRITE_PATIENCE_S), append_messages_batch (atomic,
+  chunk_rows, aggregated counters, role-gated reasoning via
+  insert_message_rows), get_messages (limit/offset, decode),
+  latest/latest_user/get_message_role. _execute_write upgraded to
+  WriteError taxonomy incl. the compression-busy short-wait retry
+  (SessionCompressionInProgressError transient, closed/permanent
+  propagate). Oracle: tests/test_hermes_state.py (SessionLifecycle/
+  MessageStorage/TimestampPreservation/Title families) +
+  tests/hermes_state/test_append_messages_batch.py; 29 CRUD parity
+  tests added; workspace 218 tests green; clippy clean. Evidence:
+  `cargo test --workspace` (unit).

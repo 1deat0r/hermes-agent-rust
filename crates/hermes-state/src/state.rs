@@ -251,6 +251,54 @@ pub struct SessionDB {
     fts_usermerge_floor_applied: Cell<bool>,
 }
 
+/// Error classes the SessionDB write path can raise, mirroring upstream's
+/// exception taxonomy (hermes_state.py @ b9aa928):
+///   - `Sqlite` — any sqlite3.Error (locked/busy retried by execute_write)
+///   - `CompressionInProgress` — SessionCompressionInProgressError
+///     (transient: retried with the short compression-busy budget)
+///   - `CompressionSessionClosed` — CompressionSessionClosedError (permanent)
+///   - `ValueError` — ValueError raised by title/sanitize surfaces (permanent)
+#[derive(Debug)]
+pub enum WriteError {
+    Sqlite(rusqlite::Error),
+    CompressionInProgress(String),
+    CompressionSessionClosed(String),
+    ValueError(String),
+}
+
+impl std::fmt::Display for WriteError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            WriteError::Sqlite(e) => write!(f, "{}", e),
+            WriteError::CompressionInProgress(s) => {
+                write!(f, "Session {:?} is being compressed by another writer", s)
+            }
+            WriteError::CompressionSessionClosed(s) => write!(
+                f,
+                "Session {:?} is closed by compression; adopt its live continuation before appending messages",
+                s
+            ),
+            WriteError::ValueError(m) => write!(f, "{}", m),
+        }
+    }
+}
+
+impl std::error::Error for WriteError {}
+
+impl From<rusqlite::Error> for WriteError {
+    fn from(e: rusqlite::Error) -> Self {
+        WriteError::Sqlite(e)
+    }
+}
+
+/// Unix epoch seconds as f64 (mirrors ``time.time()`` in upstream queries).
+pub fn now() -> f64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs_f64())
+        .unwrap_or(0.0)
+}
+
 /// Write-contention tuning — constants mirroring the class attributes.
 impl SessionDB {
     pub const WRITE_PATIENCE_S: f64 = 20.0;
@@ -261,6 +309,7 @@ impl SessionDB {
     pub const WRITE_RETRY_SLOW_AFTER_S: f64 = 2.0;
     pub const WRITE_RETRY_SLOW_MIN_S: f64 = 0.250;
     pub const WRITE_RETRY_SLOW_MAX_S: f64 = 1.000;
+    pub const COMPRESSION_BUSY_WAIT_S: f64 = 5.0;
     pub const CHECKPOINT_EVERY_N_WRITES: u64 = 50;
     pub const FTS_MERGE_EVERY_N_WRITES: u64 = 1000;
     pub const FTS_TRASH_PREFIX: &'static str = "fts_v22_trash_";
@@ -454,18 +503,24 @@ impl SessionDB {
 
     /// Execute a write transaction with BEGIN IMMEDIATE and jitter retry.
     ///
-    /// PARITY: hermes_state.py _execute_write @ b9aa928 (2768–2897) minus the
-    /// compression-lock and runtime-FTS-rebuild paths (those arrive with the
-    /// compression + search ports; the retry machinery is identical).
-    pub fn execute_write<F, T>(&self, f: &F, patience_s: Option<f64>) -> Result<T, String>
+    /// PARITY: hermes_state.py _execute_write @ b9aa928 (2768–2897), now
+    /// including the compression-busy short-wait path (SessionCompression-
+    /// InProgressError is transient: a live lock clears in a couple of
+    /// seconds, so a steer that lands mid-compression waits instead of
+    /// aborting the turn). Runtime-FTS-rebuild path still deferred to the
+    /// search port.
+    pub fn execute_write<F, T>(&self, f: &F, patience_s: Option<f64>) -> Result<T, WriteError>
     where
-        F: Fn(&Connection) -> Result<T, rusqlite::Error>,
+        F: Fn(&Connection) -> Result<T, WriteError>,
     {
         let patience_s = patience_s.unwrap_or(Self::WRITE_PATIENCE_S);
         let deadline = std::time::Instant::now() + std::time::Duration::from_secs_f64(patience_s);
+        // Set on the first compression-busy collision so the short wait is
+        // measured from then, not from the start of the write.
+        let mut compression_deadline: Option<std::time::Instant> = None;
         loop {
             let conn = self.writer_conn();
-            let attempt = (|| -> Result<T, rusqlite::Error> {
+            let attempt = (|| -> Result<T, WriteError> {
                 conn.execute_batch("BEGIN IMMEDIATE")?;
                 let result = f(&conn);
                 match result {
@@ -491,14 +546,36 @@ impl SessionDB {
                     }
                     return Ok(v);
                 }
-                Err(rusqlite::Error::SqliteFailure(e, _)) => {
+                Err(WriteError::CompressionInProgress(_)) => {
+                    // A live foreign compression lock is transient. The budget
+                    // is _COMPRESSION_BUSY_WAIT_S, not the write-lock patience:
+                    // the lease is a correctness boundary, so a writer still
+                    // locked out after a short wait is refused rather than left
+                    // to land a stale turn.
+                    if compression_deadline.is_none() {
+                        compression_deadline = Some(
+                            std::time::Instant::now()
+                                + std::time::Duration::from_secs_f64(
+                                    Self::COMPRESSION_BUSY_WAIT_S.min(patience_s),
+                                ),
+                        );
+                    }
+                    let cd = compression_deadline.unwrap();
+                    if self.sleep_before_write_retry(cd, Self::COMPRESSION_BUSY_WAIT_S) {
+                        continue;
+                    }
+                    // Exhausted the compression-busy budget: refuse the write.
+                    attempt?;
+                    unreachable!();
+                }
+                Err(WriteError::Sqlite(rusqlite::Error::SqliteFailure(e, _))) => {
                     let msg = e.to_string().to_ascii_lowercase();
                     if msg.contains("locked") || msg.contains("busy") {
                         if !self.sleep_before_write_retry(deadline, patience_s) {
-                            return Err(format!(
-                                "database is locked (another Hermes process held the state.db write lock for over {:.0}s — likely a long maintenance operation such as VACUUM, a large WAL checkpoint, or an older pre-update process; the database itself is healthy)",
-                                patience_s
-                            ));
+                            return Err(WriteError::Sqlite(rusqlite::Error::SqliteFailure(
+                                e,
+                                None,
+                            )));
                         }
                         continue;
                     }
@@ -507,15 +584,18 @@ impl SessionDB {
                     {
                         continue;
                     }
-                    return Err(e.to_string());
+                    return Err(WriteError::Sqlite(rusqlite::Error::SqliteFailure(e, None)));
                 }
-                Err(e) => {
+                Err(WriteError::Sqlite(e)) => {
                     let msg = e.to_string().to_ascii_lowercase();
-                    if msg.contains("no more rows available") && self.sleep_before_write_retry(deadline, patience_s) {
+                    if msg.contains("no more rows available")
+                        && self.sleep_before_write_retry(deadline, patience_s)
+                    {
                         continue;
                     }
-                    return Err(e.to_string());
+                    return Err(WriteError::Sqlite(e));
                 }
+                Err(e) => return Err(e),
             }
         }
     }
@@ -574,7 +654,7 @@ impl SessionDB {
     }
 
     pub fn set_meta(&self, key: &str, value: &str) -> Result<(), String> {
-        let op = |conn: &Connection| -> Result<(), rusqlite::Error> {
+        let op = |conn: &Connection| -> Result<(), WriteError> {
             conn.execute(
                 "INSERT INTO state_meta (key, value) VALUES (?, ?) \
                  ON CONFLICT(key) DO UPDATE SET value = excluded.value",
@@ -582,7 +662,7 @@ impl SessionDB {
             )?;
             Ok(())
         };
-        self.execute_write(&op, None)
+        self.execute_write(&op, None).map_err(|e| e.to_string())
     }
 
     // Accessors used by the schema mixin -------------------------------------------------
