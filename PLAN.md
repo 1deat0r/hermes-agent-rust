@@ -242,7 +242,7 @@ Legend: ✅ done · 🟡 partial · ❌ missing
 | compression locks (try_acquire/release/refresh, holder-dead reclaim, publish_compression_child, find_live_compression_child, reopen_orphaned_compression_session) | ✅ | locks ((+ _non_continuation_child_filter_sql in common)) |
 | async token accounting (queue/flush/stop writer, update_token_counts, ensure_session, record_auxiliary_usage, per-model usage upsert) | ✅ | token (dedicated writer connection — documented divergence) |
 | telegram topics (migration v1→v2, enable/disable/is_enabled, bind/get/list/delete/is_linked, list_unlinked with preview) | ✅ | topics |
-| handoffs | ❌ next | — |
+| handoffs (request/get/list_pending/claim/complete/fail, 500-char error truncation) | ✅ | handoff |
 | prune/archive | ❌ next | — |
 | replace_messages (active_only) / has_archived_messages / archive_and_compact (+ _merge_model_config_json) / rewind_to_message | ✅ | rewrite |
 | portability mixin (rich rows, distinct cwds, cron runs, skill-scaffolded, export/import) | ✅ | portability (incl. get_compression_lineage + search_sessions deps) |
@@ -286,6 +286,16 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 ## 7. Session log
 
+- 2026-08-22 (session 1m): Cross-platform handoff state machine landed —
+  handoff.rs. request_handoff (pending only from None/completed/failed),
+  get_handoff_state (fail-open None), list_pending_handoffs (session dicts
+  with resolved system prompt, oldest first, fail-open []),
+  claim_handoff (pending→running CAS), complete_handoff (clears error),
+  fail_handoff (error[:500] truncation). Oracle:
+  tests/hermes_cli/test_session_handoff.py TestHandoffStateDB subset + the
+  dedup pending-system-prompt shape; 6 parity tests in parity_state_handoff
+  .rs; workspace 307 tests green; clippy clean. Evidence:
+  `cargo test --workspace` (unit).
 - 2026-08-22 (session 1l): Telegram DM topics landed — topics.rs.
   apply_telegram_topic_migration (explicit opt-in only: mode + bindings
   tables, unique/idx, v1→v2 FK rebuild gate pinned by state_meta version),
@@ -376,8 +386,8 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   golden upstream/golden_redact.json byte-equality; corpus caught one
   real bug (_ENV_ASSIGN_RE must not be IGNORECASE). Workspace tests 189
   green; clippy clean. Evidence: `cargo test --workspace` (unit).
-  REMAINING state subsystem (post-2026-08-22 1l): handoffs,
-  prune/archive, surface read helpers (list_sessions_rich,
+  REMAINING state subsystem (post-2026-08-22 1m): prune/archive,
+  surface read helpers (list_sessions_rich,
   list_gateway_sessions, counts, search_sessions_by_id — the latter two
   depend on list_sessions_rich), then the operator-flagged P2/P3 deferreds
   (apply_ipv4_preference, partial_update_hint, managed-node bootstrap,

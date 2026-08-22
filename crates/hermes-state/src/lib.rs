@@ -6,6 +6,7 @@ pub mod cfg;
 pub mod common;
 pub mod compression_prefix;
 pub mod crud;
+pub mod handoff;
 pub mod locks;
 pub mod portability;
 pub mod rewrite;
