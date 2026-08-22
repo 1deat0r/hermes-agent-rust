@@ -343,9 +343,14 @@ dependencies = [
 name = "hermes-tools"
 version = "0.1.0"
 dependencies = [
+ "chrono",
+ "hermes-state",
  "log",
  "once_cell",
+ "regex",
+ "rusqlite",
  "serde_json",
+ "tempfile",
 ]
 
 [[package]]

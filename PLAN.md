@@ -92,7 +92,7 @@ Hermes-Agent-Rust/
     hermes-state/          # hermes_state{,_schema,_common,_portability,_search}.py  (Phase 1, open — common/schema/lifecycle landed)
     hermes-toolsets/       # toolsets.py ✅, toolset_distributions.py ✅, model_tools.py 🟡 (schema/coercion surface landed; handle_function_call deferred with agent loop)   (Phase 2)
     hermes-agent/          # run_agent.py + agent/            (Phase 2, next after toolsets)
-    hermes-tools/          # tools/ (✅ registry.py + schema_sanitizer.py — tool files scheduled)   (Phase 2)
+    hermes-tools/          # tools/ (✅ registry, schema_sanitizer, ansi_strip, clarify_tool, session_search_tool — more tool files scheduled)   (Phase 2)
     hermes-batch/          # batch_runner.py, trajectory_compressor.py, mini_swe_runner.py (Phase 2)
     hermes-cli/            # cli.py + hermes_cli/             (Phase 3, bin `hermes`)
     hermes-gateway/        # gateway/                         (Phase 4)
@@ -318,6 +318,24 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 ## 7. Session log
 
+- 2026-08-22 (session 2b): Second/third tool-file ports —
+  tools/ansi_strip.py and tools/session_search_tool.py → hermes-tools
+  src/ansi_strip.rs + src/session_search.rs (@ b9aa928). ansi_strip: full
+  ECMA-48 strip + sanitize_display_text (C0 control removal, CR→LF);
+  clarifies a real pattern bug (raw-string line-continuation backslashes).
+  session_search: single-shape tool with DISCOVERY (FTS5 + lineage dedup +
+  hidden/demoted source handling #19434 + current-lineage guards +
+  compaction/compression-history carve-outs + anchored window/bookends +
+  compaction-summary filter + rebuild-status annotation + title-match
+  path), SCROLL (±window clamp [1,20], current-lineage rejection unless
+  compacted/compression-ended, lineage rebind with warning), READ
+  (head+tail truncation, ANSI strip, @session link), BROWSE (recent
+  sessions excluding current lineage + hidden sources). Deferred: cross-
+  profile reads (_resolve_profile_db / _locate_session_db) until the
+  hermes_cli profiles crate (P3). Oracle: tests/tools/test_session_search
+  .py core shapes + schema invariants; 10 parity tests in
+  parity_session_search.rs (+3 ansi unit tests); workspace 507 tests
+  green; clippy clean. Evidence: `cargo test --workspace` (unit).
 - 2026-08-22 (session 2a): First tool-file port — tools/clarify_tool.py →
   hermes-tools/src/clarify.rs (@ b9aa928, 266 LOC). clarify_tool
   (question validation, choices flatten + trim to MAX_CHOICES, empty→open-

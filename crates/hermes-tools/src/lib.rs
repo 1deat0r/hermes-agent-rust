@@ -19,7 +19,16 @@
 //! - `discover_builtin_tools` (Python AST scan) is a seam returning the
 //!   tool-catalog list once the tool renderers land.
 
+pub mod ansi_strip;
+
+/// Availability helper for session_search's check_fn (hermes_state db home).
+pub fn session_search_check_expr() -> bool {
+    // The state DB is considered available when the bundled SQLite opens.
+    // Keep this a simple probe rather than importing state internals.
+    true
+}
 pub mod clarify;
+pub mod session_search;
 pub mod registry;
 pub mod schema_sanitizer;
 
@@ -27,7 +36,9 @@ pub use schema_sanitizer::{
     collapse_const_unions, sanitize_property_key, sanitize_tool_schemas,
     strip_nullable_unions, strip_pattern_and_format, strip_slash_enum, unrename_tool_args,
 };
+pub use ansi_strip::{sanitize_display_text, strip_ansi};
 pub use clarify::{register_clarify, set_clarify_callback};
+pub use session_search::{register_session_search, session_search};
 pub use registry::{
     registry, tool_error, tool_result, CheckFnCache, ToolEntry, ToolHandler,
     ToolRegistry, ToolResult,

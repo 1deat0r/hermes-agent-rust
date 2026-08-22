@@ -1,20 +1,20 @@
 {
  "generated_from": "/home/mustbearn/Projects/Research/hermes-agent-repo",
- "generated_at": "2026-08-22T17:11:44",
+ "generated_at": "2026-08-22T17:24:44",
  "summary": {
   "modules": 3882,
   "total_lines": 1510733,
   "production_modules": 1103,
   "production_lines": 843792,
   "status_counts": {
-   "done": 13,
+   "done": 15,
    "partial": 1,
-   "missing": 3868
+   "missing": 3866
   },
   "prod_status_counts": {
-   "done": 13,
+   "done": 15,
    "partial": 1,
-   "missing": 1089
+   "missing": 1087
   },
   "packages": {
    "gateway": {
@@ -85,8 +85,8 @@
     "lines": 123020,
     "modules": 131,
     "status": {
-     "missing": 128,
-     "done": 3
+     "missing": 126,
+     "done": 5
     }
    },
    "tests.run_agent": {
@@ -3709,7 +3709,7 @@
    "imports": [
     "hermes_state"
    ],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "tests.agent.test_memory_provider": {
@@ -22044,7 +22044,7 @@
   "tools.ansi_strip": {
    "lines": 79,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "optional-skills.security.unbroker.scripts.paths": {

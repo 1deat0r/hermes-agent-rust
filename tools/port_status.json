@@ -40,5 +40,11 @@
   },
   "tools.clarify_tool": {
     "status": "done"
+  },
+  "tools.session_search_tool": {
+    "status": "done"
+  },
+  "tools.ansi_strip": {
+    "status": "done"
   }
 }
