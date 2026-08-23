@@ -62,6 +62,8 @@ pub struct ProviderProfile {
     pub models_fetch_mode: ModelsFetchMode,
     /// Translate Hermes reasoning into Gemini's native thinking config.
     pub gemini_thinking: bool,
+    /// Route Copilot reasoning through the live model-catalog effort list.
+    pub copilot_reasoning: bool,
     /// Route the reasoning configuration through `extra_body.reasoning`.
     pub reasoning_passthrough: bool,
 }
@@ -92,6 +94,7 @@ impl ProviderProfile {
             models_fetch_disabled: false,
             models_fetch_mode: ModelsFetchMode::Standard,
             gemini_thinking: false,
+            copilot_reasoning: false,
             reasoning_passthrough: false,
         }
     }
@@ -130,6 +133,9 @@ impl ProviderProfile {
         reasoning_config: Option<&Map<String, Value>>,
         context: &Map<String, Value>,
     ) -> (Map<String, Value>, Map<String, Value>) {
+        if self.copilot_reasoning {
+            return build_copilot_reasoning(reasoning_config, context);
+        }
         if !self.reasoning_passthrough {
             return (Map::new(), Map::new());
         }
@@ -541,4 +547,69 @@ fn is_gemini_openai_compat_base_url(base_url: &str) -> bool {
     !normalized.is_empty()
         && normalized.contains("generativelanguage.googleapis.com")
         && normalized.ends_with("/openai")
+}
+
+fn build_copilot_reasoning(
+    reasoning_config: Option<&Map<String, Value>>,
+    context: &Map<String, Value>,
+) -> (Map<String, Value>, Map<String, Value>) {
+    // PARITY: CopilotProfile delegates to
+    // `hermes_cli.models.github_model_reasoning_efforts(model)`. The Rust
+    // CLI/model crate is not present yet, so the supported effort list is an
+    // explicit injected context seam for the same fail-open decision.
+    let supports_reasoning = context
+        .get("supports_reasoning")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
+    let model = context
+        .get("model")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    if !supports_reasoning || model.is_empty() {
+        return (Map::new(), Map::new());
+    }
+
+    let supported_efforts: Vec<&str> = context
+        .get("supported_efforts")
+        .and_then(Value::as_array)
+        .map(|efforts| efforts.iter().filter_map(Value::as_str).collect())
+        .unwrap_or_default();
+    if supported_efforts.is_empty() {
+        return (Map::new(), Map::new());
+    }
+
+    let has_reasoning_config = reasoning_config.is_some_and(|config| !config.is_empty());
+    if !has_reasoning_config {
+        let mut reasoning = Map::new();
+        reasoning.insert("effort".into(), Value::String("medium".into()));
+        let mut extra_body = Map::new();
+        extra_body.insert("reasoning".into(), Value::Object(reasoning));
+        return (extra_body, Map::new());
+    }
+
+    let mut effort = reasoning_config
+        .and_then(|config| config.get("effort"))
+        .and_then(Value::as_str)
+        .unwrap_or("medium")
+        .to_owned();
+    if !supported_efforts.contains(&effort.as_str()) {
+        if effort == "xhigh" && supported_efforts.contains(&"high") {
+            effort = "high".into();
+        } else if effort == "minimal" && supported_efforts.contains(&"low") {
+            effort = "low".into();
+        } else if supported_efforts.contains(&"medium") {
+            effort = "medium".into();
+        } else {
+            effort = supported_efforts[0].into();
+        }
+    }
+    if !supported_efforts.contains(&effort.as_str()) {
+        return (Map::new(), Map::new());
+    }
+
+    let mut reasoning = Map::new();
+    reasoning.insert("effort".into(), Value::String(effort));
+    let mut extra_body = Map::new();
+    extra_body.insert("reasoning".into(), Value::Object(reasoning));
+    (extra_body, Map::new())
 }

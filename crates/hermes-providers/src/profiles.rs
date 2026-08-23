@@ -18,6 +18,8 @@ mod arcee;
 mod azure_foundry;
 #[path = "bedrock.rs"]
 mod bedrock;
+#[path = "copilot.rs"]
+mod copilot;
 #[path = "copilot_acp.rs"]
 mod copilot_acp;
 #[path = "fireworks.rs"]
@@ -56,6 +58,7 @@ pub(crate) fn register_builtin_profiles() {
     register_provider(arcee::profile());
     register_provider(azure_foundry::profile());
     register_provider(bedrock::profile());
+    register_provider(copilot::profile());
     register_provider(copilot_acp::profile());
     register_provider(fireworks::profile());
     register_provider(gemini::profile());
@@ -83,6 +86,7 @@ pub(crate) fn load_profile(
             Some("arcee") => return Ok(Some(arcee::profile())),
             Some("azure-foundry") => return Ok(Some(azure_foundry::profile())),
             Some("bedrock") => return Ok(Some(bedrock::profile())),
+            Some("copilot") => return Ok(Some(copilot::profile())),
             Some("copilot-acp") => return Ok(Some(copilot_acp::profile())),
             Some("fireworks") => return Ok(Some(fireworks::profile())),
             Some("gemini") => return Ok(Some(gemini::profile())),
