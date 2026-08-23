@@ -1,6 +1,6 @@
 # Hermes Agent Rust — Next-session handoff
 
-Date: 2026-08-24 (Pacific/Auckland), session 4m.
+Date: 2026-08-24 (Pacific/Auckland), session 4n.
 
 ## Resume point
 
@@ -17,7 +17,9 @@ update. The local HTTPS Git client still has no credentials; use the
 connected GitHub API for future pushes until `gh auth login` or SSH is
 configured.
 
-Latest synchronized units: local source `b62208f` → GitHub `148b205c`
+Latest synchronized units: local source `5abcd78` → GitHub `31daa217`
+(`plugins.model-providers.azure-foundry.__init__`), after local `b62208f` →
+GitHub `148b205c`
 (`plugins.model-providers.alibaba-coding-plan.__init__`), after local `66c12f6` →
 GitHub `38e28b0` (`plugins.model-providers.huggingface.__init__`), local `7afbf40` → GitHub
 `c965919` (`plugins.model-providers.xai.__init__`), local `47c7ead` → GitHub
@@ -36,7 +38,8 @@ because it cannot preserve the local author/committer timestamps.
 ## What landed this session
 
 Module-sized commits are complete through
-`plugins.model-providers.alibaba-coding-plan.__init__`: `db23d7c`
+`plugins.model-providers.azure-foundry.__init__`: `5abcd78` locally, mirrored
+as `31daa217` remotely; `db23d7c`
 hermes-logging test isolation;
 `a1a5b1b` hermes-constants test isolation; `cd4d356` audio_container;
 `12d704e` computer_use/schema plus generator/golden; `9303b4b`
@@ -62,18 +65,21 @@ mirrored as `c965919` remotely. The Hugging Face bundled profile is `66c12f6`
 locally, mirrored as `38e28b0` remotely. The Alibaba Coding Plan bundled
 profile is `b62208f` locally, mirrored as `148b205c` remotely.
 
+The Azure Foundry bundled profile is included in the new `5abcd78` source
+commit and its `31daa217` GitHub mirror.
+
 The new `hermes-providers` crate ports `providers/base.py` and
 `providers/__init__.py` @ `b9aa928`: declarative profile defaults and hooks,
 model endpoint precedence, strict fail-open catalog parsing,
 credential-safe redirects, canonical/alias registry behavior, copy-safe
 caching, and sorted bundled/user/legacy discovery. The focused suites contain
-9 base, 8 registry, 2 Alibaba profile, 2 Arcee profile, 2 Kilo Code profile,
-2 StepFun profile, 2 OpenAI Codex profile, 2 Xiaomi profile, 2 XAI profile,
-2 Hugging Face profile, and 2 Alibaba Coding Plan profile tests are green. The provider
-surface remains partial
+9 base, 8 registry, 2 Alibaba profile, 2 Alibaba Coding Plan profile, 2 Arcee
+profile, 2 Azure Foundry profile, 2 Kilo Code profile, 2 StepFun profile, 2
+OpenAI Codex profile, 2 Xiaomi profile, 2 XAI profile, and 2 Hugging Face
+profile tests are green. The provider surface remains partial
 for the future CLI version/opener integration and remaining Rust plugin profile
 loaders. The next unit is the smallest remaining bundled profile,
-`plugins.model-providers.azure-foundry.__init__` (21 LOC).
+`plugins.model-providers.nvidia.__init__` (21 LOC).
 
 The required workspace run was green before the commit split:
 
@@ -86,15 +92,15 @@ All tests passed; only three intentional delegation/schema doc tests were ignore
 
 ## Exact working-tree state
 
-After the current Alibaba Coding Plan commit is mirrored and `main` is aligned to its
+After the current Azure Foundry commit is mirrored and `main` is aligned to its
 remote mirror, the working tree is clean. The committed metadata
 includes `PLAN.md`, `tools/port_status.json`, generated `tools/inventory.json`,
 `CONVERSION-LEDGER.md`, and this handoff. No code or parity test is pending
-for the Alibaba Coding Plan unit.
+for the Azure Foundry unit.
 
 ## Next actions, in order
 
-1. Start `plugins.model-providers.azure-foundry.__init__` by reading its pinned
+1. Start `plugins.model-providers.nvidia.__init__` by reading its pinned
    source/tests and writing profile-registration parity tests first.
 2. Keep the static bundled-profile registration order and user-loader seam
    explicit while adding the next provider profile.
@@ -105,8 +111,8 @@ for the Alibaba Coding Plan unit.
 
 `CONVERSION-LEDGER.md` is generated and contains one row for every 3,882 upstream inventory modules: 1,103 production tasks plus 2,779 oracle/test tasks. Only `done` counts toward completion.
 
-- All tracked modules: 50 done / 9 partial / 3,823 missing = **1.29%**.
-- Production modules: 50 done / 9 partial / 1,044 missing = **4.53%**.
+- All tracked modules: 51 done / 9 partial / 3,822 missing = **1.31%**.
+- Production modules: 51 done / 9 partial / 1,043 missing = **4.62%**.
 
 The nine partial production rows are `hermes_constants`, `providers.base`,
 `providers.__init__`, `tools.credential_files`,
@@ -131,18 +137,20 @@ The strict production formula is `done production modules / 1,103`; partial rows
 - MCP cache loading reads/parses the file once and fails open on malformed content.
 - XAI pins the upstream `Hermes-Agent/0.20.0` default header; dynamic
   `hermes_cli.__version__` injection remains an explicit future CLI seam.
+- Azure Foundry retains upstream's empty base URL because its endpoint is
+  per-resource and user-supplied through `AZURE_FOUNDRY_BASE_URL`.
 - `tools/gen_computer_use_schema.py` discovers the upstream root via `HERMES_UPSTREAM` and has path fallbacks for this machine.
 - `cargo fmt --all -- --check` reports many pre-existing unformatted foundation files outside this wave. Do not mass-reformat unrelated crates; use targeted formatting only if needed.
 
 ## Verification evidence
 
 The focused provider parity suites passed 9 base, 8 registry, 2 Alibaba, 2
-Alibaba Coding Plan, 2 Arcee, 2 Kilo Code, 2 StepFun, 2 OpenAI Codex, 2
-Xiaomi, 2 XAI, and 2 Hugging Face profile tests. The
+Alibaba Coding Plan, 2 Arcee, 2 Azure Foundry, 2 Kilo Code, 2 StepFun, 2
+OpenAI Codex, 2 Xiaomi, 2 XAI, and 2 Hugging Face profile tests. The
 required workspace build and test also passed with the explicit cargo
 toolchain; three
 delegation/schema doc tests are intentionally ignored. Inventory and
-conversion ledger were regenerated and now record 50 done / 9 partial / 1,044
+conversion ledger were regenerated and now record 51 done / 9 partial / 1,043
 missing production modules.
 
 ## First command tomorrow
