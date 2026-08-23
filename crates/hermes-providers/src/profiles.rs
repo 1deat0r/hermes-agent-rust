@@ -14,6 +14,8 @@ mod arcee;
 mod azure_foundry;
 #[path = "bedrock.rs"]
 mod bedrock;
+#[path = "gmi.rs"]
+mod gmi;
 #[path = "huggingface.rs"]
 mod huggingface;
 #[path = "kilocode.rs"]
@@ -42,6 +44,7 @@ pub(crate) fn register_builtin_profiles() {
     register_provider(arcee::profile());
     register_provider(azure_foundry::profile());
     register_provider(bedrock::profile());
+    register_provider(gmi::profile());
     register_provider(huggingface::profile());
     register_provider(kilocode::profile());
     register_provider(novita::profile());
@@ -63,6 +66,7 @@ pub(crate) fn load_profile(
             Some("arcee") => return Ok(Some(arcee::profile())),
             Some("azure-foundry") => return Ok(Some(azure_foundry::profile())),
             Some("bedrock") => return Ok(Some(bedrock::profile())),
+            Some("gmi") => return Ok(Some(gmi::profile())),
             Some("huggingface") => return Ok(Some(huggingface::profile())),
             Some("kilocode") => return Ok(Some(kilocode::profile())),
             Some("novita") => return Ok(Some(novita::profile())),
