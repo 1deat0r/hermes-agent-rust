@@ -459,6 +459,7 @@ mod tests {
 
     #[test]
     fn profile_fallback_warning_writes_once() {
+        let _g = crate::TEST_ENV_MUTEX.lock().unwrap();
         reset_profile_fallback_warning_for_tests();
         let p = probe_with("/tmp/user");
         p.add_file("/tmp/user/.hermes/active_profile", "coder");
@@ -472,6 +473,7 @@ mod tests {
 
     #[test]
     fn profile_fallback_no_warning_for_default() {
+        let _g = crate::TEST_ENV_MUTEX.lock().unwrap();
         reset_profile_fallback_warning_for_tests();
         let p = probe_with("/tmp/user");
         p.add_file("/tmp/user/.hermes/active_profile", "default");

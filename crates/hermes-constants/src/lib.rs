@@ -21,6 +21,12 @@ pub mod styles;
 pub mod values;
 pub mod venv;
 
+// The upstream tests monkeypatch process-global environment/config state.
+// Share one lock across Rust unit-test modules so those cases remain isolated
+// when lib tests run in parallel.
+#[cfg(test)]
+pub(crate) static TEST_ENV_MUTEX: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
 pub use home::{
     apply_subprocess_home_env, get_default_hermes_root, get_hermes_home,
     get_hermes_home_override, get_process_hermes_home, get_real_home,
