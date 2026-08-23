@@ -10,6 +10,8 @@ mod alibaba;
 mod arcee;
 #[path = "kilocode.rs"]
 mod kilocode;
+#[path = "stepfun.rs"]
+mod stepfun;
 
 use std::path::Path;
 
@@ -20,6 +22,7 @@ pub(crate) fn register_builtin_profiles() {
     register_provider(alibaba::profile());
     register_provider(arcee::profile());
     register_provider(kilocode::profile());
+    register_provider(stepfun::profile());
 }
 
 pub(crate) fn load_profile(
@@ -31,6 +34,7 @@ pub(crate) fn load_profile(
             Some("alibaba") => return Ok(Some(alibaba::profile())),
             Some("arcee") => return Ok(Some(arcee::profile())),
             Some("kilocode") => return Ok(Some(kilocode::profile())),
+            Some("stepfun") => return Ok(Some(stepfun::profile())),
             _ => {}
         }
     }
