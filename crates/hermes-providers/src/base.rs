@@ -49,6 +49,8 @@ pub struct ProviderProfile {
     pub default_aux_model: String,
     /// Disable REST model discovery when a provider uses a separate SDK.
     pub models_fetch_disabled: bool,
+    /// Route the reasoning configuration through `extra_body.reasoning`.
+    pub reasoning_passthrough: bool,
 }
 
 impl ProviderProfile {
@@ -75,6 +77,7 @@ impl ProviderProfile {
             default_max_tokens: None,
             default_aux_model: String::new(),
             models_fetch_disabled: false,
+            reasoning_passthrough: false,
         }
     }
 
@@ -106,10 +109,33 @@ impl ProviderProfile {
 
     pub fn build_api_kwargs_extras(
         &self,
-        _reasoning_config: Option<&Map<String, Value>>,
-        _context: &Map<String, Value>,
+        reasoning_config: Option<&Map<String, Value>>,
+        context: &Map<String, Value>,
     ) -> (Map<String, Value>, Map<String, Value>) {
-        (Map::new(), Map::new())
+        if !self.reasoning_passthrough {
+            return (Map::new(), Map::new());
+        }
+
+        // PARITY: VercelAIGatewayProfile defaults its typed
+        // `supports_reasoning=True` parameter when the transport does not
+        // supply the context key, and emits no reasoning body when it is false.
+        let supports_reasoning = context
+            .get("supports_reasoning")
+            .and_then(Value::as_bool)
+            .unwrap_or(true);
+        if !supports_reasoning {
+            return (Map::new(), Map::new());
+        }
+
+        let reasoning = reasoning_config.cloned().unwrap_or_else(|| {
+            Map::from_iter([
+                ("enabled".into(), Value::Bool(true)),
+                ("effort".into(), Value::String("medium".into())),
+            ])
+        });
+        let mut extra_body = Map::new();
+        extra_body.insert("reasoning".into(), Value::Object(reasoning));
+        return (extra_body, Map::new());
     }
 
     pub fn default_vision_model(&self) -> Option<String> {

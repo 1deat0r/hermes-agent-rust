@@ -85,7 +85,8 @@ fn discovery_is_lazy_and_loader_order_matches_upstream() {
 
     // A normal registry access marks discovery complete and registers the
     // statically linked bundled profiles before the user loader seam runs.
-    assert_eq!(list_providers().len(), 15);
+    assert_eq!(list_providers().len(), 16);
+    assert!(get_provider_profile("ai-gateway").is_some());
     assert!(get_provider_profile("alibaba").is_some());
     assert!(get_provider_profile("alibaba-coding-plan").is_some());
     assert!(get_provider_profile("arcee").is_some());
@@ -101,6 +102,31 @@ fn discovery_is_lazy_and_loader_order_matches_upstream() {
     assert!(get_provider_profile("stepfun").is_some());
     assert!(get_provider_profile("xiaomi").is_some());
     assert!(get_provider_profile("xai").is_some());
+    let names: Vec<_> = list_providers()
+        .into_iter()
+        .map(|profile| profile.name)
+        .collect();
+    assert_eq!(
+        names,
+        [
+            "ai-gateway",
+            "alibaba",
+            "alibaba-coding-plan",
+            "arcee",
+            "azure-foundry",
+            "bedrock",
+            "copilot-acp",
+            "gmi",
+            "huggingface",
+            "kilocode",
+            "novita",
+            "nvidia",
+            "openai-codex",
+            "stepfun",
+            "xai",
+            "xiaomi"
+        ]
+    );
     assert!(discovered_for_tests());
 }
 

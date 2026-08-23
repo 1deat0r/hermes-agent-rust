@@ -47,6 +47,9 @@
   "plugins.model-providers.alibaba-coding-plan.__init__": {
     "status": "done"
   },
+  "plugins.model-providers.ai-gateway.__init__": {
+    "status": "done"
+  },
   "plugins.model-providers.arcee.__init__": {
     "status": "done"
   },

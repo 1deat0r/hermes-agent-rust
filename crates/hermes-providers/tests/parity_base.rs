@@ -114,6 +114,7 @@ fn dataclass_defaults_match_upstream() {
     assert_eq!(profile.default_max_tokens, None);
     assert!(profile.default_aux_model.is_empty());
     assert!(!profile.models_fetch_disabled);
+    assert!(!profile.reasoning_passthrough);
 }
 
 #[test]
