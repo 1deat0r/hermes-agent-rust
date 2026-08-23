@@ -47,6 +47,8 @@ pub struct ProviderProfile {
     pub fixed_temperature: FixedTemperature,
     pub default_max_tokens: Option<u32>,
     pub default_aux_model: String,
+    /// Disable REST model discovery when a provider uses a separate SDK.
+    pub models_fetch_disabled: bool,
 }
 
 impl ProviderProfile {
@@ -72,6 +74,7 @@ impl ProviderProfile {
             fixed_temperature: FixedTemperature::CallerDefault,
             default_max_tokens: None,
             default_aux_model: String::new(),
+            models_fetch_disabled: false,
         }
     }
 
@@ -123,6 +126,11 @@ impl ProviderProfile {
         base_url: Option<&str>,
         timeout: f64,
     ) -> Option<Vec<String>> {
+        // PARITY: BedrockProfile overrides the upstream method and always
+        // returns None because model discovery uses the AWS SDK, not REST.
+        if self.models_fetch_disabled {
+            return None;
+        }
         // PARITY: Python's `base_url or self.base_url` treats an empty caller
         // override as absent, and `models_url` wins over either base URL.
         let effective_base = base_url

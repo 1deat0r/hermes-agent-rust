@@ -12,6 +12,8 @@ mod alibaba_coding_plan;
 mod arcee;
 #[path = "azure_foundry.rs"]
 mod azure_foundry;
+#[path = "bedrock.rs"]
+mod bedrock;
 #[path = "huggingface.rs"]
 mod huggingface;
 #[path = "kilocode.rs"]
@@ -39,6 +41,7 @@ pub(crate) fn register_builtin_profiles() {
     register_provider(alibaba_coding_plan::profile());
     register_provider(arcee::profile());
     register_provider(azure_foundry::profile());
+    register_provider(bedrock::profile());
     register_provider(huggingface::profile());
     register_provider(kilocode::profile());
     register_provider(novita::profile());
@@ -59,6 +62,7 @@ pub(crate) fn load_profile(
             Some("alibaba-coding-plan") => return Ok(Some(alibaba_coding_plan::profile())),
             Some("arcee") => return Ok(Some(arcee::profile())),
             Some("azure-foundry") => return Ok(Some(azure_foundry::profile())),
+            Some("bedrock") => return Ok(Some(bedrock::profile())),
             Some("huggingface") => return Ok(Some(huggingface::profile())),
             Some("kilocode") => return Ok(Some(kilocode::profile())),
             Some("novita") => return Ok(Some(novita::profile())),

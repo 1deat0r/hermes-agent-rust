@@ -130,11 +130,11 @@ config (config crate), node/profile constants remainder. Phase 2 (agent
 core: toolsets, run_agent, agent/, tools/, batch) is open.
 
 **P2 status: 🟡 OPEN — hermes-tools support wave and provider profile
-base/registry/Alibaba/Alibaba Coding Plan/Arcee/Azure Foundry/Kilo/Novita/NVIDIA/StepFun/OpenAI Codex/XAI/Xiaomi/Hugging Face profiles landed (2026-08-24).** The support wave below
+base/registry/Alibaba/Alibaba Coding Plan/Arcee/Azure Foundry/Bedrock/Kilo/Novita/NVIDIA/StepFun/OpenAI Codex/XAI/Xiaomi/Hugging Face profiles landed (2026-08-24).** The support wave below
 ports small, dependency-light modules needed by the agent surface.
 `hermes-providers` now contains the declarative `providers.base` profile,
 secure model-catalog probe, process-global registry/discovery cache, and the
-first statically linked bundled profiles (`alibaba`, `alibaba-coding-plan`, `arcee`, `azure-foundry`, `huggingface`, `kilocode`, `novita`, `nvidia`, `openai-codex`, `stepfun`, `xai`, `xiaomi`). The provider surface
+first statically linked bundled profiles (`alibaba`, `alibaba-coding-plan`, `arcee`, `azure-foundry`, `bedrock`, `huggingface`, `kilocode`, `novita`, `nvidia`, `openai-codex`, `stepfun`, `xai`, `xiaomi`). The provider surface
 remains partial until the future CLI crate supplies the runtime version used
 in `_profile_user_agent`, the application-installed urllib opener policy is
 represented, and the remaining bundled/user provider plugin profiles have
@@ -346,11 +346,12 @@ rich/routing/cooldown/meta/reactions/conversation/delete modules.
 | credential-safe redirects (same-origin retention, cross-origin `accept`/`user-agent` allowlist) | ✅ | `base.rs`; 2 redirect tests (`mock`) |
 | `_profile_user_agent` runtime CLI version and installed urllib opener policy | 🟡 | stable fallback is implemented; CLI-version injection and application opener integration remain with `hermes-cli` |
 | providers/__init__.py canonical/alias registry, cache, and lazy discovery order | ✅ | `hermes-providers::registry`; 8 parity tests (`unit`/`mock`) |
-| providers/__init__.py bundled/user/legacy import execution | 🟡 | filesystem scan and explicit loader seam are implemented; statically linked Alibaba, Alibaba Coding Plan, Arcee, Azure Foundry, Hugging Face, Kilo, Novita, NVIDIA, OpenAI Codex, StepFun, XAI, and Xiaomi are wired, remaining Rust plugin profiles/loaders remain pending |
+| providers/__init__.py bundled/user/legacy import execution | 🟡 | filesystem scan and explicit loader seam are implemented; statically linked Alibaba, Alibaba Coding Plan, Arcee, Azure Foundry, Bedrock, Hugging Face, Kilo, Novita, NVIDIA, OpenAI Codex, StepFun, XAI, and Xiaomi are wired, remaining Rust plugin profiles/loaders remain pending |
 | plugins/model-providers/alibaba/__init__.py (13 LOC) | ✅ | `hermes-providers::profiles::alibaba`; 2 source-derived parity tests (`unit`); no dedicated upstream test module |
 | plugins/model-providers/alibaba-coding-plan/__init__.py (21 LOC) | ✅ | `hermes-providers::profiles::alibaba_coding_plan`; 2 source-derived parity tests (`unit`); no dedicated upstream plugin-profile test module; related CLI/agent tests remain future-crate oracles |
 | plugins/model-providers/arcee/__init__.py (13 LOC) | ✅ | `hermes-providers::profiles::arcee`; 2 source-derived parity tests (`unit`); no dedicated upstream plugin-profile test module; related CLI/agent tests remain future-crate oracles |
 | plugins/model-providers/azure-foundry/__init__.py (21 LOC) | ✅ | `hermes-providers::profiles::azure_foundry`; 2 source-derived parity tests (`unit`); no dedicated upstream plugin-profile test module; related CLI/agent tests remain future-crate oracles |
+| plugins/model-providers/bedrock/__init__.py (30 LOC) | ✅ | `hermes-providers::profiles::bedrock`; 2 source-derived parity tests (`unit`); AWS SDK model-discovery override represented by `models_fetch_disabled`; related Bedrock adapter/transport tests remain future-crate oracles |
 | plugins/model-providers/huggingface/__init__.py (20 LOC) | ✅ | `hermes-providers::profiles::huggingface`; 2 source-derived parity tests (`unit`); no dedicated upstream plugin-profile test module; related CLI/agent tests remain future-crate oracles |
 | plugins/model-providers/kilocode/__init__.py (14 LOC) | ✅ | `hermes-providers::profiles::kilocode`; 2 source-derived parity tests (`unit`); no dedicated upstream plugin-profile test module; related CLI/agent tests remain future-crate oracles |
 | plugins/model-providers/novita/__init__.py (27 LOC) | ✅ | `hermes-providers::profiles::novita`; 2 source-derived parity tests (`unit`); upstream `tests/hermes_cli/test_api_key_providers.py` covers profile loading and pricing-cache behavior; pricing helper remains a future hermes-cli seam |
@@ -402,6 +403,7 @@ oracle tests). Upstream oracle files currently mirrored:
 - `plugins/model-providers/alibaba-coding-plan/__init__.py` → `crates/hermes-providers/tests/parity_alibaba_coding_plan.rs` (2 source-derived profile/registration parity tests; `unit`; no dedicated upstream plugin-profile test module)
 - `plugins/model-providers/arcee/__init__.py` → `crates/hermes-providers/tests/parity_arcee.rs` (2 source-derived profile/registration parity tests; `unit`; no dedicated upstream plugin-profile test module)
 - `plugins/model-providers/azure-foundry/__init__.py` → `crates/hermes-providers/tests/parity_azure_foundry.rs` (2 source-derived profile/registration parity tests; `unit`; no dedicated upstream plugin-profile test module)
+- `plugins/model-providers/bedrock/__init__.py` → `crates/hermes-providers/tests/parity_bedrock.rs` (2 source-derived profile/registration/fetch-override parity tests; `unit`; AWS SDK discovery is represented by the shared `models_fetch_disabled` capability)
 - `plugins/model-providers/huggingface/__init__.py` → `crates/hermes-providers/tests/parity_huggingface.rs` (2 source-derived profile/registration parity tests; `unit`; no dedicated upstream plugin-profile test module)
 - `plugins/model-providers/kilocode/__init__.py` → `crates/hermes-providers/tests/parity_kilocode.rs` (2 source-derived profile/registration parity tests; `unit`; no dedicated upstream plugin-profile test module)
 - `plugins/model-providers/novita/__init__.py` → `crates/hermes-providers/tests/parity_novita.rs` (2 source-derived profile/registration parity tests; `unit`; upstream `tests/hermes_cli/test_api_key_providers.py` also covers pricing-cache behavior, deferred with the hermes-cli seam)
@@ -415,6 +417,22 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 + the exact command, e.g. `cargo test -p hermes-time (unit)`.
 
 ## 7. Session log
+
+- 2026-08-24 (session 4q): Ported
+  `plugins/model-providers/bedrock/__init__.py` (@ b9aa928, 30 LOC) through a
+  source-derived TDD pass. The profile mirrors the canonical `bedrock` name,
+  `aws`/`aws-bedrock`/`amazon-bedrock`/`amazon` aliases,
+  `bedrock_converse` API mode, empty environment-variable tuple,
+  `https://bedrock-runtime.us-east-1.amazonaws.com`, and `aws_sdk` auth. Its
+  upstream `BedrockProfile.fetch_models()` subclass override is represented by
+  the shared `models_fetch_disabled` capability, which returns `None` before
+  REST endpoint validation or network I/O. Added 2 `unit` parity tests for all
+  profile fields, aliases, hostname, canonical list identity, and the
+  no-network fetch override. Focused Bedrock, base, and registry suites are
+  green. Required `/home/mustbearnold/.cargo/bin/cargo build --workspace` and
+  `/home/mustbearnold/.cargo/bin/cargo test --workspace` are green. The next
+  dependency-safe production unit is `plugins.model-providers.gmi.__init__`
+  (32 LOC).
 
 - 2026-08-24 (session 4p): Ported
   `plugins/model-providers/novita/__init__.py` (@ b9aa928, 27 LOC) through a

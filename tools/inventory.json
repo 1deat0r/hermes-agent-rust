@@ -1,20 +1,20 @@
 {
  "generated_from": "/run/media/mustbearnold/Projects/Research/hermes-agent-repo",
- "generated_at": "2026-08-24T10:29:22",
+ "generated_at": "2026-08-24T10:34:09",
  "summary": {
   "modules": 3882,
   "total_lines": 1510733,
   "production_modules": 1103,
   "production_lines": 843792,
   "status_counts": {
-   "done": 53,
+   "done": 54,
    "partial": 9,
-   "missing": 3820
+   "missing": 3819
   },
   "prod_status_counts": {
-   "done": 53,
+   "done": 54,
    "partial": 9,
-   "missing": 1041
+   "missing": 1040
   },
   "packages": {
    "gateway": {
@@ -56,8 +56,8 @@
     "lines": 124366,
     "modules": 182,
     "status": {
-     "missing": 170,
-     "done": 12
+     "missing": 169,
+     "done": 13
     }
    },
    "agent": {
@@ -26249,7 +26249,7 @@
   "plugins.model-providers.bedrock.__init__": {
    "lines": 30,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "hermes_cli.timefmt": {

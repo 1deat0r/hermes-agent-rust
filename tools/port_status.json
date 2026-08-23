@@ -53,6 +53,9 @@
   "plugins.model-providers.azure-foundry.__init__": {
     "status": "done"
   },
+  "plugins.model-providers.bedrock.__init__": {
+    "status": "done"
+  },
   "plugins.model-providers.kilocode.__init__": {
     "status": "done"
   },
