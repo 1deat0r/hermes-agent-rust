@@ -29,6 +29,7 @@ pub mod budget_config;
 pub mod tool_result_storage;
 pub mod html5_entities;
 pub mod computer_use_schema;
+pub mod credential_files;
 pub mod tts_text_normalize;
 pub mod audio_container;
 pub mod blueprints;
