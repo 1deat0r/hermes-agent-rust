@@ -10,8 +10,8 @@ use std::sync::Mutex;
 
 use hermes_providers::registry::{
     discover_with_loader, discovered_for_tests, get_provider_profile, list_providers,
-    plugin_module_name, register_provider, reset_registry_for_tests, user_plugins_dir,
-    ProviderSource,
+    mark_discovered_for_tests, plugin_module_name, register_provider, reset_registry_for_tests,
+    user_plugins_dir, ProviderSource,
 };
 use hermes_providers::ProviderProfile;
 
@@ -34,6 +34,7 @@ fn plugin_dir(root: &Path, name: &str) -> PathBuf {
 fn registration_maps_names_and_aliases_and_invalidates_cache() {
     let _guard = REGISTRY_TEST_LOCK.lock().unwrap();
     reset_registry_for_tests();
+    mark_discovered_for_tests();
 
     register_provider(profile("alpha", &["a"]));
     assert_eq!(get_provider_profile("alpha").unwrap().name, "alpha");
@@ -60,6 +61,7 @@ fn registration_maps_names_and_aliases_and_invalidates_cache() {
 fn list_returns_copy_safe_cached_snapshot_until_registration_changes() {
     let _guard = REGISTRY_TEST_LOCK.lock().unwrap();
     reset_registry_for_tests();
+    mark_discovered_for_tests();
     let first = profile("alpha", &[]);
     register_provider(first.clone());
 
@@ -81,9 +83,10 @@ fn discovery_is_lazy_and_loader_order_matches_upstream() {
     reset_registry_for_tests();
     assert!(!discovered_for_tests());
 
-    // A normal registry access marks discovery complete even when no bundled
-    // Rust profiles are wired yet.
-    assert!(list_providers().is_empty());
+    // A normal registry access marks discovery complete and registers the
+    // statically linked bundled profile before the user loader seam runs.
+    assert_eq!(list_providers().len(), 1);
+    assert!(get_provider_profile("alibaba").is_some());
     assert!(discovered_for_tests());
 }
 

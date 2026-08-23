@@ -166,6 +166,15 @@ pub fn reset_registry_for_tests() {
     *state = RegistryState::new();
 }
 
+/// Mark the registry as already discovered for isolated registry tests.
+#[doc(hidden)]
+pub fn mark_discovered_for_tests() {
+    registry_state()
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+        .discovered = true;
+}
+
 pub fn discovered_for_tests() -> bool {
     registry_state()
         .lock()
@@ -179,20 +188,13 @@ fn ensure_discovered() {
     }
 
     // PARITY: the Python registry imports bundled/user Python modules here.
-    // Until those profile modules have Rust implementations, scan their
-    // layout but leave registration to the future statically linked loaders.
-    let bundled_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("..")
-        .join("..")
-        .join("plugins")
-        .join("model-providers");
+    // Rust profile modules are statically linked and are registered in the
+    // same bundled-before-user order before the user loader seam runs.
+    crate::profiles::register_builtin_profiles();
     let user_dir = user_plugins_dir();
-    discover_with_loader(
-        Some(&bundled_dir),
-        user_dir.as_deref(),
-        None,
-        |_path, _source| Ok(None),
-    );
+    discover_with_loader(None, user_dir.as_deref(), None, |path, source| {
+        crate::profiles::load_profile(path, source)
+    });
 }
 
 fn scan_plugin_dirs<F>(

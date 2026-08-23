@@ -91,7 +91,7 @@ Hermes-Agent-Rust/
     hermes-logging/        # hermes_logging.py                (Phase 1)
     hermes-state/          # hermes_state{,_schema,_common,_portability,_search}.py  (Phase 1, open — common/schema/lifecycle landed)
     hermes-toolsets/       # toolsets.py ✅, toolset_distributions.py ✅, model_tools.py 🟡 (schema/coercion surface landed; handle_function_call deferred with agent loop)   (Phase 2)
-    hermes-providers/      # providers/base.py + providers/__init__.py (Phase 2; base profile surface opened, CLI-version seam remains)
+    hermes-providers/      # providers/base.py + providers/__init__.py + bundled profiles (Phase 2; base/registry and Alibaba profile landed, CLI-version/opener and remaining loaders remain)
     hermes-agent/          # run_agent.py + agent/            (Phase 2, next after toolsets)
     hermes-tools/          # tools/ (✅ registry, schema_sanitizer, ansi_strip, clarify_tool, session_search_tool, file_safety, read_extract, file_state, path_security, binary_extensions, budget_config, tool_result_storage, tts_text_normalize)   (Phase 2)
     hermes-batch/          # batch_runner.py, trajectory_compressor.py, mini_swe_runner.py (Phase 2)
@@ -130,15 +130,16 @@ config (config crate), node/profile constants remainder. Phase 2 (agent
 core: toolsets, run_agent, agent/, tools/, batch) is open.
 
 **P2 status: 🟡 OPEN — hermes-tools support wave and provider profile
-base/registry landed (2026-08-24).** The support wave below ports small,
-dependency-light modules needed by the agent surface. `hermes-providers` now
-contains the declarative `providers.base` profile, secure model-catalog probe,
-and process-global registry/discovery cache. The provider modules remain
-partial until the future CLI crate supplies the runtime version used in
-`_profile_user_agent`, the application-installed urllib opener policy is
-represented, and bundled/user provider plugin profiles have Rust loaders. The
-modules marked partial retain explicit seams; those seams are recorded rather
-than silently treated as complete.
+base/registry/Alibaba profile landed (2026-08-24).** The support wave below
+ports small, dependency-light modules needed by the agent surface.
+`hermes-providers` now contains the declarative `providers.base` profile,
+secure model-catalog probe, process-global registry/discovery cache, and the
+first statically linked bundled profile (`alibaba`). The provider surface
+remains partial until the future CLI crate supplies the runtime version used
+in `_profile_user_agent`, the application-installed urllib opener policy is
+represented, and the remaining bundled/user provider plugin profiles have
+Rust loaders. The modules marked partial retain explicit seams; those seams
+are recorded rather than silently treated as complete.
 
 **P0 status: ✅ COMPLETE (2026-08-22).** Exit criteria met:
 `cargo build --workspace` green; `cargo test --workspace` green (74 tests:
@@ -345,7 +346,8 @@ rich/routing/cooldown/meta/reactions/conversation/delete modules.
 | credential-safe redirects (same-origin retention, cross-origin `accept`/`user-agent` allowlist) | ✅ | `base.rs`; 2 redirect tests (`mock`) |
 | `_profile_user_agent` runtime CLI version and installed urllib opener policy | 🟡 | stable fallback is implemented; CLI-version injection and application opener integration remain with `hermes-cli` |
 | providers/__init__.py canonical/alias registry, cache, and lazy discovery order | ✅ | `hermes-providers::registry`; 8 parity tests (`unit`/`mock`) |
-| providers/__init__.py bundled/user/legacy import execution | 🟡 | filesystem scan and explicit loader seam are implemented; Rust plugin profiles/loaders remain pending |
+| providers/__init__.py bundled/user/legacy import execution | 🟡 | filesystem scan and explicit loader seam are implemented; statically linked Alibaba is wired, remaining Rust plugin profiles/loaders remain pending |
+| plugins/model-providers/alibaba/__init__.py (13 LOC) | ✅ | `hermes-providers::profiles::alibaba`; 2 source-derived parity tests (`unit`); no dedicated upstream test module |
 
 ## 6. Parity oracles
 
@@ -385,11 +387,27 @@ oracle tests). Upstream oracle files currently mirrored:
 - `tests/tools/test_working_diff.py` → `crates/hermes-tools/tests/parity_working_diff.rs`
 - `providers/base.py` + `tests/providers/test_fetch_models_base_url.py` → `crates/hermes-providers/tests/parity_base.rs` (9 profile/catalog/redirect parity tests; `unit`/`mock`)
 - `providers/__init__.py` + `tests/providers/test_provider_registry.py` + `tests/providers/test_plugin_discovery.py` → `crates/hermes-providers/tests/parity_registry.rs` (8 registry/discovery parity tests; `unit`/`mock`)
+- `plugins/model-providers/alibaba/__init__.py` → `crates/hermes-providers/tests/parity_alibaba.rs` (2 source-derived profile/registration parity tests; `unit`; no dedicated upstream test module)
 
 Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 + the exact command, e.g. `cargo test -p hermes-time (unit)`.
 
 ## 7. Session log
+
+- 2026-08-24 (session 4e): Ported `plugins/model-providers/alibaba/__init__.py`
+  (@ b9aa928, 13 LOC) through a source-derived TDD pass because the pinned
+  upstream checkout has no dedicated Alibaba test module. The Rust profile
+  preserves the canonical name, all three aliases, `DASHSCOPE_API_KEY`, and
+  the exact international DashScope-compatible base URL, then registers from
+  the statically linked bundled-profile table during lazy discovery. Added 2
+  `unit` parity tests covering fields, aliases, hostname, and canonical list
+  identity. Focused `parity_alibaba` and `parity_registry` suites are green.
+  Required `/home/mustbearnold/.cargo/bin/cargo build --workspace` and
+  `/home/mustbearnold/.cargo/bin/cargo test --workspace` are green (unit/mock;
+  3 intentional delegation/schema doc tests ignored). The bundled profile
+  loader seam remains partial for the other provider plugin modules.
+  Next dependency-safe production unit is the smallest remaining bundled
+  provider profile after the metadata and ledger are synchronized.
 
 - 2026-08-24 (session 4d): Ported `providers/__init__.py` (@ b9aa928, 198
   LOC) into `hermes-providers` through a test-first registry/discovery pass.

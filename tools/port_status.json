@@ -41,6 +41,9 @@
   "providers.__init__": {
     "status": "partial"
   },
+  "plugins.model-providers.alibaba.__init__": {
+    "status": "done"
+  },
   "tools.ansi_strip": {
     "status": "done"
   },
