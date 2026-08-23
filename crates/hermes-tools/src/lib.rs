@@ -32,6 +32,7 @@ pub mod computer_use_schema;
 pub mod credential_files;
 pub mod desktop_ui;
 pub mod mcp_schema_cache;
+pub mod todo_tool;
 pub mod tts_text_normalize;
 pub mod audio_container;
 pub mod blueprints;
