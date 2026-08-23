@@ -130,11 +130,11 @@ config (config crate), node/profile constants remainder. Phase 2 (agent
 core: toolsets, run_agent, agent/, tools/, batch) is open.
 
 **P2 status: 🟡 OPEN — hermes-tools support wave and provider profile
-base/registry/Alibaba/Alibaba Coding Plan/Arcee/Kilo/StepFun/OpenAI Codex/XAI/Xiaomi/Hugging Face profiles landed (2026-08-24).** The support wave below
+base/registry/Alibaba/Alibaba Coding Plan/Arcee/Azure Foundry/Kilo/StepFun/OpenAI Codex/XAI/Xiaomi/Hugging Face profiles landed (2026-08-24).** The support wave below
 ports small, dependency-light modules needed by the agent surface.
 `hermes-providers` now contains the declarative `providers.base` profile,
 secure model-catalog probe, process-global registry/discovery cache, and the
-first statically linked bundled profiles (`alibaba`, `alibaba-coding-plan`, `arcee`, `huggingface`, `kilocode`, `openai-codex`, `stepfun`, `xai`, `xiaomi`). The provider surface
+first statically linked bundled profiles (`alibaba`, `alibaba-coding-plan`, `arcee`, `azure-foundry`, `huggingface`, `kilocode`, `openai-codex`, `stepfun`, `xai`, `xiaomi`). The provider surface
 remains partial until the future CLI crate supplies the runtime version used
 in `_profile_user_agent`, the application-installed urllib opener policy is
 represented, and the remaining bundled/user provider plugin profiles have
@@ -346,10 +346,11 @@ rich/routing/cooldown/meta/reactions/conversation/delete modules.
 | credential-safe redirects (same-origin retention, cross-origin `accept`/`user-agent` allowlist) | ✅ | `base.rs`; 2 redirect tests (`mock`) |
 | `_profile_user_agent` runtime CLI version and installed urllib opener policy | 🟡 | stable fallback is implemented; CLI-version injection and application opener integration remain with `hermes-cli` |
 | providers/__init__.py canonical/alias registry, cache, and lazy discovery order | ✅ | `hermes-providers::registry`; 8 parity tests (`unit`/`mock`) |
-| providers/__init__.py bundled/user/legacy import execution | 🟡 | filesystem scan and explicit loader seam are implemented; statically linked Alibaba, Alibaba Coding Plan, Arcee, Hugging Face, Kilo, OpenAI Codex, StepFun, XAI, and Xiaomi are wired, remaining Rust plugin profiles/loaders remain pending |
+| providers/__init__.py bundled/user/legacy import execution | 🟡 | filesystem scan and explicit loader seam are implemented; statically linked Alibaba, Alibaba Coding Plan, Arcee, Azure Foundry, Hugging Face, Kilo, OpenAI Codex, StepFun, XAI, and Xiaomi are wired, remaining Rust plugin profiles/loaders remain pending |
 | plugins/model-providers/alibaba/__init__.py (13 LOC) | ✅ | `hermes-providers::profiles::alibaba`; 2 source-derived parity tests (`unit`); no dedicated upstream test module |
 | plugins/model-providers/alibaba-coding-plan/__init__.py (21 LOC) | ✅ | `hermes-providers::profiles::alibaba_coding_plan`; 2 source-derived parity tests (`unit`); no dedicated upstream plugin-profile test module; related CLI/agent tests remain future-crate oracles |
 | plugins/model-providers/arcee/__init__.py (13 LOC) | ✅ | `hermes-providers::profiles::arcee`; 2 source-derived parity tests (`unit`); no dedicated upstream plugin-profile test module; related CLI/agent tests remain future-crate oracles |
+| plugins/model-providers/azure-foundry/__init__.py (21 LOC) | ✅ | `hermes-providers::profiles::azure_foundry`; 2 source-derived parity tests (`unit`); no dedicated upstream plugin-profile test module; related CLI/agent tests remain future-crate oracles |
 | plugins/model-providers/huggingface/__init__.py (20 LOC) | ✅ | `hermes-providers::profiles::huggingface`; 2 source-derived parity tests (`unit`); no dedicated upstream plugin-profile test module; related CLI/agent tests remain future-crate oracles |
 | plugins/model-providers/kilocode/__init__.py (14 LOC) | ✅ | `hermes-providers::profiles::kilocode`; 2 source-derived parity tests (`unit`); no dedicated upstream plugin-profile test module; related CLI/agent tests remain future-crate oracles |
 | plugins/model-providers/stepfun/__init__.py (14 LOC) | ✅ | `hermes-providers::profiles::stepfun`; 2 source-derived parity tests (`unit`); no dedicated upstream plugin-profile test module; related CLI/agent tests remain future-crate oracles |
@@ -398,6 +399,7 @@ oracle tests). Upstream oracle files currently mirrored:
 - `plugins/model-providers/alibaba/__init__.py` → `crates/hermes-providers/tests/parity_alibaba.rs` (2 source-derived profile/registration parity tests; `unit`; no dedicated upstream test module)
 - `plugins/model-providers/alibaba-coding-plan/__init__.py` → `crates/hermes-providers/tests/parity_alibaba_coding_plan.rs` (2 source-derived profile/registration parity tests; `unit`; no dedicated upstream plugin-profile test module)
 - `plugins/model-providers/arcee/__init__.py` → `crates/hermes-providers/tests/parity_arcee.rs` (2 source-derived profile/registration parity tests; `unit`; no dedicated upstream plugin-profile test module)
+- `plugins/model-providers/azure-foundry/__init__.py` → `crates/hermes-providers/tests/parity_azure_foundry.rs` (2 source-derived profile/registration parity tests; `unit`; no dedicated upstream plugin-profile test module)
 - `plugins/model-providers/huggingface/__init__.py` → `crates/hermes-providers/tests/parity_huggingface.rs` (2 source-derived profile/registration parity tests; `unit`; no dedicated upstream plugin-profile test module)
 - `plugins/model-providers/kilocode/__init__.py` → `crates/hermes-providers/tests/parity_kilocode.rs` (2 source-derived profile/registration parity tests; `unit`; no dedicated upstream plugin-profile test module)
 - `plugins/model-providers/stepfun/__init__.py` → `crates/hermes-providers/tests/parity_stepfun.rs` (2 source-derived profile/registration parity tests; `unit`; no dedicated upstream plugin-profile test module)
@@ -409,6 +411,24 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 + the exact command, e.g. `cargo test -p hermes-time (unit)`.
 
 ## 7. Session log
+
+- 2026-08-24 (session 4n): Ported
+  `plugins/model-providers/azure-foundry/__init__.py` (@ b9aa928, 21 LOC)
+  through a source-derived TDD pass. The profile mirrors the canonical
+  `azure-foundry` name, `azure`/`azure-ai-foundry`/`azure-ai` aliases,
+  Microsoft Foundry display metadata and signup URL,
+  `AZURE_FOUNDRY_API_KEY`/`AZURE_FOUNDRY_BASE_URL` environment variables,
+  the intentionally empty per-resource base URL, and explicit `api_key`
+  auth. It is registered in sorted bundled-profile order immediately after
+  Arcee. The upstream checkout has no dedicated plugin profile test; related
+  CLI/agent tests remain future-crate oracles. Added 2 `unit` parity tests for
+  all declarative fields, aliases, empty-hostname behavior, and canonical list
+  identity. Focused Azure Foundry and registry suites are green. Required
+  `/home/mustbearnold/.cargo/bin/cargo build --workspace` and
+  `/home/mustbearnold/.cargo/bin/cargo test --workspace` are green
+  (`unit`/`mock`; 3 intentional delegation/schema doc tests ignored). The
+  next dependency-safe production unit is
+  `plugins.model-providers.nvidia.__init__` (21 LOC).
 
 - 2026-08-24 (session 4m): Ported
   `plugins/model-providers/alibaba-coding-plan/__init__.py` (@ b9aa928, 21

@@ -10,6 +10,8 @@ mod alibaba;
 mod alibaba_coding_plan;
 #[path = "arcee.rs"]
 mod arcee;
+#[path = "azure_foundry.rs"]
+mod azure_foundry;
 #[path = "huggingface.rs"]
 mod huggingface;
 #[path = "kilocode.rs"]
@@ -32,6 +34,7 @@ pub(crate) fn register_builtin_profiles() {
     register_provider(alibaba::profile());
     register_provider(alibaba_coding_plan::profile());
     register_provider(arcee::profile());
+    register_provider(azure_foundry::profile());
     register_provider(huggingface::profile());
     register_provider(kilocode::profile());
     register_provider(openai_codex::profile());
@@ -49,6 +52,7 @@ pub(crate) fn load_profile(
             Some("alibaba") => return Ok(Some(alibaba::profile())),
             Some("alibaba-coding-plan") => return Ok(Some(alibaba_coding_plan::profile())),
             Some("arcee") => return Ok(Some(arcee::profile())),
+            Some("azure-foundry") => return Ok(Some(azure_foundry::profile())),
             Some("huggingface") => return Ok(Some(huggingface::profile())),
             Some("kilocode") => return Ok(Some(kilocode::profile())),
             Some("openai-codex") => return Ok(Some(openai_codex::profile())),

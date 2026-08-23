@@ -50,6 +50,9 @@
   "plugins.model-providers.arcee.__init__": {
     "status": "done"
   },
+  "plugins.model-providers.azure-foundry.__init__": {
+    "status": "done"
+  },
   "plugins.model-providers.kilocode.__init__": {
     "status": "done"
   },
