@@ -176,6 +176,12 @@ pub fn reset_platform_caches_for_tests() {
 mod tests {
     use super::*;
     use crate::probe::fakes::FakeProbe;
+    use std::sync::Mutex;
+
+    // The production detectors intentionally cache for process lifetime. Keep
+    // cache-resetting tests serialized so parallel test execution cannot let
+    // one fake probe overwrite another test's cached result.
+    static PLATFORM_CACHE_TEST_LOCK: Mutex<()> = Mutex::new(());
 
     #[test]
     fn termux_via_version() {
@@ -199,6 +205,7 @@ mod tests {
 
     #[test]
     fn wsl_detected_from_proc_version() {
+        let _guard = PLATFORM_CACHE_TEST_LOCK.lock().unwrap();
         reset_platform_caches_for_tests();
         let p = FakeProbe::new();
         p.add_file("/proc/version", "Linux version 5.15.153.1-microsoft-standard-WSL2");
@@ -207,6 +214,7 @@ mod tests {
 
     #[test]
     fn wsl_not_detected() {
+        let _guard = PLATFORM_CACHE_TEST_LOCK.lock().unwrap();
         reset_platform_caches_for_tests();
         let p = FakeProbe::new();
         p.add_file("/proc/version", "Linux version 6.6.0-generic");
@@ -215,6 +223,7 @@ mod tests {
 
     #[test]
     fn container_dockerenv() {
+        let _guard = PLATFORM_CACHE_TEST_LOCK.lock().unwrap();
         reset_platform_caches_for_tests();
         let p = FakeProbe::new();
         p.add_path("/.dockerenv");
@@ -223,6 +232,7 @@ mod tests {
 
     #[test]
     fn container_kubernetes_env() {
+        let _guard = PLATFORM_CACHE_TEST_LOCK.lock().unwrap();
         reset_platform_caches_for_tests();
         let p = FakeProbe::new();
         p.set_env("KUBERNETES_SERVICE_HOST", "10.96.0.1");
@@ -231,6 +241,7 @@ mod tests {
 
     #[test]
     fn container_cached() {
+        let _guard = PLATFORM_CACHE_TEST_LOCK.lock().unwrap();
         reset_platform_caches_for_tests();
         let p = FakeProbe::new();
         p.add_path("/.dockerenv");
