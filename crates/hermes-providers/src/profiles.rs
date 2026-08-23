@@ -14,6 +14,8 @@ mod arcee;
 mod azure_foundry;
 #[path = "bedrock.rs"]
 mod bedrock;
+#[path = "copilot_acp.rs"]
+mod copilot_acp;
 #[path = "gmi.rs"]
 mod gmi;
 #[path = "huggingface.rs"]
@@ -44,6 +46,7 @@ pub(crate) fn register_builtin_profiles() {
     register_provider(arcee::profile());
     register_provider(azure_foundry::profile());
     register_provider(bedrock::profile());
+    register_provider(copilot_acp::profile());
     register_provider(gmi::profile());
     register_provider(huggingface::profile());
     register_provider(kilocode::profile());
@@ -66,6 +69,7 @@ pub(crate) fn load_profile(
             Some("arcee") => return Ok(Some(arcee::profile())),
             Some("azure-foundry") => return Ok(Some(azure_foundry::profile())),
             Some("bedrock") => return Ok(Some(bedrock::profile())),
+            Some("copilot-acp") => return Ok(Some(copilot_acp::profile())),
             Some("gmi") => return Ok(Some(gmi::profile())),
             Some("huggingface") => return Ok(Some(huggingface::profile())),
             Some("kilocode") => return Ok(Some(kilocode::profile())),

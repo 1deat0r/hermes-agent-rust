@@ -56,6 +56,9 @@
   "plugins.model-providers.bedrock.__init__": {
     "status": "done"
   },
+  "plugins.model-providers.copilot-acp.__init__": {
+    "status": "done"
+  },
   "plugins.model-providers.gmi.__init__": {
     "status": "done"
   },
