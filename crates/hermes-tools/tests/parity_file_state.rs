@@ -10,8 +10,13 @@ use hermes_tools::file_state::{check_stale, known_reads, note_write, record_read
 static FILE_CTR: Mutex<u64> = Mutex::new(0);
 
 fn tmp_file(content: &str) -> String {
-    let n = *FILE_CTR.lock().unwrap();
-    *FILE_CTR.lock().unwrap() += 1;
+    // Hold the counter lock across the read/increment pair.  The test binary
+    // runs cases concurrently, and releasing it between those operations can
+    // make two cases reuse the same path and contaminate the singleton
+    // registry—something pytest's per-test setup/teardown prevents upstream.
+    let mut counter = FILE_CTR.lock().unwrap();
+    let n = *counter;
+    *counter += 1;
     let path = std::env::temp_dir().join(format!("hfs_test_{n}.txt"));
     std::fs::write(&path, content).expect("write");
     path.to_string_lossy().into_owned()
