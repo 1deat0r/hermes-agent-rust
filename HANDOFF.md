@@ -1,6 +1,6 @@
 # Hermes Agent Rust — Next-session handoff
 
-Date: 2026-08-24 (Pacific/Auckland), session 4n.
+Date: 2026-08-24 (Pacific/Auckland), session 4o.
 
 ## Resume point
 
@@ -17,7 +17,9 @@ update. The local HTTPS Git client still has no credentials; use the
 connected GitHub API for future pushes until `gh auth login` or SSH is
 configured.
 
-Latest synchronized units: local source `5abcd78` → GitHub `31daa217`
+Latest synchronized units: local source `eb61ae7` → GitHub `ae9eb9e`
+(`plugins.model-providers.nvidia.__init__`), after local source `5abcd78` →
+GitHub `31daa217`
 (`plugins.model-providers.azure-foundry.__init__`), after local `b62208f` →
 GitHub `148b205c`
 (`plugins.model-providers.alibaba-coding-plan.__init__`), after local `66c12f6` →
@@ -38,8 +40,8 @@ because it cannot preserve the local author/committer timestamps.
 ## What landed this session
 
 Module-sized commits are complete through
-`plugins.model-providers.azure-foundry.__init__`: `5abcd78` locally, mirrored
-as `31daa217` remotely; `db23d7c`
+`plugins.model-providers.nvidia.__init__`: `eb61ae7` locally, mirrored as
+`ae9eb9e` remotely; `db23d7c`
 hermes-logging test isolation;
 `a1a5b1b` hermes-constants test isolation; `cd4d356` audio_container;
 `12d704e` computer_use/schema plus generator/golden; `9303b4b`
@@ -68,18 +70,21 @@ profile is `b62208f` locally, mirrored as `148b205c` remotely.
 The Azure Foundry bundled profile is included in the new `5abcd78` source
 commit and its `31daa217` GitHub mirror.
 
+The NVIDIA bundled profile is included in the new `eb61ae7` source commit and
+its `ae9eb9e` GitHub mirror.
+
 The new `hermes-providers` crate ports `providers/base.py` and
 `providers/__init__.py` @ `b9aa928`: declarative profile defaults and hooks,
 model endpoint precedence, strict fail-open catalog parsing,
 credential-safe redirects, canonical/alias registry behavior, copy-safe
 caching, and sorted bundled/user/legacy discovery. The focused suites contain
 9 base, 8 registry, 2 Alibaba profile, 2 Alibaba Coding Plan profile, 2 Arcee
-profile, 2 Azure Foundry profile, 2 Kilo Code profile, 2 StepFun profile, 2
-OpenAI Codex profile, 2 Xiaomi profile, 2 XAI profile, and 2 Hugging Face
-profile tests are green. The provider surface remains partial
+profile, 2 Azure Foundry profile, 2 Kilo Code profile, 2 NVIDIA profile, 2
+StepFun profile, 2 OpenAI Codex profile, 2 Xiaomi profile, 2 XAI profile, and
+2 Hugging Face profile tests are green. The provider surface remains partial
 for the future CLI version/opener integration and remaining Rust plugin profile
 loaders. The next unit is the smallest remaining bundled profile,
-`plugins.model-providers.nvidia.__init__` (21 LOC).
+`plugins.model-providers.novita.__init__` (27 LOC).
 
 The required workspace run was green before the commit split:
 
@@ -88,19 +93,24 @@ PATH=/home/mustbearnold/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin:$
 PATH=/home/mustbearnold/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin:$PATH /home/mustbearnold/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin/cargo test --workspace
 ```
 
-All tests passed; only three intentional delegation/schema doc tests were ignored. Two full-suite flakes were fixed and committed: hermes-logging queue registry state and hermes-constants environment/profile state now have shared process-global test mutexes.
+The required sequential workspace test passed; only three intentional
+delegation/schema doc tests were ignored. A concurrent invocation had one
+unrelated hermes-toolsets environment-isolation flake; its isolated test and
+the sequential required run passed. Two earlier full-suite flakes were fixed
+and committed: hermes-logging queue registry state and hermes-constants
+environment/profile state now have shared process-global test mutexes.
 
 ## Exact working-tree state
 
-After the current Azure Foundry commit is mirrored and `main` is aligned to its
+After the current NVIDIA commit is mirrored and `main` is aligned to its
 remote mirror, the working tree is clean. The committed metadata
 includes `PLAN.md`, `tools/port_status.json`, generated `tools/inventory.json`,
 `CONVERSION-LEDGER.md`, and this handoff. No code or parity test is pending
-for the Azure Foundry unit.
+for the NVIDIA unit.
 
 ## Next actions, in order
 
-1. Start `plugins.model-providers.nvidia.__init__` by reading its pinned
+1. Start `plugins.model-providers.novita.__init__` by reading its pinned
    source/tests and writing profile-registration parity tests first.
 2. Keep the static bundled-profile registration order and user-loader seam
    explicit while adding the next provider profile.
@@ -111,8 +121,8 @@ for the Azure Foundry unit.
 
 `CONVERSION-LEDGER.md` is generated and contains one row for every 3,882 upstream inventory modules: 1,103 production tasks plus 2,779 oracle/test tasks. Only `done` counts toward completion.
 
-- All tracked modules: 51 done / 9 partial / 3,822 missing = **1.31%**.
-- Production modules: 51 done / 9 partial / 1,043 missing = **4.62%**.
+- All tracked modules: 52 done / 9 partial / 3,821 missing = **1.34%**.
+- Production modules: 52 done / 9 partial / 1,042 missing = **4.71%**.
 
 The nine partial production rows are `hermes_constants`, `providers.base`,
 `providers.__init__`, `tools.credential_files`,
@@ -145,12 +155,12 @@ The strict production formula is `done production modules / 1,103`; partial rows
 ## Verification evidence
 
 The focused provider parity suites passed 9 base, 8 registry, 2 Alibaba, 2
-Alibaba Coding Plan, 2 Arcee, 2 Azure Foundry, 2 Kilo Code, 2 StepFun, 2
-OpenAI Codex, 2 Xiaomi, 2 XAI, and 2 Hugging Face profile tests. The
+Alibaba Coding Plan, 2 Arcee, 2 Azure Foundry, 2 Kilo Code, 2 NVIDIA, 2
+StepFun, 2 OpenAI Codex, 2 Xiaomi, 2 XAI, and 2 Hugging Face profile tests. The
 required workspace build and test also passed with the explicit cargo
 toolchain; three
 delegation/schema doc tests are intentionally ignored. Inventory and
-conversion ledger were regenerated and now record 51 done / 9 partial / 1,043
+conversion ledger were regenerated and now record 52 done / 9 partial / 1,042
 missing production modules.
 
 ## First command tomorrow
