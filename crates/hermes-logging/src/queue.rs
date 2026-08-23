@@ -26,6 +26,11 @@ pub(crate) struct QueueState {
 
 static QUEUE: Mutex<Option<QueueState>> = Mutex::new(None);
 
+// Unit tests in queue.rs and setup.rs share this process-global queue. Keep
+// their reset/register/assert sequences atomic when lib tests run in parallel.
+#[cfg(test)]
+pub(crate) static TEST_QUEUE_MUTEX: Mutex<()> = Mutex::new(());
+
 fn queue() -> std::sync::MutexGuard<'static, Option<QueueState>> {
     QUEUE.lock().unwrap_or_else(|p| p.into_inner())
 }
@@ -198,14 +203,11 @@ pub fn reset_queued_handlers() {
 mod tests {
     use super::*;
     use crate::record::Level;
-    use std::sync::Mutex;
     use tempfile::TempDir;
-
-    static Q_MUTEX: Mutex<()> = Mutex::new(());
 
     #[test]
     fn queue_flush_writes_records() {
-        let _g = Q_MUTEX.lock().unwrap();
+        let _g = TEST_QUEUE_MUTEX.lock().unwrap();
         reset_queued_handlers();
         let td = TempDir::new().unwrap();
         let path = td.path().join("q.log");
@@ -224,7 +226,7 @@ mod tests {
 
     #[test]
     fn rotating_file_handlers_returns_registered() {
-        let _g = Q_MUTEX.lock().unwrap();
+        let _g = TEST_QUEUE_MUTEX.lock().unwrap();
         reset_queued_handlers();
         let td = TempDir::new().unwrap();
         let h = std::sync::Arc::new(
