@@ -6,6 +6,8 @@
 
 #[path = "alibaba.rs"]
 mod alibaba;
+#[path = "arcee.rs"]
+mod arcee;
 
 use std::path::Path;
 
@@ -14,16 +16,19 @@ use crate::registry::{register_provider, ProviderSource};
 
 pub(crate) fn register_builtin_profiles() {
     register_provider(alibaba::profile());
+    register_provider(arcee::profile());
 }
 
 pub(crate) fn load_profile(
     path: &Path,
     source: ProviderSource,
 ) -> Result<Option<ProviderProfile>, String> {
-    if source == ProviderSource::Bundled
-        && path.file_name().and_then(|name| name.to_str()) == Some("alibaba")
-    {
-        return Ok(Some(alibaba::profile()));
+    if source == ProviderSource::Bundled {
+        match path.file_name().and_then(|name| name.to_str()) {
+            Some("alibaba") => return Ok(Some(alibaba::profile())),
+            Some("arcee") => return Ok(Some(arcee::profile())),
+            _ => {}
+        }
     }
     Ok(None)
 }

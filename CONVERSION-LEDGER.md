@@ -1,7 +1,7 @@
 # Hermes Agent → Hermes Agent Rust Conversion Ledger
 
-**Current strict completion: 1.08% of all tracked upstream modules (42/3882).**
-Production-only strict completion: **3.81%** (42/1103 production modules).
+**Current strict completion: 1.11% of all tracked upstream modules (43/3882).**
+Production-only strict completion: **3.90%** (43/1103 production modules).
 
 > This file is generated from `tools/inventory.json`; update the source ledger in `tools/port_status.json`, regenerate the inventory, then run `python3 tools/conversion_ledger.py`. Only `done` counts toward the percentage. `partial` is intentionally zero credit until its stated parity seams are closed.
 
@@ -9,10 +9,10 @@ Production-only strict completion: **3.81%** (42/1103 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 42 | 9 | 3831 | 1.08% | 28,075/1,510,733 done LOC |
-| Production modules | 42 | 9 | 1052 | 3.81% | 28,075/843,792 done LOC |
+| All tracked modules | 43 | 9 | 3830 | 1.11% | 28,088/1,510,733 done LOC |
+| Production modules | 43 | 9 | 1051 | 3.90% | 28,088/843,792 done LOC |
 
-Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-24T09:34:59`.
+Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-24T09:40:24`.
 
 ## Definition of 100.00%
 
@@ -810,7 +810,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `plugins.model-providers.alibaba-coding-plan.__init__` | production | P4 | 21 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.model-providers.alibaba.__init__` | production | P4 | 13 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.model-providers.anthropic.__init__` | production | P4 | 54 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `plugins.model-providers.arcee.__init__` | production | P4 | 13 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `plugins.model-providers.arcee.__init__` | production | P4 | 13 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.model-providers.azure-foundry.__init__` | production | P4 | 21 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.model-providers.bedrock.__init__` | production | P4 | 30 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.model-providers.copilot-acp.__init__` | production | P4 | 35 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |

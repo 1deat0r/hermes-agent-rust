@@ -44,6 +44,9 @@
   "plugins.model-providers.alibaba.__init__": {
     "status": "done"
   },
+  "plugins.model-providers.arcee.__init__": {
+    "status": "done"
+  },
   "tools.ansi_strip": {
     "status": "done"
   },

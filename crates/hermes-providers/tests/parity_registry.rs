@@ -84,9 +84,10 @@ fn discovery_is_lazy_and_loader_order_matches_upstream() {
     assert!(!discovered_for_tests());
 
     // A normal registry access marks discovery complete and registers the
-    // statically linked bundled profile before the user loader seam runs.
-    assert_eq!(list_providers().len(), 1);
+    // statically linked bundled profiles before the user loader seam runs.
+    assert_eq!(list_providers().len(), 2);
     assert!(get_provider_profile("alibaba").is_some());
+    assert!(get_provider_profile("arcee").is_some());
     assert!(discovered_for_tests());
 }
 
