@@ -91,7 +91,7 @@ Hermes-Agent-Rust/
     hermes-logging/        # hermes_logging.py                (Phase 1)
     hermes-state/          # hermes_state{,_schema,_common,_portability,_search}.py  (Phase 1, open — common/schema/lifecycle landed)
     hermes-toolsets/       # toolsets.py ✅, toolset_distributions.py ✅, model_tools.py 🟡 (schema/coercion surface landed; handle_function_call deferred with agent loop)   (Phase 2)
-    hermes-providers/      # providers/base.py + providers/__init__.py + bundled profiles (Phase 2; base/registry plus AI Gateway/Alibaba/Alibaba Coding Plan/Arcee/Azure Foundry/Bedrock/Copilot ACP/Fireworks/GMI/Kilo/Novita/NVIDIA/StepFun/OpenAI Codex/XAI/Xiaomi/Hugging Face profiles landed, CLI-version/opener and remaining loaders remain)
+    hermes-providers/      # providers/base.py + providers/__init__.py + bundled profiles (Phase 2; base/registry plus AI Gateway/Alibaba/Alibaba Coding Plan/Anthropic/Arcee/Azure Foundry/Bedrock/Copilot ACP/Fireworks/GMI/Kilo/Novita/NVIDIA/StepFun/OpenAI Codex/XAI/Xiaomi/Hugging Face profiles landed, CLI-version/opener and remaining loaders remain)
     hermes-agent/          # run_agent.py + agent/            (Phase 2, next after toolsets)
     hermes-tools/          # tools/ (✅ registry, schema_sanitizer, ansi_strip, clarify_tool, session_search_tool, file_safety, read_extract, file_state, path_security, binary_extensions, budget_config, tool_result_storage, tts_text_normalize)   (Phase 2)
     hermes-batch/          # batch_runner.py, trajectory_compressor.py, mini_swe_runner.py (Phase 2)
@@ -130,11 +130,11 @@ config (config crate), node/profile constants remainder. Phase 2 (agent
 core: toolsets, run_agent, agent/, tools/, batch) is open.
 
 **P2 status: 🟡 OPEN — hermes-tools support wave and provider profile
-base/registry/AI Gateway/Alibaba/Alibaba Coding Plan/Arcee/Azure Foundry/Bedrock/Copilot ACP/Fireworks/GMI/Kilo/Novita/NVIDIA/StepFun/OpenAI Codex/XAI/Xiaomi/Hugging Face profiles landed (2026-08-24).** The support wave below
+base/registry/AI Gateway/Alibaba/Alibaba Coding Plan/Anthropic/Arcee/Azure Foundry/Bedrock/Copilot ACP/Fireworks/GMI/Kilo/Novita/NVIDIA/StepFun/OpenAI Codex/XAI/Xiaomi/Hugging Face profiles landed (2026-08-24).** The support wave below
 ports small, dependency-light modules needed by the agent surface.
 `hermes-providers` now contains the declarative `providers.base` profile,
 secure model-catalog probe, process-global registry/discovery cache, and the
-first statically linked bundled profiles (`ai-gateway`, `alibaba`, `alibaba-coding-plan`, `arcee`, `azure-foundry`, `bedrock`, `copilot-acp`, `fireworks`, `gmi`, `huggingface`, `kilocode`, `novita`, `nvidia`, `openai-codex`, `stepfun`, `xai`, `xiaomi`). The provider surface
+first statically linked bundled profiles (`ai-gateway`, `alibaba`, `alibaba-coding-plan`, `anthropic`, `arcee`, `azure-foundry`, `bedrock`, `copilot-acp`, `fireworks`, `gmi`, `huggingface`, `kilocode`, `novita`, `nvidia`, `openai-codex`, `stepfun`, `xai`, `xiaomi`). The provider surface
 remains partial until the future CLI crate supplies the runtime version used
 in `_profile_user_agent`, the application-installed urllib opener policy is
 represented, and the remaining bundled/user provider plugin profiles have
@@ -340,16 +340,17 @@ rich/routing/cooldown/meta/reactions/conversation/delete modules.
 
 | Module / upstream surface | Status | Rust home, oracle, and evidence tier |
 |---|---|---|
-| providers/base.py (238 LOC) — declarative profile fields/defaults and no-op hooks | ✅ | `hermes-providers::base`; 9 parity tests (`unit`/`mock`); AI Gateway reasoning passthrough is represented by a profile capability |
+| providers/base.py (238 LOC) — declarative profile fields/defaults and no-op hooks | ✅ | `hermes-providers::base`; 9 parity tests (`unit`/`mock`); AI Gateway reasoning passthrough and Anthropic native model discovery are represented by profile capabilities |
 | `get_hostname`, `get_max_tokens`, and `OMIT_TEMPERATURE` | ✅ | `base.rs`; included in the focused profile tests (`unit`) |
-| `fetch_models` endpoint precedence, JSON shaping, strict fail-open behavior | ✅ | `base.rs`; loopback catalog tests (`mock`) |
+| `fetch_models` endpoint precedence, JSON shaping, strict fail-open behavior | ✅ | `base.rs`; loopback standard and Anthropic-native catalog tests (`mock`) |
 | credential-safe redirects (same-origin retention, cross-origin `accept`/`user-agent` allowlist) | ✅ | `base.rs`; 2 redirect tests (`mock`) |
 | `_profile_user_agent` runtime CLI version and installed urllib opener policy | 🟡 | stable fallback is implemented; CLI-version injection and application opener integration remain with `hermes-cli` |
 | providers/__init__.py canonical/alias registry, cache, and lazy discovery order | ✅ | `hermes-providers::registry`; 8 parity tests (`unit`/`mock`) |
-| providers/__init__.py bundled/user/legacy import execution | 🟡 | filesystem scan and explicit loader seam are implemented; statically linked AI Gateway, Alibaba, Alibaba Coding Plan, Arcee, Azure Foundry, Bedrock, Copilot ACP, Fireworks, GMI, Hugging Face, Kilo, Novita, NVIDIA, OpenAI Codex, StepFun, XAI, and Xiaomi are wired, remaining Rust plugin profiles/loaders remain pending |
+| providers/__init__.py bundled/user/legacy import execution | 🟡 | filesystem scan and explicit loader seam are implemented; statically linked AI Gateway, Alibaba, Alibaba Coding Plan, Anthropic, Arcee, Azure Foundry, Bedrock, Copilot ACP, Fireworks, GMI, Hugging Face, Kilo, Novita, NVIDIA, OpenAI Codex, StepFun, XAI, and Xiaomi are wired, remaining Rust plugin profiles/loaders remain pending |
 | plugins/model-providers/ai-gateway/__init__.py (43 LOC) | ✅ | `hermes-providers::profiles::ai_gateway`; 2 source-derived profile/registration/reasoning-hook parity tests (`unit`); `reasoning_passthrough` represents the upstream `build_api_kwargs_extras` override; related CLI/model catalog tests remain future-crate oracles |
 | plugins/model-providers/alibaba/__init__.py (13 LOC) | ✅ | `hermes-providers::profiles::alibaba`; 2 source-derived parity tests (`unit`); no dedicated upstream test module |
 | plugins/model-providers/alibaba-coding-plan/__init__.py (21 LOC) | ✅ | `hermes-providers::profiles::alibaba_coding_plan`; 2 source-derived parity tests (`unit`); no dedicated upstream plugin-profile test module; related CLI/agent tests remain future-crate oracles |
+| plugins/model-providers/anthropic/__init__.py (54 LOC) | ✅ | `hermes-providers::profiles::anthropic`; 3 source-derived parity tests (`unit`/`mock`) mirror the native profile fields and custom `x-api-key` model fetch; fixed endpoint and fail-open behavior remain explicit, with CLI/agent tests future-crate oracles |
 | plugins/model-providers/arcee/__init__.py (13 LOC) | ✅ | `hermes-providers::profiles::arcee`; 2 source-derived parity tests (`unit`); no dedicated upstream plugin-profile test module; related CLI/agent tests remain future-crate oracles |
 | plugins/model-providers/azure-foundry/__init__.py (21 LOC) | ✅ | `hermes-providers::profiles::azure_foundry`; 2 source-derived parity tests (`unit`); no dedicated upstream plugin-profile test module; related CLI/agent tests remain future-crate oracles |
 | plugins/model-providers/bedrock/__init__.py (30 LOC) | ✅ | `hermes-providers::profiles::bedrock`; 2 source-derived parity tests (`unit`); AWS SDK model-discovery override represented by `models_fetch_disabled`; related Bedrock adapter/transport tests remain future-crate oracles |
@@ -406,6 +407,7 @@ oracle tests). Upstream oracle files currently mirrored:
 - `plugins/model-providers/ai-gateway/__init__.py` → `crates/hermes-providers/tests/parity_ai_gateway.rs` (2 source-derived profile/registration/reasoning-hook parity tests; `unit`; no dedicated upstream plugin-profile test; related CLI/model catalog tests remain future-crate oracles)
 - `plugins/model-providers/alibaba/__init__.py` → `crates/hermes-providers/tests/parity_alibaba.rs` (2 source-derived profile/registration parity tests; `unit`; no dedicated upstream test module)
 - `plugins/model-providers/alibaba-coding-plan/__init__.py` → `crates/hermes-providers/tests/parity_alibaba_coding_plan.rs` (2 source-derived profile/registration parity tests; `unit`; no dedicated upstream plugin-profile test module)
+- `plugins/model-providers/anthropic/__init__.py` → `crates/hermes-providers/tests/parity_anthropic.rs` (3 source-derived profile/registration/native model-fetch parity tests; `unit`/`mock`; no dedicated upstream plugin-profile test module; fixed native endpoint and CLI/agent integrations remain future-crate seams)
 - `plugins/model-providers/arcee/__init__.py` → `crates/hermes-providers/tests/parity_arcee.rs` (2 source-derived profile/registration parity tests; `unit`; no dedicated upstream plugin-profile test module)
 - `plugins/model-providers/azure-foundry/__init__.py` → `crates/hermes-providers/tests/parity_azure_foundry.rs` (2 source-derived profile/registration parity tests; `unit`; no dedicated upstream plugin-profile test module)
 - `plugins/model-providers/bedrock/__init__.py` → `crates/hermes-providers/tests/parity_bedrock.rs` (2 source-derived profile/registration/fetch-override parity tests; `unit`; AWS SDK discovery is represented by the shared `models_fetch_disabled` capability)
@@ -425,6 +427,31 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 + the exact command, e.g. `cargo test -p hermes-time (unit)`.
 
 ## 7. Session log
+
+- 2026-08-24 (session 4v): Ported
+  `plugins/model-providers/anthropic/__init__.py` (@ b9aa928, 54 LOC) through
+  a source-derived TDD pass. No dedicated upstream profile test module exists,
+  so the pinned implementation is the oracle. The profile mirrors the
+  canonical `anthropic` name, `claude`/`claude-oauth`/`claude-code` aliases,
+  `anthropic_messages` routing, ordered Anthropic API/OAuth environment
+  variables, native API base URL, `api_key` auth, and the
+  `claude-haiku-4-5-20251001` auxiliary model. Added an explicit
+  `ModelsFetchMode::Anthropic` capability for the subclass `fetch_models()`:
+  it requires a non-empty key, probes the fixed `/v1/models` endpoint with
+  `x-api-key`, `anthropic-version: 2023-06-01`, and `Accept` headers, filters
+  string IDs from the `data` array, and fails open on transport/JSON errors.
+  The cloned-profile `models_url` override is a mock/integration seam; the
+  production profile retains the upstream fixed endpoint and ignores caller
+  `base_url`. Added 3 parity tests (`unit`/`mock`), wired the profile in sorted
+  bundled/user loader order, and updated registry expectations. Focused
+  Anthropic, base, and registry suites are green. Required
+  `/home/mustbearnold/.cargo/bin/cargo build --workspace` and
+  `/home/mustbearnold/.cargo/bin/cargo test --workspace` are green (3
+  intentional delegation/schema doc tests ignored). Inventory and conversion
+  ledger now record 59 done / 9 partial / 3,814 missing tracked modules and
+  59 done / 9 partial / 1,035 missing production modules. The next
+  dependency-safe production unit is
+  `plugins/model-providers.gemini.__init__` (61 LOC).
 
 - 2026-08-24 (session 4u): Ported
   `plugins/model-providers/fireworks/__init__.py` (@ b9aa928, 46 LOC) through

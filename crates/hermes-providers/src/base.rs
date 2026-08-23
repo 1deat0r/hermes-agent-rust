@@ -24,6 +24,15 @@ pub enum FixedTemperature {
 /// Sentinel for providers that must omit the temperature field entirely.
 pub const OMIT_TEMPERATURE: FixedTemperature = FixedTemperature::Omit;
 
+/// Model-catalog request shape selected by a provider profile.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ModelsFetchMode {
+    /// OpenAI-compatible `/models` discovery with optional Bearer auth.
+    Standard,
+    /// Native Anthropic `/v1/models` discovery with `x-api-key` auth.
+    Anthropic,
+}
+
 /// Declarative provider profile.
 #[derive(Clone, Debug, PartialEq)]
 pub struct ProviderProfile {
@@ -49,6 +58,8 @@ pub struct ProviderProfile {
     pub default_aux_model: String,
     /// Disable REST model discovery when a provider uses a separate SDK.
     pub models_fetch_disabled: bool,
+    /// Select a provider-specific model-catalog request shape.
+    pub models_fetch_mode: ModelsFetchMode,
     /// Route the reasoning configuration through `extra_body.reasoning`.
     pub reasoning_passthrough: bool,
 }
@@ -77,6 +88,7 @@ impl ProviderProfile {
             default_max_tokens: None,
             default_aux_model: String::new(),
             models_fetch_disabled: false,
+            models_fetch_mode: ModelsFetchMode::Standard,
             reasoning_passthrough: false,
         }
     }
@@ -157,6 +169,36 @@ impl ProviderProfile {
         if self.models_fetch_disabled {
             return None;
         }
+
+        if self.models_fetch_mode == ModelsFetchMode::Anthropic {
+            // PARITY: AnthropicProfile.fetch_models() requires a non-empty
+            // key, ignores caller base_url, and probes its fixed native URL.
+            if api_key.map_or(true, str::is_empty) {
+                return None;
+            }
+            let endpoint = if self.models_url.trim().is_empty() {
+                "https://api.anthropic.com/v1/models"
+            } else {
+                // Test/integration seam: a profile clone may supply an
+                // explicit endpoint without changing the production default.
+                self.models_url.trim()
+            };
+            return match self.fetch_models_inner(
+                api_key,
+                endpoint,
+                timeout,
+                ModelsFetchMode::Anthropic,
+            ) {
+                Ok(models) => Some(models),
+                Err(error) => {
+                    // PARITY: the native Anthropic probe is fail-open and
+                    // records failures only at debug level.
+                    log::debug!("fetch_models({}): {}", self.name, error);
+                    None
+                }
+            };
+        }
+
         // PARITY: Python's `base_url or self.base_url` treats an empty caller
         // override as absent, and `models_url` wins over either base URL.
         let effective_base = base_url
@@ -172,7 +214,7 @@ impl ProviderProfile {
             explicit_models_url.to_owned()
         };
 
-        match self.fetch_models_inner(api_key, &endpoint, timeout) {
+        match self.fetch_models_inner(api_key, &endpoint, timeout, ModelsFetchMode::Standard) {
             Ok(models) => Some(models),
             Err(error) => {
                 // PARITY: the upstream catalog probe is deliberately
@@ -188,6 +230,7 @@ impl ProviderProfile {
         api_key: Option<&str>,
         endpoint: &str,
         timeout: f64,
+        mode: ModelsFetchMode,
     ) -> Result<Vec<String>, String> {
         let timeout = if timeout.is_finite() && timeout >= 0.0 {
             Duration::from_secs_f64(timeout)
@@ -198,22 +241,39 @@ impl ProviderProfile {
         let original_origin = url_origin(&current_url);
 
         let mut headers = HeaderMap::new();
-        if let Some(api_key) = api_key {
-            let value = HeaderValue::from_str(&format!("Bearer {api_key}"))
-                .map_err(|error| error.to_string())?;
-            headers.insert(AUTHORIZATION, value);
+        match mode {
+            ModelsFetchMode::Standard => {
+                if let Some(api_key) = api_key {
+                    let value = HeaderValue::from_str(&format!("Bearer {api_key}"))
+                        .map_err(|error| error.to_string())?;
+                    headers.insert(AUTHORIZATION, value);
+                }
+            }
+            ModelsFetchMode::Anthropic => {
+                let api_key = api_key.filter(|value| !value.is_empty()).ok_or_else(|| {
+                    "Anthropic model discovery requires a non-empty API key".to_owned()
+                })?;
+                let value = HeaderValue::from_str(api_key).map_err(|error| error.to_string())?;
+                headers.insert(HeaderName::from_static("x-api-key"), value);
+                headers.insert(
+                    HeaderName::from_static("anthropic-version"),
+                    HeaderValue::from_static("2023-06-01"),
+                );
+            }
         }
         headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
-        let user_agent = profile_user_agent();
-        headers.insert(
-            USER_AGENT,
-            HeaderValue::from_str(&user_agent).map_err(|error| error.to_string())?,
-        );
-        for (name, value) in &self.default_headers {
-            let name =
-                HeaderName::from_bytes(name.as_bytes()).map_err(|error| error.to_string())?;
-            let value = HeaderValue::from_str(value).map_err(|error| error.to_string())?;
-            headers.insert(name, value);
+        if mode == ModelsFetchMode::Standard {
+            let user_agent = profile_user_agent();
+            headers.insert(
+                USER_AGENT,
+                HeaderValue::from_str(&user_agent).map_err(|error| error.to_string())?,
+            );
+            for (name, value) in &self.default_headers {
+                let name =
+                    HeaderName::from_bytes(name.as_bytes()).map_err(|error| error.to_string())?;
+                let value = HeaderValue::from_str(value).map_err(|error| error.to_string())?;
+                headers.insert(name, value);
+            }
         }
 
         // urllib's secure opener preserves an installed application's proxy,
@@ -272,7 +332,7 @@ impl ProviderProfile {
             let body = String::from_utf8(body.to_vec()).map_err(|error| error.to_string())?;
             let data: Value = serde_json::from_str(&body).map_err(|error| error.to_string())?;
             let items = match data {
-                Value::Array(items) => items,
+                Value::Array(items) if mode == ModelsFetchMode::Standard => items,
                 Value::Object(mut object) => object
                     .remove("data")
                     .and_then(|value| value.as_array().cloned())

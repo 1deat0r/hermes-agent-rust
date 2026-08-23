@@ -10,7 +10,7 @@ use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};
 
 use hermes_providers::base::{
-    profile_user_agent, FixedTemperature, ProviderProfile, OMIT_TEMPERATURE,
+    profile_user_agent, FixedTemperature, ModelsFetchMode, ProviderProfile, OMIT_TEMPERATURE,
 };
 use serde_json::{json, Map};
 
@@ -114,6 +114,7 @@ fn dataclass_defaults_match_upstream() {
     assert_eq!(profile.default_max_tokens, None);
     assert!(profile.default_aux_model.is_empty());
     assert!(!profile.models_fetch_disabled);
+    assert_eq!(profile.models_fetch_mode, ModelsFetchMode::Standard);
     assert!(!profile.reasoning_passthrough);
 }
 

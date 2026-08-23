@@ -10,6 +10,8 @@ mod ai_gateway;
 mod alibaba;
 #[path = "alibaba_coding_plan.rs"]
 mod alibaba_coding_plan;
+#[path = "anthropic.rs"]
+mod anthropic;
 #[path = "arcee.rs"]
 mod arcee;
 #[path = "azure_foundry.rs"]
@@ -48,6 +50,7 @@ pub(crate) fn register_builtin_profiles() {
     register_provider(ai_gateway::profile());
     register_provider(alibaba::profile());
     register_provider(alibaba_coding_plan::profile());
+    register_provider(anthropic::profile());
     register_provider(arcee::profile());
     register_provider(azure_foundry::profile());
     register_provider(bedrock::profile());
@@ -73,6 +76,7 @@ pub(crate) fn load_profile(
             Some("alibaba") => return Ok(Some(alibaba::profile())),
             Some("alibaba-coding-plan") => return Ok(Some(alibaba_coding_plan::profile())),
             Some("ai-gateway") => return Ok(Some(ai_gateway::profile())),
+            Some("anthropic") => return Ok(Some(anthropic::profile())),
             Some("arcee") => return Ok(Some(arcee::profile())),
             Some("azure-foundry") => return Ok(Some(azure_foundry::profile())),
             Some("bedrock") => return Ok(Some(bedrock::profile())),

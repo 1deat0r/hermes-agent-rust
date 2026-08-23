@@ -85,10 +85,11 @@ fn discovery_is_lazy_and_loader_order_matches_upstream() {
 
     // A normal registry access marks discovery complete and registers the
     // statically linked bundled profiles before the user loader seam runs.
-    assert_eq!(list_providers().len(), 17);
+    assert_eq!(list_providers().len(), 18);
     assert!(get_provider_profile("ai-gateway").is_some());
     assert!(get_provider_profile("alibaba").is_some());
     assert!(get_provider_profile("alibaba-coding-plan").is_some());
+    assert!(get_provider_profile("anthropic").is_some());
     assert!(get_provider_profile("arcee").is_some());
     assert!(get_provider_profile("azure-foundry").is_some());
     assert!(get_provider_profile("bedrock").is_some());
@@ -112,6 +113,7 @@ fn discovery_is_lazy_and_loader_order_matches_upstream() {
             "ai-gateway",
             "alibaba",
             "alibaba-coding-plan",
+            "anthropic",
             "arcee",
             "azure-foundry",
             "bedrock",
