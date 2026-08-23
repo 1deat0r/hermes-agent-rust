@@ -22,6 +22,8 @@ mod bedrock;
 mod copilot_acp;
 #[path = "fireworks.rs"]
 mod fireworks;
+#[path = "gemini.rs"]
+mod gemini;
 #[path = "gmi.rs"]
 mod gmi;
 #[path = "huggingface.rs"]
@@ -56,6 +58,7 @@ pub(crate) fn register_builtin_profiles() {
     register_provider(bedrock::profile());
     register_provider(copilot_acp::profile());
     register_provider(fireworks::profile());
+    register_provider(gemini::profile());
     register_provider(gmi::profile());
     register_provider(huggingface::profile());
     register_provider(kilocode::profile());
@@ -82,6 +85,7 @@ pub(crate) fn load_profile(
             Some("bedrock") => return Ok(Some(bedrock::profile())),
             Some("copilot-acp") => return Ok(Some(copilot_acp::profile())),
             Some("fireworks") => return Ok(Some(fireworks::profile())),
+            Some("gemini") => return Ok(Some(gemini::profile())),
             Some("gmi") => return Ok(Some(gmi::profile())),
             Some("huggingface") => return Ok(Some(huggingface::profile())),
             Some("kilocode") => return Ok(Some(kilocode::profile())),

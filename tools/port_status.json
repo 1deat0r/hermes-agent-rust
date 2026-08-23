@@ -68,6 +68,9 @@
   "plugins.model-providers.fireworks.__init__": {
     "status": "done"
   },
+  "plugins.model-providers.gemini.__init__": {
+    "status": "done"
+  },
   "plugins.model-providers.gmi.__init__": {
     "status": "done"
   },

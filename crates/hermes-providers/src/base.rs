@@ -60,6 +60,8 @@ pub struct ProviderProfile {
     pub models_fetch_disabled: bool,
     /// Select a provider-specific model-catalog request shape.
     pub models_fetch_mode: ModelsFetchMode,
+    /// Translate Hermes reasoning into Gemini's native thinking config.
+    pub gemini_thinking: bool,
     /// Route the reasoning configuration through `extra_body.reasoning`.
     pub reasoning_passthrough: bool,
 }
@@ -89,6 +91,7 @@ impl ProviderProfile {
             default_aux_model: String::new(),
             models_fetch_disabled: false,
             models_fetch_mode: ModelsFetchMode::Standard,
+            gemini_thinking: false,
             reasoning_passthrough: false,
         }
     }
@@ -114,8 +117,11 @@ impl ProviderProfile {
     pub fn build_extra_body(
         &self,
         _session_id: Option<&str>,
-        _context: &Map<String, Value>,
+        context: &Map<String, Value>,
     ) -> Map<String, Value> {
+        if self.gemini_thinking {
+            return build_gemini_extra_body(self, context);
+        }
         Map::new()
     }
 
@@ -393,4 +399,146 @@ fn cross_origin_safe_headers(headers: &HeaderMap) -> HeaderMap {
         safe.insert(USER_AGENT, value.clone());
     }
     safe
+}
+
+fn build_gemini_extra_body(
+    profile: &ProviderProfile,
+    context: &Map<String, Value>,
+) -> Map<String, Value> {
+    // PARITY: GeminiProfile.build_extra_body() delegates to the transport's
+    // `_build_gemini_thinking_config` helper and returns no body when the
+    // resolved model is not a Gemini thinking model.
+    let model = context
+        .get("model")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    let reasoning_config = context.get("reasoning_config").and_then(Value::as_object);
+    let raw_thinking_config = build_gemini_thinking_config(model, reasoning_config);
+    let Some(raw_thinking_config) = raw_thinking_config else {
+        return Map::new();
+    };
+
+    let base_url = context
+        .get("base_url")
+        .and_then(Value::as_str)
+        .filter(|value| !value.is_empty())
+        .unwrap_or(&profile.base_url);
+    if profile.name == "gemini" && is_gemini_openai_compat_base_url(base_url) {
+        let Some(thinking_config) = snake_case_gemini_thinking_config(&raw_thinking_config) else {
+            return Map::new();
+        };
+        let mut google = Map::new();
+        google.insert("thinking_config".into(), Value::Object(thinking_config));
+        let mut compatibility = Map::new();
+        compatibility.insert("google".into(), Value::Object(google));
+        let mut body = Map::new();
+        body.insert("extra_body".into(), Value::Object(compatibility));
+        return body;
+    }
+
+    Map::from_iter([("thinking_config".into(), Value::Object(raw_thinking_config))])
+}
+
+fn build_gemini_thinking_config(
+    model: &str,
+    reasoning_config: Option<&Map<String, Value>>,
+) -> Option<Map<String, Value>> {
+    let reasoning_config = reasoning_config?;
+    let mut normalized_model = model.trim().to_ascii_lowercase();
+    if let Some(stripped) = normalized_model.strip_prefix("google/") {
+        normalized_model = stripped.to_owned();
+    }
+    if !normalized_model.starts_with("gemini") {
+        return None;
+    }
+
+    if reasoning_config
+        .get("enabled")
+        .and_then(Value::as_bool)
+        .is_some_and(|enabled| !enabled)
+    {
+        return Some(Map::from_iter([(
+            "includeThoughts".into(),
+            Value::Bool(false),
+        )]));
+    }
+
+    let effort = reasoning_config
+        .get("effort")
+        .and_then(Value::as_str)
+        .unwrap_or("medium")
+        .trim()
+        .to_ascii_lowercase();
+    if effort == "none" {
+        return Some(Map::from_iter([(
+            "includeThoughts".into(),
+            Value::Bool(false),
+        )]));
+    }
+
+    let mut thinking_config = Map::from_iter([("includeThoughts".into(), Value::Bool(true))]);
+    if normalized_model.starts_with("gemini-2.5-") {
+        return Some(thinking_config);
+    }
+
+    let effort = match effort.as_str() {
+        "minimal" | "low" | "medium" | "high" | "xhigh" | "max" | "ultra" => effort,
+        _ => "medium".into(),
+    };
+    if normalized_model.starts_with("gemini-3") {
+        if normalized_model.contains("flash") {
+            let level = if matches!(effort.as_str(), "minimal" | "low") {
+                "low"
+            } else if matches!(effort.as_str(), "high" | "xhigh" | "max" | "ultra") {
+                "high"
+            } else {
+                "medium"
+            };
+            thinking_config.insert("thinkingLevel".into(), Value::String(level.into()));
+        } else if normalized_model.contains("pro") {
+            let level = if matches!(effort.as_str(), "high" | "xhigh" | "max" | "ultra") {
+                "high"
+            } else {
+                "low"
+            };
+            thinking_config.insert("thinkingLevel".into(), Value::String(level.into()));
+        }
+    }
+    Some(thinking_config)
+}
+
+fn snake_case_gemini_thinking_config(config: &Map<String, Value>) -> Option<Map<String, Value>> {
+    if config.is_empty() {
+        return None;
+    }
+    let mut translated = Map::new();
+    if let Some(Value::Bool(include_thoughts)) = config.get("includeThoughts") {
+        translated.insert("include_thoughts".into(), Value::Bool(*include_thoughts));
+    }
+    if let Some(Value::String(thinking_level)) = config.get("thinkingLevel") {
+        let thinking_level = thinking_level.trim();
+        if !thinking_level.is_empty() {
+            translated.insert(
+                "thinking_level".into(),
+                Value::String(thinking_level.to_ascii_lowercase()),
+            );
+        }
+    }
+    if let Some(value) = config.get("thinkingBudget") {
+        let budget = value
+            .as_i64()
+            .or_else(|| value.as_u64().and_then(|value| i64::try_from(value).ok()))
+            .or_else(|| value.as_f64().map(|value| value as i64));
+        if let Some(budget) = budget {
+            translated.insert("thinking_budget".into(), Value::Number(budget.into()));
+        }
+    }
+    (!translated.is_empty()).then_some(translated)
+}
+
+fn is_gemini_openai_compat_base_url(base_url: &str) -> bool {
+    let normalized = base_url.trim().trim_end_matches('/').to_ascii_lowercase();
+    !normalized.is_empty()
+        && normalized.contains("generativelanguage.googleapis.com")
+        && normalized.ends_with("/openai")
 }

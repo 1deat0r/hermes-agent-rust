@@ -115,6 +115,7 @@ fn dataclass_defaults_match_upstream() {
     assert!(profile.default_aux_model.is_empty());
     assert!(!profile.models_fetch_disabled);
     assert_eq!(profile.models_fetch_mode, ModelsFetchMode::Standard);
+    assert!(!profile.gemini_thinking);
     assert!(!profile.reasoning_passthrough);
 }
 
