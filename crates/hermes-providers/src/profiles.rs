@@ -14,6 +14,8 @@ mod kilocode;
 mod openai_codex;
 #[path = "stepfun.rs"]
 mod stepfun;
+#[path = "xai.rs"]
+mod xai;
 #[path = "xiaomi.rs"]
 mod xiaomi;
 
@@ -28,6 +30,7 @@ pub(crate) fn register_builtin_profiles() {
     register_provider(kilocode::profile());
     register_provider(openai_codex::profile());
     register_provider(stepfun::profile());
+    register_provider(xai::profile());
     register_provider(xiaomi::profile());
 }
 
@@ -42,6 +45,7 @@ pub(crate) fn load_profile(
             Some("kilocode") => return Ok(Some(kilocode::profile())),
             Some("openai-codex") => return Ok(Some(openai_codex::profile())),
             Some("stepfun") => return Ok(Some(stepfun::profile())),
+            Some("xai") => return Ok(Some(xai::profile())),
             Some("xiaomi") => return Ok(Some(xiaomi::profile())),
             _ => {}
         }

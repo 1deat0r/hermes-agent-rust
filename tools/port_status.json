@@ -59,6 +59,9 @@
   "plugins.model-providers.xiaomi.__init__": {
     "status": "done"
   },
+  "plugins.model-providers.xai.__init__": {
+    "status": "done"
+  },
   "tools.ansi_strip": {
     "status": "done"
   },
