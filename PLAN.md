@@ -128,6 +128,11 @@ hint, managed-node bootstrap, agent_browser_runnable, resolve_reasoning_
 config (config crate), node/profile constants remainder. Phase 2 (agent
 core: toolsets, run_agent, agent/, tools/, batch) is open.
 
+**P2 status: 🟡 OPEN — hermes-tools support wave landed (2026-08-23).** The
+wave below ports the small, dependency-light tool modules needed by the agent
+surface. The modules marked partial retain explicit config/context or validator
+seams; those seams are recorded rather than silently treated as complete.
+
 **P0 status: ✅ COMPLETE (2026-08-22).** Exit criteria met:
 `cargo build --workspace` green; `cargo test --workspace` green (74 tests:
 hermes-constants lib 45 + parity 8, hermes-time lib 13 + parity 8); clippy
@@ -136,7 +141,7 @@ clean via `cargo clippy --workspace --all-targets`; PLAN + ledger current
 tracked); P1 foundation underway with hermes-constants (foundational subset)
 and hermes-time (full) landed. Evidence tier: unit.
 
-## 5. Parity matrix (foundation)
+## 5. Parity matrix (foundation + current Phase 2 wave)
 
 Legend: ✅ done · 🟡 partial · ❌ missing
 
@@ -296,6 +301,33 @@ rich/routing/cooldown/meta/reactions/conversation/delete modules.
 | invalid-tz fallback (warn + local) | ✅ | time::{get_timezone, now} |
 | read_raw_config compatibility (fail-open) | ✅ via config reader | time::config::raw_timezone |
 
+### hermes-tools support wave (Phase 2, upstream @ b9aa928)
+
+| Module / upstream surface | Status | Rust home, oracle, and evidence tier |
+|---|---|---|
+| tools/audio_container.py (97 LOC) | ✅ | `audio_container.rs`; 6 parity tests (`unit`) |
+| tools/computer_use/schema.py (353 LOC) | ✅ | generated `computer_use_schema.rs`; byte-identical golden + 4 parity tests (`unit`) |
+| tools/credential_files.py (530 LOC) | 🟡 | `credential_files.rs`; 27 parity tests (`mock`); config, external-skills, atexit, and ContextVar→thread-local seams remain |
+| tools/daemon_pool.py (64 LOC) | ✅ | `daemon_pool.rs`; 10 parity tests (`unit`) |
+| tools/debug_helpers.py (105 LOC) | ✅ | `debug_helpers.rs`; 5 parity tests (`mock`) |
+| tools/delegation_output_schema.py (151 LOC) | 🟡 | `delegation_output_schema.rs`; 17 active parity tests (`mock`), 2 validator tests ignored pending real `jsonschema` wiring |
+| tools/desktop_ui.py (40 LOC) | ✅ | `desktop_ui.rs`; 2 emitter-routing parity tests (`mock`) |
+| tools/env_probe.py (370 LOC) | ✅ | `env_probe.rs`; 13 fake-executable/cache parity tests (`mock`) |
+| tools/fal_common.py (163 LOC) | ✅ | `fal_common.rs`; 47 injected-client/dependency parity tests (`mock`) |
+| tools/interrupt.py (124 LOC) | ✅ | `interrupt.rs`; 4 parity tests (`unit`); broader agent/gateway signal tests deferred with those crates |
+| tools/mcp_schema_cache.py (121 LOC) | ✅ | `mcp_schema_cache.rs`; 12 cache/fingerprint parity tests (`mock`) |
+| tools/read_preview_tool.py (94 LOC) | ✅ | `read_preview_tool.rs`; 8 callback/schema parity tests (`mock`) |
+| tools/read_terminal_tool.py (89 LOC) | ✅ | `read_terminal_tool.rs`; 9 callback/schema parity tests (`mock`); no dedicated upstream test file, so source is the oracle |
+| tools/slash_confirm.py (167 LOC) | ✅ | `slash_confirm.rs`; 16 confirmation-state parity tests (`mock`) |
+| tools/terminal_hints.py (170 LOC) | ✅ | `terminal_hints.rs`; 17 pattern/order parity tests (`unit`) |
+| tools/thread_context.py (120 LOC) | ✅ | `thread_context.rs`; 6 context/cleanup parity tests (`mock`) |
+| tools/threat_patterns.py (284 LOC) | 🟡 | `threat_patterns.rs`; 24 pattern/scope parity tests (`unit`); full NFKC and Python full-Unicode case-folding deferred |
+| tools/todo_tool.py (335 LOC) | 🟡 | `todo_tool.rs`; 23 store/schema parity tests (`mock`); AIAgent-owned task context and exact Python non-string `str()` coercion remain seams |
+| tools/tool_backend_helpers.py (311 LOC) | 🟡 | `tool_backend_helpers.rs`; 40 helper parity tests (`mock`); CLI/provider/secret-scope/credential-pool integrations deferred |
+| tools/tool_output_limits.py (110 LOC) | 🟡 | `tool_output_limits.rs`; 9 config/coercion parity tests (`mock`); hermes-cli config loader is an injected seam |
+| tools/working_diff.py (130 LOC) | ✅ | `working_diff.rs`; 11 subprocess/diff parity tests (`mock`) |
+| Workspace evidence for this wave | ✅ | `cargo build --workspace` and `cargo test --workspace` (`unit`/`mock`); final result recorded in §7 |
+
 ## 6. Parity oracles
 
 Every ported behavior is pinned by tests whose cases derive from upstream
@@ -312,11 +344,75 @@ oracle tests). Upstream oracle files currently mirrored:
 - `agent/redact.py` → `crates/hermes-logging/src/redact.rs` (golden `upstream/golden_redact.json`)
 - `tests/hermes_state/test_session_read_state.py` + TestCounts / TestExcludeSources / TestCompressionChainProjection / TestSessionPinAndStaleArchive / TestSessionIdSearch / gateway-listing subset → `crates/hermes-state/tests/parity_state_rich.rs`
 - `agent/session_activity.py` → `crates/hermes-state/src/activity.rs` (bound/normalize/build helpers; Python `round(x,1)` tie-to-even rounding)
+- `tests/tools/test_audio_container.py` → `crates/hermes-tools/tests/parity_audio_container.rs`
+- `tools/computer_use/schema.py` → `crates/hermes-tools/tests/parity_computer_use_schema.rs` + `upstream/golden_computer_use_schema.json`
+- `tests/tools/test_credential_files.py` → `crates/hermes-tools/tests/parity_credential_files.rs`
+- `tests/tools/test_daemon_pool.py` → `crates/hermes-tools/tests/parity_daemon_pool.rs`
+- `tests/tools/test_debug_helpers.py` → `crates/hermes-tools/tests/parity_debug_helpers*.rs`
+- `tests/tools/test_delegate_output_schema.py` → `crates/hermes-tools/tests/parity_delegation_output_schema.rs`
+- `tests/tools/test_desktop_ui.py` → `crates/hermes-tools/tests/parity_desktop_ui.rs`
+- `tests/tools/test_env_probe.py` → `crates/hermes-tools/tests/parity_env_probe.rs`
+- `tests/tools/test_fal_common.py` → `crates/hermes-tools/tests/parity_fal_common.rs`
+- `tests/tools/test_interrupt.py` → `crates/hermes-tools/tests/parity_interrupt.rs` (agent/gateway interrupt suites remain deferred)
+- `tests/tools/test_mcp_schema_cache.py` → `crates/hermes-tools/tests/parity_mcp_schema_cache.rs`
+- `tests/tools/test_read_preview_tool.py` → `crates/hermes-tools/tests/parity_read_preview_tool.rs`; `read_terminal_tool.py` is code-oracle-only because upstream has no dedicated test module
+- `tests/tools/test_slash_confirm.py` → `crates/hermes-tools/tests/parity_slash_confirm.rs`
+- `tests/tools/test_terminal_hints.py` → `crates/hermes-tools/tests/parity_terminal_hints.rs`
+- `tools/thread_context.py` → `crates/hermes-tools/tests/parity_thread_context.rs` (no dedicated upstream test module)
+- `tests/tools/test_threat_patterns.py` → `crates/hermes-tools/tests/parity_threat_patterns.rs`
+- `tests/tools/test_todo_tool.py` + `tests/tools/test_todo_tool_type_coercion.py` → `crates/hermes-tools/tests/parity_todo_tool.rs` + `upstream/golden_todo_schema.json`
+- `tests/tools/test_tool_backend_helpers.py` → `crates/hermes-tools/tests/parity_tool_backend_helpers.rs`
+- `tests/tools/test_tool_output_limits.py` → `crates/hermes-tools/tests/parity_tool_output_limits.rs`
+- `tests/tools/test_working_diff.py` → `crates/hermes-tools/tests/parity_working_diff.rs`
 
 Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 + the exact command, e.g. `cargo test -p hermes-time (unit)`.
 
 ## 7. Session log
+
+- 2026-08-24 (session 4b): Resumed the support-wave handoff and completed the
+  four pending code units. Committed `tools/tool_backend_helpers` as
+  `358f639`, `tools/tool_output_limits` as `e563376`, `tools/working_diff` as
+  `74c5286`, and the `file_state` parity temp-path isolation fix as `74e9fb8`.
+  The working-diff review corrected empty-path-list handling, conditional
+  `empty` result shaping, and untracked-probe error propagation against the
+  upstream source. Focused evidence (`mock`/`live`) passed: backend helpers
+  40, output limits 9, working diff 11, and file state 10 tests. Required
+  workspace evidence (`unit`/`mock`) is green with the explicit stable
+  toolchain commands:
+  `PATH=/home/mustbearnold/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin:$PATH /home/mustbearnold/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin/cargo build --workspace`
+  and
+  `PATH=/home/mustbearnold/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin:$PATH /home/mustbearnold/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin/cargo test --workspace`.
+  Three delegation/schema doc tests remain intentionally ignored. Inventory
+  and conversion ledger were regenerated with
+  `HERMES_UPSTREAM=/run/media/mustbearnold/Projects/Research/hermes-agent-repo tools/inventory.sh`
+  and `python3 tools/conversion_ledger.py`, retaining 41 done / 7 partial /
+  1,055 missing production modules. Because the local HTTPS Git client has no
+  credentials, the connected GitHub API published the 24 code commits as a
+  sequential remote mirror through `f12bbd3`; each remote commit has the same
+  tree snapshot and message as its local counterpart, but a different SHA
+  because the API cannot preserve the local author/committer timestamps.
+
+- 2026-08-23 (session 4a): Hermes-tools support wave ported against upstream
+  @ b9aa928. Added audio_container, computer_use/schema, credential_files,
+  daemon_pool, debug_helpers, delegation_output_schema, desktop_ui, env_probe,
+  fal_common, interrupt, mcp_schema_cache, read_preview_tool,
+  read_terminal_tool, slash_confirm, terminal_hints, thread_context,
+  threat_patterns, todo_tool, tool_backend_helpers, tool_output_limits, and
+  working_diff, with parity tests and golden schema fixtures where needed.
+  The ledger records 41 done / 7 partial production modules after
+  `HERMES_UPSTREAM=/run/media/mustbearnold/Projects/Research/hermes-agent-repo tools/inventory.sh`.
+  This count also reconciles the already-landed `agent.redact`,
+  `agent.session_activity`, and top-level `model_tools` ports into the
+  machine-readable overlay.
+  Partial seams are explicit: real JSON-Schema validation, full NFKC, config
+  and provider integrations, AIAgent/task context, and credential-file
+  ContextVar semantics. Two full-workspace test-isolation fixes were also
+  landed: a shared hermes-logging queue mutex and a shared hermes-constants
+  environment/profile mutex. Evidence (`unit`/`mock`):
+  `PATH=/home/mustbearnold/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin:$PATH /home/mustbearnold/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin/cargo build --workspace`
+  and the same explicit-toolchain command with `cargo test --workspace` are
+  green; 3 delegation/schema doc tests remain intentionally ignored.
 
 - 2026-08-22 (session 3c): agent/file_safety.py ported — hermes-tools
   src/file_safety.rs (@ b9aa928, 693 LOC; homed in hermes-tools until the

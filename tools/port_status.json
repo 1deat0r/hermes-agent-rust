@@ -2,6 +2,12 @@
   "agent.file_safety": {
     "status": "done"
   },
+  "agent.redact": {
+    "status": "done"
+  },
+  "agent.session_activity": {
+    "status": "done"
+  },
   "hermes_constants": {
     "status": "partial"
   },
@@ -26,7 +32,13 @@
   "hermes_time": {
     "status": "done"
   },
+  "model_tools": {
+    "status": "done"
+  },
   "tools.ansi_strip": {
+    "status": "done"
+  },
+  "tools.audio_container": {
     "status": "done"
   },
   "tools.binary_extensions": {
@@ -38,13 +50,49 @@
   "tools.clarify_tool": {
     "status": "done"
   },
+  "tools.computer_use.schema": {
+    "status": "done"
+  },
+  "tools.credential_files": {
+    "status": "partial"
+  },
+  "tools.daemon_pool": {
+    "status": "done"
+  },
+  "tools.debug_helpers": {
+    "status": "done"
+  },
+  "tools.delegation_output_schema": {
+    "status": "partial"
+  },
+  "tools.desktop_ui": {
+    "status": "done"
+  },
+  "tools.env_probe": {
+    "status": "done"
+  },
+  "tools.fal_common": {
+    "status": "done"
+  },
   "tools.file_state": {
+    "status": "done"
+  },
+  "tools.interrupt": {
+    "status": "done"
+  },
+  "tools.mcp_schema_cache": {
     "status": "done"
   },
   "tools.path_security": {
     "status": "done"
   },
   "tools.read_extract": {
+    "status": "done"
+  },
+  "tools.read_preview_tool": {
+    "status": "done"
+  },
+  "tools.read_terminal_tool": {
     "status": "done"
   },
   "tools.registry": {
@@ -60,6 +108,30 @@
     "status": "done"
   },
   "tools.tts_text_normalize": {
+    "status": "done"
+  },
+  "tools.slash_confirm": {
+    "status": "done"
+  },
+  "tools.terminal_hints": {
+    "status": "done"
+  },
+  "tools.thread_context": {
+    "status": "done"
+  },
+  "tools.threat_patterns": {
+    "status": "partial"
+  },
+  "tools.todo_tool": {
+    "status": "partial"
+  },
+  "tools.tool_backend_helpers": {
+    "status": "partial"
+  },
+  "tools.tool_output_limits": {
+    "status": "partial"
+  },
+  "tools.working_diff": {
     "status": "done"
   },
   "toolset_distributions": {

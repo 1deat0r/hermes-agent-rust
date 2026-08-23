@@ -1,20 +1,20 @@
 {
- "generated_from": "/home/mustbearn/Projects/Research/hermes-agent-repo",
- "generated_at": "2026-08-22T18:33:34",
+ "generated_from": "/run/media/mustbearnold/Projects/Research/hermes-agent-repo",
+ "generated_at": "2026-08-24T08:38:32",
  "summary": {
   "modules": 3882,
   "total_lines": 1510733,
   "production_modules": 1103,
   "production_lines": 843792,
   "status_counts": {
-   "done": 23,
-   "partial": 1,
-   "missing": 3858
+   "done": 41,
+   "partial": 7,
+   "missing": 3834
   },
   "prod_status_counts": {
-   "done": 23,
-   "partial": 1,
-   "missing": 1079
+   "done": 41,
+   "partial": 7,
+   "missing": 1055
   },
   "packages": {
    "gateway": {
@@ -63,8 +63,8 @@
     "lines": 133942,
     "modules": 186,
     "status": {
-     "missing": 185,
-     "done": 1
+     "missing": 183,
+     "done": 3
     }
    },
    "hermes_state": {
@@ -86,8 +86,9 @@
     "lines": 123020,
     "modules": 131,
     "status": {
-     "missing": 119,
-     "done": 12
+     "missing": 98,
+     "done": 27,
+     "partial": 6
     }
    },
    "tests.run_agent": {
@@ -200,7 +201,8 @@
     "lines": 1569,
     "modules": 1,
     "status": {
-     "missing": 1
+     "missing": 0,
+     "done": 1
     }
    },
    "tests.conftest": {
@@ -3127,7 +3129,7 @@
   "model_tools": {
    "lines": 1569,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "hermes_cli.cli_billing_mixin": {
@@ -3616,7 +3618,7 @@
   "agent.redact": {
    "lines": 1197,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "tests.run_agent.test_413_compression": {
@@ -6068,7 +6070,7 @@
    "imports": [
     "hermes_constants"
    ],
-   "port_status": "missing",
+   "port_status": "partial",
    "is_test": false
   },
   "optional-skills.security.godmode.scripts.godmode_race": {
@@ -7873,7 +7875,7 @@
   "tools.env_probe": {
    "lines": 370,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "tests.test_iron_proxy_e2e": {
@@ -8072,7 +8074,7 @@
   "tools.computer_use.schema": {
    "lines": 353,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "optional-skills.productivity.memento-flashcards.scripts.memento_cards": {
@@ -8402,7 +8404,7 @@
   "tools.todo_tool": {
    "lines": 335,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "partial",
    "is_test": false
   },
   "plugins.teams_pipeline.meetings": {
@@ -9078,7 +9080,7 @@
    "imports": [
     "utils"
    ],
-   "port_status": "missing",
+   "port_status": "partial",
    "is_test": false
   },
   "tests.hermes_cli.test_project_plugin_rce_bypass": {
@@ -9862,7 +9864,7 @@
   "tools.threat_patterns": {
    "lines": 284,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "partial",
    "is_test": false
   },
   "optional-skills.finance.polymarket.scripts.polymarket": {
@@ -14393,7 +14395,7 @@
   "tools.terminal_hints": {
    "lines": 170,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "optional-skills.security.unbroker.scripts.ledger": {
@@ -14655,7 +14657,7 @@
   "tools.slash_confirm": {
    "lines": 167,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "optional-skills.creative.pixel-art.scripts.palettes": {
@@ -14896,7 +14898,7 @@
   "tools.fal_common": {
    "lines": 163,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "tests.agent.test_summarize_tool_result_type_safety": {
@@ -15642,7 +15644,7 @@
   "tools.delegation_output_schema": {
    "lines": 151,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "partial",
    "is_test": false
   },
   "tests.plugins.platforms.photon.test_fatal_notify_self_cancel": {
@@ -17405,7 +17407,7 @@
   "tools.working_diff": {
    "lines": 130,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "tests.test_hermes_state_compression_busy_retry": {
@@ -18149,7 +18151,7 @@
     "hermes_constants",
     "utils"
    ],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "optional-skills.devops.watchers.scripts.watch_rss": {
@@ -18281,7 +18283,7 @@
   "tools.thread_context": {
    "lines": 120,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "tests.test_empty_session_hygiene": {
@@ -18793,7 +18795,7 @@
   "tools.interrupt": {
    "lines": 113,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "tests.agent.test_billing_usage": {
@@ -19043,7 +19045,7 @@
   "tools.tool_output_limits": {
    "lines": 110,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "partial",
    "is_test": false
   },
   "tools.neutts_synth": {
@@ -19407,7 +19409,7 @@
   "agent.session_activity": {
    "lines": 106,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "agent.lsp.__init__": {
@@ -19477,7 +19479,7 @@
    "imports": [
     "hermes_constants"
    ],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "tests.hermes_state.test_resolve_resume_session_id": {
@@ -20214,7 +20216,7 @@
   "tools.audio_container": {
    "lines": 97,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "tests.tui_gateway.test_billing_rpc": {
@@ -20486,7 +20488,7 @@
   "tools.read_preview_tool": {
    "lines": 94,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "tests.agent.test_learning_mutations": {
@@ -21006,7 +21008,7 @@
   "tools.read_terminal_tool": {
    "lines": 89,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "tests.test_tui_gateway_loop_noise": {
@@ -23575,7 +23577,7 @@
   "tools.daemon_pool": {
    "lines": 64,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "tools.focus_pane_tool": {
@@ -25670,7 +25672,7 @@
   "tools.desktop_ui": {
    "lines": 40,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "tests.test_live_system_guard": {
