@@ -35,6 +35,9 @@
   "model_tools": {
     "status": "done"
   },
+  "providers.base": {
+    "status": "partial"
+  },
   "tools.ansi_strip": {
     "status": "done"
   },

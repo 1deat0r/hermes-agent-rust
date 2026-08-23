@@ -91,6 +91,7 @@ Hermes-Agent-Rust/
     hermes-logging/        # hermes_logging.py                (Phase 1)
     hermes-state/          # hermes_state{,_schema,_common,_portability,_search}.py  (Phase 1, open — common/schema/lifecycle landed)
     hermes-toolsets/       # toolsets.py ✅, toolset_distributions.py ✅, model_tools.py 🟡 (schema/coercion surface landed; handle_function_call deferred with agent loop)   (Phase 2)
+    hermes-providers/      # providers/base.py + providers/__init__.py (Phase 2; base profile surface opened, CLI-version seam remains)
     hermes-agent/          # run_agent.py + agent/            (Phase 2, next after toolsets)
     hermes-tools/          # tools/ (✅ registry, schema_sanitizer, ansi_strip, clarify_tool, session_search_tool, file_safety, read_extract, file_state, path_security, binary_extensions, budget_config, tool_result_storage, tts_text_normalize)   (Phase 2)
     hermes-batch/          # batch_runner.py, trajectory_compressor.py, mini_swe_runner.py (Phase 2)
@@ -128,10 +129,15 @@ hint, managed-node bootstrap, agent_browser_runnable, resolve_reasoning_
 config (config crate), node/profile constants remainder. Phase 2 (agent
 core: toolsets, run_agent, agent/, tools/, batch) is open.
 
-**P2 status: 🟡 OPEN — hermes-tools support wave landed (2026-08-23).** The
-wave below ports the small, dependency-light tool modules needed by the agent
-surface. The modules marked partial retain explicit config/context or validator
-seams; those seams are recorded rather than silently treated as complete.
+**P2 status: 🟡 OPEN — hermes-tools support wave and provider-profile base
+landed (2026-08-24).** The support wave below ports small,
+dependency-light modules needed by the agent surface. `hermes-providers` now
+contains the declarative `providers.base` profile and secure model-catalog
+probe; the module remains partial until the future CLI crate supplies the
+runtime version used in `_profile_user_agent` and the application-installed
+urllib opener policy is represented. The modules marked partial retain
+explicit seams; those seams are recorded rather than silently treated as
+complete.
 
 **P0 status: ✅ COMPLETE (2026-08-22).** Exit criteria met:
 `cargo build --workspace` green; `cargo test --workspace` green (74 tests:
@@ -328,6 +334,17 @@ rich/routing/cooldown/meta/reactions/conversation/delete modules.
 | tools/working_diff.py (130 LOC) | ✅ | `working_diff.rs`; 11 subprocess/diff parity tests (`mock`) |
 | Workspace evidence for this wave | ✅ | `cargo build --workspace` and `cargo test --workspace` (`unit`/`mock`); final result recorded in §7 |
 
+### hermes-providers base (Phase 2, upstream @ b9aa928)
+
+| Module / upstream surface | Status | Rust home, oracle, and evidence tier |
+|---|---|---|
+| providers/base.py (238 LOC) — declarative profile fields/defaults and no-op hooks | ✅ | `hermes-providers::base`; 4 parity tests (`unit`) |
+| `get_hostname`, `get_max_tokens`, and `OMIT_TEMPERATURE` | ✅ | `base.rs`; included in the focused profile tests (`unit`) |
+| `fetch_models` endpoint precedence, JSON shaping, strict fail-open behavior | ✅ | `base.rs`; loopback catalog tests (`mock`) |
+| credential-safe redirects (same-origin retention, cross-origin `accept`/`user-agent` allowlist) | ✅ | `base.rs`; 2 redirect tests (`mock`) |
+| `_profile_user_agent` runtime CLI version and installed urllib opener policy | 🟡 | stable fallback is implemented; CLI-version injection and application opener integration remain with `hermes-cli` |
+| providers/__init__.py registry/discovery | ❌ | next dependency-safe provider unit |
+
 ## 6. Parity oracles
 
 Every ported behavior is pinned by tests whose cases derive from upstream
@@ -364,11 +381,31 @@ oracle tests). Upstream oracle files currently mirrored:
 - `tests/tools/test_tool_backend_helpers.py` → `crates/hermes-tools/tests/parity_tool_backend_helpers.rs`
 - `tests/tools/test_tool_output_limits.py` → `crates/hermes-tools/tests/parity_tool_output_limits.rs`
 - `tests/tools/test_working_diff.py` → `crates/hermes-tools/tests/parity_working_diff.rs`
+- `providers/base.py` + `tests/providers/test_fetch_models_base_url.py` → `crates/hermes-providers/tests/parity_base.rs` (9 profile/catalog/redirect parity tests; `unit`/`mock`)
 
 Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 + the exact command, e.g. `cargo test -p hermes-time (unit)`.
 
 ## 7. Session log
+
+- 2026-08-24 (session 4c): Opened the `hermes-providers` crate and ported
+  `providers/base.py` (@ b9aa928, 238 LOC) through a TDD loop. The Rust
+  `ProviderProfile` mirrors the declarative dataclass defaults, hostname and
+  token-cap hooks, temperature-omit sentinel, and pass-through message/body
+  hooks. `fetch_models` mirrors explicit-models URL precedence, caller
+  `base_url` override behavior, list/object catalog shaping, strict UTF-8/JSON
+  parsing, debug-only fail-open errors, and the five urllib redirect statuses.
+  Its manual redirect path applies the upstream origin normalization and
+  cross-origin `accept`/`user-agent` allowlist, preventing arbitrary provider
+  credential headers from crossing origins. Added the reqwest/rustls blocking
+  transport and 9 loopback parity tests in `parity_base.rs` (`unit`/`mock`).
+  Focused `cargo test -p hermes-providers --test parity_base`, required
+  `cargo build --workspace`, and required `cargo test --workspace` are green.
+  `providers.base` is recorded `partial` because `_profile_user_agent` still
+  uses the upstream fallback until the CLI crate can provide its runtime
+  version, and Python's installed opener custom-handler/cookie/instrumentation
+  policy has no Rust CLI owner yet. Next unit: `providers.__init__` registry
+  and discovery.
 
 - 2026-08-24 (session 4b): Resumed the support-wave handoff and completed the
   four pending code units. Committed `tools/tool_backend_helpers` as

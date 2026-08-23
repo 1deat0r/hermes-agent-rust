@@ -1,0 +1,11 @@
+[package]
+name = "hermes-providers"
+description = "1:1 Rust port of providers/ (Nous Research Hermes Agent)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+reqwest.workspace = true
+serde_json.workspace = true
+log.workspace = true
