@@ -1,6 +1,6 @@
 # Hermes Agent Rust — Next-session handoff
 
-Date: 2026-08-24 (Pacific/Auckland), session 4i.
+Date: 2026-08-24 (Pacific/Auckland), session 4j.
 
 ## Resume point
 
@@ -17,8 +17,9 @@ update. The local HTTPS Git client still has no credentials; use the
 connected GitHub API for future pushes until `gh auth login` or SSH is
 configured.
 
-Latest synchronized units: local source `c5e98e03` → GitHub `30d491d`
-(`plugins.model-providers.openai-codex.__init__`), after local `f04daa74` →
+Latest synchronized units: local source `47c7ead` → GitHub `aa77b2a`
+(`plugins.model-providers.xiaomi.__init__`), after local `c5e98e03` → GitHub
+`30d491d` (`plugins.model-providers.openai-codex.__init__`), local `f04daa74` →
 GitHub `cf104bd` (`plugins.model-providers.stepfun.__init__`), local
 `6d1c89dc` → GitHub
 `e14acc6` (`plugins.model-providers.kilocode.__init__`), local `fcf144a1` →
@@ -32,7 +33,7 @@ because it cannot preserve the local author/committer timestamps.
 ## What landed this session
 
 Module-sized commits are complete through
-`plugins.model-providers.openai-codex.__init__`: `db23d7c`
+`plugins.model-providers.xiaomi.__init__`: `db23d7c`
 hermes-logging test isolation;
 `a1a5b1b` hermes-constants test isolation; `cd4d356` audio_container;
 `12d704e` computer_use/schema plus generator/golden; `9303b4b`
@@ -52,7 +53,8 @@ profile (`fcf144a1` locally, mirrored as `11245d8` remotely).
 The Kilo Code bundled profile is `6d1c89dc` locally, mirrored as `e14acc6`
 remotely. The StepFun bundled profile is `f04daa74` locally, mirrored as
 `cf104bd` remotely. The OpenAI Codex bundled profile is `c5e98e03` locally,
-mirrored as `30d491d` remotely.
+mirrored as `30d491d` remotely. The Xiaomi bundled profile is `47c7ead` locally,
+mirrored as `aa77b2a` remotely.
 
 The new `hermes-providers` crate ports `providers/base.py` and
 `providers/__init__.py` @ `b9aa928`: declarative profile defaults and hooks,
@@ -60,11 +62,11 @@ model endpoint precedence, strict fail-open catalog parsing,
 credential-safe redirects, canonical/alias registry behavior, copy-safe
 caching, and sorted bundled/user/legacy discovery. The focused suites contain
 9 base, 8 registry, 2 Alibaba profile, 2 Arcee profile, 2 Kilo Code profile,
-2 StepFun profile, and 2 OpenAI Codex profile tests are green. The provider
+2 StepFun profile, 2 OpenAI Codex profile, and 2 Xiaomi profile tests are green. The provider
 surface remains partial
 for the future CLI version/opener integration and remaining Rust plugin profile
 loaders. The next unit is the smallest remaining bundled profile,
-`plugins.model-providers.xiaomi.__init__` (16 LOC).
+`plugins.model-providers.xai.__init__` (17 LOC).
 
 The required workspace run was green before the commit split:
 
@@ -77,15 +79,15 @@ All tests passed; only three intentional delegation/schema doc tests were ignore
 
 ## Exact working-tree state
 
-After the current OpenAI Codex commit is mirrored and `main` is aligned to its
+After the current Xiaomi commit is mirrored and `main` is aligned to its
 remote mirror, the working tree is clean. The committed metadata
 includes `PLAN.md`, `tools/port_status.json`, generated `tools/inventory.json`,
 `CONVERSION-LEDGER.md`, and this handoff. No code or parity test is pending
-for the OpenAI Codex unit.
+for the Xiaomi unit.
 
 ## Next actions, in order
 
-1. Start `plugins.model-providers.xiaomi.__init__` by reading its pinned
+1. Start `plugins.model-providers.xai.__init__` by reading its pinned
    source/tests and writing profile-registration parity tests first.
 2. Keep the static bundled-profile registration order and user-loader seam
    explicit while adding the next provider profile.
@@ -96,8 +98,8 @@ for the OpenAI Codex unit.
 
 `CONVERSION-LEDGER.md` is generated and contains one row for every 3,882 upstream inventory modules: 1,103 production tasks plus 2,779 oracle/test tasks. Only `done` counts toward completion.
 
-- All tracked modules: 46 done / 9 partial / 3,827 missing = **1.19%**.
-- Production modules: 46 done / 9 partial / 1,048 missing = **4.17%**.
+- All tracked modules: 47 done / 9 partial / 3,826 missing = **1.21%**.
+- Production modules: 47 done / 9 partial / 1,047 missing = **4.26%**.
 
 The nine partial production rows are `hermes_constants`, `providers.base`,
 `providers.__init__`, `tools.credential_files`,
@@ -126,11 +128,11 @@ The strict production formula is `done production modules / 1,103`; partial rows
 ## Verification evidence
 
 The focused provider parity suites passed 9 base, 8 registry, 2 Alibaba, 2
-Arcee, 2 Kilo Code, 2 StepFun, and 2 OpenAI Codex profile tests. The
+Arcee, 2 Kilo Code, 2 StepFun, 2 OpenAI Codex, and 2 Xiaomi profile tests. The
 required workspace build and test also passed with the explicit cargo
 toolchain; three
 delegation/schema doc tests are intentionally ignored. Inventory and
-conversion ledger were regenerated and now record 46 done / 9 partial / 1,048
+conversion ledger were regenerated and now record 47 done / 9 partial / 1,047
 missing production modules.
 
 ## First command tomorrow
