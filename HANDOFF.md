@@ -17,6 +17,9 @@ update. The local HTTPS Git client still has no credentials; use the
 connected GitHub API for future pushes until `gh auth login` or SSH is
 configured.
 
+Latest synchronized unit: local source commit `c121ae3` and GitHub mirror
+commit `3996dcb6` (`providers.base: port profile and model catalog @ b9aa928`).
+
 ## What landed this session
 
 Module-sized commits are complete through `tools/working_diff` and the
@@ -31,7 +34,7 @@ dependencies; `59b87f1` read_preview_tool; `35a35e6` read_terminal_tool;
 thread_context; `e422040` threat_patterns plus `examples/prof_scan.rs`;
 `f7ce193` todo_tool; `358f639` tool_backend_helpers; `e563376`
 tool_output_limits; `74c5286` working_diff; and the new `providers.base`
-profile crate unit (the SHA is recorded after its local/remote commit).
+profile crate unit (`c121ae3` locally, mirrored as `3996dcb6` remotely).
 
 The new `hermes-providers` crate ports `providers/base.py` @ `b9aa928`:
 declarative profile defaults and hooks, model endpoint precedence, strict
