@@ -56,6 +56,9 @@
   "plugins.model-providers.kilocode.__init__": {
     "status": "done"
   },
+  "plugins.model-providers.novita.__init__": {
+    "status": "done"
+  },
   "plugins.model-providers.nvidia.__init__": {
     "status": "done"
   },
