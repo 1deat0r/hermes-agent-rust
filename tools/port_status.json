@@ -71,6 +71,9 @@
   "plugins.model-providers.deepinfra.__init__": {
     "status": "done"
   },
+  "plugins.model-providers.deepseek.__init__": {
+    "status": "done"
+  },
   "plugins.model-providers.fireworks.__init__": {
     "status": "done"
   },

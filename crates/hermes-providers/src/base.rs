@@ -67,6 +67,8 @@ pub struct ProviderProfile {
     pub vertex_thinking: bool,
     /// Resolve DeepInfra's default vision model from its tagged live catalog.
     pub deepinfra_vision: bool,
+    /// Translate DeepSeek V4+ reasoning into its thinking/reasoning wire shape.
+    pub deepseek_reasoning: bool,
     /// Route Copilot reasoning through the live model-catalog effort list.
     pub copilot_reasoning: bool,
     /// Route the reasoning configuration through `extra_body.reasoning`.
@@ -101,6 +103,7 @@ impl ProviderProfile {
             gemini_thinking: false,
             vertex_thinking: false,
             deepinfra_vision: false,
+            deepseek_reasoning: false,
             copilot_reasoning: false,
             reasoning_passthrough: false,
         }
@@ -143,6 +146,9 @@ impl ProviderProfile {
         reasoning_config: Option<&Map<String, Value>>,
         context: &Map<String, Value>,
     ) -> (Map<String, Value>, Map<String, Value>) {
+        if self.deepseek_reasoning {
+            return build_deepseek_reasoning(reasoning_config, context);
+        }
         if self.copilot_reasoning {
             return build_copilot_reasoning(reasoning_config, context);
         }
@@ -718,6 +724,56 @@ fn is_gemini_openai_compat_base_url(base_url: &str) -> bool {
     !normalized.is_empty()
         && normalized.contains("generativelanguage.googleapis.com")
         && normalized.ends_with("/openai")
+}
+
+fn build_deepseek_reasoning(
+    reasoning_config: Option<&Map<String, Value>>,
+    context: &Map<String, Value>,
+) -> (Map<String, Value>, Map<String, Value>) {
+    // PARITY: DeepSeekProfile applies this hook only to DeepSeek V4+ model
+    // names, leaving V3 and unknown models' wire format untouched.
+    let model = context
+        .get("model")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .trim()
+        .to_ascii_lowercase();
+    if !model.starts_with("deepseek-v") || model.starts_with("deepseek-v3") {
+        return (Map::new(), Map::new());
+    }
+
+    let enabled = !reasoning_config
+        .and_then(|config| config.get("enabled"))
+        .and_then(Value::as_bool)
+        .is_some_and(|enabled| !enabled);
+    let mut thinking = Map::new();
+    thinking.insert(
+        "type".into(),
+        Value::String(if enabled { "enabled" } else { "disabled" }.into()),
+    );
+    let mut extra_body = Map::new();
+    extra_body.insert("thinking".into(), Value::Object(thinking));
+    if !enabled {
+        return (extra_body, Map::new());
+    }
+
+    let Some(effort) = reasoning_config
+        .and_then(|config| config.get("effort"))
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|effort| !effort.is_empty())
+        .map(str::to_ascii_lowercase)
+    else {
+        return (extra_body, Map::new());
+    };
+    let effort = match effort.as_str() {
+        "xhigh" | "max" | "ultra" => "max",
+        "low" | "medium" | "high" => effort.as_str(),
+        _ => return (extra_body, Map::new()),
+    };
+    let mut top_level = Map::new();
+    top_level.insert("reasoning_effort".into(), Value::String(effort.into()));
+    (extra_body, top_level)
 }
 
 fn build_copilot_reasoning(

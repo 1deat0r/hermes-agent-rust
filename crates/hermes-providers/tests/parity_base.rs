@@ -118,6 +118,7 @@ fn dataclass_defaults_match_upstream() {
     assert!(!profile.gemini_thinking);
     assert!(!profile.vertex_thinking);
     assert!(!profile.deepinfra_vision);
+    assert!(!profile.deepseek_reasoning);
     assert!(!profile.copilot_reasoning);
     assert!(!profile.reasoning_passthrough);
 }
