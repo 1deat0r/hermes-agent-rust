@@ -391,7 +391,9 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   credentials, the connected GitHub API published the 24 code commits as a
   sequential remote mirror through `f12bbd3`; each remote commit has the same
   tree snapshot and message as its local counterpart, but a different SHA
-  because the API cannot preserve the local author/committer timestamps.
+  because the API cannot preserve the local author/committer timestamps. The
+  metadata commit is local `2b9e8bd` and remote mirror `938944c`; its tree was
+  verified identical before the remote ref update.
 
 - 2026-08-23 (session 4a): Hermes-tools support wave ported against upstream
   @ b9aa928. Added audio_container, computer_use/schema, credential_files,
