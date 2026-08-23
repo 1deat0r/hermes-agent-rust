@@ -8,9 +8,10 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
-Current branch/HEAD: `main` / `74e9fb8` (`stabilize file_state parity temp paths`).
-The connected GitHub API has published the complete 24-commit code sequence;
-the remote mirror currently ends at `f12bbd3`. Its commit SHAs differ from the
+Current branch/HEAD: `main` / `2b9e8bd` (`record tools parity inventory and handoff @ b9aa928`).
+The connected GitHub API has published the complete 24-commit code sequence
+and the metadata commit; the remote mirror currently ends at `938944c` (code
+sequence ended at `f12bbd3`). Its commit SHAs differ from the
 local sequence because the API cannot preserve local author/committer
 timestamps, but every tree snapshot and commit message matches. The local
 HTTPS Git client still has no credentials, so use the connected GitHub API for
@@ -34,17 +35,15 @@ All tests passed; only three intentional delegation/schema doc tests were ignore
 The code units are committed. The remaining working-tree changes are the
 metadata/documentation unit: `PLAN.md`, `tools/port_status.json`, generated
 `tools/inventory.json`, `CONVERSION-LEDGER.md`, `tools/conversion_ledger.py`,
-and this handoff. No code or parity test is pending.
+  and this handoff. No code or parity test is pending; this state is clean
+  after the metadata commit.
 
 ## Next actions, in order
 
-1. Stage and commit the metadata/documentation unit containing `PLAN.md`,
-   `tools/port_status.json`, `tools/inventory.json`,
-   `CONVERSION-LEDGER.md`, `tools/conversion_ledger.py`, and this handoff;
-   publish that commit immediately through the connected GitHub API and verify
-   its remote SHA.
-2. Run `git diff --check`, confirm the workspace build/test evidence below,
+1. Run `git diff --check`, confirm the workspace build/test evidence below,
    and leave `git status` clean.
+2. For future module work, commit and publish each logical unit immediately;
+   use the connected GitHub API until local GitHub CLI authentication exists.
 
 ## Current conversion ledger
 
@@ -89,4 +88,5 @@ git status --short
 git fetch origin main
 git rev-parse origin/main
 git log --oneline -5
+git ls-remote origin refs/heads/main
 ```
