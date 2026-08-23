@@ -17,9 +17,10 @@ update. The local HTTPS Git client still has no credentials; use the
 connected GitHub API for future pushes until `gh auth login` or SSH is
 configured.
 
-Latest synchronized units: local source `ec9db5aa` → GitHub `9f8f7f6`
-(`plugins.model-providers.alibaba.__init__`), after local `c121ae3` → GitHub
-`3996dcb6` (`providers.base`) and local `0fdafeea` → GitHub `b1cb43a7`
+Latest synchronized units: local source `fcf144a1` → GitHub `11245d8`
+(`plugins.model-providers.arcee.__init__`), after local `ec9db5aa` → GitHub
+`9f8f7f6` (`plugins.model-providers.alibaba.__init__`), local `c121ae3` →
+GitHub `3996dcb6` (`providers.base`), and local `0fdafeea` → GitHub `b1cb43a7`
 (`providers.__init__`), all at upstream `b9aa928`. `main` is aligned to the
 fetched remote mirror; the API-authored SHA differs only because it cannot
 preserve the local author/committer timestamps.
@@ -27,7 +28,7 @@ preserve the local author/committer timestamps.
 ## What landed this session
 
 Module-sized commits are complete through
-`plugins.model-providers.alibaba.__init__`: `db23d7c`
+`plugins.model-providers.arcee.__init__`: `db23d7c`
 hermes-logging test isolation;
 `a1a5b1b` hermes-constants test isolation; `cd4d356` audio_container;
 `12d704e` computer_use/schema plus generator/golden; `9303b4b`
@@ -42,17 +43,19 @@ tool_output_limits; `74c5286` working_diff; and the new `providers.base`
 profile crate unit (`c121ae3` locally, mirrored as `3996dcb6` remotely);
 `providers.__init__` registry/discovery (`0fdafeea` locally, mirrored as
 `b1cb43a7` remotely); and the Alibaba bundled profile
-(`ec9db5aa` locally, mirrored as `9f8f7f6` remotely).
+(`ec9db5aa` locally, mirrored as `9f8f7f6` remotely); and the Arcee bundled
+profile (`fcf144a1` locally, mirrored as `11245d8` remotely).
 
 The new `hermes-providers` crate ports `providers/base.py` and
 `providers/__init__.py` @ `b9aa928`: declarative profile defaults and hooks,
 model endpoint precedence, strict fail-open catalog parsing,
 credential-safe redirects, canonical/alias registry behavior, copy-safe
 caching, and sorted bundled/user/legacy discovery. The focused suites contain
-9 base, 8 registry, and 2 Alibaba profile tests and are green. The provider
-surface remains partial for the future CLI version/opener integration and
-remaining Rust plugin profile loaders. The next unit is the smallest remaining
-bundled profile, `plugins.model-providers.arcee.__init__` (13 LOC).
+9 base, 8 registry, 2 Alibaba profile, and 2 Arcee profile tests and are
+green. The provider surface remains partial for the future CLI version/opener
+integration and remaining Rust plugin profile loaders. The next unit is the
+smallest remaining bundled profile, `plugins.model-providers.kilocode.__init__`
+(14 LOC).
 
 The required workspace run was green before the commit split:
 
@@ -65,15 +68,15 @@ All tests passed; only three intentional delegation/schema doc tests were ignore
 
 ## Exact working-tree state
 
-After the current Alibaba commit is mirrored and `main` is aligned to its
+After the current Arcee commit is mirrored and `main` is aligned to its
 remote mirror, the working tree is clean. The committed metadata
 includes `PLAN.md`, `tools/port_status.json`, generated `tools/inventory.json`,
 `CONVERSION-LEDGER.md`, and this handoff. No code or parity test is pending
-for the Alibaba unit.
+for the Arcee unit.
 
 ## Next actions, in order
 
-1. Start `plugins.model-providers.arcee.__init__` by reading its pinned
+1. Start `plugins.model-providers.kilocode.__init__` by reading its pinned
    source/tests and writing profile-registration parity tests first.
 2. Keep the static bundled-profile registration order and user-loader seam
    explicit while adding the next provider profile.
@@ -84,8 +87,8 @@ for the Alibaba unit.
 
 `CONVERSION-LEDGER.md` is generated and contains one row for every 3,882 upstream inventory modules: 1,103 production tasks plus 2,779 oracle/test tasks. Only `done` counts toward completion.
 
-- All tracked modules: 42 done / 9 partial / 3,831 missing = **1.08%**.
-- Production modules: 42 done / 9 partial / 1,052 missing = **3.81%**.
+- All tracked modules: 43 done / 9 partial / 3,830 missing = **1.11%**.
+- Production modules: 43 done / 9 partial / 1,051 missing = **3.90%**.
 
 The nine partial production rows are `hermes_constants`, `providers.base`,
 `providers.__init__`, `tools.credential_files`,
@@ -113,12 +116,12 @@ The strict production formula is `done production modules / 1,103`; partial rows
 
 ## Verification evidence
 
-The focused provider parity suites passed 9 base, 8 registry, and 2 Alibaba
-profile tests. The
+The focused provider parity suites passed 9 base, 8 registry, 2 Alibaba, and 2
+Arcee profile tests. The
 required workspace build and test also passed with the explicit cargo
 toolchain; three
 delegation/schema doc tests are intentionally ignored. Inventory and
-conversion ledger were regenerated and now record 42 done / 9 partial / 1,052
+conversion ledger were regenerated and now record 43 done / 9 partial / 1,051
 missing production modules.
 
 ## First command tomorrow
