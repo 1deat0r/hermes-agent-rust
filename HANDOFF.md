@@ -1,6 +1,6 @@
 # Hermes Agent Rust — Next-session handoff
 
-Date: 2026-08-24 (Pacific/Auckland), session 4w.
+Date: 2026-08-24 (Pacific/Auckland), session 4x.
 
 ## Resume point
 
@@ -17,8 +17,9 @@ update. The local HTTPS Git client still has no credentials; use the
 connected GitHub API for future pushes until `gh auth login` or SSH is
 configured.
 
-Latest synchronized units: local source `49fc714` → GitHub `30f58e1`
-(`plugins.model-providers.gemini.__init__`), after local source `9006786` →
+Latest synchronized units: local source `9740ea9` → GitHub `67a40e3`
+(`plugins.model-providers.copilot.__init__`), after local source `49fc714` →
+GitHub `30f58e1` (`plugins.model-providers.gemini.__init__`), after local source `9006786` →
 GitHub `58f6c0a` (`plugins.model-providers.anthropic.__init__`), after local source `2d9f1fd` →
 GitHub `a643a07` (`plugins.model-providers.fireworks.__init__`), after local source `69c5f5c` →
 GitHub `5a4f884` (`plugins.model-providers.ai-gateway.__init__`), after local source `56a92d6` →
@@ -52,8 +53,8 @@ because it cannot preserve the local author/committer timestamps.
 ## What landed this session
 
 Module-sized commits are complete through
-`plugins.model-providers.gemini.__init__`: `49fc714` locally, mirrored as
-`30f58e1` remotely; `db23d7c`
+`plugins.model-providers.copilot.__init__`: `9740ea9` locally, mirrored as
+`67a40e3` remotely; `db23d7c`
 hermes-logging test isolation;
 `a1a5b1b` hermes-constants test isolation; `cd4d356` audio_container;
 `12d704e` computer_use/schema plus generator/golden; `9303b4b`
@@ -109,21 +110,23 @@ commit and its `58f6c0a` GitHub mirror.
 The Google Gemini bundled profile is included in the new `49fc714` source
 commit and its `30f58e1` GitHub mirror.
 
+The GitHub Copilot bundled profile is included in the new `9740ea9` source
+commit and its `67a40e3` GitHub mirror.
+
 The new `hermes-providers` crate ports `providers/base.py` and
 `providers/__init__.py` @ `b9aa928`: declarative profile defaults and hooks,
 model endpoint precedence, strict fail-open catalog parsing,
 credential-safe redirects, canonical/alias registry behavior, copy-safe
 caching, and sorted bundled/user/legacy discovery. The focused suites contain
 9 base, 8 registry, 2 AI Gateway profile, 2 Alibaba profile, 2 Alibaba Coding
-Plan profile, 3 Anthropic profile, 3 Gemini profile, 2 Arcee profile, 2 Azure Foundry profile, 2 Bedrock profile, 2
-Copilot ACP profile, 2 Fireworks profile, 2 GMI profile, 2 Kilo Code profile, 2 NovitaAI profile, 2
+Plan profile, 3 Anthropic profile, 3 Gemini profile, 2 Arcee profile, 2 Azure Foundry profile, 2 Bedrock profile, 3 Copilot profile, 2 Copilot ACP profile, 2 Fireworks profile, 2 GMI profile, 2 Kilo Code profile, 2 NovitaAI profile, 2
 NVIDIA profile, 2 StepFun profile, 2 OpenAI Codex profile, 2 Xiaomi profile, 2
 XAI profile, and 2 Hugging Face profile tests are green.
 The provider
 surface remains partial
 for the future CLI version/opener integration and remaining Rust plugin profile
 loaders. The next unit is the smallest remaining bundled profile,
-`plugins.model-providers.copilot.__init__` (74 LOC).
+`plugins.model-providers.vertex.__init__` (75 LOC).
 
 The required workspace run was green before the commit split:
 
@@ -141,15 +144,15 @@ environment/profile state now have shared process-global test mutexes.
 
 ## Exact working-tree state
 
-After the current Gemini commit is mirrored and this handoff commit is aligned to
+After the current Copilot commit is mirrored and this handoff commit is aligned to
 its remote mirror, the working tree is clean. The committed metadata
 includes `PLAN.md`, `tools/port_status.json`, generated `tools/inventory.json`,
 `CONVERSION-LEDGER.md`, and this handoff. No code or parity test is pending
-for the Gemini unit.
+for the Copilot unit.
 
 ## Next actions, in order
 
-1. Start `plugins.model-providers.copilot.__init__` by reading its pinned
+1. Start `plugins.model-providers.vertex.__init__` by reading its pinned
    source/tests and writing profile-registration parity tests first.
 2. Keep the static bundled-profile registration order and user-loader seam
    explicit while adding the next provider profile.
@@ -160,8 +163,8 @@ for the Gemini unit.
 
 `CONVERSION-LEDGER.md` is generated and contains one row for every 3,882 upstream inventory modules: 1,103 production tasks plus 2,779 oracle/test tasks. Only `done` counts toward completion.
 
-- All tracked modules: 60 done / 9 partial / 3,813 missing = **1.55%**.
-- Production modules: 60 done / 9 partial / 1,034 missing = **5.44%**.
+- All tracked modules: 61 done / 9 partial / 3,812 missing = **1.57%**.
+- Production modules: 61 done / 9 partial / 1,033 missing = **5.53%**.
 
 The nine partial production rows are `hermes_constants`, `providers.base`,
 `providers.__init__`, `tools.credential_files`,
@@ -215,19 +218,23 @@ The strict production formula is `done production modules / 1,103`; partial rows
   `gemini_thinking` capability; it mirrors model gating, effort clamping,
   native camelCase output, and the Google OpenAI-compatible nested snake_case
   body. Full native-client and transport integrations remain future crates.
+- Copilot's source `build_api_kwargs_extras` override is represented by the
+  explicit `copilot_reasoning` capability. The live
+  `github_model_reasoning_efforts(model)` lookup is an injected context seam;
+  catalog-gated clamp precedence and fail-open behavior are preserved.
 - `tools/gen_computer_use_schema.py` discovers the upstream root via `HERMES_UPSTREAM` and has path fallbacks for this machine.
 - `cargo fmt --all -- --check` reports many pre-existing unformatted foundation files outside this wave. Do not mass-reformat unrelated crates; use targeted formatting only if needed.
 
 ## Verification evidence
 
 The focused provider parity suites passed 9 base, 8 registry, 2 AI Gateway, 2
-Alibaba, 2 Alibaba Coding Plan, 3 Anthropic, 3 Gemini, 2 Arcee, 2 Azure Foundry, 2 Bedrock, 2 Copilot
+Alibaba, 2 Alibaba Coding Plan, 3 Anthropic, 3 Gemini, 2 Arcee, 2 Azure Foundry, 2 Bedrock, 3 Copilot, 2 Copilot
 ACP, 2 Fireworks, 2 GMI, 2 Kilo Code, 2 NovitaAI, 2 NVIDIA, 2 StepFun, 2 OpenAI Codex, 2
 Xiaomi, 2 XAI, and 2 Hugging Face profile tests. The
 required workspace build and test also passed with the explicit cargo
 toolchain; three
 delegation/schema doc tests are intentionally ignored. Inventory and
-conversion ledger were regenerated and now record 60 done / 9 partial / 1,034
+conversion ledger were regenerated and now record 61 done / 9 partial / 1,033
 missing production modules.
 
 ## First command tomorrow
