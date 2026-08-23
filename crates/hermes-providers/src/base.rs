@@ -3,8 +3,9 @@
 //! PARITY: `providers/base.py` @ b9aa928. Profiles are declarative; provider
 //! clients, credential rotation, and streaming remain outside this module.
 
-use std::collections::BTreeMap;
-use std::time::Duration;
+use std::collections::{BTreeMap, HashMap};
+use std::sync::{Mutex, OnceLock};
+use std::time::{Duration, Instant};
 
 use reqwest::blocking::Client;
 use reqwest::header::{
@@ -64,6 +65,8 @@ pub struct ProviderProfile {
     pub gemini_thinking: bool,
     /// Translate Hermes reasoning into Vertex's nested Google config.
     pub vertex_thinking: bool,
+    /// Resolve DeepInfra's default vision model from its tagged live catalog.
+    pub deepinfra_vision: bool,
     /// Route Copilot reasoning through the live model-catalog effort list.
     pub copilot_reasoning: bool,
     /// Route the reasoning configuration through `extra_body.reasoning`.
@@ -97,6 +100,7 @@ impl ProviderProfile {
             models_fetch_mode: ModelsFetchMode::Standard,
             gemini_thinking: false,
             vertex_thinking: false,
+            deepinfra_vision: false,
             copilot_reasoning: false,
             reasoning_passthrough: false,
         }
@@ -169,6 +173,9 @@ impl ProviderProfile {
     }
 
     pub fn default_vision_model(&self) -> Option<String> {
+        if self.deepinfra_vision {
+            return deepinfra_default_vision_model();
+        }
         None
     }
 
@@ -371,6 +378,143 @@ impl ProviderProfile {
 
         Err("too many redirects".into())
     }
+}
+
+// PARITY: _DeepInfraProfile.default_vision_model() gates on
+// DEEPINFRA_API_KEY, then delegates to the chat-tagged DeepInfra catalog.
+// The catalog cache is process-global and keyed only by the effective base
+// URL, matching hermes_cli.models; failures are cached briefly to avoid
+// repeated blocking probes while offline.
+fn deepinfra_default_vision_model() -> Option<String> {
+    let api_key = std::env::var("DEEPINFRA_API_KEY")
+        .ok()
+        .filter(|value| !value.trim().is_empty())?;
+    let base_url = std::env::var("DEEPINFRA_BASE_URL")
+        .ok()
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or_else(|| "https://api.deepinfra.com/v1/openai".into());
+    let base_url = base_url.trim_end_matches('/').to_owned();
+    let catalog = fetch_deepinfra_catalog(&base_url, &api_key)?;
+
+    for item in catalog {
+        let Some(model_id) = item.get("id").and_then(Value::as_str) else {
+            continue;
+        };
+        let Some(raw_metadata) = item.get("metadata") else {
+            continue;
+        };
+        let Some(metadata) = raw_metadata.as_object() else {
+            continue;
+        };
+        let Some(tags) = metadata.get("tags").and_then(Value::as_array) else {
+            continue;
+        };
+        let tags: Vec<&str> = tags.iter().filter_map(Value::as_str).collect();
+        let has_surface_tag = tags.iter().any(|tag| {
+            matches!(
+                *tag,
+                "chat" | "embed" | "image-gen" | "tts" | "stt" | "video-gen"
+            )
+        });
+        if has_surface_tag {
+            if !tags.contains(&"chat") {
+                continue;
+            }
+        } else if deepinfra_chat_id_is_excluded(model_id) {
+            continue;
+        }
+        if tags.contains(&"vision") && !model_id.is_empty() {
+            return Some(model_id.to_owned());
+        }
+    }
+    None
+}
+
+type DeepInfraCatalogCache = HashMap<String, Vec<Value>>;
+type DeepInfraNegativeCache = HashMap<String, Instant>;
+
+static DEEPINFRA_CATALOG_CACHE: OnceLock<Mutex<DeepInfraCatalogCache>> = OnceLock::new();
+static DEEPINFRA_NEGATIVE_CACHE: OnceLock<Mutex<DeepInfraNegativeCache>> = OnceLock::new();
+
+fn fetch_deepinfra_catalog(base_url: &str, api_key: &str) -> Option<Vec<Value>> {
+    let cache = DEEPINFRA_CATALOG_CACHE.get_or_init(|| Mutex::new(HashMap::new()));
+    if let Some(catalog) = cache.lock().ok()?.get(base_url).cloned() {
+        return Some(catalog);
+    }
+
+    let negative_cache = DEEPINFRA_NEGATIVE_CACHE.get_or_init(|| Mutex::new(HashMap::new()));
+    if let Some(last_failure) = negative_cache.lock().ok()?.get(base_url).copied() {
+        if last_failure.elapsed() < Duration::from_secs(60) {
+            return None;
+        }
+    }
+
+    let endpoint = format!("{base_url}/models?filter=true&sort_by=hermes");
+    let result = (|| {
+        let client = Client::builder()
+            .timeout(Duration::from_secs(5))
+            .build()
+            .map_err(|error| error.to_string())?;
+        let mut request = client
+            .get(endpoint)
+            .header(USER_AGENT, profile_user_agent());
+        if !api_key.is_empty() {
+            request = request.header(AUTHORIZATION, format!("Bearer {api_key}"));
+        }
+        let response = request
+            .send()
+            .map_err(|error| error.to_string())?
+            .error_for_status()
+            .map_err(|error| error.to_string())?;
+        let payload: Value =
+            serde_json::from_slice(&response.bytes().map_err(|error| error.to_string())?)
+                .map_err(|error| error.to_string())?;
+        payload
+            .get("data")
+            .and_then(Value::as_array)
+            .cloned()
+            .ok_or_else(|| "DeepInfra catalog response has no data list".to_owned())
+    })();
+
+    match result {
+        Ok(catalog) => {
+            if let Ok(mut cached) = cache.lock() {
+                cached.insert(base_url.to_owned(), catalog.clone());
+            }
+            if let Ok(mut failures) = negative_cache.lock() {
+                failures.remove(base_url);
+            }
+            Some(catalog)
+        }
+        Err(error) => {
+            log::debug!("DeepInfra catalog fetch failed: {error}");
+            if let Ok(mut failures) = negative_cache.lock() {
+                failures.insert(base_url.to_owned(), Instant::now());
+            }
+            None
+        }
+    }
+}
+
+fn deepinfra_chat_id_is_excluded(model_id: &str) -> bool {
+    let model_id = model_id.to_ascii_lowercase();
+    [
+        "embed",
+        "rerank",
+        "whisper",
+        "stable-diffusion",
+        "flux",
+        "sdxl",
+        "tts",
+        "bark",
+        "speech",
+        "image-gen",
+        "clip",
+        "vit-",
+        "dpt-",
+    ]
+    .iter()
+    .any(|marker| model_id.contains(marker))
 }
 
 /// Return the user-agent used by model catalog probes.
