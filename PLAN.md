@@ -91,7 +91,7 @@ Hermes-Agent-Rust/
     hermes-logging/        # hermes_logging.py                (Phase 1)
     hermes-state/          # hermes_state{,_schema,_common,_portability,_search}.py  (Phase 1, open — common/schema/lifecycle landed)
     hermes-toolsets/       # toolsets.py ✅, toolset_distributions.py ✅, model_tools.py 🟡 (schema/coercion surface landed; handle_function_call deferred with agent loop)   (Phase 2)
-    hermes-providers/      # providers/base.py + providers/__init__.py + bundled profiles (Phase 2; base/registry plus Alibaba/Arcee/Kilo/StepFun profiles landed, CLI-version/opener and remaining loaders remain)
+    hermes-providers/      # providers/base.py + providers/__init__.py + bundled profiles (Phase 2; base/registry plus Alibaba/Arcee/Kilo/StepFun/OpenAI Codex profiles landed, CLI-version/opener and remaining loaders remain)
     hermes-agent/          # run_agent.py + agent/            (Phase 2, next after toolsets)
     hermes-tools/          # tools/ (✅ registry, schema_sanitizer, ansi_strip, clarify_tool, session_search_tool, file_safety, read_extract, file_state, path_security, binary_extensions, budget_config, tool_result_storage, tts_text_normalize)   (Phase 2)
     hermes-batch/          # batch_runner.py, trajectory_compressor.py, mini_swe_runner.py (Phase 2)
@@ -130,11 +130,11 @@ config (config crate), node/profile constants remainder. Phase 2 (agent
 core: toolsets, run_agent, agent/, tools/, batch) is open.
 
 **P2 status: 🟡 OPEN — hermes-tools support wave and provider profile
-base/registry/Alibaba/Arcee/Kilo/StepFun profiles landed (2026-08-24).** The support wave below
+base/registry/Alibaba/Arcee/Kilo/StepFun/OpenAI Codex profiles landed (2026-08-24).** The support wave below
 ports small, dependency-light modules needed by the agent surface.
 `hermes-providers` now contains the declarative `providers.base` profile,
 secure model-catalog probe, process-global registry/discovery cache, and the
-first statically linked bundled profiles (`alibaba`, `arcee`, `kilocode`, `stepfun`). The provider surface
+first statically linked bundled profiles (`alibaba`, `arcee`, `kilocode`, `stepfun`, `openai-codex`). The provider surface
 remains partial until the future CLI crate supplies the runtime version used
 in `_profile_user_agent`, the application-installed urllib opener policy is
 represented, and the remaining bundled/user provider plugin profiles have
@@ -346,11 +346,12 @@ rich/routing/cooldown/meta/reactions/conversation/delete modules.
 | credential-safe redirects (same-origin retention, cross-origin `accept`/`user-agent` allowlist) | ✅ | `base.rs`; 2 redirect tests (`mock`) |
 | `_profile_user_agent` runtime CLI version and installed urllib opener policy | 🟡 | stable fallback is implemented; CLI-version injection and application opener integration remain with `hermes-cli` |
 | providers/__init__.py canonical/alias registry, cache, and lazy discovery order | ✅ | `hermes-providers::registry`; 8 parity tests (`unit`/`mock`) |
-| providers/__init__.py bundled/user/legacy import execution | 🟡 | filesystem scan and explicit loader seam are implemented; statically linked Alibaba, Arcee, Kilo, and StepFun are wired, remaining Rust plugin profiles/loaders remain pending |
+| providers/__init__.py bundled/user/legacy import execution | 🟡 | filesystem scan and explicit loader seam are implemented; statically linked Alibaba, Arcee, Kilo, StepFun, and OpenAI Codex are wired, remaining Rust plugin profiles/loaders remain pending |
 | plugins/model-providers/alibaba/__init__.py (13 LOC) | ✅ | `hermes-providers::profiles::alibaba`; 2 source-derived parity tests (`unit`); no dedicated upstream test module |
 | plugins/model-providers/arcee/__init__.py (13 LOC) | ✅ | `hermes-providers::profiles::arcee`; 2 source-derived parity tests (`unit`); no dedicated upstream plugin-profile test module; related CLI/agent tests remain future-crate oracles |
 | plugins/model-providers/kilocode/__init__.py (14 LOC) | ✅ | `hermes-providers::profiles::kilocode`; 2 source-derived parity tests (`unit`); no dedicated upstream plugin-profile test module; related CLI/agent tests remain future-crate oracles |
 | plugins/model-providers/stepfun/__init__.py (14 LOC) | ✅ | `hermes-providers::profiles::stepfun`; 2 source-derived parity tests (`unit`); no dedicated upstream plugin-profile test module; related CLI/agent tests remain future-crate oracles |
+| plugins/model-providers/openai-codex/__init__.py (15 LOC) | ✅ | `hermes-providers::profiles::openai_codex`; 2 source-derived parity tests (`unit`); no dedicated upstream plugin-profile test module; related CLI/TUI tests remain future-crate oracles |
 
 ## 6. Parity oracles
 
@@ -394,11 +395,28 @@ oracle tests). Upstream oracle files currently mirrored:
 - `plugins/model-providers/arcee/__init__.py` → `crates/hermes-providers/tests/parity_arcee.rs` (2 source-derived profile/registration parity tests; `unit`; no dedicated upstream plugin-profile test module)
 - `plugins/model-providers/kilocode/__init__.py` → `crates/hermes-providers/tests/parity_kilocode.rs` (2 source-derived profile/registration parity tests; `unit`; no dedicated upstream plugin-profile test module)
 - `plugins/model-providers/stepfun/__init__.py` → `crates/hermes-providers/tests/parity_stepfun.rs` (2 source-derived profile/registration parity tests; `unit`; no dedicated upstream plugin-profile test module)
+- `plugins/model-providers/openai-codex/__init__.py` → `crates/hermes-providers/tests/parity_openai_codex.rs` (2 source-derived profile/registration parity tests; `unit`; no dedicated upstream plugin-profile test module)
 
 Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 + the exact command, e.g. `cargo test -p hermes-time (unit)`.
 
 ## 7. Session log
+
+- 2026-08-24 (session 4i): Ported
+  `plugins/model-providers/openai-codex/__init__.py` (@ b9aa928, 15 LOC)
+  through a source-derived TDD pass. The profile mirrors the canonical
+  `openai-codex` name, `codex`/`openai_codex` aliases, `codex_responses` API
+  mode, empty API-key environment tuple, ChatGPT Codex endpoint, and
+  `oauth_external` auth type. It is registered in sorted bundled-profile order
+  with the four earlier static profiles. The upstream checkout has no dedicated
+  plugin profile test; related CLI/TUI tests remain future-crate oracles. Added
+  2 `unit` parity tests for all declarative fields, aliases, hostname, and
+  canonical list identity. Focused Codex and registry suites are green.
+  Required `/home/mustbearnold/.cargo/bin/cargo build --workspace` and
+  `/home/mustbearnold/.cargo/bin/cargo test --workspace` are green
+  (`unit`/`mock`; 3 intentional delegation/schema doc tests ignored). Next
+  dependency-safe production unit is `plugins.model-providers.xiaomi.__init__`
+  (16 LOC), the smallest remaining bundled provider profile.
 
 - 2026-08-24 (session 4h): Ported `plugins/model-providers/stepfun/__init__.py`
   (@ b9aa928, 14 LOC) through a source-derived TDD pass. The profile mirrors

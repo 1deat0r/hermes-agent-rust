@@ -10,6 +10,8 @@ mod alibaba;
 mod arcee;
 #[path = "kilocode.rs"]
 mod kilocode;
+#[path = "openai_codex.rs"]
+mod openai_codex;
 #[path = "stepfun.rs"]
 mod stepfun;
 
@@ -22,6 +24,7 @@ pub(crate) fn register_builtin_profiles() {
     register_provider(alibaba::profile());
     register_provider(arcee::profile());
     register_provider(kilocode::profile());
+    register_provider(openai_codex::profile());
     register_provider(stepfun::profile());
 }
 
@@ -34,6 +37,7 @@ pub(crate) fn load_profile(
             Some("alibaba") => return Ok(Some(alibaba::profile())),
             Some("arcee") => return Ok(Some(arcee::profile())),
             Some("kilocode") => return Ok(Some(kilocode::profile())),
+            Some("openai-codex") => return Ok(Some(openai_codex::profile())),
             Some("stepfun") => return Ok(Some(stepfun::profile())),
             _ => {}
         }
