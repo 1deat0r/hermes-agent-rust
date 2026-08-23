@@ -38,6 +38,9 @@
   "providers.base": {
     "status": "partial"
   },
+  "providers.__init__": {
+    "status": "partial"
+  },
   "tools.ansi_strip": {
     "status": "done"
   },

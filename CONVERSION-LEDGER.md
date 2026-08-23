@@ -9,10 +9,10 @@ Production-only strict completion: **3.72%** (41/1103 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 41 | 8 | 3833 | 1.06% | 28,062/1,510,733 done LOC |
-| Production modules | 41 | 8 | 1054 | 3.72% | 28,062/843,792 done LOC |
+| All tracked modules | 41 | 9 | 3832 | 1.06% | 28,062/1,510,733 done LOC |
+| Production modules | 41 | 9 | 1053 | 3.72% | 28,062/843,792 done LOC |
 
-Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-24T09:15:46`.
+Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-24T09:27:45`.
 
 ## Definition of 100.00%
 
@@ -30,6 +30,7 @@ The conversion is complete only when all of these are true:
 | Module | Phase | Upstream LOC | Required closure |
 |---|---|---:|---|
 | `hermes_constants` | P1 | 1,481 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
+| `providers.__init__` | P2 | 198 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `providers.base` | P2 | 238 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `tools.credential_files` | P2 | 530 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `tools.delegation_output_schema` | P2 | 151 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
@@ -920,7 +921,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `plugins.video_gen.deepinfra.__init__` | production | P4 | 90 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.video_gen.fal.__init__` | production | P4 | 624 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.video_gen.xai.__init__` | production | P4 | 925 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `providers.__init__` | production | P2 | 198 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `providers.__init__` | production | P2 | 198 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
 | `providers.base` | production | P2 | 238 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
 | `run_agent` | production | P2 | 8,206 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `scripts.add_contributor` | production | P2 | 103 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |

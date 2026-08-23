@@ -505,9 +505,11 @@ dependencies = [
 name = "hermes-providers"
 version = "0.1.0"
 dependencies = [
+ "hermes-constants",
  "log",
  "reqwest",
  "serde_json",
+ "tempfile",
 ]
 
 [[package]]
