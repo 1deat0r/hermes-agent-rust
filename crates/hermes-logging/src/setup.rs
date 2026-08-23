@@ -250,6 +250,7 @@ mod tests {
 
     #[test]
     fn setup_creates_log_files() {
+        let _g = crate::queue::TEST_QUEUE_MUTEX.lock().unwrap();
         reset_logging_for_tests();
         let td = TempDir::new().unwrap();
         let dir = setup_logging(SetupOptions {
@@ -267,6 +268,7 @@ mod tests {
 
     #[test]
     fn config_defaults_read() {
+        let _g = crate::queue::TEST_QUEUE_MUTEX.lock().unwrap();
         let td = TempDir::new().unwrap();
         std::fs::write(
             td.path().join("config.yaml"),
