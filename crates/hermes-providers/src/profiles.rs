@@ -8,6 +8,8 @@
 mod alibaba;
 #[path = "arcee.rs"]
 mod arcee;
+#[path = "huggingface.rs"]
+mod huggingface;
 #[path = "kilocode.rs"]
 mod kilocode;
 #[path = "openai_codex.rs"]
@@ -27,6 +29,7 @@ use crate::registry::{register_provider, ProviderSource};
 pub(crate) fn register_builtin_profiles() {
     register_provider(alibaba::profile());
     register_provider(arcee::profile());
+    register_provider(huggingface::profile());
     register_provider(kilocode::profile());
     register_provider(openai_codex::profile());
     register_provider(stepfun::profile());
@@ -42,6 +45,7 @@ pub(crate) fn load_profile(
         match path.file_name().and_then(|name| name.to_str()) {
             Some("alibaba") => return Ok(Some(alibaba::profile())),
             Some("arcee") => return Ok(Some(arcee::profile())),
+            Some("huggingface") => return Ok(Some(huggingface::profile())),
             Some("kilocode") => return Ok(Some(kilocode::profile())),
             Some("openai-codex") => return Ok(Some(openai_codex::profile())),
             Some("stepfun") => return Ok(Some(stepfun::profile())),

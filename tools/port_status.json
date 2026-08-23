@@ -62,6 +62,9 @@
   "plugins.model-providers.xai.__init__": {
     "status": "done"
   },
+  "plugins.model-providers.huggingface.__init__": {
+    "status": "done"
+  },
   "tools.ansi_strip": {
     "status": "done"
   },
