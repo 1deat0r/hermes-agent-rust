@@ -1,6 +1,6 @@
 # Hermes Agent Rust — Next-session handoff
 
-Date: 2026-08-24 (Pacific/Auckland), session 4x.
+Date: 2026-08-24 (Pacific/Auckland), session 4y.
 
 ## Resume point
 
@@ -17,7 +17,12 @@ update. The local HTTPS Git client still has no credentials; use the
 connected GitHub API for future pushes until `gh auth login` or SSH is
 configured.
 
-Latest synchronized units: local source `9740ea9` → GitHub `67a40e3`
+Latest synchronized units: local source `1dca197` → GitHub `bb20257`
+(`plugins.model-providers.vertex.__init__`, including current plan/inventory
+metadata), after local test-hardening source `b2c1f4f` → GitHub `1682e21`
+(`hermes-constants` platform-cache test serialization), after local handoff
+source `2a31667` → GitHub `cb3c1e8` (`HANDOFF.md` for the Copilot unit), after
+local source `9740ea9` → GitHub `67a40e3`
 (`plugins.model-providers.copilot.__init__`), after local source `49fc714` →
 GitHub `30f58e1` (`plugins.model-providers.gemini.__init__`), after local source `9006786` →
 GitHub `58f6c0a` (`plugins.model-providers.anthropic.__init__`), after local source `2d9f1fd` →
@@ -53,8 +58,9 @@ because it cannot preserve the local author/committer timestamps.
 ## What landed this session
 
 Module-sized commits are complete through
-`plugins.model-providers.copilot.__init__`: `9740ea9` locally, mirrored as
-`67a40e3` remotely; `db23d7c`
+`plugins.model-providers.vertex.__init__`: `1dca197` locally, mirrored as
+`bb20257` remotely; the required platform-cache test hardening is
+`b2c1f4f` locally, mirrored as `1682e21` remotely; `db23d7c`
 hermes-logging test isolation;
 `a1a5b1b` hermes-constants test isolation; `cd4d356` audio_container;
 `12d704e` computer_use/schema plus generator/golden; `9303b4b`
@@ -113,47 +119,57 @@ commit and its `30f58e1` GitHub mirror.
 The GitHub Copilot bundled profile is included in the new `9740ea9` source
 commit and its `67a40e3` GitHub mirror.
 
+The Google Vertex AI bundled profile is included in the new `1dca197` source
+commit and its `bb20257` GitHub mirror. It mirrors Vertex's OAuth metadata,
+aliases, base URL, auxiliary model, nested snake_case Gemini thinking body,
+and unconditional no-REST model discovery behavior. The runtime OAuth token
+adapter remains a future seam; `vertex_thinking` and `models_fetch_disabled`
+make the current profile contract explicit.
+
 The new `hermes-providers` crate ports `providers/base.py` and
 `providers/__init__.py` @ `b9aa928`: declarative profile defaults and hooks,
 model endpoint precedence, strict fail-open catalog parsing,
 credential-safe redirects, canonical/alias registry behavior, copy-safe
 caching, and sorted bundled/user/legacy discovery. The focused suites contain
 9 base, 8 registry, 2 AI Gateway profile, 2 Alibaba profile, 2 Alibaba Coding
-Plan profile, 3 Anthropic profile, 3 Gemini profile, 2 Arcee profile, 2 Azure Foundry profile, 2 Bedrock profile, 3 Copilot profile, 2 Copilot ACP profile, 2 Fireworks profile, 2 GMI profile, 2 Kilo Code profile, 2 NovitaAI profile, 2
-NVIDIA profile, 2 StepFun profile, 2 OpenAI Codex profile, 2 Xiaomi profile, 2
-XAI profile, and 2 Hugging Face profile tests are green.
+Plan profile, 3 Anthropic profile, 3 Gemini profile, 2 Arcee profile, 2 Azure
+Foundry profile, 2 Bedrock profile, 3 Copilot profile, 2 Copilot ACP profile,
+2 Fireworks profile, 2 GMI profile, 2 Kilo Code profile, 2 NovitaAI profile,
+2 NVIDIA profile, 2 StepFun profile, 3 Vertex profile, 2 OpenAI Codex profile,
+2 Xiaomi profile, 2 XAI profile, and 2 Hugging Face profile tests are green.
 The provider
 surface remains partial
 for the future CLI version/opener integration and remaining Rust plugin profile
-loaders. The next unit is the smallest remaining bundled profile,
-`plugins.model-providers.vertex.__init__` (75 LOC).
+loaders. The next unit is `plugins.model-providers.deepinfra.__init__` (81
+LOC).
 
-The required workspace run was green before the commit split:
+The required Vertex workspace verification was green before the synchronized
+commit:
 
 ```text
-PATH=/home/mustbearnold/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin:$PATH /home/mustbearnold/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin/cargo build --workspace
-PATH=/home/mustbearnold/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin:$PATH /home/mustbearnold/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin/cargo test --workspace
+PATH=/home/mustbearnold/.cargo/bin:$PATH cargo build --workspace
+PATH=/home/mustbearnold/.cargo/bin:$PATH cargo test --workspace --quiet
 ```
 
-The required sequential workspace test passed; only three intentional
-delegation/schema doc tests were ignored. A concurrent invocation had one
-unrelated hermes-toolsets environment-isolation flake; its isolated test and
-the sequential required run passed. Two earlier full-suite flakes were fixed
-and committed: hermes-logging queue registry state and hermes-constants
-environment/profile state now have shared process-global test mutexes.
+The first full test attempt exposed a race among the existing
+process-global hermes-constants platform-cache tests; serializing only those
+cache-resetting tests is committed as `b2c1f4f`/`1682e21`. The final workspace
+run passed all active tests; only three intentional delegation/schema doc
+tests remain ignored. Earlier hermes-logging and hermes-constants test-state
+hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-After the current Copilot commit is mirrored and this handoff commit is aligned to
+After the current Vertex commit is mirrored and this handoff commit is aligned to
 its remote mirror, the working tree is clean. The committed metadata
 includes `PLAN.md`, `tools/port_status.json`, generated `tools/inventory.json`,
 `CONVERSION-LEDGER.md`, and this handoff. No code or parity test is pending
-for the Copilot unit.
+for the Vertex unit.
 
 ## Next actions, in order
 
-1. Start `plugins.model-providers.vertex.__init__` by reading its pinned
-   source/tests and writing profile-registration parity tests first.
+1. Start `plugins.model-providers.deepinfra.__init__` (81 LOC) by reading its
+   pinned source/tests and writing profile-registration parity tests first.
 2. Keep the static bundled-profile registration order and user-loader seam
    explicit while adding the next provider profile.
 3. For every future module, commit and publish each logical unit immediately;
@@ -163,8 +179,8 @@ for the Copilot unit.
 
 `CONVERSION-LEDGER.md` is generated and contains one row for every 3,882 upstream inventory modules: 1,103 production tasks plus 2,779 oracle/test tasks. Only `done` counts toward completion.
 
-- All tracked modules: 61 done / 9 partial / 3,812 missing = **1.57%**.
-- Production modules: 61 done / 9 partial / 1,033 missing = **5.53%**.
+- All tracked modules: 62 done / 9 partial / 3,811 missing = **1.60%**.
+- Production modules: 62 done / 9 partial / 1,032 missing = **5.62%**.
 
 The nine partial production rows are `hermes_constants`, `providers.base`,
 `providers.__init__`, `tools.credential_files`,
@@ -222,19 +238,29 @@ The strict production formula is `done production modules / 1,103`; partial rows
   explicit `copilot_reasoning` capability. The live
   `github_model_reasoning_efforts(model)` lookup is an injected context seam;
   catalog-gated clamp precedence and fail-open behavior are preserved.
+- Vertex's source `build_extra_body` override is represented by the explicit
+  `vertex_thinking` capability; Gemini model gating, effort clamping, and
+  nested snake_case `extra_body.google.thinking_config` output are preserved.
+  Its unconditional `fetch_models() -> None` override is represented by
+  `models_fetch_disabled`; OAuth token resolution remains a future runtime
+  adapter seam.
+- Platform cache-resetting tests are serialized because the production WSL and
+  container detectors intentionally cache for process lifetime; the mutex is
+  test-only and does not change detector behavior.
 - `tools/gen_computer_use_schema.py` discovers the upstream root via `HERMES_UPSTREAM` and has path fallbacks for this machine.
 - `cargo fmt --all -- --check` reports many pre-existing unformatted foundation files outside this wave. Do not mass-reformat unrelated crates; use targeted formatting only if needed.
 
 ## Verification evidence
 
 The focused provider parity suites passed 9 base, 8 registry, 2 AI Gateway, 2
-Alibaba, 2 Alibaba Coding Plan, 3 Anthropic, 3 Gemini, 2 Arcee, 2 Azure Foundry, 2 Bedrock, 3 Copilot, 2 Copilot
-ACP, 2 Fireworks, 2 GMI, 2 Kilo Code, 2 NovitaAI, 2 NVIDIA, 2 StepFun, 2 OpenAI Codex, 2
-Xiaomi, 2 XAI, and 2 Hugging Face profile tests. The
+Alibaba, 2 Alibaba Coding Plan, 3 Anthropic, 3 Gemini, 2 Arcee, 2 Azure
+Foundry, 2 Bedrock, 3 Copilot, 2 Copilot ACP, 2 Fireworks, 2 GMI, 2 Kilo
+Code, 2 NovitaAI, 2 NVIDIA, 2 StepFun, 3 Vertex, 2 OpenAI Codex, 2 Xiaomi,
+2 XAI, and 2 Hugging Face profile tests. The
 required workspace build and test also passed with the explicit cargo
 toolchain; three
 delegation/schema doc tests are intentionally ignored. Inventory and
-conversion ledger were regenerated and now record 61 done / 9 partial / 1,033
+conversion ledger were regenerated and now record 62 done / 9 partial / 1,032
 missing production modules.
 
 ## First command tomorrow
