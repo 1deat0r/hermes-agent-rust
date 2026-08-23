@@ -1,7 +1,7 @@
 # Hermes Agent → Hermes Agent Rust Conversion Ledger
 
-**Current strict completion: 1.57% of all tracked upstream modules (61/3882).**
-Production-only strict completion: **5.53%** (61/1103 production modules).
+**Current strict completion: 1.60% of all tracked upstream modules (62/3882).**
+Production-only strict completion: **5.62%** (62/1103 production modules).
 
 > This file is generated from `tools/inventory.json`; update the source ledger in `tools/port_status.json`, regenerate the inventory, then run `python3 tools/conversion_ledger.py`. Only `done` counts toward the percentage. `partial` is intentionally zero credit until its stated parity seams are closed.
 
@@ -9,10 +9,10 @@ Production-only strict completion: **5.53%** (61/1103 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 61 | 9 | 3812 | 1.57% | 28,649/1,510,733 done LOC |
-| Production modules | 61 | 9 | 1033 | 5.53% | 28,649/843,792 done LOC |
+| All tracked modules | 62 | 9 | 3811 | 1.60% | 28,724/1,510,733 done LOC |
+| Production modules | 62 | 9 | 1032 | 5.62% | 28,724/843,792 done LOC |
 
-Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-24T11:26:18`.
+Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-24T11:36:33`.
 
 ## Definition of 100.00%
 
@@ -835,7 +835,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `plugins.model-providers.qwen-oauth.__init__` | production | P4 | 108 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.model-providers.stepfun.__init__` | production | P4 | 14 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.model-providers.upstage.__init__` | production | P4 | 115 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `plugins.model-providers.vertex.__init__` | production | P4 | 75 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `plugins.model-providers.vertex.__init__` | production | P4 | 75 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.model-providers.xai.__init__` | production | P4 | 17 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.model-providers.xiaomi.__init__` | production | P4 | 16 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.model-providers.zai.__init__` | production | P4 | 127 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |

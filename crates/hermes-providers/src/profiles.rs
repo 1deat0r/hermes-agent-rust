@@ -40,6 +40,8 @@ mod nvidia;
 mod openai_codex;
 #[path = "stepfun.rs"]
 mod stepfun;
+#[path = "vertex.rs"]
+mod vertex;
 #[path = "xai.rs"]
 mod xai;
 #[path = "xiaomi.rs"]
@@ -69,6 +71,7 @@ pub(crate) fn register_builtin_profiles() {
     register_provider(nvidia::profile());
     register_provider(openai_codex::profile());
     register_provider(stepfun::profile());
+    register_provider(vertex::profile());
     register_provider(xai::profile());
     register_provider(xiaomi::profile());
 }
@@ -97,6 +100,7 @@ pub(crate) fn load_profile(
             Some("nvidia") => return Ok(Some(nvidia::profile())),
             Some("openai-codex") => return Ok(Some(openai_codex::profile())),
             Some("stepfun") => return Ok(Some(stepfun::profile())),
+            Some("vertex") => return Ok(Some(vertex::profile())),
             Some("xai") => return Ok(Some(xai::profile())),
             Some("xiaomi") => return Ok(Some(xiaomi::profile())),
             _ => {}

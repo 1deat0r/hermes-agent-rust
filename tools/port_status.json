@@ -89,6 +89,9 @@
   "plugins.model-providers.stepfun.__init__": {
     "status": "done"
   },
+  "plugins.model-providers.vertex.__init__": {
+    "status": "done"
+  },
   "plugins.model-providers.openai-codex.__init__": {
     "status": "done"
   },

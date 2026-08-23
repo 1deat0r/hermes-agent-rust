@@ -62,6 +62,8 @@ pub struct ProviderProfile {
     pub models_fetch_mode: ModelsFetchMode,
     /// Translate Hermes reasoning into Gemini's native thinking config.
     pub gemini_thinking: bool,
+    /// Translate Hermes reasoning into Vertex's nested Google config.
+    pub vertex_thinking: bool,
     /// Route Copilot reasoning through the live model-catalog effort list.
     pub copilot_reasoning: bool,
     /// Route the reasoning configuration through `extra_body.reasoning`.
@@ -94,6 +96,7 @@ impl ProviderProfile {
             models_fetch_disabled: false,
             models_fetch_mode: ModelsFetchMode::Standard,
             gemini_thinking: false,
+            vertex_thinking: false,
             copilot_reasoning: false,
             reasoning_passthrough: false,
         }
@@ -122,6 +125,9 @@ impl ProviderProfile {
         _session_id: Option<&str>,
         context: &Map<String, Value>,
     ) -> Map<String, Value> {
+        if self.vertex_thinking {
+            return build_vertex_extra_body(context);
+        }
         if self.gemini_thinking {
             return build_gemini_extra_body(self, context);
         }
@@ -433,16 +439,37 @@ fn build_gemini_extra_body(
         let Some(thinking_config) = snake_case_gemini_thinking_config(&raw_thinking_config) else {
             return Map::new();
         };
-        let mut google = Map::new();
-        google.insert("thinking_config".into(), Value::Object(thinking_config));
-        let mut compatibility = Map::new();
-        compatibility.insert("google".into(), Value::Object(google));
-        let mut body = Map::new();
-        body.insert("extra_body".into(), Value::Object(compatibility));
-        return body;
+        return nested_gemini_extra_body(thinking_config);
     }
 
     Map::from_iter([("thinking_config".into(), Value::Object(raw_thinking_config))])
+}
+
+fn build_vertex_extra_body(context: &Map<String, Value>) -> Map<String, Value> {
+    // PARITY: VertexProfile uses the same Gemini helper but always routes the
+    // result through `_snake_case_gemini_thinking_config` for its OpenAI API.
+    let model = context
+        .get("model")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    let reasoning_config = context.get("reasoning_config").and_then(Value::as_object);
+    let Some(raw_thinking_config) = build_gemini_thinking_config(model, reasoning_config) else {
+        return Map::new();
+    };
+    let Some(thinking_config) = snake_case_gemini_thinking_config(&raw_thinking_config) else {
+        return Map::new();
+    };
+    nested_gemini_extra_body(thinking_config)
+}
+
+fn nested_gemini_extra_body(thinking_config: Map<String, Value>) -> Map<String, Value> {
+    let mut google = Map::new();
+    google.insert("thinking_config".into(), Value::Object(thinking_config));
+    let mut compatibility = Map::new();
+    compatibility.insert("google".into(), Value::Object(google));
+    let mut body = Map::new();
+    body.insert("extra_body".into(), Value::Object(compatibility));
+    body
 }
 
 fn build_gemini_thinking_config(
