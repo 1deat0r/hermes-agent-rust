@@ -388,12 +388,11 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   `HERMES_UPSTREAM=/run/media/mustbearnold/Projects/Research/hermes-agent-repo tools/inventory.sh`
   and `python3 tools/conversion_ledger.py`, retaining 41 done / 7 partial /
   1,055 missing production modules. Because the local HTTPS Git client has no
-  credentials, the connected GitHub API published the 24 code commits as a
-  sequential remote mirror through `f12bbd3`; each remote commit has the same
-  tree snapshot and message as its local counterpart, but a different SHA
-  because the API cannot preserve the local author/committer timestamps. The
-  metadata commit is local `2b9e8bd` and remote mirror `938944c`; its tree was
-  verified identical before the remote ref update.
+  credentials, the connected GitHub API published the 24 code commits and
+  metadata commits as a sequential remote mirror; each remote commit has the
+  same tree snapshot and message as its local counterpart, but a different
+  SHA because the API cannot preserve the local author/committer timestamps.
+  Each tree was verified identical before its remote ref update.
 
 - 2026-08-23 (session 4a): Hermes-tools support wave ported against upstream
   @ b9aa928. Added audio_container, computer_use/schema, credential_files,

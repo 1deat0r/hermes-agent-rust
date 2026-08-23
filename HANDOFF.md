@@ -8,14 +8,14 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
-Current branch/HEAD: `main` / `2b9e8bd` (`record tools parity inventory and handoff @ b9aa928`).
-The connected GitHub API has published the complete 24-commit code sequence
-and the metadata commit; the remote mirror currently ends at `938944c` (code
-sequence ended at `f12bbd3`). Its commit SHAs differ from the
-local sequence because the API cannot preserve local author/committer
-timestamps, but every tree snapshot and commit message matches. The local
-HTTPS Git client still has no credentials, so use the connected GitHub API for
-the metadata commit as well unless `gh auth login` or SSH is configured.
+Current branch/HEAD: `main` at the locally committed implementation and
+metadata sequence. The connected GitHub API has published the complete code
+and metadata sequence as a sequential remote mirror. Its commit SHAs differ
+from the local sequence because the API cannot preserve local author/committer
+timestamps, but every tree snapshot and commit message matches and was
+verified before each ref update. The local HTTPS Git client still has no
+credentials; use the connected GitHub API for future pushes until `gh auth
+login` or SSH is configured.
 
 ## What landed this session
 
