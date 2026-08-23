@@ -6,6 +6,8 @@
 
 #[path = "alibaba.rs"]
 mod alibaba;
+#[path = "alibaba_coding_plan.rs"]
+mod alibaba_coding_plan;
 #[path = "arcee.rs"]
 mod arcee;
 #[path = "huggingface.rs"]
@@ -28,6 +30,7 @@ use crate::registry::{register_provider, ProviderSource};
 
 pub(crate) fn register_builtin_profiles() {
     register_provider(alibaba::profile());
+    register_provider(alibaba_coding_plan::profile());
     register_provider(arcee::profile());
     register_provider(huggingface::profile());
     register_provider(kilocode::profile());
@@ -44,6 +47,7 @@ pub(crate) fn load_profile(
     if source == ProviderSource::Bundled {
         match path.file_name().and_then(|name| name.to_str()) {
             Some("alibaba") => return Ok(Some(alibaba::profile())),
+            Some("alibaba-coding-plan") => return Ok(Some(alibaba_coding_plan::profile())),
             Some("arcee") => return Ok(Some(arcee::profile())),
             Some("huggingface") => return Ok(Some(huggingface::profile())),
             Some("kilocode") => return Ok(Some(kilocode::profile())),
