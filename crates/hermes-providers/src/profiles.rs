@@ -8,6 +8,8 @@
 mod alibaba;
 #[path = "arcee.rs"]
 mod arcee;
+#[path = "kilocode.rs"]
+mod kilocode;
 
 use std::path::Path;
 
@@ -17,6 +19,7 @@ use crate::registry::{register_provider, ProviderSource};
 pub(crate) fn register_builtin_profiles() {
     register_provider(alibaba::profile());
     register_provider(arcee::profile());
+    register_provider(kilocode::profile());
 }
 
 pub(crate) fn load_profile(
@@ -27,6 +30,7 @@ pub(crate) fn load_profile(
         match path.file_name().and_then(|name| name.to_str()) {
             Some("alibaba") => return Ok(Some(alibaba::profile())),
             Some("arcee") => return Ok(Some(arcee::profile())),
+            Some("kilocode") => return Ok(Some(kilocode::profile())),
             _ => {}
         }
     }
