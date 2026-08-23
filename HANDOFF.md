@@ -17,13 +17,14 @@ update. The local HTTPS Git client still has no credentials; use the
 connected GitHub API for future pushes until `gh auth login` or SSH is
 configured.
 
-Latest synchronized unit: local source commit `c121ae3` and GitHub mirror
-commit `3996dcb6` (`providers.base: port profile and model catalog @ b9aa928`).
+Latest synchronized units: local `c121ae3` → GitHub `3996dcb6`
+(`providers.base`) and local `0fdafeea` → GitHub `b1cb43a7`
+(`providers.__init__`), both at upstream `b9aa928`.
 
 ## What landed this session
 
-Module-sized commits are complete through `tools/working_diff` and the
-current `providers.base` unit: `db23d7c` hermes-logging test isolation;
+Module-sized commits are complete through `providers.__init__`: `db23d7c`
+hermes-logging test isolation;
 `a1a5b1b` hermes-constants test isolation; `cd4d356` audio_container;
 `12d704e` computer_use/schema plus generator/golden; `9303b4b`
 credential_files; `3d18cce` daemon_pool; `f55a634` debug_helpers; `e616a7c`
@@ -34,14 +35,18 @@ dependencies; `59b87f1` read_preview_tool; `35a35e6` read_terminal_tool;
 thread_context; `e422040` threat_patterns plus `examples/prof_scan.rs`;
 `f7ce193` todo_tool; `358f639` tool_backend_helpers; `e563376`
 tool_output_limits; `74c5286` working_diff; and the new `providers.base`
-profile crate unit (`c121ae3` locally, mirrored as `3996dcb6` remotely).
+profile crate unit (`c121ae3` locally, mirrored as `3996dcb6` remotely);
+`providers.__init__` registry/discovery (`0fdafeea` locally, mirrored as
+`b1cb43a7` remotely).
 
-The new `hermes-providers` crate ports `providers/base.py` @ `b9aa928`:
-declarative profile defaults and hooks, model endpoint precedence, strict
-fail-open catalog parsing, and credential-safe redirect behavior. Its 9
-focused loopback parity tests are green. `providers.base` remains partial for
-the future CLI version injection and installed-opener integration; the next
-unit is `providers.__init__` registry/discovery.
+The new `hermes-providers` crate ports `providers/base.py` and
+`providers/__init__.py` @ `b9aa928`: declarative profile defaults and hooks,
+model endpoint precedence, strict fail-open catalog parsing,
+credential-safe redirects, canonical/alias registry behavior, copy-safe
+caching, and sorted bundled/user/legacy discovery. The focused suites contain
+9 base and 8 registry tests and are green. Both provider modules remain
+partial for the future CLI version/opener integration and Rust plugin profile
+loaders. The next unit is `plugins.model-providers.alibaba.__init__` (13 LOC).
 
 The required workspace run was green before the commit split:
 
@@ -64,8 +69,8 @@ for this unit.
 
 1. Verify the local/remote `providers.base` commit trees and leave `main`
    aligned with `origin/main`.
-2. Start `providers.__init__` by reading its pinned source/tests and writing
-   registry/discovery parity tests first.
+2. Start `plugins.model-providers.alibaba.__init__` by reading its pinned
+   source/tests and writing profile-registration parity tests first.
 3. For every future module, commit and publish each logical unit immediately;
    use the connected GitHub API until local GitHub CLI authentication exists.
 
@@ -73,14 +78,14 @@ for this unit.
 
 `CONVERSION-LEDGER.md` is generated and contains one row for every 3,882 upstream inventory modules: 1,103 production tasks plus 2,779 oracle/test tasks. Only `done` counts toward completion.
 
-- All tracked modules: 41 done / 8 partial / 3,833 missing = **1.06%**.
-- Production modules: 41 done / 8 partial / 1,054 missing = **3.72%**.
+- All tracked modules: 41 done / 9 partial / 3,832 missing = **1.06%**.
+- Production modules: 41 done / 9 partial / 1,053 missing = **3.72%**.
 
-The eight partial production rows are `hermes_constants`, `providers.base`,
-`tools.credential_files`, `tools.delegation_output_schema`,
-`tools.threat_patterns`, `tools.todo_tool`, `tools.tool_backend_helpers`, and
-`tools.tool_output_limits`. Their closure seams are listed in the ledger and
-PLAN.md.
+The nine partial production rows are `hermes_constants`, `providers.base`,
+`providers.__init__`, `tools.credential_files`,
+`tools.delegation_output_schema`, `tools.threat_patterns`, `tools.todo_tool`,
+`tools.tool_backend_helpers`, and `tools.tool_output_limits`. Their closure
+seams are listed in the ledger and PLAN.md.
 
 Regenerate with:
 
@@ -102,10 +107,11 @@ The strict production formula is `done production modules / 1,103`; partial rows
 
 ## Verification evidence
 
-The focused provider parity suite passed 9 tests. The required workspace build
-and test also passed with the explicit cargo toolchain; three
+The focused provider parity suites passed 9 base and 8 registry tests. The
+required workspace build and test also passed with the explicit cargo
+toolchain; three
 delegation/schema doc tests are intentionally ignored. Inventory and
-conversion ledger were regenerated and now record 41 done / 8 partial / 1,054
+conversion ledger were regenerated and now record 41 done / 9 partial / 1,053
 missing production modules.
 
 ## First command tomorrow
