@@ -1,6 +1,6 @@
 # Hermes Agent Rust — Next-session handoff
 
-Date: 2026-08-24 (Pacific/Auckland), session 4t.
+Date: 2026-08-24 (Pacific/Auckland), session 4u.
 
 ## Resume point
 
@@ -17,8 +17,9 @@ update. The local HTTPS Git client still has no credentials; use the
 connected GitHub API for future pushes until `gh auth login` or SSH is
 configured.
 
-Latest synchronized units: local source `69c5f5c` → GitHub `5a4f884`
-(`plugins.model-providers.ai-gateway.__init__`), after local source `56a92d6` →
+Latest synchronized units: local source `2d9f1fd` → GitHub `a643a07`
+(`plugins.model-providers.fireworks.__init__`), after local source `69c5f5c` →
+GitHub `5a4f884` (`plugins.model-providers.ai-gateway.__init__`), after local source `56a92d6` →
 GitHub `93d9edc` (`plugins.model-providers.copilot-acp.__init__`), after local
 source `d39ca6a` → GitHub `3f03b65` (`plugins.model-providers.gmi.__init__`),
 after local source `1d974f1` →
@@ -49,8 +50,8 @@ because it cannot preserve the local author/committer timestamps.
 ## What landed this session
 
 Module-sized commits are complete through
-`plugins.model-providers.ai-gateway.__init__`: `69c5f5c` locally, mirrored as
-`5a4f884` remotely; `db23d7c`
+`plugins.model-providers.fireworks.__init__`: `2d9f1fd` locally, mirrored as
+`a643a07` remotely; `db23d7c`
 hermes-logging test isolation;
 `a1a5b1b` hermes-constants test isolation; `cd4d356` audio_container;
 `12d704e` computer_use/schema plus generator/golden; `9303b4b`
@@ -97,6 +98,9 @@ commit and its `93d9edc` GitHub mirror.
 The Vercel AI Gateway bundled profile is included in the new `69c5f5c` source
 commit and its `5a4f884` GitHub mirror.
 
+The Fireworks AI bundled profile is included in the new `2d9f1fd` source
+commit and its `a643a07` GitHub mirror.
+
 The new `hermes-providers` crate ports `providers/base.py` and
 `providers/__init__.py` @ `b9aa928`: declarative profile defaults and hooks,
 model endpoint precedence, strict fail-open catalog parsing,
@@ -104,14 +108,14 @@ credential-safe redirects, canonical/alias registry behavior, copy-safe
 caching, and sorted bundled/user/legacy discovery. The focused suites contain
 9 base, 8 registry, 2 AI Gateway profile, 2 Alibaba profile, 2 Alibaba Coding
 Plan profile, 2 Arcee profile, 2 Azure Foundry profile, 2 Bedrock profile, 2
-Copilot ACP profile, 2 GMI profile, 2 Kilo Code profile, 2 NovitaAI profile, 2
+Copilot ACP profile, 2 Fireworks profile, 2 GMI profile, 2 Kilo Code profile, 2 NovitaAI profile, 2
 NVIDIA profile, 2 StepFun profile, 2 OpenAI Codex profile, 2 Xiaomi profile, 2
 XAI profile, and 2 Hugging Face profile tests are green.
 The provider
 surface remains partial
 for the future CLI version/opener integration and remaining Rust plugin profile
 loaders. The next unit is the smallest remaining bundled profile,
-`plugins.model-providers.fireworks.__init__` (46 LOC).
+`plugins.model-providers.anthropic.__init__` (54 LOC).
 
 The required workspace run was green before the commit split:
 
@@ -129,15 +133,15 @@ environment/profile state now have shared process-global test mutexes.
 
 ## Exact working-tree state
 
-After the current AI Gateway commit is mirrored and this handoff commit is aligned to
+After the current Fireworks commit is mirrored and this handoff commit is aligned to
 its remote mirror, the working tree is clean. The committed metadata
 includes `PLAN.md`, `tools/port_status.json`, generated `tools/inventory.json`,
 `CONVERSION-LEDGER.md`, and this handoff. No code or parity test is pending
-for the AI Gateway unit.
+for the Fireworks unit.
 
 ## Next actions, in order
 
-1. Start `plugins.model-providers.fireworks.__init__` by reading its pinned
+1. Start `plugins.model-providers.anthropic.__init__` by reading its pinned
    source/tests and writing profile-registration parity tests first.
 2. Keep the static bundled-profile registration order and user-loader seam
    explicit while adding the next provider profile.
@@ -148,8 +152,8 @@ for the AI Gateway unit.
 
 `CONVERSION-LEDGER.md` is generated and contains one row for every 3,882 upstream inventory modules: 1,103 production tasks plus 2,779 oracle/test tasks. Only `done` counts toward completion.
 
-- All tracked modules: 57 done / 9 partial / 3,816 missing = **1.47%**.
-- Production modules: 57 done / 9 partial / 1,037 missing = **5.17%**.
+- All tracked modules: 58 done / 9 partial / 3,815 missing = **1.49%**.
+- Production modules: 58 done / 9 partial / 1,036 missing = **5.26%**.
 
 The nine partial production rows are `hermes_constants`, `providers.base`,
 `providers.__init__`, `tools.credential_files`,
@@ -192,6 +196,8 @@ The strict production formula is `done production modules / 1,103`; partial rows
   the `reasoning_passthrough` profile capability; it copies supplied reasoning
   config into `extra_body.reasoning`, defaults to enabled/medium, and honors
   `supports_reasoning=False` by omitting the body.
+- Fireworks pins the upstream `HermesAgent/0.20.0` default header; dynamic
+  `hermes_cli.__version__` injection remains an explicit future CLI seam.
 - `tools/gen_computer_use_schema.py` discovers the upstream root via `HERMES_UPSTREAM` and has path fallbacks for this machine.
 - `cargo fmt --all -- --check` reports many pre-existing unformatted foundation files outside this wave. Do not mass-reformat unrelated crates; use targeted formatting only if needed.
 
@@ -199,12 +205,12 @@ The strict production formula is `done production modules / 1,103`; partial rows
 
 The focused provider parity suites passed 9 base, 8 registry, 2 AI Gateway, 2
 Alibaba, 2 Alibaba Coding Plan, 2 Arcee, 2 Azure Foundry, 2 Bedrock, 2 Copilot
-ACP, 2 GMI, 2 Kilo Code, 2 NovitaAI, 2 NVIDIA, 2 StepFun, 2 OpenAI Codex, 2
+ACP, 2 Fireworks, 2 GMI, 2 Kilo Code, 2 NovitaAI, 2 NVIDIA, 2 StepFun, 2 OpenAI Codex, 2
 Xiaomi, 2 XAI, and 2 Hugging Face profile tests. The
 required workspace build and test also passed with the explicit cargo
 toolchain; three
 delegation/schema doc tests are intentionally ignored. Inventory and
-conversion ledger were regenerated and now record 57 done / 9 partial / 1,037
+conversion ledger were regenerated and now record 58 done / 9 partial / 1,036
 missing production modules.
 
 ## First command tomorrow
