@@ -62,6 +62,9 @@
   "plugins.model-providers.copilot-acp.__init__": {
     "status": "done"
   },
+  "plugins.model-providers.fireworks.__init__": {
+    "status": "done"
+  },
   "plugins.model-providers.gmi.__init__": {
     "status": "done"
   },
