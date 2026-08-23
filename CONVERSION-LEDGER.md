@@ -1,7 +1,7 @@
 # Hermes Agent → Hermes Agent Rust Conversion Ledger
 
-**Current strict completion: 1.31% of all tracked upstream modules (51/3882).**
-Production-only strict completion: **4.62%** (51/1103 production modules).
+**Current strict completion: 1.34% of all tracked upstream modules (52/3882).**
+Production-only strict completion: **4.71%** (52/1103 production modules).
 
 > This file is generated from `tools/inventory.json`; update the source ledger in `tools/port_status.json`, regenerate the inventory, then run `python3 tools/conversion_ledger.py`. Only `done` counts toward the percentage. `partial` is intentionally zero credit until its stated parity seams are closed.
 
@@ -9,10 +9,10 @@ Production-only strict completion: **4.62%** (51/1103 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 51 | 9 | 3822 | 1.31% | 28,226/1,510,733 done LOC |
-| Production modules | 51 | 9 | 1043 | 4.62% | 28,226/843,792 done LOC |
+| All tracked modules | 52 | 9 | 3821 | 1.34% | 28,247/1,510,733 done LOC |
+| Production modules | 52 | 9 | 1042 | 4.71% | 28,247/843,792 done LOC |
 
-Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-24T10:19:03`.
+Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-24T10:25:01`.
 
 ## Definition of 100.00%
 
@@ -827,7 +827,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `plugins.model-providers.minimax.__init__` | production | P4 | 97 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.model-providers.nous.__init__` | production | P4 | 88 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.model-providers.novita.__init__` | production | P4 | 27 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `plugins.model-providers.nvidia.__init__` | production | P4 | 21 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `plugins.model-providers.nvidia.__init__` | production | P4 | 21 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.model-providers.ollama-cloud.__init__` | production | P4 | 89 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.model-providers.openai-codex.__init__` | production | P4 | 15 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.model-providers.opencode-zen.__init__` | production | P4 | 147 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |

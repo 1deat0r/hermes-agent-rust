@@ -16,6 +16,8 @@ mod azure_foundry;
 mod huggingface;
 #[path = "kilocode.rs"]
 mod kilocode;
+#[path = "nvidia.rs"]
+mod nvidia;
 #[path = "openai_codex.rs"]
 mod openai_codex;
 #[path = "stepfun.rs"]
@@ -37,6 +39,7 @@ pub(crate) fn register_builtin_profiles() {
     register_provider(azure_foundry::profile());
     register_provider(huggingface::profile());
     register_provider(kilocode::profile());
+    register_provider(nvidia::profile());
     register_provider(openai_codex::profile());
     register_provider(stepfun::profile());
     register_provider(xai::profile());
@@ -55,6 +58,7 @@ pub(crate) fn load_profile(
             Some("azure-foundry") => return Ok(Some(azure_foundry::profile())),
             Some("huggingface") => return Ok(Some(huggingface::profile())),
             Some("kilocode") => return Ok(Some(kilocode::profile())),
+            Some("nvidia") => return Ok(Some(nvidia::profile())),
             Some("openai-codex") => return Ok(Some(openai_codex::profile())),
             Some("stepfun") => return Ok(Some(stepfun::profile())),
             Some("xai") => return Ok(Some(xai::profile())),
