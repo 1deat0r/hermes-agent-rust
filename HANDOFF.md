@@ -1,6 +1,6 @@
 # Hermes Agent Rust — Next-session handoff
 
-Date: 2026-08-24 (Pacific/Auckland), session 4b4.
+Date: 2026-08-24 (Pacific/Auckland), session 4b5.
 
 ## Resume point
 
@@ -17,7 +17,11 @@ update. The local HTTPS Git client still has no credentials; use the
 connected GitHub API for future pushes until `gh auth login` or SSH is
 configured.
 
-Latest synchronized unit: local source `b119001` → GitHub `dfc21ed`
+Latest synchronized unit: local source `ae1eb70` → GitHub `ac22bde`
+(`agent.auxiliary_client` task-provider routing extension, including current
+PLAN/inventory/ledger metadata), after local handoff source `008472a` →
+GitHub `38d93dd` (`HANDOFF.md` for the auxiliary predicate/wire unit), after
+local source `b119001` → GitHub `dfc21ed`
 (`agent.auxiliary_client` predicate/wire partial, including current
 plan/inventory/README metadata), after local handoff source `a224ff3` →
 GitHub `4a7020b` (`HANDOFF.md` for the ZAI unit), after local source
@@ -98,8 +102,10 @@ because it cannot preserve the local author/committer timestamps.
 
 ## What landed this session
 
-The synchronized partial auxiliary-client slice is `b119001` locally, mirrored
-as `dfc21ed` remotely; the ZAI profile is `0dfa448` locally, mirrored as
+The synchronized auxiliary-client predicate/wire slice is `b119001` locally,
+mirrored as `dfc21ed` remotely; its task-provider routing extension is
+`ae1eb70` locally, mirrored as `ac22bde` remotely; the ZAI profile is
+`0dfa448` locally, mirrored as
 `df894bb` remotely; the Kimi Coding profile is `7fe4f19` locally, mirrored as
 `a85e7a2` remotely; the Upstage profile is `034b2ea` locally, mirrored as
 `d1bff84` remotely; the Qwen OAuth profile is `4e3894e` locally, mirrored as
@@ -265,6 +271,16 @@ client construction, credential pools, async transport, cancellation and
 progress handling, provider fallback, and the remaining call path are still
 pending.
 
+The task-provider routing extension is included in the new `ae1eb70` source
+commit and its `ac22bde` GitHub mirror. It mirrors explicit-over-config
+precedence, matching task endpoint/key adoption, first-class provider identity
+with an explicit base URL, direct `openai` → `custom` expansion, MoA
+aggregator unwrapping with virtual credential removal, unresolved-MoA
+fail-through, and explicit/configured `model: auto` normalization. Config
+maps, MoA preset results, and provider-registry membership are explicit Rust
+adapter inputs; secret-scope/key-env lookup and client construction remain
+pending higher-layer seams.
+
 The Qwen Portal bundled profile is included in the new `4e3894e` source
 commit and its `41482fc` GitHub mirror. The `qwen_portal` capability mirrors
 the source's string/list message normalization, unsupported-part filtering,
@@ -301,7 +317,7 @@ The new `hermes-providers` crate ports `providers/base.py` and
 model endpoint precedence, strict fail-open catalog parsing,
 credential-safe redirects, canonical/alias registry behavior, copy-safe
 caching, and sorted bundled/user/legacy discovery. The focused suites contain
-5 auxiliary-client predicate/wire/error tests,
+12 auxiliary-client routing/predicate/wire/error tests,
 9 base, 8 registry, 2 AI Gateway profile, 2 Alibaba profile, 2 Alibaba Coding
 Plan profile, 3 Anthropic profile, 3 Gemini profile, 2 Arcee profile, 2 Azure
 Foundry profile, 2 Bedrock profile, 3 Copilot profile, 2 Copilot ACP profile,
@@ -318,10 +334,11 @@ The provider
 surface remains partial
 for the future CLI version/opener integration and remaining Rust plugin profile
 loaders. `agent.auxiliary_client` remains partial; continue its client/
-transport/fallback sections before promoting it. The ledger's next missing
-production unit is `run_agent` (8,206 LOC).
+credential-resolution, transport, and fallback sections before promoting it.
+The ledger's next missing production unit is `run_agent` (8,206 LOC), but the
+active continuation seam is the partial auxiliary client.
 
-The required auxiliary-client predicate workspace verification was green before
+The required auxiliary-client routing workspace verification was green before
 the synchronized
 commit:
 
@@ -341,12 +358,12 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-After the current auxiliary-client partial source commit is mirrored and this
-handoff commit is aligned
+After the current auxiliary-client routing source commit `ae1eb70` is mirrored
+as `ac22bde` and this handoff commit is aligned
 to its remote mirror, the working tree is clean. The committed metadata
 includes `AGENTS.md`, `PLAN.md`, `tools/port_status.json`, generated
 `tools/inventory.json`, `CONVERSION-LEDGER.md`, and this handoff. No code or
-parity test is pending for the current predicate slice; the
+parity test is pending for the current routing slice; the
 `agent.auxiliary_client` module remains partial.
 
 ## Next actions, in order
@@ -493,11 +510,14 @@ The strict production formula is `done production modules / 1,103`; partial rows
   independently so vendor-prefixed IDs still receive the native top-level
   `reasoning_effort`. The Rust adapter emits the same `thinking` body and
   fail-open empty maps for unsupported/no-config cases.
-- The auxiliary-client predicate slice uses explicit Rust adapter inputs for
-  Python hidden state: `main_provider`, OpenRouter/Nous credential-presence
-  booleans, and `AuxiliaryError` status/type/message. This preserves the source
-  classification precedence while leaving client/transport/fallback lifecycle
-  semantics pending with the partial module.
+- The auxiliary-client predicate and task-routing slices use explicit Rust
+  adapter inputs for Python hidden state: `main_provider`,
+  `AuxiliaryTaskConfig`, MoA aggregator results, provider-registry IDs,
+  OpenRouter/Nous credential-presence booleans, and `AuxiliaryError`
+  status/type/message. This preserves the source classification and
+  precedence order while leaving secret-scope/key-env lookup,
+  client/transport/fallback lifecycle semantics pending with the partial
+  module.
 
 - Platform cache-resetting tests are serialized because the production WSL and
   container detectors intentionally cache for process lifetime; the mutex is
@@ -512,7 +532,7 @@ Cloud, 2 AI Gateway, 2 Alibaba, 2 Alibaba Coding Plan, 3 Anthropic, 3 Gemini,
 2 Arcee, 2 Azure
 Foundry, 2 Bedrock, 3 Copilot, 2 Copilot ACP, 2 Fireworks, 2 GMI, 2 Kilo
 Code, 3 Kimi Coding, 2 NovitaAI, 2 NVIDIA, 2 StepFun, 3 Vertex, 2 DeepInfra,
-5 auxiliary-client predicate/wire/error, 5 ZAI profile,
+12 auxiliary-client routing/predicate/wire/error, 5 ZAI profile,
 2 DeepSeek, 3 Nous, 3 Minimax, 2 OpenAI Codex, 4 Qwen OAuth, 4 Upstage,
 2 Xiaomi, 2 XAI, and 2 Hugging Face profile
 tests. The
