@@ -9,10 +9,10 @@ Production-only strict completion: **6.62%** (73/1103 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 73 | 10 | 3799 | 1.88% | 29,844/1,510,733 done LOC |
-| Production modules | 73 | 10 | 1020 | 6.62% | 29,844/843,792 done LOC |
+| All tracked modules | 73 | 11 | 3798 | 1.88% | 29,844/1,510,733 done LOC |
+| Production modules | 73 | 11 | 1019 | 6.62% | 29,844/843,792 done LOC |
 
-Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-24T15:51:03`.
+Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-24T16:01:47`.
 
 ## Definition of 100.00%
 
@@ -30,6 +30,7 @@ The conversion is complete only when all of these are true:
 | Module | Phase | Upstream LOC | Required closure |
 |---|---|---:|---|
 | `agent.auxiliary_client` | P2 | 10,044 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
+| `agent.credential_pool` | P2 | 3,147 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `hermes_constants` | P1 | 1,481 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `providers.__init__` | P2 | 198 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `providers.base` | P2 | 238 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
@@ -63,9 +64,9 @@ Work bottom-up by phase. The list is regenerated from missing production rows, w
 | 15 | `tools.computer_use.cua_backend` | P2 | 3,295 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
 | 16 | `optional-skills.migration.openclaw-migration.scripts.openclaw_to_hermes` | P2 | 3,286 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
 | 17 | `agent.anthropic_adapter` | P2 | 3,177 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
-| 18 | `agent.credential_pool` | P2 | 3,147 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
-| 19 | `tools.transcription_tools` | P2 | 3,016 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
-| 20 | `tools.process_registry` | P2 | 2,937 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
+| 18 | `tools.transcription_tools` | P2 | 3,016 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
+| 19 | `tools.process_registry` | P2 | 2,937 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
+| 20 | `agent.agent_init` | P2 | 2,823 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
 
 ## Operating protocol
 
@@ -124,7 +125,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `agent.conversation_loop` | production | P2 | 7,524 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.copilot_acp_client` | production | P2 | 756 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.credential_persistence` | production | P2 | 174 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `agent.credential_pool` | production | P2 | 3,147 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `agent.credential_pool` | production | P2 | 3,147 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
 | `agent.credential_sources` | production | P2 | 443 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.credits_tracker` | production | P2 | 852 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.curator` | production | P2 | 2,019 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |

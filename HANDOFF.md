@@ -1,6 +1,6 @@
 # Hermes Agent Rust — Next-session handoff
 
-Date: 2026-08-24 (Pacific/Auckland), session 4bd.
+Date: 2026-08-24 (Pacific/Auckland), session 4be.
 
 ## Resume point
 
@@ -9,7 +9,7 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
 Current branch/HEAD: `main` is aligned with `origin/main` after the local and
-GitHub API mirror sequence for the auxiliary keepalive/pool unit and its
+GitHub API mirror sequence for the credential-pool core unit and its
 handoff checkpoint.
 The connected GitHub API publishes each logical commit immediately as a
 sequential remote mirror. Its commit SHAs differ from the local sequence
@@ -19,7 +19,8 @@ update. The local HTTPS Git client still has no credentials; use the connected
 GitHub API for future pushes until `gh auth login` or SSH is configured.
 
 Latest synchronized unit: local `895fbcf` → GitHub `ead6b5f`
-(`feat(agent): add auxiliary keepalive and pool parity @ b9aa928`), with the
+(`feat(agent): add auxiliary keepalive and pool parity @ b9aa928`), followed by
+the current credential-pool core unit, with the
 exact tree and all tracked blobs verified before aligning local `main` to the
 API-authored remote ref. The preceding documentation/GitHub metadata hook
 workflow and its handoff checkpoints were mirrored immediately after each
@@ -132,6 +133,17 @@ is aligned to the fetched remote mirror; the API-authored SHA differs only
 because it cannot preserve the local author/committer timestamps.
 
 ## What landed this session
+
+The current unit adds `hermes-agent::credential_pool`'s deterministic
+in-memory core. `CredentialPool` mirrors source priority fill-first,
+least-used, and round-robin selection; explicit reset timestamps and
+status-based cooldowns; terminal OAuth `DEAD` transitions; failed-key identity
+matching; duplicate-key quarantine; and unmatched-identity fail-open rotation.
+Eight source-derived `unit` tests were added. Persistence/auth-store and env
+seeding, serialization, OAuth refresh, lease locking, random selection,
+logging throttles, and cross-process locking remain pending. The required
+workspace validation and local/GitHub mirror refs will be recorded after this
+unit is committed.
 
 The current auxiliary-client transport/pool unit adds
 `AuxiliaryHttpClientConfig` and `openai_client_config_with_transport` in
@@ -483,8 +495,8 @@ and 73 done / 10 partial / 1,020 missing production modules.
 ## Next actions, in order
 
 1. Continue `agent.auxiliary_client` with concrete SDK/network client
-   construction and the remaining credential-pool lifecycle/rotation/refresh
-   source/tests; proxy/TLS policy, keepalive options, Codex headers, token
+   construction, then connect it to the credential-pool persistence/refresh
+   boundary; proxy/TLS policy, keepalive options, Codex headers, token
    selection, and pool-first runtime projection are now recorded.
 2. Keep the adapter boundaries explicit; do not promote the module until
    concrete client, async transport, cancellation, and fallback seams are

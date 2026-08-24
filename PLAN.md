@@ -350,6 +350,12 @@ rich/routing/cooldown/meta/reactions/conversation/delete modules.
 | tools/working_diff.py (130 LOC) | ✅ | `working_diff.rs`; 11 subprocess/diff parity tests (`mock`) |
 | Workspace evidence for this wave | ✅ | `cargo build --workspace` and `cargo test --workspace` (`unit`/`mock`); final result recorded in §7 |
 
+### hermes-agent credential pool (Phase 2, upstream @ b9aa928)
+
+| Module / upstream surface | Status | Rust home, oracle, and evidence tier |
+|---|---|---|
+| `agent/credential_pool.py` (3,147 LOC) — deterministic in-memory selection, cooldown, terminal-failure, failed-key identity, and duplicate-key rotation sections | 🟡 | `hermes-agent::credential_pool`; 8 source-derived parity tests (`unit`) cover fill-first priority/current/peek, least-used counting, round-robin order, explicit reset timestamps, terminal `token_invalidated` → `DEAD` rotation, unmatched-key fail-open rotation, duplicate-key quarantine, and sole-credential transient-versus-billing cooldowns; persistence/auth-store seeding, serialization, environment/config discovery, OAuth refresh, lease locking, random strategy, logging throttles, and cross-process locking remain pending |
+
 ### hermes-agent auxiliary client (Phase 2, upstream @ b9aa928)
 
 | Module / upstream surface | Status | Rust home, oracle, and evidence tier |
@@ -482,6 +488,20 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 + the exact command, e.g. `cargo test -p hermes-time (unit)`.
 
 ## 7. Session log
+
+- 2026-08-24 (session 4be): Continued the missing
+  `agent.credential_pool` port (@ b9aa928, 3,147 LOC) with the deterministic
+  in-memory selection/rotation core. The Rust `CredentialPool` preserves
+  priority fill-first selection, least-used request counting, round-robin
+  priority rotation, explicit reset timestamp precedence, status-dependent
+  cooldowns including the sole-credential transient exception, terminal OAuth
+  `DEAD` transitions, failed-key identity matching, duplicate-key quarantine,
+  and unmatched-identity fail-open rotation. Persistence, auth-store and env
+  seeding, serialization, OAuth refresh, lease locking, random selection,
+  logging throttles, and cross-process locking remain higher-layer seams.
+  Added 8 source-derived `unit` parity tests first; the focused pool suite and
+  the existing 37 auxiliary-client tests passed. The next auxiliary seam is
+  concrete SDK/network client construction and pool persistence/refresh.
 
 - 2026-08-24 (session 4bd): Continued the partial
   `agent/auxiliary_client.py` port (@ b9aa928, 10,044 LOC) with the

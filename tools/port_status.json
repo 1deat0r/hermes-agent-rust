@@ -5,7 +5,10 @@
  "agent.redact": {
    "status": "done"
  },
-  "agent.auxiliary_client": {
+ "agent.auxiliary_client": {
+    "status": "partial"
+  },
+ "agent.credential_pool": {
     "status": "partial"
   },
  "agent.session_activity": {
