@@ -494,10 +494,17 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   the tracked hooks, while `tools/pre_commit_docs.py`, `tools/refresh_docs.py`,
   and `tools/sync_github_metadata.py` keep the workflow reviewable. No ledger
   change: 73 done / 10 partial / 3,799 missing tracked modules and 73 done /
-  10 partial / 1,020 missing production modules. Validation is recorded after
-  the hook smoke checks and workspace checks complete. The next conversion unit
-  remains concrete `agent.auxiliary_client` SDK/httpx construction and broader
-  credential-pool selection.
+  10 partial / 1,020 missing production modules. Validation: `bash -n
+  .githooks/pre-commit .githooks/post-commit tools/install_hooks.sh`, Python
+  syntax compilation for all three helper scripts, the README/inventory refresh
+  command, the no-token metadata smoke check, `.githooks/pre-commit`,
+  `git diff --check`, `/home/mustbearnold/.cargo/bin/cargo build --workspace`,
+  and the final `/home/mustbearnold/.cargo/bin/cargo test --workspace` retry
+  all passed. The first parallel workspace test run reproduced the known
+  process-global credential-file race once; its exact targeted test and the
+  complete retry passed. The next conversion unit remains concrete
+  `agent.auxiliary_client` SDK/httpx construction and broader credential-pool
+  selection.
 
 - 2026-08-24 (session 4bb): Continued the partial
   `agent/auxiliary_client.py` port (@ b9aa928, 10,044 LOC) with Codex

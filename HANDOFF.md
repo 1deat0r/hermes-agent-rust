@@ -8,9 +8,8 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
-Current branch/HEAD: `main` at the last synchronized implementation and
-metadata sequence, with the tracked documentation-hook workflow currently
-being prepared. The connected GitHub API publishes each logical commit
+Current branch/HEAD: `main` at API-authored mirror `1af2de6` for local hook/docs
+commit `0d2bcd4`. The connected GitHub API publishes each logical commit
 immediately as a sequential remote mirror. Its commit SHAs differ from the
 local sequence because the API cannot preserve local author/committer
 timestamps, but every tree snapshot and commit message matches and is verified
@@ -18,7 +17,9 @@ before each ref update. The local HTTPS Git client still has no credentials;
 use the connected GitHub API for future pushes until `gh auth login` or SSH is
 configured.
 
-Latest synchronized unit: local source `9a0bc98` → GitHub `1550e03`
+Latest synchronized unit: local hook/docs commit `0d2bcd4` → GitHub `1af2de6`
+(`chore: enforce documentation and GitHub metadata sync`), after local source
+`9a0bc98` → GitHub `1550e03`
 (`agent.auxiliary_client` Codex token selection, including current
 PLAN/inventory/ledger metadata), after local handoff source `116bb97` →
 GitHub `9388f11` (`HANDOFF.md` for the Codex-header unit), after local source
@@ -127,8 +128,9 @@ because it cannot preserve the local author/committer timestamps.
 
 ## What landed this session
 
-The tracked documentation/GitHub metadata hook workflow is the current
-non-ledger unit. Its `pre-commit` hook refreshes the generated inventory and
+The tracked documentation/GitHub metadata hook workflow is included in local
+commit `0d2bcd4` and its `1af2de6` GitHub mirror. It is the current non-ledger
+unit. Its `pre-commit` hook refreshes the generated inventory and
 conversion ledger, updates the README status snapshot, stages those generated
 files, and requires `PLAN.md` plus `HANDOFF.md` for source/parity/tooling
 changes. Its `post-commit` hook synchronizes the repository description through
@@ -419,12 +421,21 @@ credential-resolution, transport, and fallback sections before promoting it.
 The ledger's next missing production unit is `run_agent` (8,206 LOC), but the
 active continuation seam is the partial auxiliary client.
 
-The required auxiliary-client Codex-token-selection workspace verification was green
-before
-the synchronized
-commit:
+The required auxiliary-client Codex-token-selection workspace verification was
+green before the hook/docs commit. The hook-specific validation was also green:
 
 ```text
+bash -n .githooks/pre-commit .githooks/post-commit tools/install_hooks.sh
+python3 - <<'PY'
+from pathlib import Path
+for path in (Path('tools/refresh_docs.py'), Path('tools/pre_commit_docs.py'), Path('tools/sync_github_metadata.py')):
+    compile(path.read_text(encoding='utf-8'), str(path), 'exec')
+print('python helper syntax passed')
+PY
+HERMES_UPSTREAM=/run/media/mustbearnold/Projects/Research/hermes-agent-repo python3 tools/refresh_docs.py --upstream /run/media/mustbearnold/Projects/Research/hermes-agent-repo
+env -u HERMES_GITHUB_TOKEN -u GH_TOKEN -u GITHUB_TOKEN python3 tools/sync_github_metadata.py --readme-mode skip
+.githooks/pre-commit
+git diff --check
 /home/mustbearnold/.cargo/bin/cargo test -p hermes-agent --test parity_auxiliary_client
 /home/mustbearnold/.cargo/bin/cargo test -p hermes-providers --test parity_zai --test parity_base --test parity_registry
 /home/mustbearnold/.cargo/bin/cargo build --workspace
@@ -440,12 +451,13 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-After the current auxiliary-client Codex-token-selection source commit `9a0bc98` is
-mirrored as `1550e03` and this handoff commit is aligned
-to its remote mirror, the working tree is clean. The committed metadata
-includes `AGENTS.md`, `PLAN.md`, `tools/port_status.json`, generated
-`tools/inventory.json`, `CONVERSION-LEDGER.md`, and this handoff. No code or
-parity test is pending for the current Codex-token-selection slice; the
+After local hook/docs commit `0d2bcd4` was mirrored as `1af2de6`, the local
+`main` ref was aligned to the API-authored SHA. The local and remote trees both
+resolve to `9791d8f624cf3e2e052f2068f0c978f66ef8d573`; all 268 tracked blobs
+match by path, mode, and SHA, and the worktree is clean. The committed hook
+workflow includes `AGENTS.md`, `PLAN.md`, `README.md`, `HANDOFF.md`, the
+generated inventory/ledger, both tracked hooks, the GitHub description source,
+and the three helper scripts. No conversion-ledger status changed; the
 `agent.auxiliary_client` module remains partial.
 
 ## Next actions, in order
