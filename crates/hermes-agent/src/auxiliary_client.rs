@@ -303,6 +303,84 @@ pub fn resolve_aux_task_provider_model(
     }
 }
 
+/// The subset of a credential-pool entry consumed by auxiliary client setup.
+///
+/// `runtime_api_key` and `runtime_base_url` are already projected by the
+/// credential pool. For Nous, the pool's JWT validation and
+/// `inference_base_url` selection happen in the auth layer; callers pass the
+/// resulting values here.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct AuxiliaryPoolEntry {
+    pub provider: Option<String>,
+    pub runtime_api_key: Option<String>,
+    pub access_token: Option<String>,
+    pub runtime_base_url: Option<String>,
+    pub inference_base_url: Option<String>,
+    pub base_url: Option<String>,
+}
+
+fn normalize_pool_url(value: &str) -> String {
+    value.trim().trim_end_matches('/').to_owned()
+}
+
+/// Resolve the runtime credential used by auxiliary client construction.
+///
+/// The source first asks the pool entry for its provider-aware
+/// `runtime_api_key`, then falls back to the raw `access_token`, and finally
+/// strips whitespace from the selected value.
+///
+/// PARITY: agent/auxiliary_client.py lines 1079-1086.
+pub fn pool_runtime_api_key(entry: Option<&AuxiliaryPoolEntry>) -> String {
+    let Some(entry) = entry else {
+        return String::new();
+    };
+    let selected = entry
+        .runtime_api_key
+        .as_deref()
+        .filter(|value| !value.is_empty())
+        .or(entry.access_token.as_deref())
+        .unwrap_or_default();
+    selected.trim().to_owned()
+}
+
+/// Resolve and normalize the runtime base URL used by auxiliary clients.
+///
+/// Nous's explicit inference override is checked before the projected pool
+/// URL. All other providers use runtime URL, inference URL, base URL, then
+/// caller fallback, in that order.
+///
+/// `nous_inference_override` is the explicit adapter for the source's
+/// `_nous_inference_env_override()` lookup.
+///
+/// PARITY: agent/auxiliary_client.py lines 1088-1118.
+pub fn pool_runtime_base_url(
+    entry: Option<&AuxiliaryPoolEntry>,
+    fallback: Option<&str>,
+    nous_inference_override: Option<&str>,
+) -> String {
+    let Some(entry) = entry else {
+        return normalize_pool_url(fallback.unwrap_or_default());
+    };
+
+    if entry.provider.as_deref() == Some("nous") {
+        if let Some(override_url) = nous_inference_override.filter(|value| !value.is_empty()) {
+            return normalize_pool_url(override_url);
+        }
+    }
+
+    let selected = entry
+        .runtime_base_url
+        .as_deref()
+        .filter(|value| !value.is_empty())
+        .or(entry.inference_base_url.as_deref())
+        .filter(|value| !value.is_empty())
+        .or(entry.base_url.as_deref())
+        .filter(|value| !value.is_empty())
+        .or(fallback)
+        .unwrap_or_default();
+    normalize_pool_url(selected)
+}
+
 /// Normalize an auxiliary provider name and its source aliases.
 ///
 /// main_provider is the explicit adapter for the source's lazy

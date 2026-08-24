@@ -1,7 +1,8 @@
 use hermes_agent::auxiliary_client::{
     auxiliary_max_tokens_param, is_model_incompatible_error, is_model_not_found_error,
-    is_payment_error, is_rate_limit_error, normalize_aux_provider, resolve_aux_task_provider_model,
-    AuxiliaryError, AuxiliaryTaskConfig,
+    is_payment_error, is_rate_limit_error, normalize_aux_provider, pool_runtime_api_key,
+    pool_runtime_base_url, resolve_aux_task_provider_model, AuxiliaryError, AuxiliaryPoolEntry,
+    AuxiliaryTaskConfig,
 };
 use serde_json::json;
 
@@ -367,4 +368,89 @@ fn resolve_task_provider_expands_direct_openai_alias() {
         Some("https://api.openai.com/v1")
     );
     assert_eq!(resolved.model.as_deref(), Some("gpt-5.4"));
+}
+
+#[test]
+fn pool_runtime_api_key_prefers_projected_key_then_access_token() {
+    let entry = AuxiliaryPoolEntry {
+        runtime_api_key: Some("  runtime-key  ".into()),
+        access_token: Some("access-token".into()),
+        ..AuxiliaryPoolEntry::default()
+    };
+    assert_eq!(pool_runtime_api_key(Some(&entry)), "runtime-key");
+
+    let fallback_entry = AuxiliaryPoolEntry {
+        access_token: Some("  access-token  ".into()),
+        ..AuxiliaryPoolEntry::default()
+    };
+    assert_eq!(pool_runtime_api_key(Some(&fallback_entry)), "access-token");
+    assert_eq!(pool_runtime_api_key(None), "");
+}
+
+#[test]
+fn pool_runtime_base_url_follows_source_precedence_and_normalization() {
+    let runtime = AuxiliaryPoolEntry {
+        runtime_base_url: Some(" https://runtime.example/v1/// ".into()),
+        inference_base_url: Some("https://inference.example/v1".into()),
+        base_url: Some("https://base.example/v1".into()),
+        ..AuxiliaryPoolEntry::default()
+    };
+    assert_eq!(
+        pool_runtime_base_url(Some(&runtime), Some("https://fallback.example/v1"), None),
+        "https://runtime.example/v1"
+    );
+
+    let inference = AuxiliaryPoolEntry {
+        inference_base_url: Some(" https://inference.example/v1/ ".into()),
+        base_url: Some("https://base.example/v1".into()),
+        ..AuxiliaryPoolEntry::default()
+    };
+    assert_eq!(
+        pool_runtime_base_url(Some(&inference), Some("https://fallback.example/v1"), None),
+        "https://inference.example/v1"
+    );
+
+    let base = AuxiliaryPoolEntry {
+        base_url: Some(" https://base.example/v1/// ".into()),
+        ..AuxiliaryPoolEntry::default()
+    };
+    assert_eq!(
+        pool_runtime_base_url(Some(&base), Some("https://fallback.example/v1"), None),
+        "https://base.example/v1"
+    );
+    assert_eq!(
+        pool_runtime_base_url(None, Some(" https://fallback.example/v1/// "), None),
+        "https://fallback.example/v1"
+    );
+}
+
+#[test]
+fn pool_runtime_base_url_applies_only_nous_inference_override() {
+    let nous = AuxiliaryPoolEntry {
+        provider: Some("nous".into()),
+        runtime_base_url: Some("https://runtime.nous.example/v1".into()),
+        ..AuxiliaryPoolEntry::default()
+    };
+    assert_eq!(
+        pool_runtime_base_url(
+            Some(&nous),
+            Some("https://fallback.example/v1"),
+            Some(" https://override.nous.example/v1/// "),
+        ),
+        "https://override.nous.example/v1"
+    );
+
+    let other = AuxiliaryPoolEntry {
+        provider: Some("openrouter".into()),
+        runtime_base_url: Some("https://runtime.example/v1".into()),
+        ..AuxiliaryPoolEntry::default()
+    };
+    assert_eq!(
+        pool_runtime_base_url(
+            Some(&other),
+            Some("https://fallback.example/v1"),
+            Some("https://override.nous.example/v1"),
+        ),
+        "https://runtime.example/v1"
+    );
 }
