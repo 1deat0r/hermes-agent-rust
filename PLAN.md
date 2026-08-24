@@ -132,9 +132,10 @@ core: toolsets, run_agent, agent/, tools/, batch) is open.
 **P2 status: 🟡 OPEN — hermes-tools support wave and provider profile
 base/registry/Actual/AI Gateway/Alibaba/Alibaba Coding Plan/Anthropic/Arcee/Azure Foundry/Bedrock/Copilot/Copilot ACP/Custom/DeepInfra/DeepSeek/Fireworks/Gemini/GMI/Kilo/Kimi Coding/Minimax/Novita/NVIDIA/Nous/Ollama Cloud/OpenAI Codex/Qwen OAuth/StepFun/Upstage/Vertex/XAI/Xiaomi/ZAI/Hugging Face profiles landed (2026-08-24).** The support wave below
 ports small, dependency-light modules needed by the agent surface.
-The first `hermes-agent::auxiliary_client` section is now partial: provider
-alias normalization, max-token wire-key selection, and payment/rate-limit/
-model-error predicates are ported; client construction, credentials, async
+The first `hermes-agent::auxiliary_client` sections are now partial: provider
+alias normalization, max-token wire-key selection, payment/rate-limit/
+model-error predicates, and the explicit task provider/model/endpoint
+precedence resolver are ported; client construction, credential pools, async
 transport, cancellation, and fallback chains remain pending.
 `hermes-providers` now contains the declarative `providers.base` profile,
 secure model-catalog probe, process-global registry/discovery cache, and the
@@ -344,7 +345,7 @@ rich/routing/cooldown/meta/reactions/conversation/delete modules.
 
 | Module / upstream surface | Status | Rust home, oracle, and evidence tier |
 |---|---|---|
-| `agent/auxiliary_client.py` (10,044 LOC) — routing predicate and wire-parameter section | 🟡 | `hermes-agent::auxiliary_client`; 5 source-derived parity tests (`unit`) cover provider aliases/special forms, OpenAI-compatible max-token keyword selection, payment/quota and rate-limit classification, and disjoint stale-model/capability errors; client construction, credentials, async transport, cancellation, and fallback chains remain pending |
+| `agent/auxiliary_client.py` (10,044 LOC) — routing, wire-parameter, and task-provider precedence sections | 🟡 | `hermes-agent::auxiliary_client`; 12 source-derived parity tests (`unit`) cover provider aliases/special forms, OpenAI-compatible max-token keyword selection, payment/quota and rate-limit classification, disjoint stale-model/capability errors, explicit/configured endpoint and key precedence, MoA unwrapping, direct OpenAI aliasing, and `auto` model normalization; client construction, credential pools, async transport, cancellation, and fallback chains remain pending |
 
 ### hermes-providers base (Phase 2, upstream @ b9aa928)
 
@@ -432,7 +433,7 @@ oracle tests). Upstream oracle files currently mirrored:
 - `tests/tools/test_tool_output_limits.py` → `crates/hermes-tools/tests/parity_tool_output_limits.rs`
 - `tests/tools/test_working_diff.py` → `crates/hermes-tools/tests/parity_working_diff.rs`
 - `providers/base.py` + `tests/providers/test_fetch_models_base_url.py` → `crates/hermes-providers/tests/parity_base.rs` (9 profile/catalog/redirect parity tests; `unit`/`mock`)
-- `agent/auxiliary_client.py` + `tests/agent/test_auxiliary_client.py` → `crates/hermes-agent/tests/parity_auxiliary_client.rs` (5 source-derived routing/wire/error parity tests; `unit`; client construction, credential pools, async transport, cancellation, and provider fallback oracles remain future sections)
+- `agent/auxiliary_client.py` + `tests/agent/test_auxiliary_client.py` → `crates/hermes-agent/tests/parity_auxiliary_client.rs` (12 source-derived routing/wire/error/task-provider-resolution parity tests; `unit`; client construction, credential pools, async transport, cancellation, and provider fallback oracles remain future sections)
 - `providers/__init__.py` + `tests/providers/test_provider_registry.py` + `tests/providers/test_plugin_discovery.py` → `crates/hermes-providers/tests/parity_registry.rs` (8 registry/discovery parity tests; `unit`/`mock`)
 - `plugins/model-providers/ai-gateway/__init__.py` → `crates/hermes-providers/tests/parity_ai_gateway.rs` (2 source-derived profile/registration/reasoning-hook parity tests; `unit`; no dedicated upstream plugin-profile test; related CLI/model catalog tests remain future-crate oracles)
 - `plugins/model-providers/alibaba/__init__.py` → `crates/hermes-providers/tests/parity_alibaba.rs` (2 source-derived profile/registration parity tests; `unit`; no dedicated upstream test module)
@@ -472,6 +473,27 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 + the exact command, e.g. `cargo test -p hermes-time (unit)`.
 
 ## 7. Session log
+
+- 2026-08-24 (session 4b5): Continued the partial
+  `agent/auxiliary_client.py` port (@ b9aa928, 10,044 LOC) with the pure
+  `_resolve_task_provider_model` routing seam. The Rust resolver mirrors
+  explicit-over-config precedence, matching task endpoint/key adoption,
+  first-class provider identity with an explicit base URL, direct
+  `openai` → `custom` expansion, MoA aggregator unwrapping with virtual
+  credential removal, unresolved-MoA fail-through, and explicit/configured
+  `model: auto` normalization. Config maps, MoA preset results, and provider
+  registry membership are explicit Rust adapter inputs; secret-scope/key-env
+  lookup and client construction remain pending higher-layer seams. Added 7
+  source-derived `unit` parity tests (12 total in `parity_auxiliary_client.rs`)
+  first; the focused suite passed. Required
+  `/home/mustbearnold/.cargo/bin/cargo build --workspace` passed. The first
+  full workspace test exposed a pre-existing parallel credential-files test
+  race; its isolated rerun and the second full workspace test both passed.
+  Only the three intentional delegation/schema doc tests are ignored. The
+  inventory and conversion ledger remain at 73 done / 10 partial / 3,799
+  missing tracked modules and 73 done / 10 partial / 1,020 missing production
+  modules. The next seam is auxiliary client construction and credential
+  resolution before transport/fallback lifecycle work.
 
 - 2026-08-24 (session 4b4): Opened the `hermes-agent` crate and ported the
   dependency-safe predicate/wire-parameter section of

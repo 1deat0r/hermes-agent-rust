@@ -68,6 +68,241 @@ const PROVIDER_ALIASES: &[(&str, &str)] = &[
     ("tencentmaas", "tencent-tokenhub"),
 ];
 
+/// The config fields consumed by the dependency-safe task-provider resolver.
+///
+/// The Python source obtains this map from `load_config_readonly()` and also
+/// resolves `key_env` through the secret scope. Rust callers supply the
+/// already-resolved values here; credential-pool and environment resolution
+/// remain higher-layer seams.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct AuxiliaryTaskConfig {
+    pub provider: Option<String>,
+    pub model: Option<String>,
+    pub base_url: Option<String>,
+    pub api_key: Option<String>,
+    pub api_mode: Option<String>,
+}
+
+/// Result of resolving one auxiliary task's provider/model/endpoint inputs.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct AuxiliaryTaskProviderResolution {
+    pub provider: String,
+    pub model: Option<String>,
+    pub base_url: Option<String>,
+    pub api_key: Option<String>,
+    pub api_mode: Option<String>,
+}
+
+fn trimmed_option(value: Option<&str>) -> Option<String> {
+    value
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(ToOwned::to_owned)
+}
+
+fn normalized_model(value: Option<&str>) -> Option<String> {
+    let value = trimmed_option(value)?;
+    if value.eq_ignore_ascii_case("auto") {
+        None
+    } else {
+        Some(value)
+    }
+}
+
+fn is_known_aux_provider(provider: &str, known_provider_ids: &[&str]) -> bool {
+    known_provider_ids
+        .iter()
+        .any(|known| known.eq_ignore_ascii_case(provider))
+}
+
+/// Resolve explicit and per-task provider/model/endpoint inputs.
+///
+/// `task_config` is the source's `auxiliary.<task>` map, `moa_aggregator` is
+/// the already-resolved `(provider, model)` for a MoA preset, and
+/// `known_provider_ids` is the provider registry view used to preserve
+/// first-class provider identity when an explicit base URL is present. These
+/// are explicit Rust adapters for Python config/registry lookups.
+///
+/// PARITY: agent/auxiliary_client.py lines 7369-7558.
+pub fn resolve_aux_task_provider_model(
+    task_config: Option<&AuxiliaryTaskConfig>,
+    task: Option<&str>,
+    explicit_provider: Option<&str>,
+    explicit_model: Option<&str>,
+    explicit_base_url: Option<&str>,
+    explicit_api_key: Option<&str>,
+    moa_aggregator: Option<(&str, &str)>,
+    known_provider_ids: &[&str],
+) -> AuxiliaryTaskProviderResolution {
+    let mut cfg_provider =
+        trimmed_option(task_config.and_then(|config| config.provider.as_deref()));
+    let cfg_model = normalized_model(task_config.and_then(|config| config.model.as_deref()));
+    let mut cfg_base_url =
+        trimmed_option(task_config.and_then(|config| config.base_url.as_deref()));
+    let mut cfg_api_key = trimmed_option(task_config.and_then(|config| config.api_key.as_deref()));
+    let cfg_api_mode = trimmed_option(task_config.and_then(|config| config.api_mode.as_deref()));
+
+    let mut provider = trimmed_option(explicit_provider);
+    let mut model = normalized_model(explicit_model).or(cfg_model.clone());
+    let mut base_url = trimmed_option(explicit_base_url);
+    let mut api_key = trimmed_option(explicit_api_key);
+    let task_present = task.is_some_and(|name| !name.trim().is_empty());
+
+    let unwrap_moa = |candidate: &str, candidate_model: Option<String>| {
+        if !candidate.eq_ignore_ascii_case("moa") {
+            return (candidate.to_owned(), candidate_model, false);
+        }
+        match moa_aggregator {
+            Some((aggregator_provider, aggregator_model))
+                if !aggregator_provider.trim().is_empty()
+                    && !aggregator_model.trim().is_empty()
+                    && !aggregator_provider.eq_ignore_ascii_case("moa") =>
+            {
+                (
+                    aggregator_provider.trim().to_owned(),
+                    Some(aggregator_model.trim().to_owned()),
+                    true,
+                )
+            }
+            _ => (candidate.to_owned(), candidate_model, false),
+        }
+    };
+
+    // An explicit provider takes the same MoA chokepoint as the source. The
+    // virtual endpoint/key belong to the facade and must not reach the real
+    // aggregator client after a successful unwrap.
+    if let Some(candidate) = provider.take() {
+        let (resolved_provider, resolved_model, unwrapped) = unwrap_moa(&candidate, model);
+        provider = Some(resolved_provider);
+        model = resolved_model;
+        if unwrapped {
+            base_url = None;
+            api_key = None;
+        }
+    } else if let Some(candidate) = cfg_provider.clone() {
+        // The config path passes the already-selected model to the shared
+        // MoA resolver, then clears config endpoint credentials on success.
+        let (resolved_provider, resolved_model, unwrapped) = unwrap_moa(&candidate, model.clone());
+        if unwrapped {
+            model = resolved_model;
+            cfg_base_url = None;
+            cfg_api_key = None;
+        }
+        cfg_provider = Some(resolved_provider);
+    }
+
+    // Direct API-key aliases are not registry providers. Preserve a caller's
+    // endpoint when present; otherwise use the source's OpenAI default.
+    let expand_direct_alias =
+        |candidate: Option<String>, existing_base: Option<String>| match candidate {
+            Some(value) if value.eq_ignore_ascii_case("openai") => (
+                Some("custom".to_owned()),
+                existing_base.or_else(|| Some("https://api.openai.com/v1".to_owned())),
+            ),
+            other => (other, existing_base),
+        };
+    let (expanded_provider, expanded_base_url) = expand_direct_alias(provider, base_url);
+    provider = expanded_provider;
+    base_url = expanded_base_url;
+    let (expanded_cfg_provider, expanded_cfg_base_url) =
+        expand_direct_alias(cfg_provider, cfg_base_url);
+    cfg_provider = expanded_cfg_provider;
+    cfg_base_url = expanded_cfg_base_url;
+
+    // An explicit provider may use the task's endpoint/key when the task names
+    // the same provider (or leaves the provider unspecified).
+    if let Some(provider_value) = provider.as_ref() {
+        if !provider_value.eq_ignore_ascii_case("auto")
+            && base_url.is_none()
+            && cfg_base_url.is_some()
+            && (cfg_provider.is_none()
+                || cfg_provider
+                    .as_deref()
+                    .is_some_and(|configured| configured.eq_ignore_ascii_case(provider_value)))
+        {
+            base_url = cfg_base_url.clone();
+            if api_key.is_none() {
+                api_key = cfg_api_key.clone();
+            }
+        }
+    }
+
+    if let Some(url) = base_url {
+        let preserve = provider.as_deref().is_some_and(|value| {
+            let lowered = value.to_ascii_lowercase();
+            !lowered.is_empty()
+                && lowered != "auto"
+                && lowered != "custom"
+                && !lowered.starts_with("custom:")
+                && is_known_aux_provider(&lowered, known_provider_ids)
+        });
+        return AuxiliaryTaskProviderResolution {
+            provider: if preserve {
+                provider.unwrap_or_else(|| "custom".into())
+            } else {
+                "custom".into()
+            },
+            model,
+            base_url: Some(url),
+            api_key,
+            api_mode: cfg_api_mode,
+        };
+    }
+
+    if let Some(provider) = provider {
+        return AuxiliaryTaskProviderResolution {
+            provider,
+            model,
+            base_url: None,
+            api_key,
+            api_mode: cfg_api_mode,
+        };
+    }
+
+    if task_present || task_config.is_some() {
+        if cfg_base_url.is_some() && cfg_api_key.is_some() {
+            return AuxiliaryTaskProviderResolution {
+                provider: "custom".into(),
+                model,
+                base_url: cfg_base_url,
+                api_key: cfg_api_key,
+                api_mode: cfg_api_mode,
+            };
+        }
+        if let (Some(url), Some(configured_provider)) = (cfg_base_url.clone(), cfg_provider.clone())
+        {
+            if !configured_provider.eq_ignore_ascii_case("auto") {
+                return AuxiliaryTaskProviderResolution {
+                    provider: configured_provider,
+                    model,
+                    base_url: Some(url),
+                    api_key: None,
+                    api_mode: cfg_api_mode,
+                };
+            }
+        }
+        if let Some(configured_provider) = cfg_provider {
+            if !configured_provider.eq_ignore_ascii_case("auto") {
+                return AuxiliaryTaskProviderResolution {
+                    provider: configured_provider,
+                    model,
+                    base_url: cfg_base_url,
+                    api_key: cfg_api_key,
+                    api_mode: cfg_api_mode,
+                };
+            }
+        }
+    }
+
+    AuxiliaryTaskProviderResolution {
+        provider: "auto".into(),
+        model,
+        base_url: None,
+        api_key: None,
+        api_mode: cfg_api_mode,
+    }
+}
+
 /// Normalize an auxiliary provider name and its source aliases.
 ///
 /// main_provider is the explicit adapter for the source's lazy

@@ -1,6 +1,7 @@
 use hermes_agent::auxiliary_client::{
     auxiliary_max_tokens_param, is_model_incompatible_error, is_model_not_found_error,
-    is_payment_error, is_rate_limit_error, normalize_aux_provider, AuxiliaryError,
+    is_payment_error, is_rate_limit_error, normalize_aux_provider, resolve_aux_task_provider_model,
+    AuxiliaryError, AuxiliaryTaskConfig,
 };
 use serde_json::json;
 
@@ -199,4 +200,171 @@ fn model_not_found_and_incompatible_classifiers_are_disjoint() {
     );
     assert!(!is_model_incompatible_error(&billing));
     assert!(!is_model_not_found_error(&billing));
+}
+
+const KNOWN_PROVIDER_IDS: &[&str] = &[
+    "anthropic",
+    "minimax-oauth",
+    "nous",
+    "openai-codex",
+    "qwen-oauth",
+    "xai-oauth",
+];
+
+#[test]
+fn resolve_task_provider_preserves_known_provider_with_explicit_endpoint() {
+    for provider in KNOWN_PROVIDER_IDS {
+        let resolved = resolve_aux_task_provider_model(
+            None,
+            Some("vision"),
+            Some(provider),
+            Some("test-model"),
+            Some("https://provider.example/v1"),
+            Some("resolved-token"),
+            None,
+            KNOWN_PROVIDER_IDS,
+        );
+
+        assert_eq!(resolved.provider, *provider);
+        assert_eq!(resolved.model.as_deref(), Some("test-model"));
+        assert_eq!(
+            resolved.base_url.as_deref(),
+            Some("https://provider.example/v1")
+        );
+        assert_eq!(resolved.api_key.as_deref(), Some("resolved-token"));
+        assert_eq!(resolved.api_mode, None);
+    }
+}
+
+#[test]
+fn resolve_task_provider_adopts_matching_configured_endpoint_and_key() {
+    let config = AuxiliaryTaskConfig {
+        provider: Some("custom".into()),
+        model: Some("meta/llama-3.2-11b-vision-instruct".into()),
+        base_url: Some("https://integrate.api.nvidia.com/v1".into()),
+        api_key: Some("nvapi-secret".into()),
+        api_mode: None,
+    };
+
+    let resolved = resolve_aux_task_provider_model(
+        Some(&config),
+        Some("vision"),
+        Some("custom"),
+        Some("meta/llama-3.2-11b-vision-instruct"),
+        None,
+        None,
+        None,
+        &[],
+    );
+
+    assert_eq!(resolved.provider, "custom");
+    assert_eq!(
+        resolved.model.as_deref(),
+        Some("meta/llama-3.2-11b-vision-instruct")
+    );
+    assert_eq!(
+        resolved.base_url.as_deref(),
+        Some("https://integrate.api.nvidia.com/v1")
+    );
+    assert_eq!(resolved.api_key.as_deref(), Some("nvapi-secret"));
+    assert_eq!(resolved.api_mode, None);
+}
+
+#[test]
+fn resolve_task_provider_unwraps_explicit_moa_and_drops_virtual_credentials() {
+    let resolved = resolve_aux_task_provider_model(
+        None,
+        Some("title_generation"),
+        Some("moa"),
+        Some("opus-gpt"),
+        Some("moa://local"),
+        Some("moa-virtual-provider"),
+        Some(("openrouter", "anthropic/claude-opus-4.8")),
+        &[],
+    );
+
+    assert_eq!(resolved.provider, "openrouter");
+    assert_eq!(resolved.model.as_deref(), Some("anthropic/claude-opus-4.8"));
+    assert_eq!(resolved.base_url, None);
+    assert_eq!(resolved.api_key, None);
+}
+
+#[test]
+fn resolve_task_provider_unwraps_configured_moa() {
+    let config = AuxiliaryTaskConfig {
+        provider: Some("moa".into()),
+        model: Some("opus-gpt".into()),
+        ..AuxiliaryTaskConfig::default()
+    };
+
+    let resolved = resolve_aux_task_provider_model(
+        Some(&config),
+        Some("title_generation"),
+        None,
+        None,
+        None,
+        None,
+        Some(("anthropic", "claude-opus-4.8")),
+        &[],
+    );
+
+    assert_eq!(resolved.provider, "anthropic");
+    assert_eq!(resolved.model.as_deref(), Some("claude-opus-4.8"));
+    assert_eq!(resolved.base_url, None);
+    assert_eq!(resolved.api_key, None);
+}
+
+#[test]
+fn resolve_task_provider_keeps_literal_moa_when_preset_is_unresolved() {
+    let resolved = resolve_aux_task_provider_model(
+        None,
+        Some("title_generation"),
+        Some("moa"),
+        Some("gone-preset"),
+        None,
+        None,
+        None,
+        &[],
+    );
+
+    assert_eq!(resolved.provider, "moa");
+    assert_eq!(resolved.model.as_deref(), Some("gone-preset"));
+}
+
+#[test]
+fn resolve_task_provider_normalizes_explicit_auto_model_to_none() {
+    let resolved = resolve_aux_task_provider_model(
+        None,
+        None,
+        Some("anthropic"),
+        Some("auto"),
+        None,
+        None,
+        None,
+        &[],
+    );
+
+    assert_eq!(resolved.provider, "anthropic");
+    assert_eq!(resolved.model, None);
+}
+
+#[test]
+fn resolve_task_provider_expands_direct_openai_alias() {
+    let resolved = resolve_aux_task_provider_model(
+        None,
+        None,
+        Some("openai"),
+        Some("gpt-5.4"),
+        None,
+        None,
+        None,
+        &[],
+    );
+
+    assert_eq!(resolved.provider, "custom");
+    assert_eq!(
+        resolved.base_url.as_deref(),
+        Some("https://api.openai.com/v1")
+    );
+    assert_eq!(resolved.model.as_deref(), Some("gpt-5.4"));
 }
