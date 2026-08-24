@@ -1,6 +1,6 @@
 # Hermes Agent Rust — Next-session handoff
 
-Date: 2026-08-24 (Pacific/Auckland), session 4af.
+Date: 2026-08-24 (Pacific/Auckland), session 4b0.
 
 ## Resume point
 
@@ -17,7 +17,11 @@ update. The local HTTPS Git client still has no credentials; use the
 connected GitHub API for future pushes until `gh auth login` or SSH is
 configured.
 
-Latest synchronized unit: local source `adf7332` → GitHub `6e88a75`
+Latest synchronized unit: local source `4e3894e` → GitHub `41482fc`
+(`plugins.model-providers.qwen-oauth.__init__`, including current
+plan/inventory metadata), after local handoff source `4a1881e` → GitHub
+`c8ad87a` (`HANDOFF.md` and corrected PLAN metadata for the Custom unit),
+after local source `adf7332` → GitHub `6e88a75`
 (`plugins.model-providers.custom.__init__`, including current plan/inventory
 metadata), after local handoff source `fa2a85a` → GitHub `b58e0aa`
 (`HANDOFF.md` for the Minimax unit), after local source `54d7a3d` → GitHub
@@ -82,7 +86,8 @@ because it cannot preserve the local author/committer timestamps.
 ## What landed this session
 
 Module-sized commits are complete through
-`plugins.model-providers.custom.__init__`: `adf7332` locally, mirrored as
+`plugins.model-providers.qwen-oauth.__init__`: `4e3894e` locally, mirrored as
+`41482fc` remotely; the Custom profile is `adf7332` locally, mirrored as
 `6e88a75` remotely; the Minimax profiles are `54d7a3d` locally, mirrored as
 `9d44d76` remotely; the Ollama Cloud profile is `63db0cf` locally, mirrored as
 `1262f1f` remotely; the Actual profile is `163edce` locally, mirrored as
@@ -200,6 +205,16 @@ adaptive thinking for any supplied config, explicit disabled thinking, and
 no thinking body when config is absent. Auxiliary-client, OAuth runtime,
 and broader agent/transport integration remain future higher-layer seams.
 
+The Qwen Portal bundled profile is included in the new `4e3894e` source
+commit and its `41482fc` GitHub mirror. The `qwen_portal` capability mirrors
+the source's string/list message normalization, unsupported-part filtering,
+first-system-message `cache_control` injection, nested `image_url` retry-copy
+guard, constant `vl_high_resolution_images=true` body field, and top-level
+non-empty `qwen_session_metadata` mapping. The profile mirrors Qwen's three
+aliases, `QWEN_API_KEY`, Portal URL, external OAuth auth type, and 65,536
+default max-token cap; Qwen CLI credential resolution and full transport
+integration remain future higher-layer seams.
+
 The Custom/Ollama local bundled profile is included in the new `adf7332`
 source commit and its `6e88a75` GitHub mirror. It mirrors Custom's six
 aliases, empty user-configured endpoint fields, 65,536 default max-token
@@ -233,19 +248,19 @@ Foundry profile, 2 Bedrock profile, 3 Copilot profile, 2 Copilot ACP profile,
 2 NovitaAI profile,
 2 NVIDIA profile, 2 StepFun profile, 3 Vertex profile, 2 DeepInfra profile,
 2 DeepSeek profile, 3 Nous profile, 3 Actual profile, 3 Ollama Cloud profile,
-3 Minimax profile, 2 OpenAI Codex profile, 2 Xiaomi profile, 2 XAI profile,
+3 Minimax profile, 2 OpenAI Codex profile, 4 Qwen OAuth profile, 2 Xiaomi profile,
 and 2 Hugging Face
 profile tests are green.
 The provider
 surface remains partial
 for the future CLI version/opener integration and remaining Rust plugin profile
-loaders. The next unit is `plugins.model-providers.qwen-oauth.__init__` (108 LOC).
+loaders. The next unit is `plugins.model-providers.upstage.__init__` (115 LOC).
 
-The required Custom workspace verification was green before the synchronized
+The required Qwen workspace verification was green before the synchronized
 commit:
 
 ```text
-PATH=/home/mustbearnold/.cargo/bin:$PATH cargo test -p hermes-providers --test parity_custom --test parity_base --test parity_registry
+PATH=/home/mustbearnold/.cargo/bin:$PATH cargo test -p hermes-providers --test parity_qwen_oauth --test parity_base --test parity_registry
 PATH=/home/mustbearnold/.cargo/bin:$PATH cargo build --workspace
 PATH=/home/mustbearnold/.cargo/bin:$PATH cargo test --workspace --quiet
 ```
@@ -259,15 +274,15 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-After the current Custom commit is mirrored and this handoff commit is aligned
+After the current Qwen commit is mirrored and this handoff commit is aligned
 to its remote mirror, the working tree is clean. The committed metadata
 includes `AGENTS.md`, `PLAN.md`, `tools/port_status.json`, generated
 `tools/inventory.json`, `CONVERSION-LEDGER.md`, and this handoff. No code or
-parity test is pending for the Custom unit.
+parity test is pending for the Qwen unit.
 
 ## Next actions, in order
 
-1. Start `plugins.model-providers.qwen-oauth.__init__` (108 LOC) by reading its
+1. Start `plugins.model-providers.upstage.__init__` (115 LOC) by reading its
    pinned source/tests and writing profile-registration parity tests first.
 2. Keep the static bundled-profile registration order and user-loader seam
    explicit while adding the next provider profile.
@@ -278,8 +293,8 @@ parity test is pending for the Custom unit.
 
 `CONVERSION-LEDGER.md` is generated and contains one row for every 3,882 upstream inventory modules: 1,103 production tasks plus 2,779 oracle/test tasks. Only `done` counts toward completion.
 
-- All tracked modules: 69 done / 9 partial / 3,804 missing = **1.78%**.
-- Production modules: 69 done / 9 partial / 1,025 missing = **6.26%**.
+- All tracked modules: 70 done / 9 partial / 3,803 missing = **1.80%**.
+- Production modules: 70 done / 9 partial / 1,024 missing = **6.35%**.
 
 The nine partial production rows are `hermes_constants`, `providers.base`,
 `providers.__init__`, `tools.credential_files`,
@@ -387,6 +402,10 @@ The strict production formula is `done production modules / 1,103`; partial rows
   emits both top-level `reasoning_effort=none` and `think=false`; effort
   values are trimmed/lowercased and passed through; empty configs omit
   reasoning; and catalog probing fails open until a base URL is configured.
+- Qwen's source selectively copies mutable nested `image_url` parts; the Rust
+  `serde_json::Value` adapter owns its returned tree and clones the complete
+  message value while preserving the same normalization, cache-control, and
+  input-mutation contract.
 - Platform cache-resetting tests are serialized because the production WSL and
   container detectors intentionally cache for process lifetime; the mutex is
   test-only and does not change detector behavior.
@@ -400,12 +419,12 @@ Cloud, 2 AI Gateway, 2 Alibaba, 2 Alibaba Coding Plan, 3 Anthropic, 3 Gemini,
 2 Arcee, 2 Azure
 Foundry, 2 Bedrock, 3 Copilot, 2 Copilot ACP, 2 Fireworks, 2 GMI, 2 Kilo
 Code, 2 NovitaAI, 2 NVIDIA, 2 StepFun, 3 Vertex, 2 DeepInfra, 2 DeepSeek,
-3 Nous, 3 Minimax, 2 OpenAI Codex, 2 Xiaomi, 2 XAI, and 2 Hugging Face profile
+3 Nous, 3 Minimax, 2 OpenAI Codex, 4 Qwen OAuth, 2 Xiaomi, 2 XAI, and 2 Hugging Face profile
 tests. The
 required workspace build and test also passed with the explicit cargo
 toolchain; three
 delegation/schema doc tests are intentionally ignored. Inventory and
-conversion ledger were regenerated and now record 69 done / 9 partial / 1,025
+conversion ledger were regenerated and now record 70 done / 9 partial / 1,024
 missing production modules.
 
 ## First command tomorrow
