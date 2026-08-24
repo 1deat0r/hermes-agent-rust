@@ -1,6 +1,6 @@
 # Hermes Agent Rust — Next-session handoff
 
-Date: 2026-08-24 (Pacific/Auckland), session 4b3.
+Date: 2026-08-24 (Pacific/Auckland), session 4b4.
 
 ## Resume point
 
@@ -17,9 +17,13 @@ update. The local HTTPS Git client still has no credentials; use the
 connected GitHub API for future pushes until `gh auth login` or SSH is
 configured.
 
-Latest synchronized unit: local source `0dfa448` → GitHub `df894bb`
-(`plugins.model-providers.zai.__init__`, including current plan/inventory
-metadata), after local handoff source `c7f93e5` → GitHub `db3df00`
+Latest synchronized unit: local source `b119001` → GitHub `dfc21ed`
+(`agent.auxiliary_client` predicate/wire partial, including current
+plan/inventory/README metadata), after local handoff source `a224ff3` →
+GitHub `4a7020b` (`HANDOFF.md` for the ZAI unit), after local source
+`0dfa448` → GitHub `df894bb` (`plugins.model-providers.zai.__init__`,
+including current plan/inventory metadata), after local handoff source
+`c7f93e5` → GitHub `db3df00`
 (`HANDOFF.md` for the Kimi Coding unit), after local source `7fe4f19` →
 GitHub `a85e7a2` (`plugins.model-providers.kimi-coding.__init__`, including
 current plan/inventory metadata), after local handoff source `edd9b4a` →
@@ -94,8 +98,8 @@ because it cannot preserve the local author/committer timestamps.
 
 ## What landed this session
 
-Module-sized commits are complete through
-`plugins.model-providers.zai.__init__`: `0dfa448` locally, mirrored as
+The synchronized partial auxiliary-client slice is `b119001` locally, mirrored
+as `dfc21ed` remotely; the ZAI profile is `0dfa448` locally, mirrored as
 `df894bb` remotely; the Kimi Coding profile is `7fe4f19` locally, mirrored as
 `a85e7a2` remotely; the Upstage profile is `034b2ea` locally, mirrored as
 `d1bff84` remotely; the Qwen OAuth profile is `4e3894e` locally, mirrored as
@@ -250,6 +254,17 @@ mirrors Z.AI's aliases, ordered API-key variables, endpoint, fallback models,
 and GLM-4.5 Flash auxiliary model; CLI credential/model-picker and full
 transport integration remain future higher-layer seams.
 
+The first `hermes-agent` checkpoint is included in the new `b119001` source
+commit and its `dfc21ed` GitHub mirror. The partial
+`hermes_agent::auxiliary_client` slice mirrors the source's provider alias
+normalization (`custom:`, `codex`, `main`, and the bundled alias table),
+OpenAI-compatible output-token keyword selection, and payment/quota,
+rate-limit, stale-model, and model-capability error predicates. Hidden
+Python config and exception introspection are explicit Rust adapter inputs;
+client construction, credential pools, async transport, cancellation and
+progress handling, provider fallback, and the remaining call path are still
+pending.
+
 The Qwen Portal bundled profile is included in the new `4e3894e` source
 commit and its `41482fc` GitHub mirror. The `qwen_portal` capability mirrors
 the source's string/list message normalization, unsupported-part filtering,
@@ -286,6 +301,7 @@ The new `hermes-providers` crate ports `providers/base.py` and
 model endpoint precedence, strict fail-open catalog parsing,
 credential-safe redirects, canonical/alias registry behavior, copy-safe
 caching, and sorted bundled/user/legacy discovery. The focused suites contain
+5 auxiliary-client predicate/wire/error tests,
 9 base, 8 registry, 2 AI Gateway profile, 2 Alibaba profile, 2 Alibaba Coding
 Plan profile, 3 Anthropic profile, 3 Gemini profile, 2 Arcee profile, 2 Azure
 Foundry profile, 2 Bedrock profile, 3 Copilot profile, 2 Copilot ACP profile,
@@ -301,12 +317,16 @@ profile tests are green.
 The provider
 surface remains partial
 for the future CLI version/opener integration and remaining Rust plugin profile
-loaders. The next dependency-safe unit is `agent.auxiliary_client` (10,044 LOC).
+loaders. `agent.auxiliary_client` remains partial; continue its client/
+transport/fallback sections before promoting it. The ledger's next missing
+production unit is `run_agent` (8,206 LOC).
 
-The required ZAI workspace verification was green before the synchronized
+The required auxiliary-client predicate workspace verification was green before
+the synchronized
 commit:
 
 ```text
+/home/mustbearnold/.cargo/bin/cargo test -p hermes-agent --test parity_auxiliary_client
 /home/mustbearnold/.cargo/bin/cargo test -p hermes-providers --test parity_zai --test parity_base --test parity_registry
 /home/mustbearnold/.cargo/bin/cargo build --workspace
 /home/mustbearnold/.cargo/bin/cargo test --workspace
@@ -321,18 +341,20 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-After the current ZAI source commit is mirrored and this handoff commit is aligned
+After the current auxiliary-client partial source commit is mirrored and this
+handoff commit is aligned
 to its remote mirror, the working tree is clean. The committed metadata
 includes `AGENTS.md`, `PLAN.md`, `tools/port_status.json`, generated
 `tools/inventory.json`, `CONVERSION-LEDGER.md`, and this handoff. No code or
-parity test is pending for the ZAI unit.
+parity test is pending for the current predicate slice; the
+`agent.auxiliary_client` module remains partial.
 
 ## Next actions, in order
 
-1. Start `agent.auxiliary_client` (10,044 LOC) by reading its pinned
-   source/tests and identifying the next dependency-safe Rust seam.
-2. Keep the TDD/parity-test-first protocol and record any higher-layer
-   adapter seams explicitly while adding the next module.
+1. Continue `agent.auxiliary_client` by reading the pinned client-construction/
+   credential-resolution source/tests and writing the next parity tests first.
+2. Keep the adapter boundaries explicit; do not promote the module until
+   client, transport, cancellation, and fallback seams are covered.
 3. For every future module, commit and publish each logical unit immediately;
    use the connected GitHub API until local GitHub CLI authentication exists.
 
@@ -340,13 +362,14 @@ parity test is pending for the ZAI unit.
 
 `CONVERSION-LEDGER.md` is generated and contains one row for every 3,882 upstream inventory modules: 1,103 production tasks plus 2,779 oracle/test tasks. Only `done` counts toward completion.
 
-- All tracked modules: 73 done / 9 partial / 3,800 missing = **1.88%**.
-- Production modules: 73 done / 9 partial / 1,021 missing = **6.62%**.
+- All tracked modules: 73 done / 10 partial / 3,799 missing = **1.88%**.
+- Production modules: 73 done / 10 partial / 1,020 missing = **6.62%**.
 
-The nine partial production rows are `hermes_constants`, `providers.base`,
-`providers.__init__`, `tools.credential_files`,
-`tools.delegation_output_schema`, `tools.threat_patterns`, `tools.todo_tool`,
-`tools.tool_backend_helpers`, and `tools.tool_output_limits`. Their closure
+The ten partial production rows are `agent.auxiliary_client`,
+`hermes_constants`, `providers.base`, `providers.__init__`,
+`tools.credential_files`, `tools.delegation_output_schema`,
+`tools.threat_patterns`, `tools.todo_tool`, `tools.tool_backend_helpers`,
+and `tools.tool_output_limits`. Their closure
 seams are listed in the ledger and PLAN.md.
 
 Regenerate with:
@@ -470,6 +493,11 @@ The strict production formula is `done production modules / 1,103`; partial rows
   independently so vendor-prefixed IDs still receive the native top-level
   `reasoning_effort`. The Rust adapter emits the same `thinking` body and
   fail-open empty maps for unsupported/no-config cases.
+- The auxiliary-client predicate slice uses explicit Rust adapter inputs for
+  Python hidden state: `main_provider`, OpenRouter/Nous credential-presence
+  booleans, and `AuxiliaryError` status/type/message. This preserves the source
+  classification precedence while leaving client/transport/fallback lifecycle
+  semantics pending with the partial module.
 
 - Platform cache-resetting tests are serialized because the production WSL and
   container detectors intentionally cache for process lifetime; the mutex is
@@ -484,14 +512,14 @@ Cloud, 2 AI Gateway, 2 Alibaba, 2 Alibaba Coding Plan, 3 Anthropic, 3 Gemini,
 2 Arcee, 2 Azure
 Foundry, 2 Bedrock, 3 Copilot, 2 Copilot ACP, 2 Fireworks, 2 GMI, 2 Kilo
 Code, 3 Kimi Coding, 2 NovitaAI, 2 NVIDIA, 2 StepFun, 3 Vertex, 2 DeepInfra,
-5 ZAI profile,
+5 auxiliary-client predicate/wire/error, 5 ZAI profile,
 2 DeepSeek, 3 Nous, 3 Minimax, 2 OpenAI Codex, 4 Qwen OAuth, 4 Upstage,
 2 Xiaomi, 2 XAI, and 2 Hugging Face profile
 tests. The
 required workspace build and test also passed with the explicit cargo
 toolchain; three
 delegation/schema doc tests are intentionally ignored. Inventory and
-conversion ledger were regenerated and now record 73 done / 9 partial / 1,021
+conversion ledger were regenerated and now record 73 done / 10 partial / 1,020
 missing production modules.
 
 ## First command tomorrow
