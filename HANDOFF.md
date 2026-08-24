@@ -9,7 +9,7 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
 Current branch/HEAD: `main` is aligned with `origin/main` after the local and
-GitHub API mirror sequence for the final auxiliary-client handoff checkpoint.
+GitHub API mirror sequence for the credential-pool row-model unit.
 The connected GitHub API publishes each logical commit immediately as a
 sequential remote mirror. Its commit SHAs differ from the local sequence
 because the API cannot preserve local author/committer timestamps, but every
@@ -17,7 +17,9 @@ tree snapshot and commit message matches and is verified before each ref
 update. The local HTTPS Git client still has no credentials; use the connected
 GitHub API for future pushes until `gh auth login` or SSH is configured.
 
-Latest synchronized unit: local handoff `ffcdf32` → GitHub `2dec2f0`
+Latest synchronized unit: local source `1011551` → GitHub `6858357`
+(`feat(agent): port credential pool row model @ b9aa928`), with the previous
+local handoff `ffcdf32` → GitHub `2dec2f0`
 (`handoff: record final auxiliary docs refs @ b9aa928`), with the previous
 local handoff `743fbcf` → GitHub `539b7c0`
 (`handoff: finalize auxiliary reqwest checkpoint @ b9aa928`), the earlier
@@ -169,7 +171,10 @@ process-global `hermes-tools::parity_credential_files` race twice; the exact
 isolated test and serialized workspace test passed, with only the three
 intentional delegation/schema doc tests ignored. Auth-store orchestration,
 environment/config seeding, OAuth refresh, leases, random selection, logging
-throttles, and cross-process pool locking remain pending.
+throttles, and cross-process pool locking remain pending. Local source commit
+`1011551` was mirrored as GitHub `6858357`; both refs resolve to the verified
+tree `39b2fe2271e125baa2d27dc9be769ccb00d7085e` with 270 matching tracked
+blobs.
 
 The current auxiliary-client transport/pool unit adds
 `AuxiliaryHttpClientConfig` and `openai_client_config_with_transport` in
@@ -528,8 +533,8 @@ hardening remains in the preceding synchronized history.
 ## Exact working-tree state
 
 Local `main` and `origin/main` both resolve to GitHub's API-authored
-`2dec2f04b56b652d49e6d866dce90f9d4250ed0e`; their trees both resolve to
-`7ec804d59c405122dad0ae12ed1321eea8956881`. The recursive GitHub tree and
+`6858357294d878fd8929bae054c7ce388f507431`; their trees both resolve to
+`39b2fe2271e125baa2d27dc9be769ccb00d7085e`. The recursive GitHub tree and
 local `git ls-tree -r` contain 270 blobs with no path/mode/SHA mismatches, and
 the worktree is clean. No conversion-ledger status changed: the current
 summary is 73 done / 11 partial / 3,798 missing tracked modules and 73 done /
