@@ -57,6 +57,8 @@ pub struct ProviderProfile {
     pub fixed_temperature: FixedTemperature,
     pub default_max_tokens: Option<u32>,
     pub default_aux_model: String,
+    /// Use Actual Computer's environment-aware `/models` catalog hook.
+    pub actual_catalog: bool,
     /// Disable REST model discovery when a provider uses a separate SDK.
     pub models_fetch_disabled: bool,
     /// Select a provider-specific model-catalog request shape.
@@ -100,6 +102,7 @@ impl ProviderProfile {
             fixed_temperature: FixedTemperature::CallerDefault,
             default_max_tokens: None,
             default_aux_model: String::new(),
+            actual_catalog: false,
             models_fetch_disabled: false,
             models_fetch_mode: ModelsFetchMode::Standard,
             gemini_thinking: false,
@@ -204,6 +207,10 @@ impl ProviderProfile {
         base_url: Option<&str>,
         timeout: f64,
     ) -> Option<Vec<String>> {
+        if self.actual_catalog {
+            return fetch_actual_models(api_key, base_url, timeout, &self.base_url);
+        }
+
         // PARITY: BedrockProfile overrides the upstream method and always
         // returns None because model discovery uses the AWS SDK, not REST.
         if self.models_fetch_disabled {
@@ -393,6 +400,112 @@ impl ProviderProfile {
 
         Err("too many redirects".into())
     }
+}
+
+fn fetch_actual_models(
+    api_key: Option<&str>,
+    base_url: Option<&str>,
+    timeout: f64,
+    profile_base_url: &str,
+) -> Option<Vec<String>> {
+    // PARITY: ActualProfile prefers a non-empty ACTUAL_BASE_URL environment
+    // override, then the caller base URL, then its hosted profile default.
+    let environment_base_url = std::env::var("ACTUAL_BASE_URL").unwrap_or_default();
+    let raw_base_url = if !environment_base_url.trim().is_empty() {
+        environment_base_url.trim().to_owned()
+    } else {
+        base_url
+            .filter(|value| !value.is_empty())
+            .unwrap_or(profile_base_url)
+            .to_owned()
+    };
+    let normalized_base_url = normalize_actual_base_url(&raw_base_url);
+    if normalized_base_url.is_empty() {
+        return None;
+    }
+
+    let timeout = if timeout.is_finite() && timeout >= 0.0 {
+        Duration::from_secs_f64(timeout)
+    } else {
+        return None;
+    };
+    let endpoint = format!("{}/models", normalized_base_url.trim_end_matches('/'));
+    let client = Client::builder().timeout(timeout).build().ok()?;
+    let mut request = client
+        .get(endpoint)
+        .header(ACCEPT, "application/json")
+        .header(USER_AGENT, profile_user_agent());
+    if let Some(api_key) = api_key.filter(|value| !value.is_empty()) {
+        request = request.header(AUTHORIZATION, format!("Bearer {api_key}"));
+    }
+
+    let result = (|| {
+        let response = request.send().map_err(|error| error.to_string())?;
+        let response = response
+            .error_for_status()
+            .map_err(|error| error.to_string())?;
+        let payload = response.bytes().map_err(|error| error.to_string())?;
+        let data: Value = serde_json::from_slice(&payload).map_err(|error| error.to_string())?;
+        let items = match data {
+            Value::Array(items) => items,
+            Value::Object(mut object) => match object.remove("data") {
+                None => Vec::new(),
+                Some(Value::Array(items)) => items,
+                Some(Value::String(_) | Value::Object(_)) => Vec::new(),
+                Some(_) => return Err("Actual model catalog data is not iterable".into()),
+            },
+            Value::String(_) => Vec::new(),
+            _ => return Err("Actual model catalog response is not iterable".into()),
+        };
+        Ok::<Vec<String>, String>(
+            items
+                .into_iter()
+                .filter_map(|item| match item {
+                    Value::Object(object) => object
+                        .get("id")
+                        .and_then(Value::as_str)
+                        .map(ToOwned::to_owned),
+                    _ => None,
+                })
+                .collect(),
+        )
+    })();
+
+    match result {
+        Ok(models) => Some(models),
+        Err(error) => {
+            log::debug!("fetch_models(actual): {error}");
+            None
+        }
+    }
+}
+
+fn normalize_actual_base_url(base_url: &str) -> String {
+    // PARITY: `_normalize_actual_base_url` adds `/v1` only for Actual's
+    // hosted root and recognized local roots; all other paths are preserved.
+    let url = base_url.trim().trim_end_matches('/').to_owned();
+    if url.is_empty() {
+        return "https://api.actual.inc/v1".into();
+    }
+
+    let Ok(parsed) = Url::parse(&url) else {
+        return url;
+    };
+    let host = parsed
+        .host_str()
+        .unwrap_or_default()
+        .to_ascii_lowercase()
+        .trim_end_matches('.')
+        .to_owned();
+    let path = parsed.path().trim_end_matches('/');
+    let is_root = path.is_empty() || path == "/";
+    if (host == "api.actual.inc"
+        || matches!(host.as_str(), "localhost" | "127.0.0.1" | "::1" | "0.0.0.0"))
+        && is_root
+    {
+        return format!("{url}/v1");
+    }
+    url
 }
 
 // PARITY: _DeepInfraProfile.default_vision_model() gates on

@@ -1,7 +1,7 @@
 # Hermes Agent → Hermes Agent Rust Conversion Ledger
 
-**Current strict completion: 1.67% of all tracked upstream modules (65/3882).**
-Production-only strict completion: **5.89%** (65/1103 production modules).
+**Current strict completion: 1.70% of all tracked upstream modules (66/3882).**
+Production-only strict completion: **5.98%** (66/1103 production modules).
 
 > This file is generated from `tools/inventory.json`; update the source ledger in `tools/port_status.json`, regenerate the inventory, then run `python3 tools/conversion_ledger.py`. Only `done` counts toward the percentage. `partial` is intentionally zero credit until its stated parity seams are closed.
 
@@ -9,10 +9,10 @@ Production-only strict completion: **5.89%** (65/1103 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 65 | 9 | 3808 | 1.67% | 28,995/1,510,733 done LOC |
-| Production modules | 65 | 9 | 1029 | 5.89% | 28,995/843,792 done LOC |
+| All tracked modules | 66 | 9 | 3807 | 1.70% | 29,084/1,510,733 done LOC |
+| Production modules | 66 | 9 | 1028 | 5.98% | 29,084/843,792 done LOC |
 
-Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-24T12:09:14`.
+Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-24T12:24:54`.
 
 ## Definition of 100.00%
 
@@ -805,7 +805,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `plugins.memory.query_rewrite` | production | P4 | 139 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.memory.retaindb.__init__` | production | P4 | 804 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.memory.supermemory.__init__` | production | P4 | 1,053 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `plugins.model-providers.actual.__init__` | production | P4 | 89 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `plugins.model-providers.actual.__init__` | production | P4 | 89 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.model-providers.ai-gateway.__init__` | production | P4 | 43 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.model-providers.alibaba-coding-plan.__init__` | production | P4 | 21 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.model-providers.alibaba.__init__` | production | P4 | 13 | ✅ done | Maintain parity evidence; no remaining task in this row. |

@@ -4,6 +4,8 @@
 //! The registry calls `register_builtin_profiles()` before the user-plugin
 //! loader so user registrations retain upstream last-writer-wins precedence.
 
+#[path = "actual.rs"]
+mod actual;
 #[path = "ai_gateway.rs"]
 mod ai_gateway;
 #[path = "alibaba.rs"]
@@ -59,6 +61,7 @@ use crate::base::ProviderProfile;
 use crate::registry::{register_provider, ProviderSource};
 
 pub(crate) fn register_builtin_profiles() {
+    register_provider(actual::profile());
     register_provider(ai_gateway::profile());
     register_provider(alibaba::profile());
     register_provider(alibaba_coding_plan::profile());
@@ -91,6 +94,7 @@ pub(crate) fn load_profile(
 ) -> Result<Option<ProviderProfile>, String> {
     if source == ProviderSource::Bundled {
         match path.file_name().and_then(|name| name.to_str()) {
+            Some("actual") => return Ok(Some(actual::profile())),
             Some("alibaba") => return Ok(Some(alibaba::profile())),
             Some("alibaba-coding-plan") => return Ok(Some(alibaba_coding_plan::profile())),
             Some("ai-gateway") => return Ok(Some(ai_gateway::profile())),
