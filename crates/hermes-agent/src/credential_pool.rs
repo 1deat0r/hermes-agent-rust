@@ -159,7 +159,8 @@ pub struct SeedResult {
 /// store into this crate.
 ///
 /// PARITY: `agent/credential_pool.py._seed_from_singletons` (2453–2835),
-/// currently the `nous`, `qwen-oauth`, and `minimax-oauth` branches. The caller supplies the
+/// currently the `nous`, `qwen-oauth`, `minimax-oauth`, and `openai-codex`
+/// branches. The caller supplies the
 /// already-resolved provider object and source suppression set; `None` means
 /// the provider state/resolver result was absent, while
 /// `Some(empty/object-without-runtime)` preserves each source branch's
@@ -261,6 +262,57 @@ pub fn seed_from_singletons(
         }
         payload.insert("base_url".into(), Value::String(base_url.into()));
         payload.insert("label".into(), Value::String(label.into()));
+        result.changed = upsert_entry(entries, provider, source, &payload);
+        return result;
+    }
+
+    if provider == "openai-codex" {
+        let source = "device_code";
+        if suppressed_sources.contains(source) {
+            return result;
+        }
+        let Some(state) = state else {
+            return result;
+        };
+        let Some(tokens) = state.get("tokens").and_then(Value::as_object) else {
+            return result;
+        };
+        let Some(access_token) = tokens
+            .get("access_token")
+            .and_then(Value::as_str)
+            .filter(|token| !token.is_empty())
+        else {
+            return result;
+        };
+
+        result.active_sources.insert(source.into());
+        let custom_label = state
+            .get("label")
+            .and_then(Value::as_str)
+            .map(str::trim)
+            .filter(|label| !label.is_empty());
+        let fallback_label = label_from_token(access_token, source);
+        let mut payload = Map::new();
+        payload.insert("source".into(), Value::String(source.into()));
+        payload.insert("auth_type".into(), Value::String(AUTH_TYPE_OAUTH.into()));
+        payload.insert(
+            "access_token".into(),
+            Value::String(access_token.to_owned()),
+        );
+        if let Some(value) = tokens.get("refresh_token").filter(|value| !value.is_null()) {
+            payload.insert("refresh_token".into(), value.clone());
+        }
+        payload.insert(
+            "base_url".into(),
+            Value::String("https://chatgpt.com/backend-api/codex".into()),
+        );
+        if let Some(value) = state.get("last_refresh").filter(|value| !value.is_null()) {
+            payload.insert("last_refresh".into(), value.clone());
+        }
+        payload.insert(
+            "label".into(),
+            Value::String(custom_label.unwrap_or(&fallback_label).into()),
+        );
         result.changed = upsert_entry(entries, provider, source, &payload);
         return result;
     }

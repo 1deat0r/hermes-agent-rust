@@ -13,6 +13,9 @@ GitHub API mirror sequence for the MiniMax OAuth singleton seeder. The local
 source commit `5abcc34da3bca6ac682931743ce85023cef183eb` was mirrored as
 GitHub `f9f4c457df15052546da0cf498f847e4d7d53e26`; both refs resolve to tree
 `f2de2de704c4ba7d61a57b230f0c6770ee303ed3` with 273 matching tracked blobs.
+The current OpenAI Codex source unit is being recorded in this next logical
+checkpoint; its exact source and mirror refs will be added immediately after
+publication.
 The connected GitHub API publishes each logical commit immediately as a
 sequential remote mirror. Its commit SHAs differ from the local sequence
 because the API cannot preserve local author/committer timestamps, but every
@@ -186,7 +189,8 @@ unmet while the conversion remains partial.
 
 The current source unit extends `hermes-agent::credential_pool` through the
 provider-singleton seeding boundary. It adds the explicit `seed_from_singletons`
-seam for the upstream Nous, Qwen, and MiniMax branches: Nous device-code source
+seam for the upstream Nous, Qwen, MiniMax, and OpenAI Codex branches: Nous
+device-code source
 suppression, stale device-code removal when singleton state has no runtime
 material, invoke-JWT agent-key/runtime selection, custom labels, and
 direct/extra metadata preservation for access/refresh expiry, obtained-at,
@@ -198,12 +202,17 @@ suppression, and custom-or-token-derived labels. Three source-derived `mock`
 tests were added first; the focused credential-pool wave now has 38 pool plus
 15 persistence tests. The upstream MiniMax branch has no dedicated
 singleton-seeding test, so its implementation is the code oracle and that
-gap is recorded in PLAN.md. The remaining singleton branches, full
+gap is recorded in PLAN.md. OpenAI Codex adds nested tokens, the fixed Codex
+backend URL, `last_refresh`, suppression, and custom-or-token-derived labels;
+three additional source-derived `mock` tests bring the focused wave to 41
+pool plus 15 persistence tests. Existing upstream Codex auth-provider tests
+cover the nested auth-store shape, but no direct singleton-seeding test exists.
+The remaining singleton branches, full
 loader/config/custom-provider composition, Z.AI endpoint probing, OAuth
 refresh, leases, and logging throttles remain pending. Local source commit
-`5abcc34da3bca6ac682931743ce85023cef183eb` was mirrored as GitHub
-`f9f4c457df15052546da0cf498f847e4d7d53e26`; both refs resolve to tree
-`f2de2de704c4ba7d61a57b230f0c6770ee303ed3` with 273 matching tracked blobs.
+`5abcc34da3bca6ac682931743ce85023cef183eb` remains the latest published
+source checkpoint; the Codex source and immediate GitHub mirror refs will be
+recorded in the next handoff checkpoint.
 
 The preceding synchronized source unit extended `hermes-agent::credential_pool`
 through the lower environment-aware `load_pool` transaction. It added the
@@ -639,10 +648,11 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-Local `main` and `origin/main` are aligned at GitHub mirror commit
-`f9f4c457df15052546da0cf498f847e4d7d53e26`, whose tree
-`f2de2de704c4ba7d61a57b230f0c6770ee303ed3` was verified recursively with 273
-blobs and no path/mode/SHA mismatches. No conversion-ledger status changed:
+Before the OpenAI Codex source unit, local `main` and `origin/main` were
+aligned at GitHub mirror commit `f9f4c457df15052546da0cf498f847e4d7d53e26`,
+whose tree `f2de2de704c4ba7d61a57b230f0c6770ee303ed3` was verified recursively
+with 273 blobs and no path/mode/SHA mismatches. No conversion-ledger status
+changed:
 the current summary is 73 done / 11 partial / 3,798 missing tracked modules
 and 73 done / 11 partial / 1,019 missing production modules.
 
@@ -654,7 +664,7 @@ and 73 done / 11 partial / 1,019 missing production modules.
    serialization, source upsert, strategy, provider-boundary, selection,
    persistence, cooldown-recency merge, auth-store lock, and environment
    seeding input boundary, lower environment-aware load transaction, and Nous/
-   Qwen/MiniMax singleton state boundaries are now recorded.
+   Qwen/MiniMax/OpenAI Codex singleton state boundaries are now recorded.
 2. Then connect the auxiliary-client concrete transport to credential-pool
    lifecycle, cancellation, and provider fallback seams without promoting
    either partial module prematurely.
@@ -688,14 +698,15 @@ The strict production formula is `done production modules / 1,103`; partial rows
 ## Fidelity notes
 
 - The credential environment seeder, lower `load_pool` transaction, and
-  Nous/Qwen/MiniMax singleton seeders keep the agent crate bottom-up by taking
-  provider registry metadata, pool config, resolved singleton state,
-  secret-scope values, suppression state, and auth-store paths as explicit
-  inputs. Kimi's pure key-prefix endpoint routing, Nous state-to-pool field
-  copy, Qwen resolved-credential field copy, and MiniMax OAuth state mapping
-  are mirrored; the remaining singleton/config branches, custom-provider
-  composition, and the source's Z.AI network endpoint probe remain deferred
-  to the auth/provider layer.
+  Nous/Qwen/MiniMax/OpenAI Codex singleton seeders keep the agent crate
+  bottom-up by taking provider registry metadata, pool config, resolved
+  singleton state, secret-scope values, suppression state, and auth-store paths
+  as explicit inputs. Kimi's pure key-prefix endpoint routing, Nous state-to-
+  pool field copy, Qwen resolved-credential field copy, MiniMax OAuth state
+  mapping, and OpenAI Codex nested-token field copy are mirrored; the
+  remaining singleton/config branches, custom-provider composition, and the
+  source's Z.AI network endpoint probe remain deferred to the auth/provider
+  layer.
 - Desktop emitter is process-global like upstream; session-ID lookup remains a thread-local gateway seam.
 - Credential registration uses an ordered vector for Python dict insertion order; it remains thread-local rather than async-task-local.
 - Daemon pool rejects zero workers like Python; Rust Drop intentionally avoids joining wedged daemon workers.

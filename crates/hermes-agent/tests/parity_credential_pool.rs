@@ -568,6 +568,97 @@ fn minimax_oauth_singleton_seed_respects_oauth_suppression() {
     assert!(entries.is_empty());
 }
 
+// Tier: mock — mirrors tests/hermes_cli/test_auth_codex_provider.py's
+// auth-store token shape and the upstream openai-codex singleton branch.
+#[test]
+fn openai_codex_singleton_seed_materializes_nested_tokens_and_metadata() {
+    let state = json!({
+        "provider": "openai-codex",
+        "tokens": {
+            "access_token": "codex_access_token",
+            "refresh_token": "codex_refresh_token"
+        },
+        "last_refresh": "2026-08-24T12:00:00+00:00",
+        "label": "work-codex"
+    });
+    let state = state.as_object().unwrap().clone();
+    let mut entries = Vec::new();
+
+    let result = seed_from_singletons("openai-codex", &mut entries, Some(&state), &BTreeSet::new());
+
+    assert!(result.changed);
+    assert_eq!(
+        result.active_sources,
+        BTreeSet::from([String::from("device_code")])
+    );
+    assert_eq!(entries.len(), 1);
+    assert_eq!(entries[0].source, "device_code");
+    assert_eq!(entries[0].auth_type, "oauth");
+    assert_eq!(entries[0].access_token, "codex_access_token");
+    assert_eq!(
+        entries[0].refresh_token.as_deref(),
+        Some("codex_refresh_token")
+    );
+    assert_eq!(
+        entries[0].base_url.as_deref(),
+        Some("https://chatgpt.com/backend-api/codex")
+    );
+    assert_eq!(
+        entries[0].last_refresh.as_deref(),
+        Some("2026-08-24T12:00:00+00:00")
+    );
+    assert_eq!(entries[0].label, "work-codex");
+}
+
+// Tier: mock — mirrors the upstream label_from_token fallback and the
+// fail-open path when the nested Codex token object has no access token.
+#[test]
+fn openai_codex_singleton_seed_uses_token_label_and_fails_open_without_access() {
+    let token = jwt_with_claims(json!({"email": "codex@example.test"}));
+    let state = json!({
+        "tokens": {"access_token": token},
+        "last_refresh": "2026-08-24T12:00:00+00:00"
+    });
+    let state = state.as_object().unwrap().clone();
+    let mut entries = Vec::new();
+
+    let result = seed_from_singletons("openai-codex", &mut entries, Some(&state), &BTreeSet::new());
+
+    assert!(result.changed);
+    assert_eq!(entries.len(), 1);
+    assert_eq!(entries[0].label, "codex@example.test");
+
+    let empty_state = json!({"tokens": {"refresh_token": "refresh-only"}});
+    let empty_state = empty_state.as_object().unwrap().clone();
+    let mut empty_entries = Vec::new();
+    let empty_result = seed_from_singletons(
+        "openai-codex",
+        &mut empty_entries,
+        Some(&empty_state),
+        &BTreeSet::new(),
+    );
+    assert!(!empty_result.changed);
+    assert!(empty_result.active_sources.is_empty());
+    assert!(empty_entries.is_empty());
+}
+
+// Tier: mock — mirrors the upstream device_code suppression gate.
+#[test]
+fn openai_codex_singleton_seed_respects_device_code_suppression() {
+    let state = json!({
+        "tokens": {"access_token": "codex_access_token"}
+    });
+    let state = state.as_object().unwrap().clone();
+    let mut entries = Vec::new();
+    let suppressed = BTreeSet::from([String::from("device_code")]);
+
+    let result = seed_from_singletons("openai-codex", &mut entries, Some(&state), &suppressed);
+
+    assert!(!result.changed);
+    assert!(result.active_sources.is_empty());
+    assert!(entries.is_empty());
+}
+
 // Tier: unit — mirrors agent/credential_pool.py _select_unlocked fill-first path.
 #[test]
 fn fill_first_selection_follows_priority_and_tracks_current_entry() {
