@@ -744,6 +744,145 @@ fn xai_oauth_singleton_seed_respects_suppression_and_missing_tokens() {
     assert!(entries.is_empty());
 }
 
+// Tier: mock — mirrors tests/agent/test_credential_pool.py::
+// test_load_pool_oauth_path_still_autodiscovers and the upstream Anthropic
+// singleton branch's resolved credential-file inputs.
+#[test]
+fn anthropic_singleton_seed_materializes_resolved_oauth_sources() {
+    let state = json!({
+        "provider_explicitly_configured": true,
+        "api_key_path_explicit": false,
+        "hermes_pkce": {
+            "accessToken": "sk-ant-oat01-pkce-token",
+            "refreshToken": "pkce-refresh",
+            "expiresAt": 1_900_000_000_000i64
+        },
+        "claude_code": {
+            "accessToken": "sk-ant-oat01-claude-code-token",
+            "refreshToken": "claude-refresh",
+            "expiresAt": 1_900_000_100_000i64
+        }
+    });
+    let state = state.as_object().unwrap().clone();
+    let mut entries = Vec::new();
+
+    let result = seed_from_singletons("anthropic", &mut entries, Some(&state), &BTreeSet::new());
+
+    assert!(result.changed);
+    assert_eq!(
+        result.active_sources,
+        BTreeSet::from([String::from("claude_code"), String::from("hermes_pkce")])
+    );
+    assert_eq!(entries.len(), 2);
+    let pkce = entries
+        .iter()
+        .find(|entry| entry.source == "hermes_pkce")
+        .unwrap();
+    assert_eq!(pkce.auth_type, "oauth");
+    assert_eq!(pkce.access_token, "sk-ant-oat01-pkce-token");
+    assert_eq!(pkce.refresh_token.as_deref(), Some("pkce-refresh"));
+    assert_eq!(pkce.expires_at_ms, Some(1_900_000_000_000));
+    assert_eq!(pkce.label, "hermes_pkce");
+    assert_eq!(
+        entries
+            .iter()
+            .find(|entry| entry.source == "claude_code")
+            .unwrap()
+            .expires_at_ms,
+        Some(1_900_000_100_000)
+    );
+}
+
+// Tier: mock — mirrors tests/agent/test_credential_pool.py::
+// test_load_pool_api_key_path_prunes_stale_oauth_entries.
+#[test]
+fn anthropic_singleton_seed_prunes_autodiscovered_sources_on_api_key_path() {
+    let state = json!({
+        "provider_explicitly_configured": true,
+        "api_key_path_explicit": true
+    });
+    let state = state.as_object().unwrap().clone();
+    let mut entries = vec![
+        PooledCredential::from_json(
+            "anthropic",
+            &json!({
+                "id": "stale-cc",
+                "source": "claude_code",
+                "auth_type": "oauth",
+                "access_token": "stale-cc-token"
+            }),
+        ),
+        PooledCredential::from_json(
+            "anthropic",
+            &json!({
+                "id": "stale-pkce",
+                "source": "hermes_pkce",
+                "auth_type": "oauth",
+                "access_token": "stale-pkce-token"
+            }),
+        ),
+        PooledCredential::from_json(
+            "anthropic",
+            &json!({
+                "id": "manual",
+                "source": "manual",
+                "auth_type": "api_key",
+                "access_token": "manual-token"
+            }),
+        ),
+    ];
+
+    let result = seed_from_singletons("anthropic", &mut entries, Some(&state), &BTreeSet::new());
+
+    assert!(result.changed);
+    assert!(result.active_sources.is_empty());
+    assert_eq!(entries.len(), 1);
+    assert_eq!(entries[0].source, "manual");
+}
+
+// Tier: mock — mirrors tests/agent/test_credential_pool.py::
+// test_load_pool_does_not_seed_claude_code_when_anthropic_not_configured.
+#[test]
+fn anthropic_singleton_seed_requires_explicit_provider_configuration() {
+    let state = json!({
+        "provider_explicitly_configured": false,
+        "api_key_path_explicit": false,
+        "claude_code": {"accessToken": "sk-ant-oat01-token"}
+    });
+    let state = state.as_object().unwrap().clone();
+    let mut entries = Vec::new();
+
+    let result = seed_from_singletons("anthropic", &mut entries, Some(&state), &BTreeSet::new());
+
+    assert!(!result.changed);
+    assert!(result.active_sources.is_empty());
+    assert!(entries.is_empty());
+}
+
+// Tier: mock — mirrors the shared per-source suppression gate.
+#[test]
+fn anthropic_singleton_seed_respects_source_suppression() {
+    let state = json!({
+        "provider_explicitly_configured": true,
+        "api_key_path_explicit": false,
+        "hermes_pkce": {"accessToken": "sk-ant-oat01-pkce-token"},
+        "claude_code": {"accessToken": "sk-ant-oat01-claude-token"}
+    });
+    let state = state.as_object().unwrap().clone();
+    let mut entries = Vec::new();
+    let suppressed = BTreeSet::from([String::from("claude_code")]);
+
+    let result = seed_from_singletons("anthropic", &mut entries, Some(&state), &suppressed);
+
+    assert!(result.changed);
+    assert_eq!(
+        result.active_sources,
+        BTreeSet::from([String::from("hermes_pkce")])
+    );
+    assert_eq!(entries.len(), 1);
+    assert_eq!(entries[0].source, "hermes_pkce");
+}
+
 // Tier: unit — mirrors agent/credential_pool.py _select_unlocked fill-first path.
 #[test]
 fn fill_first_selection_follows_priority_and_tracks_current_entry() {

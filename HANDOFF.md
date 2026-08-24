@@ -1,6 +1,6 @@
 # Hermes Agent Rust — Next-session handoff
 
-Date: 2026-08-24 (Pacific/Auckland), session 4c9.
+Date: 2026-08-24 (Pacific/Auckland), session 4cd.
 
 ## Resume point
 
@@ -9,8 +9,10 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
 Current branch/HEAD: `main` is aligned with `origin/main` after the local and
-GitHub API mirror sequence for the xAI OAuth singleton seeder. The local source
-commit `3d6ae211cdddfd859c5d86487b5811c8b8d9afd3` was mirrored as GitHub
+GitHub API mirror sequence for the xAI OAuth singleton seeder. The next local
+source unit adds the Anthropic OAuth singleton seeder; its exact local/GitHub
+refs will be recorded immediately after publication. The local source commit
+`3d6ae211cdddfd859c5d86487b5811c8b8d9afd3` was mirrored as GitHub
 `f6bc402553af0c828fca84fc382e060dadef326a`; both refs resolve to tree
 `156891e38d39a8aa21bde13a133a4202a4672e91` with 273 matching tracked blobs.
 The connected GitHub API publishes each logical commit immediately as a
@@ -192,7 +194,10 @@ unmet while the conversion remains partial.
 
 The current source unit extends `hermes-agent::credential_pool` through the
 provider-singleton seeding boundary. It adds the explicit `seed_from_singletons`
-seam for the upstream Nous, Qwen, MiniMax, OpenAI Codex, and xAI branches: Nous
+seam for the upstream Anthropic, Nous, Qwen, MiniMax, OpenAI Codex, and xAI
+branches: Anthropic provider opt-in/API-key-path gates, resolved
+`hermes_pkce`/`claude_code` credential-file access/refresh/expiry/label mapping,
+source suppression, and stale autodiscovered-row pruning; Nous
 device-code source
 suppression, stale device-code removal when singleton state has no runtime
 material, invoke-JWT agent-key/runtime selection, custom labels, and
@@ -214,12 +219,14 @@ The xAI OAuth branch adds nested tokens, the fixed xAI endpoint,
 `last_refresh`, device-code suppression, and token-derived labels; three
 additional source-derived `mock` tests bring the focused wave to 44 pool plus
 15 persistence tests. Dedicated upstream xAI pool-seeding tests cover
-materialization and suppression. The remaining singleton branches, full
+materialization and suppression. Four additional Anthropic source-derived
+`mock` tests bring the focused wave to 48 pool plus 15 persistence tests (63
+total). The remaining singleton branches, full
 loader/config/custom-provider composition, Z.AI endpoint probing, OAuth
 refresh, leases, and logging throttles remain pending. Local source commit
-`3d6ae211cdddfd859c5d86487b5811c8b8d9afd3` was mirrored as GitHub
-`f6bc402553af0c828fca84fc382e060dadef326a`; both refs resolve to tree
-`156891e38d39a8aa21bde13a133a4202a4672e91` with 273 matching tracked blobs.
+`3d6ae211cdddfd859c5d86487b5811c8b8d9afd3` remains the latest published
+source mirror; the Anthropic source refs are recorded in the next docs
+checkpoint.
 
 The preceding synchronized source unit extended `hermes-agent::credential_pool`
 through the lower environment-aware `load_pool` transaction. It added the
@@ -655,7 +662,8 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-Local `main` and `origin/main` are aligned at GitHub mirror commit
+Before the Anthropic source unit, local `main` and `origin/main` were aligned at
+GitHub mirror commit
 `f6bc402553af0c828fca84fc382e060dadef326a`, whose tree
 `156891e38d39a8aa21bde13a133a4202a4672e91` was verified recursively with 273
 blobs and no path/mode/SHA mismatches. No conversion-ledger status changed:
@@ -669,8 +677,9 @@ and 73 done / 11 partial / 1,019 missing production modules.
    OAuth refresh; the row model,
    serialization, source upsert, strategy, provider-boundary, selection,
    persistence, cooldown-recency merge, auth-store lock, and environment
-   seeding input boundary, lower environment-aware load transaction, and Nous/
-   Qwen/MiniMax/OpenAI Codex/xAI singleton state boundaries are now recorded.
+   seeding input boundary, lower environment-aware load transaction, and
+   Anthropic/Nous/Qwen/MiniMax/OpenAI Codex/xAI singleton state boundaries are
+   now recorded.
 2. Then connect the auxiliary-client concrete transport to credential-pool
    lifecycle, cancellation, and provider fallback seams without promoting
    either partial module prematurely.
@@ -704,15 +713,17 @@ The strict production formula is `done production modules / 1,103`; partial rows
 ## Fidelity notes
 
 - The credential environment seeder, lower `load_pool` transaction, and
-  Nous/Qwen/MiniMax/OpenAI Codex/xAI singleton seeders keep the agent crate
+  Anthropic/Nous/Qwen/MiniMax/OpenAI Codex/xAI singleton seeders keep the agent crate
   bottom-up by taking provider registry metadata, pool config, resolved
   singleton state, secret-scope values, suppression state, and auth-store paths
-  as explicit inputs. Kimi's pure key-prefix endpoint routing, Nous state-to-
-  pool field copy, Qwen resolved-credential field copy, MiniMax OAuth state
-  mapping, OpenAI Codex nested-token field copy, and xAI nested-token field
-  copy are mirrored; the remaining singleton/config branches, custom-provider
-  composition, and the source's Z.AI network endpoint probe remain deferred
-  to the auth/provider layer.
+  as explicit inputs. Anthropic's provider/API-key-path gates and resolved
+  `hermes_pkce`/`claude_code` credential-file outputs are represented in that
+  seam. Kimi's pure key-prefix endpoint routing, Nous state-to-pool field copy,
+  Qwen resolved-credential field copy, MiniMax OAuth state mapping, OpenAI Codex
+  nested-token field copy, and xAI nested-token field copy are mirrored; the
+  remaining singleton/config branches, custom-provider composition, and the
+  source's Z.AI network endpoint probe remain deferred to the auth/provider
+  layer.
 - Desktop emitter is process-global like upstream; session-ID lookup remains a thread-local gateway seam.
 - Credential registration uses an ordered vector for Python dict insertion order; it remains thread-local rather than async-task-local.
 - Daemon pool rejects zero workers like Python; Rust Drop intentionally avoids joining wedged daemon workers.

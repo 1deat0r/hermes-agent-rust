@@ -159,12 +159,16 @@ pub struct SeedResult {
 /// store into this crate.
 ///
 /// PARITY: `agent/credential_pool.py._seed_from_singletons` (2453–2835),
-/// currently the `nous`, `qwen-oauth`, `minimax-oauth`, `openai-codex`, and
-/// `xai-oauth` branches. The caller supplies the
+/// currently the `anthropic`, `nous`, `qwen-oauth`, `minimax-oauth`,
+/// `openai-codex`, and `xai-oauth` branches. The caller supplies the
 /// already-resolved provider object and source suppression set; `None` means
 /// the provider state/resolver result was absent, while
 /// `Some(empty/object-without-runtime)` preserves each source branch's
 /// fail-open behavior.
+/// For `anthropic`, the resolved map also carries
+/// `provider_explicitly_configured`, `api_key_path_explicit`, and the
+/// `hermes_pkce`/`claude_code` credential-file results so this crate does not
+/// import the CLI or adapter layers.
 pub fn seed_from_singletons(
     provider: &str,
     entries: &mut Vec<PooledCredential>,
@@ -172,6 +176,74 @@ pub fn seed_from_singletons(
     suppressed_sources: &BTreeSet<String>,
 ) -> SeedResult {
     let mut result = SeedResult::default();
+
+    if provider == "anthropic" {
+        let Some(state) = state else {
+            return result;
+        };
+        if !state
+            .get("provider_explicitly_configured")
+            .and_then(Value::as_bool)
+            .unwrap_or(false)
+        {
+            return result;
+        }
+
+        if state
+            .get("api_key_path_explicit")
+            .and_then(Value::as_bool)
+            .unwrap_or(false)
+        {
+            let original_len = entries.len();
+            entries.retain(|entry| entry.source != "hermes_pkce" && entry.source != "claude_code");
+            result.changed = entries.len() != original_len;
+            return result;
+        }
+
+        for source in ["hermes_pkce", "claude_code"] {
+            let Some(source_state) = state.get(source).and_then(Value::as_object) else {
+                continue;
+            };
+            let Some(access_token) = source_state
+                .get("accessToken")
+                .and_then(Value::as_str)
+                .filter(|token| !token.is_empty())
+            else {
+                continue;
+            };
+            if suppressed_sources.contains(source) {
+                continue;
+            }
+
+            result.active_sources.insert(source.into());
+            let mut payload = Map::new();
+            payload.insert("source".into(), Value::String(source.into()));
+            payload.insert("auth_type".into(), Value::String(AUTH_TYPE_OAUTH.into()));
+            payload.insert(
+                "access_token".into(),
+                Value::String(access_token.to_owned()),
+            );
+            if let Some(value) = source_state
+                .get("refreshToken")
+                .filter(|value| !value.is_null())
+            {
+                payload.insert("refresh_token".into(), value.clone());
+            }
+            if let Some(expires_at_ms) = source_state.get("expiresAt").and_then(|value| {
+                value
+                    .as_i64()
+                    .or_else(|| value.as_u64().and_then(|value| i64::try_from(value).ok()))
+            }) {
+                payload.insert("expires_at_ms".into(), Value::from(expires_at_ms));
+            }
+            payload.insert(
+                "label".into(),
+                Value::String(label_from_token(access_token, source)),
+            );
+            result.changed |= upsert_entry(entries, provider, source, &payload);
+        }
+        return result;
+    }
 
     if provider == "qwen-oauth" {
         let Some(state) = state else {
