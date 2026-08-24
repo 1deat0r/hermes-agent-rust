@@ -1,6 +1,6 @@
 # Hermes Agent Rust — Next-session handoff
 
-Date: 2026-08-24 (Pacific/Auckland), session 4ae.
+Date: 2026-08-24 (Pacific/Auckland), session 4af.
 
 ## Resume point
 
@@ -17,8 +17,11 @@ update. The local HTTPS Git client still has no credentials; use the
 connected GitHub API for future pushes until `gh auth login` or SSH is
 configured.
 
-Latest synchronized unit: local source `54d7a3d` → GitHub `9d44d76`
-(`plugins.model-providers.minimax.__init__`, including current
+Latest synchronized unit: local source `adf7332` → GitHub `6e88a75`
+(`plugins.model-providers.custom.__init__`, including current plan/inventory
+metadata), after local handoff source `fa2a85a` → GitHub `b58e0aa`
+(`HANDOFF.md` for the Minimax unit), after local source `54d7a3d` → GitHub
+`9d44d76` (`plugins.model-providers.minimax.__init__`, including current
 plan/inventory metadata), after local handoff source `90d52cd` → GitHub
 `d880d1a` (`HANDOFF.md` for the Ollama Cloud unit), after local source
 `63db0cf` → GitHub `1262f1f`
@@ -79,7 +82,8 @@ because it cannot preserve the local author/committer timestamps.
 ## What landed this session
 
 Module-sized commits are complete through
-`plugins.model-providers.minimax.__init__`: `54d7a3d` locally, mirrored as
+`plugins.model-providers.custom.__init__`: `adf7332` locally, mirrored as
+`6e88a75` remotely; the Minimax profiles are `54d7a3d` locally, mirrored as
 `9d44d76` remotely; the Ollama Cloud profile is `63db0cf` locally, mirrored as
 `1262f1f` remotely; the Actual profile is `163edce` locally, mirrored as
 `5b7efa2` remotely; the Nous profile is `956fa19` locally, mirrored as
@@ -196,6 +200,14 @@ adaptive thinking for any supplied config, explicit disabled thinking, and
 no thinking body when config is absent. Auxiliary-client, OAuth runtime,
 and broader agent/transport integration remain future higher-layer seams.
 
+The Custom/Ollama local bundled profile is included in the new `adf7332`
+source commit and its `6e88a75` GitHub mirror. It mirrors Custom's six
+aliases, empty user-configured endpoint fields, 65,536 default max-token
+cap, `ollama_num_ctx` options body, disabled/`none` dual reasoning fields,
+trimmed/lowercased top-level effort passthrough, empty-config omission,
+and fail-open catalog guard until a base URL is configured. Broader CLI
+custom endpoint and transport integration remain future higher-layer seams.
+
 The Ollama Cloud bundled profile is included in the new `63db0cf` source
 commit and its `1262f1f` GitHub mirror. It mirrors the profile metadata,
 alias, API-key environment, base URL, auxiliary model, and the top-level
@@ -217,7 +229,8 @@ caching, and sorted bundled/user/legacy discovery. The focused suites contain
 9 base, 8 registry, 2 AI Gateway profile, 2 Alibaba profile, 2 Alibaba Coding
 Plan profile, 3 Anthropic profile, 3 Gemini profile, 2 Arcee profile, 2 Azure
 Foundry profile, 2 Bedrock profile, 3 Copilot profile, 2 Copilot ACP profile,
-2 Fireworks profile, 2 GMI profile, 2 Kilo Code profile, 2 NovitaAI profile,
+4 Custom profile, 2 Fireworks profile, 2 GMI profile, 2 Kilo Code profile,
+2 NovitaAI profile,
 2 NVIDIA profile, 2 StepFun profile, 3 Vertex profile, 2 DeepInfra profile,
 2 DeepSeek profile, 3 Nous profile, 3 Actual profile, 3 Ollama Cloud profile,
 3 Minimax profile, 2 OpenAI Codex profile, 2 Xiaomi profile, 2 XAI profile,
@@ -226,13 +239,13 @@ profile tests are green.
 The provider
 surface remains partial
 for the future CLI version/opener integration and remaining Rust plugin profile
-loaders. The next unit is `plugins.model-providers.custom.__init__` (103 LOC).
+loaders. The next unit is `plugins.model-providers.qwen-oauth.__init__` (108 LOC).
 
-The required Minimax workspace verification was green before the synchronized
+The required Custom workspace verification was green before the synchronized
 commit:
 
 ```text
-PATH=/home/mustbearnold/.cargo/bin:$PATH cargo test -p hermes-providers --test parity_minimax --test parity_base --test parity_registry
+PATH=/home/mustbearnold/.cargo/bin:$PATH cargo test -p hermes-providers --test parity_custom --test parity_base --test parity_registry
 PATH=/home/mustbearnold/.cargo/bin:$PATH cargo build --workspace
 PATH=/home/mustbearnold/.cargo/bin:$PATH cargo test --workspace --quiet
 ```
@@ -246,15 +259,15 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-After the current Minimax commit is mirrored and this handoff commit is aligned
+After the current Custom commit is mirrored and this handoff commit is aligned
 to its remote mirror, the working tree is clean. The committed metadata
 includes `AGENTS.md`, `PLAN.md`, `tools/port_status.json`, generated
 `tools/inventory.json`, `CONVERSION-LEDGER.md`, and this handoff. No code or
-parity test is pending for the Minimax unit.
+parity test is pending for the Custom unit.
 
 ## Next actions, in order
 
-1. Start `plugins.model-providers.custom.__init__` (103 LOC) by reading its
+1. Start `plugins.model-providers.qwen-oauth.__init__` (108 LOC) by reading its
    pinned source/tests and writing profile-registration parity tests first.
 2. Keep the static bundled-profile registration order and user-loader seam
    explicit while adding the next provider profile.
@@ -265,8 +278,8 @@ parity test is pending for the Minimax unit.
 
 `CONVERSION-LEDGER.md` is generated and contains one row for every 3,882 upstream inventory modules: 1,103 production tasks plus 2,779 oracle/test tasks. Only `done` counts toward completion.
 
-- All tracked modules: 68 done / 9 partial / 3,805 missing = **1.75%**.
-- Production modules: 68 done / 9 partial / 1,026 missing = **6.17%**.
+- All tracked modules: 69 done / 9 partial / 3,804 missing = **1.78%**.
+- Production modules: 69 done / 9 partial / 1,025 missing = **6.26%**.
 
 The nine partial production rows are `hermes_constants`, `providers.base`,
 `providers.__init__`, `tools.credential_files`,
@@ -368,6 +381,12 @@ The strict production formula is `done production modules / 1,103`; partial rows
   when config is absent. Query-bearing `/v1` paths remain accepted per the
   upstream `urlparse(...).path` predicate; auxiliary/OAuth/transport seams
   remain future higher-layer integrations.
+- Custom's source `build_api_kwargs_extras` and `fetch_models` overrides are
+  represented by the explicit `custom_provider` capability. Truthy
+  `ollama_num_ctx` maps to `extra_body.options.num_ctx`; disabled/`none`
+  emits both top-level `reasoning_effort=none` and `think=false`; effort
+  values are trimmed/lowercased and passed through; empty configs omit
+  reasoning; and catalog probing fails open until a base URL is configured.
 - Platform cache-resetting tests are serialized because the production WSL and
   container detectors intentionally cache for process lifetime; the mutex is
   test-only and does not change detector behavior.
@@ -376,7 +395,7 @@ The strict production formula is `done production modules / 1,103`; partial rows
 
 ## Verification evidence
 
-The focused provider parity suites passed 9 base, 8 registry, 3 Actual, 3 Ollama
+The focused provider parity suites passed 9 base, 8 registry, 4 Custom, 3 Actual, 3 Ollama
 Cloud, 2 AI Gateway, 2 Alibaba, 2 Alibaba Coding Plan, 3 Anthropic, 3 Gemini,
 2 Arcee, 2 Azure
 Foundry, 2 Bedrock, 3 Copilot, 2 Copilot ACP, 2 Fireworks, 2 GMI, 2 Kilo
@@ -386,7 +405,7 @@ tests. The
 required workspace build and test also passed with the explicit cargo
 toolchain; three
 delegation/schema doc tests are intentionally ignored. Inventory and
-conversion ledger were regenerated and now record 68 done / 9 partial / 1,026
+conversion ledger were regenerated and now record 69 done / 9 partial / 1,025
 missing production modules.
 
 ## First command tomorrow

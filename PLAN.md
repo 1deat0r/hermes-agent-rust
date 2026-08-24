@@ -450,7 +450,7 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 ## 7. Session log
 
 - 2026-08-24 (session 4af): Ported
-  `plugins-model-providers/custom/__init__.py` (@ b9aa928, 103 LOC) through
+  `plugins/model-providers/custom/__init__.py` (@ b9aa928, 103 LOC) through
   a source-derived TDD pass against
   `tests/plugins/model_providers/test_custom_profile.py`. The profile mirrors
   the canonical `custom` name, six Ollama/local/OpenAI-compatible aliases,
@@ -491,8 +491,8 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   Minimax/base/registry regressions,
   `/home/mustbearnold/.cargo/bin/cargo build --workspace`, and
   `/home/mustbearnold/.cargo/bin/cargo test --workspace --quiet` are green.
-  Inventory and conversion ledger now record 68 done / 9 partial / 3,805
-  missing tracked modules and 68 done / 9 partial / 1,026 missing production
+  Inventory and conversion ledger now record 69 done / 9 partial / 3,804
+  missing tracked modules and 69 done / 9 partial / 1,025 missing production
   modules. The next dependency-safe production unit is
   `plugins.model-providers.custom.__init__` (103 LOC).
 
