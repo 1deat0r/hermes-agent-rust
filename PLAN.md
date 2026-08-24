@@ -502,6 +502,10 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   Added 8 source-derived `unit` parity tests first; the focused pool suite and
   the existing 37 auxiliary-client tests passed. The next auxiliary seam is
   concrete SDK/network client construction and pool persistence/refresh.
+  Required `/home/mustbearnold/.cargo/bin/cargo build --workspace` and
+  `/home/mustbearnold/.cargo/bin/cargo test --workspace` both passed; local
+  source commit `6fcc72f` was mirrored as GitHub `1d46bab`, with verified tree
+  `b69eb818bc34145186f7432c8ebe8910e3f461da` and 270 matching tracked blobs.
 
 - 2026-08-24 (session 4bd): Continued the partial
   `agent/auxiliary_client.py` port (@ b9aa928, 10,044 LOC) with the

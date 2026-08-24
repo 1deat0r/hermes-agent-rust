@@ -18,15 +18,17 @@ tree snapshot and commit message matches and is verified before each ref
 update. The local HTTPS Git client still has no credentials; use the connected
 GitHub API for future pushes until `gh auth login` or SSH is configured.
 
-Latest synchronized unit: local `895fbcf` → GitHub `ead6b5f`
-(`feat(agent): add auxiliary keepalive and pool parity @ b9aa928`), followed by
-the current credential-pool core unit, with the
-exact tree and all tracked blobs verified before aligning local `main` to the
-API-authored remote ref. The preceding documentation/GitHub metadata hook
-workflow and its handoff checkpoints were mirrored immediately after each
-local commit. The last auxiliary-client source unit before that workflow was
-local `9a0bc98` → GitHub `1550e03`; the older synchronized history follows.
-(`agent.auxiliary_client` Codex token selection, including current
+Latest synchronized unit: local `6fcc72f` → GitHub `1d46bab`
+(`feat(agent): port credential pool selection core @ b9aa928`), with the
+previous local `895fbcf` → GitHub `ead6b5f`
+(`feat(agent): add auxiliary keepalive and pool parity @ b9aa928`) immediately
+before it. The exact tree and all tracked blobs were verified before aligning
+local `main` to the API-authored remote ref, with the older synchronized
+history following. The preceding documentation/GitHub metadata hook workflow
+and its handoff checkpoints were mirrored immediately after each local commit.
+The last auxiliary-client source unit before that workflow was local `9a0bc98`
+→ GitHub `1550e03`; the older synchronized history follows. The
+`agent.auxiliary_client` Codex token-selection unit, including current
 PLAN/inventory/ledger metadata), after local handoff source `116bb97` →
 GitHub `9388f11` (`HANDOFF.md` for the Codex-header unit), after local source
 `4d229c2` → GitHub `40fd571`
@@ -142,8 +144,10 @@ matching; duplicate-key quarantine; and unmatched-identity fail-open rotation.
 Eight source-derived `unit` tests were added. Persistence/auth-store and env
 seeding, serialization, OAuth refresh, lease locking, random selection,
 logging throttles, and cross-process locking remain pending. The required
-workspace validation and local/GitHub mirror refs will be recorded after this
-unit is committed.
+`/home/mustbearnold/.cargo/bin/cargo build --workspace` and
+`/home/mustbearnold/.cargo/bin/cargo test --workspace` both passed; local
+`6fcc72f` was mirrored as GitHub `1d46bab`, and the remote/local tree is
+`b69eb818bc34145186f7432c8ebe8910e3f461da` with 270 matching tracked blobs.
 
 The current auxiliary-client transport/pool unit adds
 `AuxiliaryHttpClientConfig` and `openai_client_config_with_transport` in
@@ -485,12 +489,12 @@ hardening remains in the preceding synchronized history.
 ## Exact working-tree state
 
 Local `main` and `origin/main` both resolve to GitHub's API-authored
-`ead6b5fe39ed033f7847a7330b7d3ca172cdf014`; their trees both resolve to
-`d9720eddbe0198216912d7c3de6c8fb3693a45b1`. The recursive GitHub tree and
-local `git ls-tree -r` contain 268 blobs with no path/mode/SHA mismatches, and
-the worktree is clean. No conversion-ledger status changed: the module
-remains partial at 73 done / 10 partial / 3,799 missing tracked modules
-and 73 done / 10 partial / 1,020 missing production modules.
+`1d46bab5fd4dbdbbe264931c13b2d2a8023e079f`; their trees both resolve to
+`b69eb818bc34145186f7432c8ebe8910e3f461da`. The recursive GitHub tree and
+local `git ls-tree -r` contain 270 blobs with no path/mode/SHA mismatches, and
+the worktree is clean. No conversion-ledger status changed: the current
+summary is 73 done / 11 partial / 3,798 missing tracked modules and 73 done /
+11 partial / 1,020 missing production modules.
 
 ## Next actions, in order
 
@@ -508,10 +512,11 @@ and 73 done / 10 partial / 1,020 missing production modules.
 
 `CONVERSION-LEDGER.md` is generated and contains one row for every 3,882 upstream inventory modules: 1,103 production tasks plus 2,779 oracle/test tasks. Only `done` counts toward completion.
 
-- All tracked modules: 73 done / 10 partial / 3,799 missing = **1.88%**.
-- Production modules: 73 done / 10 partial / 1,020 missing = **6.62%**.
+- All tracked modules: 73 done / 11 partial / 3,798 missing = **1.88%**.
+- Production modules: 73 done / 11 partial / 1,020 missing = **6.62%**.
 
-The ten partial production rows are `agent.auxiliary_client`,
+The eleven partial production rows are `agent.auxiliary_client`,
+`agent.credential_pool`,
 `hermes_constants`, `providers.base`, `providers.__init__`,
 `tools.credential_files`, `tools.delegation_output_schema`,
 `tools.threat_patterns`, `tools.todo_tool`, `tools.tool_backend_helpers`,
