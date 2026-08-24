@@ -34,6 +34,33 @@
 6. **Commit.** One logical unit per commit. Message references the
    module(s) and upstream commit. Never commit a red build.
 
+## 2A. Mandatory documentation checkpoint
+
+A Codex task is not complete until its repository state is documented, even if
+it ends blocked or with a failing test:
+
+1. Update `tools/port_status.json` for every module-status change, regenerate
+   `tools/inventory.json` with `tools/inventory.sh`, and regenerate
+   `CONVERSION-LEDGER.md` with `python3 tools/conversion_ledger.py`.
+2. Update `PLAN.md` with phase status, parity evidence tier (`unit`, `mock`, or
+   `live`), exact validation commands, issues, and the next dependency-safe
+   unit.
+3. Update `HANDOFF.md` with the current branch/worktree state, completed
+   milestone, exact tests/checks, blockers, next action, and the generated
+   strict percentages for all tracked and production modules.
+4. If no module changed, explicitly record “no ledger change” plus the current
+   ledger counts and validation result in `HANDOFF.md`; do not fabricate a
+   `done` row merely to touch the file.
+5. Before the final response or commit, run `cargo build --workspace`,
+   `cargo test --workspace`, and `git diff --check` as applicable to the task,
+   then verify `PLAN.md`, `HANDOFF.md`, `tools/inventory.json`, and
+   `CONVERSION-LEDGER.md` agree.
+
+The final Codex response must name the documentation files updated or verified,
+quote the current ledger percentages, list exact validation commands, and state
+the next unit or blocker. A session that stops before this gate must leave a
+partial-work checkpoint in `HANDOFF.md`.
+
 ## 3. Porting conventions
 
 - One crate per upstream package/area (see PLAN §3). Dependency direction is
