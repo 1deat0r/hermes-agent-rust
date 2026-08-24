@@ -1,6 +1,6 @@
 # Hermes Agent Rust — Next-session handoff
 
-Date: 2026-08-24 (Pacific/Auckland), session 4aa.
+Date: 2026-08-24 (Pacific/Auckland), session 4ab.
 
 ## Resume point
 
@@ -17,7 +17,11 @@ update. The local HTTPS Git client still has no credentials; use the
 connected GitHub API for future pushes until `gh auth login` or SSH is
 configured.
 
-Latest synchronized units: local source `fd80752` → GitHub `372dc02`
+Latest synchronized units: local source `956fa19` → GitHub `6a3259f`
+(`plugins.model-providers.nous.__init__`, including current plan/inventory
+metadata), after local docs source `2523860` → GitHub `a6c7179` (`AGENTS.md`
+documentation checkpoint), after local handoff source `e69136b` → GitHub
+`87a5dd8` (`HANDOFF.md` for the DeepSeek unit), after local source `fd80752` → GitHub `372dc02`
 (`plugins.model-providers.deepseek.__init__`, including current plan/inventory
 metadata), after local handoff source `f9b2994` → GitHub `9baf32d`
 (`HANDOFF.md` for the DeepInfra unit), after local source `a7f45d2` → GitHub
@@ -64,7 +68,8 @@ because it cannot preserve the local author/committer timestamps.
 ## What landed this session
 
 Module-sized commits are complete through
-`plugins.model-providers.deepseek.__init__`: `fd80752` locally, mirrored as
+`plugins.model-providers.nous.__init__`: `956fa19` locally, mirrored as
+`6a3259f` remotely; the DeepSeek profile is `fd80752` locally, mirrored as
 `372dc02` remotely; the DeepInfra profile is `a7f45d2` locally, mirrored as
 `984bf1e` remotely; the Vertex profile is `1dca197` locally, mirrored as
 `bb20257` remotely; the required platform-cache test hardening is
@@ -150,6 +155,17 @@ disabled/no-op behavior, and maps effort levels to the top-level
 `reasoning_effort`; broader reasoning-content history repair remains a future
 agent/transport seam.
 
+The Nous bundled profile is included in the new `956fa19` source commit and
+its `6a3259f` GitHub mirror. It mirrors Nous's metadata, aliases, fallback
+models, OAuth device-code auth, Portal product/client/conversation tags,
+cron-stable sticky routing, provider preferences, and reasoning omission when
+disabled. The `nous_portal` capability uses the pinned b9aa928 client version
+and a `conversation_context` adapter; runtime CLI-version injection and
+ContextVar propagation remain future higher-layer seams.
+
+The repository documentation checkpoint is included in the separate
+`2523860` local commit and `a6c7179` GitHub mirror (`AGENTS.md`).
+
 The new `hermes-providers` crate ports `providers/base.py` and
 `providers/__init__.py` @ `b9aa928`: declarative profile defaults and hooks,
 model endpoint precedence, strict fail-open catalog parsing,
@@ -160,14 +176,14 @@ Plan profile, 3 Anthropic profile, 3 Gemini profile, 2 Arcee profile, 2 Azure
 Foundry profile, 2 Bedrock profile, 3 Copilot profile, 2 Copilot ACP profile,
 2 Fireworks profile, 2 GMI profile, 2 Kilo Code profile, 2 NovitaAI profile,
 2 NVIDIA profile, 2 StepFun profile, 3 Vertex profile, 2 DeepInfra profile,
-2 DeepSeek profile, 2 OpenAI Codex profile, 2 Xiaomi profile, 2 XAI profile,
-and 2 Hugging Face profile tests are green.
+2 DeepSeek profile, 3 Nous profile, 2 OpenAI Codex profile, 2 Xiaomi profile,
+2 XAI profile, and 2 Hugging Face profile tests are green.
 The provider
 surface remains partial
 for the future CLI version/opener integration and remaining Rust plugin profile
-loaders. The next unit is `plugins.model-providers.nous.__init__` (88 LOC).
+loaders. The next unit is `plugins.model-providers.actual.__init__` (89 LOC).
 
-The required DeepSeek workspace verification was green before the synchronized
+The required Nous workspace verification was green before the synchronized
 commit:
 
 ```text
@@ -184,15 +200,15 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-After the current DeepSeek commit is mirrored and this handoff commit is aligned to
+After the current Nous commit is mirrored and this handoff commit is aligned to
 its remote mirror, the working tree is clean. The committed metadata
-includes `PLAN.md`, `tools/port_status.json`, generated `tools/inventory.json`,
-`CONVERSION-LEDGER.md`, and this handoff. No code or parity test is pending
-for the DeepSeek unit.
+includes `AGENTS.md`, `PLAN.md`, `tools/port_status.json`, generated
+`tools/inventory.json`, `CONVERSION-LEDGER.md`, and this handoff. No code or
+parity test is pending for the Nous unit.
 
 ## Next actions, in order
 
-1. Start `plugins.model-providers.nous.__init__` (88 LOC) by reading its
+1. Start `plugins.model-providers.actual.__init__` (89 LOC) by reading its
    pinned source/tests and writing profile-registration parity tests first.
 2. Keep the static bundled-profile registration order and user-loader seam
    explicit while adding the next provider profile.
@@ -203,8 +219,8 @@ for the DeepSeek unit.
 
 `CONVERSION-LEDGER.md` is generated and contains one row for every 3,882 upstream inventory modules: 1,103 production tasks plus 2,779 oracle/test tasks. Only `done` counts toward completion.
 
-- All tracked modules: 64 done / 9 partial / 3,809 missing = **1.65%**.
-- Production modules: 64 done / 9 partial / 1,030 missing = **5.80%**.
+- All tracked modules: 65 done / 9 partial / 3,808 missing = **1.67%**.
+- Production modules: 65 done / 9 partial / 1,029 missing = **5.89%**.
 
 The nine partial production rows are `hermes_constants`, `providers.base`,
 `providers.__init__`, `tools.credential_files`,
@@ -279,6 +295,12 @@ The strict production formula is `done production modules / 1,103`; partial rows
   enabled/disabled thinking, and low/medium/high versus max effort mapping
   are preserved; broader reasoning-content replay/history repair remains a
   future agent/transport seam.
+- Nous's source `build_extra_body` and `build_api_kwargs_extras` overrides are
+  represented by the explicit `nous_portal` capability. Product/client and
+  conversation tags, cron timestamp normalization, truthy provider preference
+  forwarding, reasoning defaults, and disabled omission are preserved. The
+  pinned CLI version and `conversation_context` map key are explicit seams
+  until the higher-layer runtime supplies the live version and ContextVar.
 - Platform cache-resetting tests are serialized because the production WSL and
   container detectors intentionally cache for process lifetime; the mutex is
   test-only and does not change detector behavior.
@@ -290,12 +312,12 @@ The strict production formula is `done production modules / 1,103`; partial rows
 The focused provider parity suites passed 9 base, 8 registry, 2 AI Gateway, 2
 Alibaba, 2 Alibaba Coding Plan, 3 Anthropic, 3 Gemini, 2 Arcee, 2 Azure
 Foundry, 2 Bedrock, 3 Copilot, 2 Copilot ACP, 2 Fireworks, 2 GMI, 2 Kilo
-Code, 2 NovitaAI, 2 NVIDIA, 2 StepFun, 3 Vertex, 2 DeepInfra, 2 DeepSeek, 2 OpenAI
-Codex, 2 Xiaomi, 2 XAI, and 2 Hugging Face profile tests. The
+Code, 2 NovitaAI, 2 NVIDIA, 2 StepFun, 3 Vertex, 2 DeepInfra, 2 DeepSeek,
+3 Nous, 2 OpenAI Codex, 2 Xiaomi, 2 XAI, and 2 Hugging Face profile tests. The
 required workspace build and test also passed with the explicit cargo
 toolchain; three
 delegation/schema doc tests are intentionally ignored. Inventory and
-conversion ledger were regenerated and now record 64 done / 9 partial / 1,030
+conversion ledger were regenerated and now record 65 done / 9 partial / 1,029
 missing production modules.
 
 ## First command tomorrow
