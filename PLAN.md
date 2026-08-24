@@ -515,8 +515,10 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   Targeted `hermes-agent` Clippy still reports only the two pre-existing
   `auxiliary_client` lints. Remaining singleton branches, full loader/config
   composition, Z.AI probing, OAuth refresh, leases, and logging throttles
-  remain pending. The source commit and immediate GitHub mirror refs will be
-  recorded in the next handoff checkpoint.
+  remain pending. Local source commit
+  `c471092747601784ee50b4d9503b6877c379bb25` was mirrored as GitHub
+  `e4bd1f2199e3290a5adf381888c06f1bd0f3337d`; both refs resolve to tree
+  `115b270c7e7bfeae69ca6c628fbc1ee844c2e22f` with 273 matching tracked blobs.
 
 - 2026-08-24 (session 4c8): Continued the partial `agent.credential_pool`
   port (@ b9aa928) through the provider-singleton seeding boundary. Added the

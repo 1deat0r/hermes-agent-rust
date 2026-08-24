@@ -9,10 +9,10 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
 Current branch/HEAD: `main` is aligned with `origin/main` after the local and
-GitHub API mirror sequence for the Nous singleton seeder. The local source
-commit `e0d804b3b851b49ccc7688ee5e044ccdef5e7f26` was mirrored as GitHub
-`a8e152495fe343c6f793c7e1980add0ccda466ce`; both refs resolve to tree
-`cca9c7bdb420b42dd7abb7bf7b443de3ce6da2da` with 273 matching tracked blobs.
+GitHub API mirror sequence for the Qwen OAuth singleton seeder. The local
+source commit `c471092747601784ee50b4d9503b6877c379bb25` was mirrored as
+GitHub `e4bd1f2199e3290a5adf381888c06f1bd0f3337d`; both refs resolve to tree
+`115b270c7e7bfeae69ca6c628fbc1ee844c2e22f` with 273 matching tracked blobs.
 The connected GitHub API publishes each logical commit immediately as a
 sequential remote mirror. Its commit SHAs differ from the local sequence
 because the API cannot preserve local author/committer timestamps, but every
@@ -21,6 +21,10 @@ update. The local HTTPS Git client still has no credentials; use the connected
 GitHub API for future pushes until `gh auth login` or SSH is configured.
 
 Latest synchronized unit: local source
+`c471092747601784ee50b4d9503b6877c379bb25` → GitHub
+`e4bd1f2199e3290a5adf381888c06f1bd0f3337d`
+(`feat(agent): seed Qwen OAuth singleton credentials @ b9aa928`), with the
+previous local source
 `e0d804b3b851b49ccc7688ee5e044ccdef5e7f26` → GitHub
 `a8e152495fe343c6f793c7e1980add0ccda466ce`
 (`feat(agent): seed Nous singleton credentials @ b9aa928`), with the previous
@@ -189,9 +193,10 @@ absent-token fail-open behavior. Two source-derived `mock` tests were added
 first; the focused credential-pool wave now has 35 pool plus 15 persistence
 tests. The remaining singleton branches, full loader/config/custom-provider
 composition, Z.AI endpoint probing, OAuth refresh, leases, and logging
-throttles remain pending. The exact source and documentation mirror refs will
-be recorded in the next handoff checkpoint immediately after this source
-commit is published.
+throttles remain pending. Local source commit
+`c471092747601784ee50b4d9503b6877c379bb25` was mirrored as GitHub
+`e4bd1f2199e3290a5adf381888c06f1bd0f3337d`; both refs resolve to tree
+`115b270c7e7bfeae69ca6c628fbc1ee844c2e22f` with 273 matching tracked blobs.
 
 The preceding synchronized source unit extended `hermes-agent::credential_pool`
 through the lower environment-aware `load_pool` transaction. It added the
@@ -627,12 +632,9 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-The source commit for the Qwen OAuth singleton seeder is ready for the
-immediate local/GitHub mirror sequence; its exact commit/tree refs will be
-written in the next documentation-only checkpoint. Before this unit, local
-`main` and `origin/main` were aligned at GitHub mirror commit
-`62a344fa881ed17d40ae76a6191141c5040c9d76`, whose tree
-`88784ed1b0b2c61f567913561eaeaa7dc5636bdd` was verified recursively with 273
+Local `main` and `origin/main` are aligned at GitHub mirror commit
+`e4bd1f2199e3290a5adf381888c06f1bd0f3337d`, whose tree
+`115b270c7e7bfeae69ca6c628fbc1ee844c2e22f` was verified recursively with 273
 blobs and no path/mode/SHA mismatches. No conversion-ledger status changed:
 the current summary is 73 done / 11 partial / 3,798 missing tracked modules
 and 73 done / 11 partial / 1,019 missing production modules.
