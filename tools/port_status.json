@@ -68,10 +68,13 @@
   "plugins.model-providers.copilot-acp.__init__": {
     "status": "done"
   },
-  "plugins.model-providers.copilot.__init__": {
+ "plugins.model-providers.copilot.__init__": {
+   "status": "done"
+ },
+  "plugins.model-providers.custom.__init__": {
     "status": "done"
   },
-  "plugins.model-providers.deepinfra.__init__": {
+ "plugins.model-providers.deepinfra.__init__": {
     "status": "done"
   },
   "plugins.model-providers.deepseek.__init__": {

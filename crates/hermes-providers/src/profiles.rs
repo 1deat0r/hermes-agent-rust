@@ -24,6 +24,8 @@ mod bedrock;
 mod copilot;
 #[path = "copilot_acp.rs"]
 mod copilot_acp;
+#[path = "custom.rs"]
+mod custom;
 #[path = "deepinfra.rs"]
 mod deepinfra;
 #[path = "deepseek.rs"]
@@ -75,6 +77,7 @@ pub(crate) fn register_builtin_profiles() {
     register_provider(bedrock::profile());
     register_provider(copilot::profile());
     register_provider(copilot_acp::profile());
+    register_provider(custom::profile());
     register_provider(deepinfra::profile());
     register_provider(deepseek::profile());
     register_provider(fireworks::profile());
@@ -112,6 +115,7 @@ pub(crate) fn load_profile(
             Some("bedrock") => return Ok(Some(bedrock::profile())),
             Some("copilot") => return Ok(Some(copilot::profile())),
             Some("copilot-acp") => return Ok(Some(copilot_acp::profile())),
+            Some("custom") => return Ok(Some(custom::profile())),
             Some("deepinfra") => return Ok(Some(deepinfra::profile())),
             Some("deepseek") => return Ok(Some(deepseek::profile())),
             Some("fireworks") => return Ok(Some(fireworks::profile())),

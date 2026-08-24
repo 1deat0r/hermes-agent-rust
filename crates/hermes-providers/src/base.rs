@@ -77,6 +77,8 @@ pub struct ProviderProfile {
     pub ollama_cloud_reasoning: bool,
     /// Translate MiniMax-M3 reasoning for the global OpenAI-compatible route.
     pub minimax_reasoning: bool,
+    /// Apply Custom/Ollama local reasoning and user-configured catalog hooks.
+    pub custom_provider: bool,
     /// Route Copilot reasoning through the live model-catalog effort list.
     pub copilot_reasoning: bool,
     /// Route the reasoning configuration through `extra_body.reasoning`.
@@ -116,6 +118,7 @@ impl ProviderProfile {
             nous_portal: false,
             ollama_cloud_reasoning: false,
             minimax_reasoning: false,
+            custom_provider: false,
             copilot_reasoning: false,
             reasoning_passthrough: false,
         }
@@ -173,6 +176,9 @@ impl ProviderProfile {
         if self.minimax_reasoning {
             return build_minimax_reasoning(reasoning_config, context);
         }
+        if self.custom_provider {
+            return build_custom_reasoning(reasoning_config, context);
+        }
         if self.copilot_reasoning {
             return build_copilot_reasoning(reasoning_config, context);
         }
@@ -221,6 +227,12 @@ impl ProviderProfile {
     ) -> Option<Vec<String>> {
         if self.actual_catalog {
             return fetch_actual_models(api_key, base_url, timeout, &self.base_url);
+        }
+        // PARITY: CustomProfile.fetch_models() refuses catalog discovery until
+        // either the caller or profile supplies a user-configured base URL.
+        if self.custom_provider && base_url.map_or(true, str::is_empty) && self.base_url.is_empty()
+        {
+            return None;
         }
 
         // PARITY: BedrockProfile overrides the upstream method and always
@@ -1013,6 +1025,49 @@ fn is_minimax_global_openai_base_url(base_url: &str) -> bool {
         .path()
         .trim_end_matches('/')
         .eq_ignore_ascii_case("/v1")
+}
+
+fn build_custom_reasoning(
+    reasoning_config: Option<&Map<String, Value>>,
+    context: &Map<String, Value>,
+) -> (Map<String, Value>, Map<String, Value>) {
+    // PARITY: CustomProfile maps the keyword-only `ollama_num_ctx` and
+    // reasoning configuration into independent wire fields.
+    let mut extra_body = Map::new();
+    let mut top_level = Map::new();
+
+    if let Some(num_ctx) = context.get("ollama_num_ctx") {
+        let is_zero = num_ctx.as_i64() == Some(0)
+            || num_ctx.as_u64() == Some(0)
+            || num_ctx.as_f64() == Some(0.0);
+        if num_ctx.is_number() && !is_zero {
+            let mut options = Map::new();
+            options.insert("num_ctx".into(), num_ctx.clone());
+            extra_body.insert("options".into(), Value::Object(options));
+        }
+    }
+
+    // Python's `if reasoning_config` intentionally skips an empty dict.
+    if let Some(reasoning_config) = reasoning_config.filter(|config| !config.is_empty()) {
+        let effort = reasoning_config
+            .get("effort")
+            .and_then(Value::as_str)
+            .map(str::trim)
+            .map(str::to_ascii_lowercase)
+            .unwrap_or_default();
+        let enabled = reasoning_config
+            .get("enabled")
+            .and_then(Value::as_bool)
+            .unwrap_or(true);
+        if effort == "none" || !enabled {
+            top_level.insert("reasoning_effort".into(), Value::String("none".into()));
+            extra_body.insert("think".into(), Value::Bool(false));
+        } else if !effort.is_empty() {
+            top_level.insert("reasoning_effort".into(), Value::String(effort));
+        }
+    }
+
+    (extra_body, top_level)
 }
 
 fn build_nous_extra_body(
