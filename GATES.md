@@ -15,8 +15,9 @@ The conversion is decomposed into these dependency-ordered branches:
 5. Surfaces: TUI, ACP, scripts, bundled skills, and remaining top-level modules.
 6. Root integration: full-workspace tests, live/mock contract checks, docs/ledger closure, and local/GitHub mirror verification.
 
-The active leaf is Agent core → credential lifecycle. Its next dependency-safe
-unit is auth-store persistence and provider/environment seeding; later leaves
+The active leaf is Agent core → credential lifecycle. Its current
+dependency-safe unit is the transport-neutral OAuth refresh/re-selection
+boundary; its next unit is outer configuration discovery/loading. Later leaves
 must not be marked verified while a lower-layer contract remains partial.
 
 - [ ] G1: every tracked upstream module is marked done in the generated inventory

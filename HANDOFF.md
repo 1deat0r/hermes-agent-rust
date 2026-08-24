@@ -207,20 +207,22 @@ branches and the active credential-lifecycle leaf. These gates are intentionally
 unmet while the conversion remains partial.
 
 The current source unit extends `hermes-agent::credential_pool` through the
-pure custom-provider configuration compatibility boundary. It adds explicit
-normalization, legacy `custom_providers` plus keyed `providers` merging, URL
-precedence (`base_url` → `url` → `api`) with template acceptance, camelCase
-aliases, model-map/list normalization, keyed enablement filtering,
-case-insensitive deduplication, extra-header stringification, input
-immutability, and malformed-legacy fail-open behavior. Four source-derived
-`unit` parity tests were added first; the focused credential-pool wave now has
-61 pool plus 15 persistence tests (76 total). Outer config discovery/loading,
-Z.AI endpoint probing, OAuth refresh, leases, and logging throttles remain
-pending. The source commit and its immediate GitHub mirror are recorded above;
-the source tree was recursively verified before the branch was aligned. Local
-commit `9216c3849362a39145b9147394630cfa112171e1` was mirrored as GitHub
-`1167a7381d7623247a37267edd4f16e2df7371e5`; both refs resolve to tree
-`9b6f57ac636b2f247cf5fb196b28fda08081ac3d` with 273 matching tracked blobs.
+transport-neutral OAuth refresh/re-selection boundary. It adds
+`OAuthRefreshResult`/`OAuthRefreshError`, successful token replacement with
+status/error clearing and source-compatible optional-field preservation,
+provider-specific expiry-skew detection for Anthropic, OpenAI Codex, and xAI,
+deferred refresh/re-selection through an injected provider callback, fail-open
+refresh exhaustion, and borrowed-secret-safe serialization after refresh. Four
+source-derived `mock`/`unit` parity tests were added first; the focused
+credential-pool wave now has 65 pool plus 15 persistence tests (80 total).
+Validation passed: targeted rustfmt, focused pool/persistence/auxiliary tests,
+`cargo build --workspace`, `cargo test --workspace -- --test-threads=1`, and
+the approved 5/5-gate credential-lifecycle recheck. No conversion-ledger
+status changed. The source and documentation are pending the next logical
+commit; its exact local/GitHub refs will be recorded in the immediate
+checkpoint. Provider-specific OAuth transport/auth-store write-through, outer
+config discovery/loading, Z.AI endpoint probing, leases, and logging throttles
+remain pending.
 
 The preceding source unit extends `hermes-agent::credential_pool` through the
 provider-singleton seeding boundary. It adds the explicit `seed_from_singletons`
@@ -710,26 +712,30 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-Local `main` and `origin/main` are aligned after the custom-provider
-compatibility source mirror sequence. The latest source snapshot, local
+Local `main` and `origin/main` remain aligned at the preceding
+custom-provider compatibility snapshot while this refresh unit is pending
+commit. The working tree contains the transport-neutral OAuth
+refresh/re-selection implementation and its documentation checkpoint; the
+preceding synchronized source snapshot is local
 `9216c3849362a39145b9147394630cfa112171e1` → GitHub
-`1167a7381d7623247a37267edd4f16e2df7371e5`, has tree
-`9b6f57ac636b2f247cf5fb196b28fda08081ac3d`, verified recursively with 273
-blobs and no path/mode/SHA mismatches. No conversion-ledger status changed:
-the current summary is 73 done / 11 partial / 3,798 missing tracked modules
-and 73 done / 11 partial / 1,019 missing production modules.
+`1167a7381d7623247a37267edd4f16e2df7371e5`, tree
+`9b6f57ac636b2f247cf5fb196b28fda08081ac3d`, with 273 verified matching
+tracked blobs. No conversion-ledger status changed: the current summary is
+73 done / 11 partial / 3,798 missing tracked modules and 73 done / 11 partial /
+1,019 missing production modules.
 
 ## Next actions, in order
 
 1. Continue `agent.credential_pool` through outer configuration discovery/
-   loading, Z.AI probing, and OAuth refresh; the row
-   model,
+   loading and Z.AI probing; provider-specific OAuth transport/auth-store
+   write-through, leases, and logging throttles remain pending. The row model,
    serialization, source upsert, strategy, provider-boundary, selection,
-   persistence, cooldown-recency merge, auth-store lock, and environment
-   seeding input boundary, lower environment-aware load transaction, explicit
-   full `load_pool` composition, Anthropic/Nous/Copilot/Qwen/MiniMax/OpenAI
-   Codex/xAI singleton state boundaries, and custom-pool config/model seeding
-   boundary are now recorded.
+   persistence, cooldown-recency merge, auth-store lock, environment seeding
+   input boundary, lower environment-aware load transaction, explicit full
+   `load_pool` composition, Anthropic/Nous/Copilot/Qwen/MiniMax/OpenAI
+   Codex/xAI singleton state boundaries, custom-pool config/model seeding,
+   compatibility normalization, and transport-neutral refresh boundary are
+   now recorded.
 2. Then connect the auxiliary-client concrete transport to credential-pool
    lifecycle, cancellation, and provider fallback seams without promoting
    either partial module prematurely.
@@ -902,6 +908,13 @@ The strict production formula is `done production modules / 1,103`; partial rows
   test-only and does not change detector behavior.
 - `tools/gen_computer_use_schema.py` discovers the upstream root via `HERMES_UPSTREAM` and has path fallbacks for this machine.
 - `cargo fmt --all -- --check` reports many pre-existing unformatted foundation files outside this wave. Do not mass-reformat unrelated crates; use targeted formatting only if needed.
+
+For the OAuth refresh/re-selection unit, the focused
+`/home/mustbearnold/.cargo/bin/cargo test -p hermes-agent --test
+parity_credential_pool --test parity_credential_store --test
+parity_auxiliary_client` run passed 121 tests, the full workspace build passed,
+the serialized workspace test passed with 1,112 tests and 5 intentional
+ignored tests, and the approved leaf gate recheck passed all 5 gates.
 
 ## Verification evidence
 

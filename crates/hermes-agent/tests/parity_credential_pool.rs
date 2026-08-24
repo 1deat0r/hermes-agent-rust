@@ -6,8 +6,8 @@ use hermes_agent::credential_pool::{
     normalize_custom_provider_entry, normalize_pool_priorities, pool_strategy_from_config,
     providers_dict_to_custom_providers, prune_stale_seeded_entries, seed_custom_pool,
     seed_from_env, seed_from_singletons, upsert_entry, CredentialPool, CredentialStatus,
-    EnvironmentSnapshot, PoolErrorContext, PoolLoadInputs, PoolStrategy, PooledCredential,
-    ProviderCredentialConfig,
+    EnvironmentSnapshot, OAuthRefreshResult, PoolErrorContext, PoolLoadInputs, PoolStrategy,
+    PooledCredential, ProviderCredentialConfig,
 };
 use hermes_agent::credential_store::{read_credential_pool_at, save_auth_store};
 use serde_json::{json, Value};
@@ -2091,4 +2091,132 @@ fn custom_pool_seed_materializes_matching_model_config_key() {
         Some("https://api.together.ai/v1")
     );
     assert_eq!(entries[0].label, "model_config");
+}
+
+// Tier: mock — mirrors agent/credential_pool.py `_refresh_entry_impl` token
+// replacement and the deferred-refresh branch in `select`.
+#[test]
+fn oauth_refresh_result_replaces_tokens_and_clears_failure_state() {
+    let mut entry = PooledCredential::new("openai-codex", "codex-1", "old-access", 0);
+    entry.auth_type = "oauth".into();
+    entry.refresh_token = Some("old-refresh".into());
+    entry.last_status = Some("exhausted".into());
+    entry.status = Some(CredentialStatus::Exhausted);
+    entry.last_status_at = Some(1_700_000_000.0);
+    entry.last_error_code = Some(401);
+    entry.last_error_reason = Some("token_expired".into());
+    entry.last_error_message = Some("expired".into());
+    entry.last_error_reset_at = Some(1_700_000_300.0);
+    entry.failure_reason = Some("transient".into());
+
+    let updated = entry
+        .apply_oauth_refresh(&OAuthRefreshResult {
+            access_token: "new-access".into(),
+            refresh_token: Some("new-refresh".into()),
+            expires_at_ms: None,
+            last_refresh: Some("2026-08-24T00:00:00Z".into()),
+        })
+        .expect("valid refresh response");
+
+    assert_eq!(updated.access_token, "new-access");
+    assert_eq!(updated.refresh_token.as_deref(), Some("new-refresh"));
+    assert_eq!(
+        updated.last_refresh.as_deref(),
+        Some("2026-08-24T00:00:00Z")
+    );
+    assert_eq!(updated.status, None);
+    assert_eq!(updated.last_status, None);
+    assert_eq!(updated.last_status_at, None);
+    assert_eq!(updated.last_error_code, None);
+    assert_eq!(updated.last_error_reason, None);
+    assert_eq!(updated.last_error_message, None);
+    assert_eq!(updated.last_error_reset_at, None);
+    assert_eq!(updated.failure_reason, None);
+}
+
+// Tier: mock — mirrors tests/agent/test_credential_pool_deferred_refresh.py
+// and test_credential_pool_lease_refresh_reselect.py's deferred re-selection
+// invariant with the refresh transport supplied by the owning auth layer.
+#[test]
+fn select_with_refresh_reselects_after_deferred_refresh() {
+    let stale_token = jwt_with_claims(json!({"exp": 1}));
+    let mut stale = PooledCredential::new("openai-codex", "stale", &stale_token, 0);
+    stale.auth_type = "oauth".into();
+    stale.refresh_token = Some("stale-refresh".into());
+
+    let mut pool = CredentialPool::new("openai-codex", vec![stale], PoolStrategy::FillFirst);
+    let mut refresh_calls = 0;
+    let selected = pool.select_with_refresh(1_700_000_000.0, |entry| {
+        refresh_calls += 1;
+        assert_eq!(entry.id, "stale");
+        Ok(OAuthRefreshResult {
+            access_token: "fresh-access".into(),
+            refresh_token: Some("fresh-refresh".into()),
+            expires_at_ms: None,
+            last_refresh: Some("2026-08-24T00:00:00Z".into()),
+        })
+    });
+
+    assert_eq!(refresh_calls, 1);
+    assert_eq!(
+        selected.as_ref().map(|entry| entry.access_token.as_str()),
+        Some("fresh-access")
+    );
+    assert_eq!(
+        pool.entries()[0].refresh_token.as_deref(),
+        Some("fresh-refresh")
+    );
+}
+
+// Tier: mock — mirrors the source's fail-open refresh path: a failed OAuth
+// refresh is exhausted and omitted from the current selection.
+#[test]
+fn select_with_refresh_exhausts_failed_refresh_and_fails_open() {
+    let stale_token = jwt_with_claims(json!({"exp": 1}));
+    let mut stale = PooledCredential::new("openai-codex", "stale", &stale_token, 0);
+    stale.auth_type = "oauth".into();
+    stale.refresh_token = Some("stale-refresh".into());
+
+    let mut pool = CredentialPool::new("openai-codex", vec![stale], PoolStrategy::FillFirst);
+    let selected = pool.select_with_refresh(1_700_000_000.0, |_entry| {
+        Err(PoolErrorContext {
+            reason: Some("invalid_grant".into()),
+            message: Some("refresh token rejected".into()),
+            reset_at: None,
+        })
+    });
+
+    assert!(selected.is_none());
+    let entry = &pool.entries()[0];
+    assert_eq!(entry.status, Some(CredentialStatus::Exhausted));
+    assert_eq!(entry.last_error_reason.as_deref(), Some("invalid_grant"));
+    assert_eq!(
+        entry.last_error_message.as_deref(),
+        Some("refresh token rejected")
+    );
+}
+
+// Tier: unit — preserves the source's final borrowed-secret sanitizer after
+// an OAuth refresh updates the in-memory row.
+#[test]
+fn refreshed_borrowed_entry_stays_metadata_only_on_disk() {
+    let mut entry = PooledCredential::new("openrouter", "env-row", "old-borrowed-access", 0);
+    entry.source = "env:OPENROUTER_API_KEY".into();
+    entry.auth_type = "oauth".into();
+    entry.refresh_token = Some("old-borrowed-refresh".into());
+
+    let updated = entry
+        .apply_oauth_refresh(&OAuthRefreshResult {
+            access_token: "new-borrowed-access".into(),
+            refresh_token: Some("new-borrowed-refresh".into()),
+            expires_at_ms: None,
+            last_refresh: None,
+        })
+        .expect("OAuth row accepts refresh result");
+    let payload = updated.to_json();
+
+    assert!(!payload.to_string().contains("new-borrowed-access"));
+    assert!(!payload.to_string().contains("new-borrowed-refresh"));
+    assert_eq!(payload["source"], "env:OPENROUTER_API_KEY");
+    assert!(payload["secret_fingerprint"].as_str().is_some());
 }

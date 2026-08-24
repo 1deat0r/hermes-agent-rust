@@ -1213,6 +1213,57 @@ impl PooledCredential {
         self.status = Some(status);
         self.last_status = Some(status.as_source().to_owned());
     }
+
+    /// Apply a successful OAuth refresh response without performing transport
+    /// or persistence work owned by the higher auth layer.
+    ///
+    /// PARITY: `agent/credential_pool.py._refresh_entry_impl` (1290–1706).
+    /// Provider adapters may omit a rotated refresh token or timestamp; in
+    /// that case the source preserves the existing value.
+    pub fn apply_oauth_refresh(
+        &self,
+        refreshed: &OAuthRefreshResult,
+    ) -> Result<Self, OAuthRefreshError> {
+        if self.auth_type != AUTH_TYPE_OAUTH {
+            return Err(OAuthRefreshError::NotOAuth);
+        }
+        let access_token = refreshed.access_token.trim();
+        if access_token.is_empty() {
+            return Err(OAuthRefreshError::MissingAccessToken);
+        }
+
+        let mut updated = self.clone();
+        updated.access_token = access_token.to_owned();
+        if let Some(refresh_token) = refreshed
+            .refresh_token
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+        {
+            updated.refresh_token = Some(refresh_token.to_owned());
+        }
+        if let Some(expires_at_ms) = refreshed.expires_at_ms {
+            updated.expires_at_ms = Some(expires_at_ms);
+        }
+        if let Some(last_refresh) = refreshed
+            .last_refresh
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+        {
+            updated.last_refresh = Some(last_refresh.to_owned());
+        }
+
+        updated.last_status = None;
+        updated.status = None;
+        updated.last_status_at = None;
+        updated.last_error_code = None;
+        updated.last_error_reason = None;
+        updated.last_error_message = None;
+        updated.last_error_reset_at = None;
+        updated.failure_reason = None;
+        Ok(updated)
+    }
 }
 
 const EXTRA_KEYS: &[&str] = &[
@@ -2589,6 +2640,26 @@ pub fn normalize_pool_priorities(provider: &str, entries: &mut [PooledCredential
     changed
 }
 
+/// The already-resolved token payload returned by a provider OAuth adapter.
+///
+/// Network I/O, provider-specific endpoints, and auth-store write-through stay
+/// in the higher auth layer. This value is the narrow result consumed by the
+/// pool lifecycle.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct OAuthRefreshResult {
+    pub access_token: String,
+    pub refresh_token: Option<String>,
+    pub expires_at_ms: Option<i64>,
+    pub last_refresh: Option<String>,
+}
+
+/// Fail-open validation failures for a provider refresh result.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum OAuthRefreshError {
+    NotOAuth,
+    MissingAccessToken,
+}
+
 /// Error metadata supplied to `mark_exhausted_and_rotate`.
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct PoolErrorContext {
@@ -2621,6 +2692,14 @@ const TERMINAL_AUTH_REASONS: &[&str] = &[
     "unauthorized_client",
     "refresh_token_reused",
 ];
+
+fn jwt_expiry_seconds(token: &str) -> Option<f64> {
+    decode_jwt_claims(token)?.get("exp").and_then(|value| {
+        value
+            .as_f64()
+            .or_else(|| value.as_i64().map(|value| value as f64))
+    })
+}
 
 impl CredentialPool {
     /// Create a pool sorted by the source priority order.
@@ -2693,6 +2772,123 @@ impl CredentialPool {
     pub fn select(&mut self, now: f64) -> Option<PooledCredential> {
         let available = self.available_indices(now, true);
         self.select_from_available(available)
+    }
+
+    /// Select after refreshing expiring OAuth entries through an injected
+    /// provider adapter.
+    ///
+    /// PARITY: `agent/credential_pool.py.select` and
+    /// `_available_entries(refresh=True)` (1769–2019). Single-use provider
+    /// refreshes are represented by the callback so this crate does not
+    /// acquire auth-store locks or perform network I/O.
+    pub fn select_with_refresh<F>(&mut self, now: f64, mut refresh: F) -> Option<PooledCredential>
+    where
+        F: FnMut(&PooledCredential) -> Result<OAuthRefreshResult, PoolErrorContext>,
+    {
+        let available = self.available_indices(now, true);
+        let mut ready_indices = Vec::new();
+        let mut pending = Vec::new();
+        for index in available {
+            let entry = &self.entries[index];
+            if self.entry_needs_refresh_at(entry, now) {
+                pending.push(entry.clone());
+            } else {
+                ready_indices.push(index);
+            }
+        }
+
+        let selected = self.select_from_available(ready_indices);
+        for entry in pending {
+            let _ = self.refresh_entry_with(&entry.id, now, false, &mut refresh);
+        }
+        if selected.is_some() {
+            return selected;
+        }
+
+        let available = self.available_indices(now, true);
+        let ready_indices = available
+            .into_iter()
+            .filter(|index| !self.entry_needs_refresh_at(&self.entries[*index], now))
+            .collect();
+        self.select_from_available(ready_indices)
+    }
+
+    /// Apply one provider refresh result to a pool row.
+    ///
+    /// A failed or malformed refresh is fail-open: the row is exhausted and
+    /// omitted from the returned selection, matching `_refresh_entry_impl`.
+    pub fn refresh_entry_with<F>(
+        &mut self,
+        credential_id: &str,
+        now: f64,
+        force: bool,
+        mut refresh: F,
+    ) -> Option<PooledCredential>
+    where
+        F: FnMut(&PooledCredential) -> Result<OAuthRefreshResult, PoolErrorContext>,
+    {
+        let index = self
+            .entries
+            .iter()
+            .position(|entry| entry.id == credential_id)?;
+        let entry = self.entries[index].clone();
+        if entry.auth_type != AUTH_TYPE_OAUTH
+            || entry
+                .refresh_token
+                .as_deref()
+                .is_none_or(|value| value.trim().is_empty())
+        {
+            if force {
+                self.mark_entry(index, None, None, None, now);
+            }
+            return None;
+        }
+
+        let refreshed = match refresh(&entry) {
+            Ok(refreshed) => refreshed,
+            Err(error_context) => {
+                self.mark_entry(index, None, Some(&error_context), None, now);
+                return None;
+            }
+        };
+        let updated = match entry.apply_oauth_refresh(&refreshed) {
+            Ok(updated) => updated,
+            Err(_) => {
+                self.mark_entry(index, None, None, None, now);
+                return None;
+            }
+        };
+        self.entries[index] = updated.clone();
+        Some(updated)
+    }
+
+    fn entry_needs_refresh_at(&self, entry: &PooledCredential, now: f64) -> bool {
+        if entry.auth_type != AUTH_TYPE_OAUTH {
+            return false;
+        }
+        match self.provider.as_str() {
+            "anthropic" => entry
+                .expires_at_ms
+                .is_some_and(|expires_at| expires_at as f64 / 1000.0 <= now + 120.0),
+            "openai-codex" => jwt_expiry_seconds(&entry.access_token)
+                .is_some_and(|expires_at| expires_at <= now + 120.0),
+            "xai-oauth" => {
+                let Some(expires_at) = jwt_expiry_seconds(&entry.access_token) else {
+                    return false;
+                };
+                let remaining = expires_at - now;
+                let skew = if remaining <= 45.0 * 60.0 {
+                    120.0
+                } else {
+                    3600.0
+                };
+                expires_at <= now + skew
+            }
+            // Nous refresh is deliberately owned by runtime credential
+            // resolution, not pool enumeration or selection.
+            "nous" => false,
+            _ => false,
+        }
     }
 
     /// Mark the failed credential and return the next available credential.
