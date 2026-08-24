@@ -9,12 +9,10 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
 Current branch/HEAD: `main` is aligned with `origin/main` after the local and
-GitHub API mirror sequence for the Anthropic OAuth singleton seeder. The next
-local source unit adds the Copilot singleton seeder; its exact refs will be
-recorded immediately after publication. The local
-source commit `4659f291b9bdc3637d3ebe5a2109f2cb8ee33f65` was mirrored as GitHub
-`502491d1a790c369613d717b64620c98c82b94fa`; both refs resolve to tree
-`e60b32164a164b88f010aede28e80c2bd1d5edbf` with 273 matching tracked blobs.
+GitHub API mirror sequence for the Copilot singleton seeder. The local source
+commit `19d0adb6efd8dbaf52d92c053d625a56993c2ea9` was mirrored as GitHub
+`33187eafa6a98fd0e7c22e582449e41bf102bb96`; both refs resolve to tree
+`00f4120fe2d977522030ba41a17ca571370629ca` with 273 matching tracked blobs.
 The connected GitHub API publishes each logical commit immediately as a
 sequential remote mirror. Its commit SHAs differ from the local sequence
 because the API cannot preserve local author/committer timestamps, but every
@@ -23,7 +21,10 @@ update. The local HTTPS Git client still has no credentials; use the connected
 GitHub API for future pushes until `gh auth login` or SSH is configured.
 
 Latest synchronized unit: local source
-`4659f291b9bdc3637d3ebe5a2109f2cb8ee33f65` → GitHub
+`19d0adb6efd8dbaf52d92c053d625a56993c2ea9` → GitHub
+`33187eafa6a98fd0e7c22e582449e41bf102bb96`
+(`feat(agent): seed Copilot credentials @ b9aa928`), with the previous local
+source `4659f291b9bdc3637d3ebe5a2109f2cb8ee33f65` → GitHub
 `502491d1a790c369613d717b64620c98c82b94fa`
 (`feat(agent): seed Anthropic OAuth credentials @ b9aa928`), with the previous
 local source `3d6ae211cdddfd859c5d86487b5811c8b8d9afd3` → GitHub
@@ -233,9 +234,9 @@ token` resolver and network exchange are represented by explicit resolved
 token/source/endpoint inputs in this crate. The remaining singleton branches, full
 loader/config/custom-provider composition, Z.AI endpoint probing, OAuth
 refresh, leases, and logging throttles remain pending. Local source commit
-`4659f291b9bdc3637d3ebe5a2109f2cb8ee33f65` was mirrored as GitHub
-`502491d1a790c369613d717b64620c98c82b94fa`; both refs resolve to tree
-`e60b32164a164b88f010aede28e80c2bd1d5edbf` with 273 matching tracked blobs.
+`19d0adb6efd8dbaf52d92c053d625a56993c2ea9` was mirrored as GitHub
+`33187eafa6a98fd0e7c22e582449e41bf102bb96`; both refs resolve to tree
+`00f4120fe2d977522030ba41a17ca571370629ca` with 273 matching tracked blobs.
 
 The preceding synchronized source unit extended `hermes-agent::credential_pool`
 through the lower environment-aware `load_pool` transaction. It added the
@@ -671,11 +672,11 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-Before the Copilot source unit, local `main` and `origin/main` were aligned
-after the Anthropic source and documentation mirror sequence. The latest source snapshot, local
-`4659f291b9bdc3637d3ebe5a2109f2cb8ee33f65` → GitHub
-`502491d1a790c369613d717b64620c98c82b94fa`, has tree
-`e60b32164a164b88f010aede28e80c2bd1d5edbf`, verified recursively with 273
+Local `main` and `origin/main` are aligned after the Copilot source and
+documentation mirror sequence. The latest source snapshot, local
+`19d0adb6efd8dbaf52d92c053d625a56993c2ea9` → GitHub
+`33187eafa6a98fd0e7c22e582449e41bf102bb96`, has tree
+`00f4120fe2d977522030ba41a17ca571370629ca`, verified recursively with 273
 blobs and no path/mode/SHA mismatches. No conversion-ledger status changed:
 the current summary is 73 done / 11 partial / 3,798 missing tracked modules
 and 73 done / 11 partial / 1,019 missing production modules.
