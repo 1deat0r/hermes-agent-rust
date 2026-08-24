@@ -9,6 +9,7 @@ members = [
     "crates/hermes-toolsets",
     "crates/hermes-tools",
     "crates/hermes-providers",
+    "crates/hermes-agent",
 ]
 
 [workspace.package]

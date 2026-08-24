@@ -1,66 +1,111 @@
 # Hermes Agent in Rust ☤
 
-A **1:1 port** of [NousResearch/hermes-agent](https://github.com/NousResearch/hermes-agent)
-to idiomatic Rust — same CLI surface, same on-disk formats, same wire
-protocols, same observable behavior. Different implementation language.
+An in-progress **1:1 Rust port of [NousResearch/hermes-agent](https://github.com/NousResearch/hermes-agent)**. The target is the same CLI surface, on-disk formats, wire protocols, provider/tool behavior, and observable semantics in an idiomatic Rust implementation.
 
-> **Status: P0/P1 foundation.** Upstream: `b9aa928` (~843,792 production LOC,
-> 1,103 modules). Live ledger: [`PLAN.md`](PLAN.md) ·
-> [`tools/inventory.json`](tools/inventory.json) · [`AGENTS.md`](AGENTS.md).
+## Current status
+
+The live conversion ledger currently reports:
+
+- **All tracked modules:** **1.88%** — `73 / 3,882` done, `10` partial,
+  `3,799` missing.
+- **Production modules:** **6.62%** — `73 / 1,103` done, `10` partial,
+  `1,020` missing.
+
+Only `done` rows receive credit; partial rows remain zero-credit until their
+parity seams are closed. Regenerate the inventory and ledger with:
+
+```bash
+HERMES_UPSTREAM=/path/to/hermes-agent-repo tools/inventory.sh
+python3 tools/conversion_ledger.py
+```
+
+P0 infrastructure/governance is complete. Foundation and provider-support work
+is landed in several crates, while the agent core, remaining tools, CLI,
+gateway, platform plugins, cron, TUI, ACP, and the full parity-oracle surface
+remain in progress. The percentage is intentionally strict and is not a claim
+that the runtime is feature-complete.
+
+The first `hermes-agent::auxiliary_client` routing/wire-predicate slice is
+partial; its client construction, credential, async transport, cancellation,
+and fallback-chain sections remain to be ported.
 
 ## Why this project exists
 
-The original Hermes Agent is the self-improving AI agent by Nous Research
-(skills, agent-curated memory, FTS5 session search, cron, delegation, seven
-terminal backends, multi-provider LLM support, a multi-platform messaging
-gateway). This repo re-implements it in Rust so it can run as a single static
-binary with no Python runtime — while remaining behaviorally identical.
+Hermes Agent is a self-improving AI agent with skills, curated memory, FTS5
+session search, cron scheduling, delegation, multiple terminal backends,
+multi-provider model support, and a multi-platform gateway. This repository
+reimplements those observable contracts in Rust, with Python behavior and
+upstream tests serving as the oracle.
 
 ## Fidelity contract
 
-"1:1" is defined at the *observable contract* level (not line-for-line
-transpilation):
+The port is evaluated at the observable-contract level:
 
-- CLI surface — same `hermes` / `hermes-agent` / `hermes-acp` entry points
-- On-disk formats — `config.yaml`, `~/.hermes` layout, state DB, session files
-- Wire protocols — gateway platforms, MCP, ACP
-- Provider/tool behavior — same message shapes, tool names and outputs
-- Fail-open semantics — same fallbacks, same env precedence, same caching
+- CLI entry points: `hermes`, `hermes-agent`, and `hermes-acp`
+- On-disk formats: configuration, `~/.hermes`, state DB, and session files
+- Wire protocols: gateway platforms, MCP, and ACP
+- Provider and tool names, inputs, outputs, and streaming behavior
+- Environment precedence, caching, lifecycle, and fail-open semantics
 
-Every ported behavior is pinned by parity tests whose cases derive from
-upstream tests (golden fixtures under `upstream/`). Guessing at upstream
-behavior is a defect, not a shortcut.
+Intentional divergences must be documented and signed off. A compiling crate
+alone does not count as parity.
 
 ## Workspace layout
 
-```
+```text
 crates/
-  hermes-constants/   # hermes_constants.py  — foundational subset ✅
-  hermes-time/        # hermes_time.py       — full port ✅
-  ...                 # hermes-utils, logging, state, agent, cli, gateway…
-                      # (see PLAN.md §3 for the full crate map)
-tools/                # inventory ledger + parity helpers
-upstream/             # vendored golden fixtures (read-only)
+  hermes-constants/   platform, paths, values, and reasoning constants
+  hermes-time/        time and timezone behavior
+  hermes-utils/       shared utility behavior
+  hermes-logging/     logging and redaction
+  hermes-state/       SQLite state, sessions, search, routing, and portability
+  hermes-toolsets/    tool schemas and distributions
+  hermes-providers/   provider registry and bundled profiles
+  hermes-agent/       agent loop and runtime
+  hermes-tools/       tool implementations and safety helpers
+  hermes-batch/       batch and trajectory helpers
+  hermes-cli/         `hermes` command-line surface
+  hermes-gateway/     messaging gateway
+  hermes-platforms/   platform plugins
+  hermes-cron/        scheduling
+  hermes-tui/         terminal UI
+  hermes-acp/         Agent Client Protocol
+
+tools/                inventory and parity helpers
+upstream/             pinned golden fixtures, read-only
 ```
 
-## Governance
+## Project documents
 
-The standing process rules live in [`PLAN.md`](PLAN.md) §0 and
-[`AGENTS.md`](AGENTS.md). In short: every phase ends with the plan updated,
-evidence carries a tier (`unit` / `mock` / `live`), and every commit builds
-green.
+- [`PLAN.md`](PLAN.md) — governance, phases, parity matrix, evidence, and next
+  dependency-safe unit.
+- [`CONVERSION-LEDGER.md`](CONVERSION-LEDGER.md) — generated strict module and
+  oracle/test ledger.
+- [`HANDOFF.md`](HANDOFF.md) — current checkpoint, exact validation, blockers,
+  next action, and completion percentages.
+- [`AGENTS.md`](AGENTS.md) — mandatory Codex documentation and commit/push gate.
 
-## Building
+Each Codex task must update or verify the ledger, plan, and handoff before it
+reports completion. One logical unit is committed and pushed at a time; remote
+synchronization must be verified rather than assumed.
+
+## Build and test
 
 ```bash
 cargo build --workspace
-cargo test --workspace    # 74 tests, including upstream parity oracles
+cargo test --workspace
+cargo clippy --workspace --all-targets
 ```
+
+The exact commands and evidence tier for each checkpoint belong in `PLAN.md` and
+`HANDOFF.md`. Keep upstream-derived parity tests green and do not silently
+convert partial or missing inventory rows into completion.
 
 ## Upstream reference
 
-Local pinned clone: `/home/mustbearn/Projects/Research/hermes-agent-repo`
-(remote: `https://github.com/NousResearch/hermes-agent`, commit `b9aa928`).
+Target repository: [NousResearch/hermes-agent](https://github.com/NousResearch/hermes-agent)
+
+Pinned upstream commit: `b9aa928`.
 
 ## License
 

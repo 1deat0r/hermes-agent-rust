@@ -1,0 +1,12 @@
+[package]
+name = "hermes-agent"
+description = "1:1 Rust port of agent/ surfaces (Nous Research Hermes Agent)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+hermes-utils = { path = "../hermes-utils" }
+serde_json.workspace = true
+thiserror.workspace = true

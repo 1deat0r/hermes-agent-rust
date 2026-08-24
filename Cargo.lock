@@ -475,6 +475,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "hermes-agent"
+version = "0.1.0"
+dependencies = [
+ "hermes-utils",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
 name = "hermes-constants"
 version = "0.1.0"
 dependencies = [

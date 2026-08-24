@@ -9,10 +9,10 @@ Production-only strict completion: **6.62%** (73/1103 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 73 | 9 | 3800 | 1.88% | 29,844/1,510,733 done LOC |
-| Production modules | 73 | 9 | 1021 | 6.62% | 29,844/843,792 done LOC |
+| All tracked modules | 73 | 10 | 3799 | 1.88% | 29,844/1,510,733 done LOC |
+| Production modules | 73 | 10 | 1020 | 6.62% | 29,844/843,792 done LOC |
 
-Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-24T14:09:11`.
+Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-24T14:25:38`.
 
 ## Definition of 100.00%
 
@@ -29,6 +29,7 @@ The conversion is complete only when all of these are true:
 
 | Module | Phase | Upstream LOC | Required closure |
 |---|---|---:|---|
+| `agent.auxiliary_client` | P2 | 10,044 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `hermes_constants` | P1 | 1,481 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `providers.__init__` | P2 | 198 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `providers.base` | P2 | 238 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
@@ -45,26 +46,26 @@ Work bottom-up by phase. The list is regenerated from missing production rows, w
 
 | Order | Module | Phase | Upstream LOC | Task |
 |---:|---|---|---:|---|
-| 1 | `agent.auxiliary_client` | P2 | 10,044 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
-| 2 | `run_agent` | P2 | 8,206 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
-| 3 | `tools.mcp_tool` | P2 | 7,530 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
-| 4 | `agent.conversation_loop` | P2 | 7,524 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
-| 5 | `agent.context_compressor` | P2 | 7,110 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
-| 6 | `tools.browser_tool` | P2 | 5,098 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
-| 7 | `agent.chat_completion_helpers` | P2 | 4,599 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
-| 8 | `tools.approval` | P2 | 4,557 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
-| 9 | `tools.skills_hub` | P2 | 4,432 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
-| 10 | `tools.delegate_tool` | P2 | 4,342 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
-| 11 | `agent.agent_runtime_helpers` | P2 | 4,077 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
-| 12 | `agent.conversation_compression` | P2 | 4,035 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
-| 13 | `tools.tts_tool` | P2 | 3,964 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
-| 14 | `tools.terminal_tool` | P2 | 3,580 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
-| 15 | `agent.model_metadata` | P2 | 3,370 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
-| 16 | `tools.computer_use.cua_backend` | P2 | 3,295 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
-| 17 | `optional-skills.migration.openclaw-migration.scripts.openclaw_to_hermes` | P2 | 3,286 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
-| 18 | `agent.anthropic_adapter` | P2 | 3,177 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
-| 19 | `agent.credential_pool` | P2 | 3,147 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
-| 20 | `tools.transcription_tools` | P2 | 3,016 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
+| 1 | `run_agent` | P2 | 8,206 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
+| 2 | `tools.mcp_tool` | P2 | 7,530 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
+| 3 | `agent.conversation_loop` | P2 | 7,524 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
+| 4 | `agent.context_compressor` | P2 | 7,110 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
+| 5 | `tools.browser_tool` | P2 | 5,098 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
+| 6 | `agent.chat_completion_helpers` | P2 | 4,599 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
+| 7 | `tools.approval` | P2 | 4,557 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
+| 8 | `tools.skills_hub` | P2 | 4,432 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
+| 9 | `tools.delegate_tool` | P2 | 4,342 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
+| 10 | `agent.agent_runtime_helpers` | P2 | 4,077 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
+| 11 | `agent.conversation_compression` | P2 | 4,035 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
+| 12 | `tools.tts_tool` | P2 | 3,964 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
+| 13 | `tools.terminal_tool` | P2 | 3,580 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
+| 14 | `agent.model_metadata` | P2 | 3,370 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
+| 15 | `tools.computer_use.cua_backend` | P2 | 3,295 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
+| 16 | `optional-skills.migration.openclaw-migration.scripts.openclaw_to_hermes` | P2 | 3,286 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
+| 17 | `agent.anthropic_adapter` | P2 | 3,177 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
+| 18 | `agent.credential_pool` | P2 | 3,147 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
+| 19 | `tools.transcription_tools` | P2 | 3,016 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
+| 20 | `tools.process_registry` | P2 | 2,937 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
 
 ## Operating protocol
 
@@ -99,7 +100,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `agent.anthropic_adapter` | production | P2 | 3,177 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.async_utils` | production | P2 | 84 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.aux_accounting` | production | P2 | 138 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `agent.auxiliary_client` | production | P2 | 10,044 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `agent.auxiliary_client` | production | P2 | 10,044 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
 | `agent.azure_identity_adapter` | production | P2 | 571 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.backend_identity` | production | P2 | 204 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.background_review` | production | P2 | 1,081 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |

@@ -2,10 +2,13 @@
   "agent.file_safety": {
     "status": "done"
   },
-  "agent.redact": {
-    "status": "done"
+ "agent.redact": {
+   "status": "done"
+ },
+  "agent.auxiliary_client": {
+    "status": "partial"
   },
-  "agent.session_activity": {
+ "agent.session_activity": {
     "status": "done"
   },
   "hermes_constants": {
