@@ -2,7 +2,7 @@ use hermes_agent::auxiliary_client::{
     auxiliary_max_tokens_param, auxiliary_proxy_for_base_url, auxiliary_proxy_from_env,
     codex_cloudflare_headers, is_anthropic_compatible_host, is_model_incompatible_error,
     is_model_not_found_error, is_payment_error, is_rate_limit_error, normalize_aux_provider,
-    openai_client_config, pool_runtime_api_key, pool_runtime_base_url,
+    openai_client_config, pool_runtime_api_key, pool_runtime_base_url, read_codex_access_token,
     resolve_aux_task_provider_model, resolve_auxiliary_tls_verify, to_openai_base_url,
     AuxiliaryError, AuxiliaryPoolEntry, AuxiliarySslVerifySetting, AuxiliaryTaskConfig,
     AuxiliaryTlsVerify,
@@ -732,4 +732,70 @@ fn codex_cloudflare_headers_fail_open_for_malformed_or_empty_tokens() {
         assert_eq!(headers.get("originator"), Some(&"codex_cli_rs".into()));
         assert!(!headers.contains_key("ChatGPT-Account-ID"));
     }
+}
+
+// Tier: unit — mirrors TestReadCodexAccessToken in
+// tests/agent/test_auxiliary_client.py.
+#[test]
+fn codex_access_token_prefers_pool_runtime_key() {
+    let entry = AuxiliaryPoolEntry {
+        runtime_api_key: Some("  pool-token  ".into()),
+        ..AuxiliaryPoolEntry::default()
+    };
+    let auth = json!({
+        "tokens": {"access_token": "auth-token", "refresh_token": "refresh"}
+    });
+
+    assert_eq!(
+        read_codex_access_token(true, Some(&entry), Some(&auth), 1_700_000_000),
+        Some("pool-token".into())
+    );
+}
+
+// Tier: unit — mirrors TestReadCodexAccessToken in
+// tests/agent/test_auxiliary_client.py.
+#[test]
+fn codex_access_token_reads_and_trims_auth_store_token() {
+    let auth = json!({
+        "tokens": {"access_token": "  tok-123  ", "refresh_token": "refresh"}
+    });
+
+    assert_eq!(
+        read_codex_access_token(false, None, Some(&auth), 1_700_000_000),
+        Some("tok-123".into())
+    );
+}
+
+// Tier: unit — mirrors expired_jwt_returns_none and valid_jwt_returns_token.
+#[test]
+fn codex_access_token_filters_expired_jwt_but_keeps_valid_jwt() {
+    let expired = json!({
+        "tokens": {"access_token": "h.eyJleHAiOjE3MDAwMDAwMDB9.s"}
+    });
+    assert_eq!(
+        read_codex_access_token(false, None, Some(&expired), 1_700_000_001),
+        None
+    );
+
+    let valid = json!({
+        "tokens": {"access_token": "h.eyJleHAiOjE3MDAwMDAwMDB9.s"}
+    });
+    assert_eq!(
+        read_codex_access_token(false, None, Some(&valid), 1_700_000_000),
+        Some("h.eyJleHAiOjE3MDAwMDAwMDB9.s".into())
+    );
+}
+
+// Tier: unit — mirrors the source's non-JWT decode-error fail-open path.
+#[test]
+fn codex_access_token_keeps_non_jwt_tokens_and_fails_open_on_missing_shape() {
+    let plain = json!({"tokens": {"access_token": "plain-token"}});
+    assert_eq!(
+        read_codex_access_token(false, None, Some(&plain), 1_700_000_000),
+        Some("plain-token".into())
+    );
+    assert_eq!(
+        read_codex_access_token(false, None, Some(&json!({})), 1_700_000_000),
+        None
+    );
 }

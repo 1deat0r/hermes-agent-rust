@@ -656,6 +656,66 @@ pub fn codex_cloudflare_headers(access_token: &str) -> BTreeMap<String, String> 
     headers
 }
 
+fn codex_access_token_expired(access_token: &str, now_epoch_seconds: u64) -> bool {
+    let Some(payload_part) = access_token.split('.').nth(1) else {
+        return false;
+    };
+    let mut encoded = payload_part.to_owned();
+    encoded.push_str(&"=".repeat((4 - encoded.len() % 4) % 4));
+    let Ok(decoded) = URL_SAFE.decode(encoded.as_bytes()) else {
+        return false;
+    };
+    let Ok(claims) = serde_json::from_slice::<Value>(&decoded) else {
+        return false;
+    };
+    let Some(exp_value) = claims.get("exp") else {
+        return false;
+    };
+    let exp = match exp_value {
+        Value::Number(value) => value.as_f64().unwrap_or(0.0),
+        // Python treats bool as an int during the `time.time() > exp`
+        // comparison, while false is skipped by the preceding truthiness
+        // check.
+        Value::Bool(value) => u8::from(*value) as f64,
+        _ => return false,
+    };
+    exp != 0.0 && (now_epoch_seconds as f64) > exp
+}
+
+/// Select a usable Codex access token from an explicit pool projection or the
+/// already-resolved Hermes auth-store token object.
+///
+/// The pool flag and auth-store value are explicit adapters for the source's
+/// credential-pool and `hermes_cli.auth._read_codex_tokens()` lookups. A
+/// malformed/non-JWT token is retained, while a decoded expired JWT is
+/// rejected so provider fallback can continue.
+///
+/// PARITY: agent/auxiliary_client.py lines 2279-2317.
+pub fn read_codex_access_token(
+    pool_present: bool,
+    pool_entry: Option<&AuxiliaryPoolEntry>,
+    auth_tokens: Option<&Value>,
+    now_epoch_seconds: u64,
+) -> Option<String> {
+    if pool_present {
+        let pool_token = pool_runtime_api_key(pool_entry);
+        if !pool_token.is_empty() {
+            return Some(pool_token);
+        }
+    }
+
+    let access_token = auth_tokens
+        .and_then(|value| value.get("tokens"))
+        .and_then(|tokens| tokens.get("access_token"))
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|token| !token.is_empty())?;
+    if codex_access_token_expired(access_token, now_epoch_seconds) {
+        return None;
+    }
+    Some(access_token.to_owned())
+}
+
 /// Normalize an auxiliary provider name and its source aliases.
 ///
 /// main_provider is the explicit adapter for the source's lazy
