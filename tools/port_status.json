@@ -131,6 +131,9 @@
   "plugins.model-providers.xai.__init__": {
     "status": "done"
   },
+  "plugins.model-providers.zai.__init__": {
+    "status": "done"
+  },
   "plugins.model-providers.huggingface.__init__": {
     "status": "done"
   },

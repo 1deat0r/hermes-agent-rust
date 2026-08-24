@@ -66,6 +66,8 @@ mod vertex;
 mod xai;
 #[path = "xiaomi.rs"]
 mod xiaomi;
+#[path = "zai.rs"]
+mod zai;
 
 use std::path::Path;
 
@@ -107,6 +109,7 @@ pub(crate) fn register_builtin_profiles() {
     register_provider(vertex::profile());
     register_provider(xai::profile());
     register_provider(xiaomi::profile());
+    register_provider(zai::profile());
 }
 
 pub(crate) fn load_profile(
@@ -147,6 +150,7 @@ pub(crate) fn load_profile(
             Some("vertex") => return Ok(Some(vertex::profile())),
             Some("xai") => return Ok(Some(xai::profile())),
             Some("xiaomi") => return Ok(Some(xiaomi::profile())),
+            Some("zai") => return Ok(Some(zai::profile())),
             _ => {}
         }
     }

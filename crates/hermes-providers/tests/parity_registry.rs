@@ -85,7 +85,7 @@ fn discovery_is_lazy_and_loader_order_matches_upstream() {
 
     // A normal registry access marks discovery complete and registers the
     // statically linked bundled profiles before the user loader seam runs.
-    assert_eq!(list_providers().len(), 34);
+    assert_eq!(list_providers().len(), 35);
     assert!(get_provider_profile("actual").is_some());
     assert!(get_provider_profile("ai-gateway").is_some());
     assert!(get_provider_profile("alibaba").is_some());
@@ -104,6 +104,7 @@ fn discovery_is_lazy_and_loader_order_matches_upstream() {
     assert!(get_provider_profile("kilocode").is_some());
     assert!(get_provider_profile("kimi-coding").is_some());
     assert!(get_provider_profile("kimi-coding-cn").is_some());
+    assert!(get_provider_profile("zai").is_some());
     assert!(get_provider_profile("minimax").is_some());
     assert!(get_provider_profile("minimax-cn").is_some());
     assert!(get_provider_profile("minimax-oauth").is_some());
@@ -160,7 +161,8 @@ fn discovery_is_lazy_and_loader_order_matches_upstream() {
             "upstage",
             "vertex",
             "xai",
-            "xiaomi"
+            "xiaomi",
+            "zai"
         ]
     );
     assert!(discovered_for_tests());

@@ -86,6 +86,8 @@ pub struct ProviderProfile {
     /// Apply Kimi Coding's endpoint confirmation, k3 filtering, and reasoning
     /// wire-shape rules.
     pub kimi_coding: bool,
+    /// Translate Z.AI GLM thinking and GLM-5.2 reasoning-effort controls.
+    pub zai_reasoning: bool,
     /// Route Copilot reasoning through the live model-catalog effort list.
     pub copilot_reasoning: bool,
     /// Route the reasoning configuration through `extra_body.reasoning`.
@@ -129,6 +131,7 @@ impl ProviderProfile {
             qwen_portal: false,
             upstage_reasoning: false,
             kimi_coding: false,
+            zai_reasoning: false,
             copilot_reasoning: false,
             reasoning_passthrough: false,
         }
@@ -185,6 +188,9 @@ impl ProviderProfile {
         }
         if self.kimi_coding {
             return build_kimi_reasoning(reasoning_config, context);
+        }
+        if self.zai_reasoning {
+            return build_zai_reasoning(reasoning_config, context);
         }
         if self.upstage_reasoning {
             return build_upstage_reasoning(reasoning_config, context);
@@ -939,6 +945,106 @@ fn build_qwen_api_kwargs_extras(
         top_level.insert("metadata".into(), Value::Object(metadata.clone()));
     }
     (Map::new(), top_level)
+}
+
+fn build_zai_reasoning(
+    reasoning_config: Option<&Map<String, Value>>,
+    context: &Map<String, Value>,
+) -> (Map<String, Value>, Map<String, Value>) {
+    // PARITY: ZaiProfile gates the thinking body on GLM 4.5+ and separately
+    // recognizes GLM-5.2 aliases for its native high/max effort knob.
+    let model = context.get("model").and_then(Value::as_str);
+    let supports_thinking = zai_model_supports_thinking(model);
+    let is_glm_5_2 = is_glm_5_2(model);
+    if !supports_thinking && !is_glm_5_2 {
+        return (Map::new(), Map::new());
+    }
+
+    let mut extra_body = Map::new();
+    let mut top_level = Map::new();
+    if let Some(reasoning_config) = reasoning_config {
+        let enabled = !reasoning_config
+            .get("enabled")
+            .and_then(Value::as_bool)
+            .is_some_and(|enabled| !enabled);
+        extra_body.insert(
+            "thinking".into(),
+            Value::Object(Map::from_iter([(
+                "type".into(),
+                Value::String(if enabled { "enabled" } else { "disabled" }.into()),
+            )])),
+        );
+    }
+
+    if is_glm_5_2 {
+        if let Some(effort) = glm_5_2_reasoning_effort(reasoning_config) {
+            top_level.insert("reasoning_effort".into(), Value::String(effort));
+        }
+    }
+    (extra_body, top_level)
+}
+
+fn zai_model_supports_thinking(model: Option<&str>) -> bool {
+    // PARITY: This mirrors ^glm-(\d+)(?:\.(\d+))? and intentionally ignores
+    // any suffix after the version prefix.
+    let model = model.unwrap_or_default().trim().to_ascii_lowercase();
+    let Some(version) = model.strip_prefix("glm-") else {
+        return false;
+    };
+    let major_end = version
+        .find(|character: char| !character.is_ascii_digit())
+        .unwrap_or(version.len());
+    if major_end == 0 {
+        return false;
+    }
+    let major = version[..major_end].parse::<u32>().unwrap_or(0);
+    let remainder = &version[major_end..];
+    let minor = if let Some(remainder) = remainder.strip_prefix('.') {
+        let minor_end = remainder
+            .find(|character: char| !character.is_ascii_digit())
+            .unwrap_or(remainder.len());
+        if minor_end == 0 {
+            0
+        } else {
+            remainder[..minor_end].parse::<u32>().unwrap_or(0)
+        }
+    } else {
+        0
+    };
+    (major, minor) >= (4, 5)
+}
+
+fn is_glm_5_2(model: Option<&str>) -> bool {
+    let model = model.unwrap_or_default().trim().to_ascii_lowercase();
+    !model.is_empty()
+        && ["glm-5.2", "glm-5-2", "glm-5p2"]
+            .iter()
+            .any(|token| model.contains(token))
+}
+
+fn glm_5_2_reasoning_effort(reasoning_config: Option<&Map<String, Value>>) -> Option<String> {
+    let reasoning_config = reasoning_config?;
+    if reasoning_config
+        .get("enabled")
+        .and_then(Value::as_bool)
+        .is_some_and(|enabled| !enabled)
+    {
+        return None;
+    }
+    let effort = reasoning_config
+        .get("effort")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .trim()
+        .to_ascii_lowercase();
+    if effort.is_empty() || effort == "none" {
+        return None;
+    }
+    if matches!(effort.as_str(), "xhigh" | "max" | "ultra") {
+        Some("max".into())
+    } else {
+        Some("high".into())
+    }
 }
 
 fn build_kimi_reasoning(
