@@ -9,10 +9,10 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
 Current branch/HEAD: `main` is aligned with `origin/main` after the local and
-GitHub API mirror sequence for the credential cooldown-recency unit. The
-local source commit `fd7e26d07e1efbab67885f56ca8d9eae2ce9b4a9` was mirrored as
-GitHub `e022d323070e2672017e26e71fb9c24678412b4d`; both refs resolve to tree
-`11def3079a8a63a329b59a963907afec98f041a0` with 273 matching tracked blobs.
+GitHub API mirror sequence for the auth-store locking unit. The local source
+commit `197c14819ebc37739d7a501aa1d94a2133ec4d32` was mirrored as GitHub
+`b98265b02c4b65fdb7aae8ace265a5cd5d925efc`; both refs resolve to tree
+`a7498bc6a0ba7d9f8f2b6e816664b70dcfc9ac43` with 273 matching tracked blobs.
 The connected GitHub API publishes each logical commit immediately as a
 sequential remote mirror. Its commit SHAs differ from the local sequence
 because the API cannot preserve local author/committer timestamps, but every
@@ -21,7 +21,10 @@ update. The local HTTPS Git client still has no credentials; use the connected
 GitHub API for future pushes until `gh auth login` or SSH is configured.
 
 Latest synchronized unit: local source
-`fd7e26d07e1efbab67885f56ca8d9eae2ce9b4a9` → GitHub
+`197c14819ebc37739d7a501aa1d94a2133ec4d32` → GitHub
+`b98265b02c4b65fdb7aae8ace265a5cd5d925efc`
+(`feat(agent): add auth store locking @ b9aa928`), with the previous local
+source `fd7e26d07e1efbab67885f56ca8d9eae2ce9b4a9` → GitHub
 `e022d323070e2672017e26e71fb9c24678412b4d`
 (`feat(agent): merge credential cooldown state @ b9aa928`), with the previous
 local source `43b4baf` → GitHub `72976e0748ed6c1b708cc35465e463594806c6f1`
@@ -172,7 +175,7 @@ with `0700` parents, per-provider profile/global fallback reads, and the
 final borrowed-secret sanitizer at the pool write boundary. The follow-on
 cooldown-recency merge now adopts newer live `EXHAUSTED` cooldowns and `DEAD`
 quarantines for the same token while rejecting re-auth token changes and
-expired cooldowns. The next auth-store extension adds platform-native
+expired cooldowns. The auth-store extension now adds platform-native
 exclusive `.lock` files with 15-second minimum timeouts, same-thread
 reentrancy, independent per-path holders, and locking across the full pool
 write transaction. Fifteen source-derived `unit`/`mock` tests pass in the
@@ -587,7 +590,7 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-Local `main` and `origin/main` are aligned after the credential cooldown source
+Local `main` and `origin/main` are aligned after the auth-store lock source
 and handoff mirror sequence. The recursive GitHub tree and local
 `git ls-tree -r` verification contain 273 blobs with no path/mode/SHA
 mismatches, and the worktree is clean. No conversion-ledger status changed: the current

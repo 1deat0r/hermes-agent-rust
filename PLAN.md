@@ -505,7 +505,10 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   `/home/mustbearnold/.cargo/bin/cargo test --workspace -- --test-threads=1`
   also passed. Environment/config discovery, provider seeding, OAuth refresh,
   leases, logging throttles, and cross-process orchestration beyond the
-  auth-store lock remain pending.
+  auth-store lock remain pending. Local source commit
+  `197c14819ebc37739d7a501aa1d94a2133ec4d32` was mirrored as GitHub
+  `b98265b02c4b65fdb7aae8ace265a5cd5d925efc`; both refs resolve to tree
+  `a7498bc6a0ba7d9f8f2b6e816664b70dcfc9ac43` with 273 matching tracked blobs.
 
 - 2026-08-24 (session 4c4): Continued the partial `agent.credential_pool`
   port (@ b9aa928) through cooldown-recency persistence merging. The Rust
