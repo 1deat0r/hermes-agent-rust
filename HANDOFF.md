@@ -1,6 +1,6 @@
 # Hermes Agent Rust — Next-session handoff
 
-Date: 2026-08-24 (Pacific/Auckland), session 4bc.
+Date: 2026-08-24 (Pacific/Auckland), session 4bd.
 
 ## Resume point
 
@@ -128,6 +128,21 @@ is aligned to the fetched remote mirror; the API-authored SHA differs only
 because it cannot preserve the local author/committer timestamps.
 
 ## What landed this session
+
+The current auxiliary-client transport/pool unit adds
+`AuxiliaryHttpClientConfig` and `openai_client_config_with_transport` in
+`hermes-agent::auxiliary_client`. They mirror the pinned upstream keepalive
+client's 20/100 limits, 20-second expiry, `(15, None, 15, 10)` timeout shape,
+env-only proxy/no-proxy mount policy, sync/async mode, TLS choice, and
+explicit-client-over-default precedence. The same unit adds fail-open pool
+selection-state projection and pool-first runtime credential fallback for the
+Nous/xAI-style auxiliary paths. Five source-derived `unit` tests were added;
+the focused suite now has 37 passing tests. These remain transport-neutral and
+injected-input adapters: concrete SDK/network client construction, pool
+persistence/rotation/refresh, cancellation, and provider fallback chains are
+still pending. The required workspace build and test commands passed; the
+local source commit and its GitHub mirror will be recorded in the next
+handoff checkpoint immediately after publication.
 
 The tracked documentation/GitHub metadata hook workflow is included in local
 commit `0d2bcd4` and its `1af2de6` GitHub mirror. It is the current non-ledger

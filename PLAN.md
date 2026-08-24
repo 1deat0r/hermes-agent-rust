@@ -354,7 +354,7 @@ rich/routing/cooldown/meta/reactions/conversation/delete modules.
 
 | Module / upstream surface | Status | Rust home, oracle, and evidence tier |
 |---|---|---|
-| `agent/auxiliary_client.py` (10,044 LOC) — routing, wire-parameter, task-provider precedence, pool-runtime projection, endpoint normalization, client-option, proxy/TLS policy, Codex credential-header, and Codex token-selection sections | 🟡 | `hermes-agent::auxiliary_client`; 32 source-derived parity tests (`unit`) cover provider aliases/special forms, OpenAI-compatible max-token keyword selection, payment/quota and rate-limit classification, disjoint stale-model/capability errors, explicit/configured endpoint and key precedence, MoA unwrapping, direct OpenAI aliasing, `auto` model normalization, pool key fallback, URL precedence/normalization, the Nous-only base-URL override, MiniMax/Z.AI/Kimi OpenAI wire paths, exact Anthropic host validation, default/explicit SDK retry options, env proxy precedence/SOCKS normalization/`NO_PROXY` bypass, default/custom/insecure TLS verification, fail-open CA handling, Codex originator/User-Agent/account-ID header shaping, pool-first/auth-store Codex token selection, JWT expiry filtering, and non-JWT fail-open behavior; SDK/httpx construction, remaining credential pools, async transport, cancellation, and fallback chains remain pending |
+| `agent/auxiliary_client.py` (10,044 LOC) — routing, wire-parameter, task-provider precedence, pool-runtime projection, endpoint normalization, client-option, proxy/TLS policy, Codex credential-header, Codex token-selection, keepalive transport options, and pool-first runtime credential sections | 🟡 | `hermes-agent::auxiliary_client`; 37 source-derived parity tests (`unit`) cover provider aliases/special forms, OpenAI-compatible max-token keyword selection, payment/quota and rate-limit classification, disjoint stale-model/capability errors, explicit/configured endpoint and key precedence, MoA unwrapping, direct OpenAI aliasing, `auto` model normalization, pool key fallback and fail-open selection states, URL precedence/normalization, the Nous-only base-URL override, MiniMax/Z.AI/Kimi OpenAI wire paths, exact Anthropic host validation, default/explicit SDK retry options, env proxy precedence/SOCKS normalization/`NO_PROXY` bypass, keepalive pool/timeout/mount options for sync and async modes, default/custom/insecure TLS verification, fail-open CA handling, Codex originator/User-Agent/account-ID header shaping, pool-first/auth-store Codex token selection, pool-first runtime credential fallback, JWT expiry filtering, and non-JWT fail-open behavior; concrete SDK/network client construction, full credential-pool lifecycle/rotation, cancellation, and provider fallback chains remain pending |
 
 ### hermes-providers base (Phase 2, upstream @ b9aa928)
 
@@ -482,6 +482,27 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 + the exact command, e.g. `cargo test -p hermes-time (unit)`.
 
 ## 7. Session log
+
+- 2026-08-24 (session 4bd): Continued the partial
+  `agent/auxiliary_client.py` port (@ b9aa928, 10,044 LOC) with the
+  transport and broader pool-selection boundary. The Rust
+  `AuxiliaryHttpClientConfig` mirrors `build_keepalive_http_client`'s sync /
+  async switch, 20/100 connection limits, 20-second idle expiry,
+  connect/read/write/pool timeout contract, env-only proxy selection, and
+  explicit no-proxy scheme mounts. `openai_client_config_with_transport`
+  preserves injected-client and explicit-client precedence alongside the
+  `max_retries=0` default. `select_auxiliary_pool_entry` preserves the
+  source's distinction between no pool, present-but-unselectable pool, and a
+  selected entry; `resolve_pool_first_runtime_credentials` adds the pool-first
+  Nous/xAI runtime fallback projection. Added 5 source-derived `unit` parity
+  tests first (37 total in `parity_auxiliary_client.rs`); the focused suite
+  passed. These are transport-neutral and injected-input adapters: concrete
+  SDK/network construction, pool persistence/rotation/refresh, cancellation,
+  and provider fallback chains remain higher-layer seams. Required
+  `/home/mustbearnold/.cargo/bin/cargo build --workspace` and
+  `/home/mustbearnold/.cargo/bin/cargo test --workspace` both passed; the
+  workspace test run reports only the three intentional delegation/schema doc
+  tests as ignored.
 
 - 2026-08-24 (session 4bc): Added the tracked documentation/GitHub metadata
   hook workflow. `.githooks/pre-commit` refreshes `tools/inventory.json`,

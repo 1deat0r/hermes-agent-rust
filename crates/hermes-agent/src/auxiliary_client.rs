@@ -1,15 +1,17 @@
 //! Dependency-safe parity helpers from `agent/auxiliary_client.py`.
 //!
 //! This module starts with pure routing predicates and wire parameter helpers.
-//! Client construction, credential pools, async transport, cancellation, and
-//! provider fallback chains remain higher-layer sections of the 10,044-line
-//! upstream module.
+//! Transport-neutral SDK/httpx options and pool-first credential projection are
+//! now included; concrete SDK/network clients, pool lifecycle/rotation,
+//! cancellation, and provider fallback chains remain higher-layer sections of
+//! the 10,044-line upstream module.
 
 use base64::{engine::general_purpose::URL_SAFE, Engine as _};
 use hermes_utils::{base_url_hostname, model_forces_max_completion_tokens, normalize_proxy_url};
 use serde_json::{json, Value};
 use std::collections::BTreeMap;
 use std::path::Path;
+use std::time::Duration;
 use thiserror::Error;
 
 /// Minimal exception-shaped adapter used by the source error classifiers.
@@ -384,6 +386,70 @@ pub fn pool_runtime_base_url(
     normalize_pool_url(selected)
 }
 
+/// Result of selecting a provider credential from the source pool boundary.
+///
+/// The Python pool is loaded dynamically and can fail open in two distinct
+/// ways: no usable pool exists, or a present pool cannot currently select an
+/// entry. Keeping the presence bit separate from the optional entry preserves
+/// the distinction used by Codex/Nous fallback logic.
+///
+/// PARITY: agent/auxiliary_client.py lines 1040-1076.
+pub fn select_auxiliary_pool_entry<'a>(
+    pool_load_succeeded: bool,
+    pool_has_credentials: bool,
+    selected_entry: Option<&'a AuxiliaryPoolEntry>,
+) -> (bool, Option<&'a AuxiliaryPoolEntry>) {
+    if !pool_load_succeeded || !pool_has_credentials {
+        return (false, None);
+    }
+    (true, selected_entry)
+}
+
+/// Runtime credential pair projected from a pool or legacy auth resolver.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AuxiliaryRuntimeCredentials {
+    pub api_key: String,
+    pub base_url: String,
+}
+
+/// Resolve auxiliary runtime credentials pool-first, then through a legacy
+/// auth-store/runtime resolver supplied by the caller.
+///
+/// A present pool with no selectable/usable entry does not suppress the
+/// legacy resolver for runtime calls: the source's Nous and xAI OAuth helpers
+/// both fall through to their singleton auth resolver in that case. URL
+/// normalization is shared with `pool_runtime_base_url` so provider-specific
+/// Nous overrides retain their precedence.
+///
+/// PARITY: agent/auxiliary_client.py lines 2195-2269.
+pub fn resolve_pool_first_runtime_credentials(
+    pool_present: bool,
+    pool_entry: Option<&AuxiliaryPoolEntry>,
+    pool_base_url_fallback: Option<&str>,
+    nous_inference_override: Option<&str>,
+    legacy: Option<(&str, &str)>,
+) -> Option<AuxiliaryRuntimeCredentials> {
+    if pool_present {
+        let api_key = pool_runtime_api_key(pool_entry);
+        let base_url =
+            pool_runtime_base_url(pool_entry, pool_base_url_fallback, nous_inference_override);
+        if !api_key.is_empty() && !base_url.is_empty() {
+            return Some(AuxiliaryRuntimeCredentials { api_key, base_url });
+        }
+    }
+
+    let (api_key, base_url) = legacy?;
+    let api_key = api_key.trim();
+    let base_url = normalize_pool_url(base_url);
+    if api_key.is_empty() || base_url.is_empty() {
+        return None;
+    }
+    Some(AuxiliaryRuntimeCredentials {
+        api_key: api_key.to_owned(),
+        base_url,
+    })
+}
+
 /// Normalize provider inference endpoints for the OpenAI-compatible client.
 ///
 /// MiniMax exposes an Anthropic Messages path alongside `/v1`, Z.AI uses a
@@ -430,12 +496,62 @@ pub fn is_anthropic_compatible_host(url: &str) -> bool {
     base_url_hostname(&normalized) == "api.anthropic.com"
 }
 
+/// Keepalive HTTP options passed to the eventual OpenAI-compatible SDK client.
+///
+/// This is the transport-neutral Rust representation of the source's httpx
+/// client. `plain_scheme_mounts` means the source installs explicit HTTP and
+/// HTTPS transports with the same TLS verification setting, which disables
+/// httpx's ambient system-proxy lookup when no env proxy was selected.
+///
+/// PARITY: agent/process_bootstrap.py lines 145-213.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AuxiliaryHttpClientConfig {
+    pub async_mode: bool,
+    pub proxy: Option<String>,
+    pub verify: AuxiliaryTlsVerify,
+    pub max_keepalive_connections: usize,
+    pub max_connections: usize,
+    pub keepalive_expiry: Duration,
+    pub connect_timeout: Duration,
+    pub read_timeout: Option<Duration>,
+    pub write_timeout: Duration,
+    pub pool_timeout: Duration,
+    pub plain_scheme_mounts: bool,
+}
+
+/// Build the source-equivalent keepalive client configuration.
+///
+/// The eventual Rust HTTP implementation consumes this value to construct a
+/// blocking or async client. Proxy selection is performed before deciding
+/// whether the source's explicit no-proxy scheme mounts are needed.
+pub fn auxiliary_http_client_config(
+    base_url: Option<&str>,
+    async_mode: bool,
+    verify: AuxiliaryTlsVerify,
+) -> AuxiliaryHttpClientConfig {
+    let proxy = auxiliary_proxy_for_base_url(base_url);
+    AuxiliaryHttpClientConfig {
+        async_mode,
+        plain_scheme_mounts: proxy.is_none(),
+        proxy,
+        verify,
+        max_keepalive_connections: 20,
+        max_connections: 100,
+        keepalive_expiry: Duration::from_secs(20),
+        connect_timeout: Duration::from_secs(15),
+        read_timeout: None,
+        write_timeout: Duration::from_secs(15),
+        pool_timeout: Duration::from_secs(10),
+    }
+}
+
 /// Options passed to the eventual OpenAI-compatible auxiliary SDK client.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AuxiliaryOpenAiClientConfig {
     pub api_key: String,
     pub base_url: String,
     pub max_retries: i64,
+    pub http_client: Option<AuxiliaryHttpClientConfig>,
 }
 
 /// Build the transport-independent OpenAI client options.
@@ -456,7 +572,34 @@ pub fn openai_client_config(
         api_key: api_key.to_owned(),
         base_url: base_url.to_owned(),
         max_retries: explicit_max_retries.unwrap_or(0),
+        http_client: None,
     }
+}
+
+/// Build OpenAI-compatible options with the source's injected keepalive
+/// client, while allowing an explicit caller-provided client to win.
+///
+/// This mirrors `_create_openai_client`'s `{**injected, **kwargs}` merge: the
+/// default transport is added first and an explicit transport replaces it.
+///
+/// PARITY: agent/auxiliary_client.py lines 172-231.
+pub fn openai_client_config_with_transport(
+    api_key: &str,
+    base_url: &str,
+    explicit_max_retries: Option<i64>,
+    async_mode: bool,
+    verify: AuxiliaryTlsVerify,
+    explicit_http_client: Option<AuxiliaryHttpClientConfig>,
+) -> AuxiliaryOpenAiClientConfig {
+    let mut config = openai_client_config(api_key, base_url, explicit_max_retries);
+    config.http_client = explicit_http_client.or_else(|| {
+        Some(auxiliary_http_client_config(
+            Some(base_url),
+            async_mode,
+            verify,
+        ))
+    });
+    config
 }
 
 const AUXILIARY_PROXY_ENV_KEYS: &[&str] = &[

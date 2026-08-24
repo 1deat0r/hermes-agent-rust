@@ -1,11 +1,13 @@
 use hermes_agent::auxiliary_client::{
-    auxiliary_max_tokens_param, auxiliary_proxy_for_base_url, auxiliary_proxy_from_env,
-    codex_cloudflare_headers, is_anthropic_compatible_host, is_model_incompatible_error,
-    is_model_not_found_error, is_payment_error, is_rate_limit_error, normalize_aux_provider,
-    openai_client_config, pool_runtime_api_key, pool_runtime_base_url, read_codex_access_token,
-    resolve_aux_task_provider_model, resolve_auxiliary_tls_verify, to_openai_base_url,
-    AuxiliaryError, AuxiliaryPoolEntry, AuxiliarySslVerifySetting, AuxiliaryTaskConfig,
-    AuxiliaryTlsVerify,
+    auxiliary_http_client_config, auxiliary_max_tokens_param, auxiliary_proxy_for_base_url,
+    auxiliary_proxy_from_env, codex_cloudflare_headers, is_anthropic_compatible_host,
+    is_model_incompatible_error, is_model_not_found_error, is_payment_error, is_rate_limit_error,
+    normalize_aux_provider, openai_client_config, openai_client_config_with_transport,
+    pool_runtime_api_key, pool_runtime_base_url, read_codex_access_token,
+    resolve_aux_task_provider_model, resolve_auxiliary_tls_verify,
+    resolve_pool_first_runtime_credentials, select_auxiliary_pool_entry, to_openai_base_url,
+    AuxiliaryError, AuxiliaryHttpClientConfig, AuxiliaryPoolEntry, AuxiliaryRuntimeCredentials,
+    AuxiliarySslVerifySetting, AuxiliaryTaskConfig, AuxiliaryTlsVerify,
 };
 use serde_json::json;
 use std::ffi::OsString;
@@ -573,6 +575,162 @@ fn openai_client_config_disables_sdk_retries_by_default() {
 fn openai_client_config_preserves_explicit_retry_override() {
     let config = openai_client_config("api-key", "https://provider.example/v1", Some(5));
     assert_eq!(config.max_retries, 5);
+}
+
+// Tier: unit — mirrors agent/process_bootstrap.py build_keepalive_http_client.
+#[test]
+fn auxiliary_http_client_config_matches_keepalive_pool_and_timeout_contract() {
+    let _lock = AUXILIARY_ENV_MUTEX.lock().unwrap();
+    let _environment = EnvironmentSnapshot::new();
+    clear_auxiliary_env();
+
+    let config = auxiliary_http_client_config(
+        Some("https://provider.example/v1"),
+        false,
+        AuxiliaryTlsVerify::CaBundle("/tmp/provider-ca.pem".into()),
+    );
+
+    assert_eq!(
+        config,
+        AuxiliaryHttpClientConfig {
+            async_mode: false,
+            proxy: None,
+            verify: AuxiliaryTlsVerify::CaBundle("/tmp/provider-ca.pem".into()),
+            max_keepalive_connections: 20,
+            max_connections: 100,
+            keepalive_expiry: std::time::Duration::from_secs(20),
+            connect_timeout: std::time::Duration::from_secs(15),
+            read_timeout: None,
+            write_timeout: std::time::Duration::from_secs(15),
+            pool_timeout: std::time::Duration::from_secs(10),
+            plain_scheme_mounts: true,
+        }
+    );
+}
+
+// Tier: unit — mirrors agent/process_bootstrap.py proxy/mount construction.
+#[test]
+fn auxiliary_http_client_config_uses_proxy_and_async_transport_precedence() {
+    let _lock = AUXILIARY_ENV_MUTEX.lock().unwrap();
+    let _environment = EnvironmentSnapshot::new();
+    clear_auxiliary_env();
+    unsafe { std::env::set_var("HTTPS_PROXY", "http://proxy.example:8080") };
+
+    let config = auxiliary_http_client_config(
+        Some("https://provider.example/v1"),
+        true,
+        AuxiliaryTlsVerify::Disabled,
+    );
+
+    assert!(config.async_mode);
+    assert_eq!(config.proxy.as_deref(), Some("http://proxy.example:8080"));
+    assert!(!config.plain_scheme_mounts);
+    assert_eq!(config.verify, AuxiliaryTlsVerify::Disabled);
+}
+
+// Tier: unit — mirrors agent/auxiliary_client.py _create_openai_client kwargs merge.
+#[test]
+fn openai_client_config_with_transport_injects_default_and_preserves_explicit_client() {
+    let _lock = AUXILIARY_ENV_MUTEX.lock().unwrap();
+    let _environment = EnvironmentSnapshot::new();
+    clear_auxiliary_env();
+
+    let defaulted = openai_client_config_with_transport(
+        "api-key",
+        "https://provider.example/v1",
+        None,
+        false,
+        AuxiliaryTlsVerify::Default,
+        None,
+    );
+    assert_eq!(defaulted.max_retries, 0);
+    assert!(defaulted.http_client.is_some());
+
+    let explicit = AuxiliaryHttpClientConfig {
+        async_mode: true,
+        proxy: Some("http://explicit.example:8080".into()),
+        verify: AuxiliaryTlsVerify::Disabled,
+        max_keepalive_connections: 1,
+        max_connections: 2,
+        keepalive_expiry: std::time::Duration::from_secs(3),
+        connect_timeout: std::time::Duration::from_secs(4),
+        read_timeout: Some(std::time::Duration::from_secs(5)),
+        write_timeout: std::time::Duration::from_secs(6),
+        pool_timeout: std::time::Duration::from_secs(7),
+        plain_scheme_mounts: false,
+    };
+    let overridden = openai_client_config_with_transport(
+        "api-key",
+        "https://provider.example/v1",
+        Some(4),
+        false,
+        AuxiliaryTlsVerify::Default,
+        Some(explicit.clone()),
+    );
+    assert_eq!(overridden.max_retries, 4);
+    assert_eq!(overridden.http_client, Some(explicit));
+}
+
+// Tier: unit — mirrors agent/auxiliary_client.py _select_pool_entry.
+#[test]
+fn auxiliary_pool_selection_preserves_fail_open_presence_states() {
+    let entry = AuxiliaryPoolEntry {
+        runtime_api_key: Some("pool-key".into()),
+        ..AuxiliaryPoolEntry::default()
+    };
+
+    assert_eq!(
+        select_auxiliary_pool_entry(false, true, Some(&entry)),
+        (false, None)
+    );
+    assert_eq!(
+        select_auxiliary_pool_entry(true, false, Some(&entry)),
+        (false, None)
+    );
+    assert_eq!(select_auxiliary_pool_entry(true, true, None), (true, None));
+    assert_eq!(
+        select_auxiliary_pool_entry(true, true, Some(&entry)),
+        (true, Some(&entry))
+    );
+}
+
+// Tier: unit — mirrors Nous/xAI auxiliary pool-first runtime resolution.
+#[test]
+fn pool_first_runtime_credentials_prefer_valid_pool_then_legacy_fallback() {
+    let pool_entry = AuxiliaryPoolEntry {
+        runtime_api_key: Some("  pool-key  ".into()),
+        runtime_base_url: Some(" https://pool.example/v1/// ".into()),
+        ..AuxiliaryPoolEntry::default()
+    };
+    let legacy = Some((" legacy-key ", " https://legacy.example/v1/// "));
+
+    assert_eq!(
+        resolve_pool_first_runtime_credentials(true, Some(&pool_entry), None, None, legacy,),
+        Some(AuxiliaryRuntimeCredentials {
+            api_key: "pool-key".into(),
+            base_url: "https://pool.example/v1".into(),
+        })
+    );
+
+    let invalid_pool = AuxiliaryPoolEntry {
+        runtime_api_key: Some(" ".into()),
+        runtime_base_url: Some("https://pool.example/v1".into()),
+        ..AuxiliaryPoolEntry::default()
+    };
+    assert_eq!(
+        resolve_pool_first_runtime_credentials(true, Some(&invalid_pool), None, None, legacy),
+        Some(AuxiliaryRuntimeCredentials {
+            api_key: "legacy-key".into(),
+            base_url: "https://legacy.example/v1".into(),
+        })
+    );
+    assert_eq!(
+        resolve_pool_first_runtime_credentials(false, None, None, None, legacy),
+        Some(AuxiliaryRuntimeCredentials {
+            api_key: "legacy-key".into(),
+            base_url: "https://legacy.example/v1".into(),
+        })
+    );
 }
 
 // Tier: unit — mirrors tests/run_agent/test_create_openai_client_proxy_env.py.
