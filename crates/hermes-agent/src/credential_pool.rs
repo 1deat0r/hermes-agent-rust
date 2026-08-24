@@ -148,6 +148,23 @@ impl EnvironmentSnapshot {
     }
 }
 
+/// Explicit inputs for the full `load_pool` composition boundary.
+///
+/// The owning auth/config layer constructs this view after resolving provider
+/// singletons and configuration. Borrowing the values keeps this crate
+/// independent of those higher-level representations while avoiding a wide
+/// positional function signature.
+pub struct PoolLoadInputs<'a> {
+    pub provider_config: Option<&'a ProviderCredentialConfig>,
+    pub pool_config: Option<&'a Map<String, Value>>,
+    pub snapshot: &'a EnvironmentSnapshot,
+    pub singleton_state: Option<&'a Map<String, Value>>,
+    pub custom_providers: &'a [Value],
+    pub model_config: Option<&'a Map<String, Value>>,
+    pub profile_path: &'a Path,
+    pub global_path: Option<&'a Path>,
+}
+
 /// Result of one source-seeding pass.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct SeedResult {
@@ -764,10 +781,9 @@ pub fn prune_stale_seeded_entries(
 
 /// Load, environment-seed, prune, normalize, and persist one provider pool.
 ///
-/// PARITY: `agent/credential_pool.py.load_pool` (3084–3165), limited to the
-/// environment/config-independent portion currently owned by this crate. The
-/// higher auth layer will compose singleton and custom-provider seeders around
-/// this transaction once those source contracts are ported.
+/// This compatibility wrapper keeps the earlier environment-only boundary for
+/// callers that have not yet supplied provider-owned singleton or custom
+/// configuration inputs.
 pub fn load_pool_with_environment_at(
     provider: &str,
     provider_config: Option<&ProviderCredentialConfig>,
@@ -776,10 +792,37 @@ pub fn load_pool_with_environment_at(
     profile_path: &Path,
     global_path: Option<&Path>,
 ) -> io::Result<CredentialPool> {
+    load_pool_with_inputs_at(
+        provider,
+        PoolLoadInputs {
+            provider_config,
+            pool_config,
+            snapshot,
+            singleton_state: None,
+            custom_providers: &[],
+            model_config: None,
+            profile_path,
+            global_path,
+        },
+    )
+}
+
+/// Load one provider pool from explicit auth/config inputs.
+///
+/// PARITY: `agent/credential_pool.py.load_pool` (3084–3165). The upstream
+/// function chooses the `custom:*` branch before any singleton/environment
+/// seeding. This bottom-up boundary receives the already-resolved singleton
+/// state, custom-provider list, model map, and suppression set through the
+/// environment snapshot so the higher auth/config layer can supply them
+/// without an upward crate dependency.
+pub fn load_pool_with_inputs_at(
+    provider: &str,
+    inputs: PoolLoadInputs<'_>,
+) -> io::Result<CredentialPool> {
     let provider = provider.trim().to_ascii_lowercase();
     let raw = crate::credential_store::read_credential_pool_at(
-        Some(profile_path),
-        global_path,
+        Some(inputs.profile_path),
+        inputs.global_path,
         Some(&provider),
     )?;
     let raw_entries = raw.as_array().cloned().unwrap_or_default();
@@ -815,7 +858,7 @@ pub fn load_pool_with_environment_at(
     if raw_needs_auth_normalization {
         // A global fallback is read-only. Only heal auth-type normalization
         // when the active profile actually owns a non-empty provider pool.
-        let active_store = crate::credential_store::load_auth_store(Some(profile_path))?;
+        let active_store = crate::credential_store::load_auth_store(Some(inputs.profile_path))?;
         let active_entries = active_store
             .get("credential_pool")
             .and_then(Value::as_object)
@@ -824,12 +867,48 @@ pub fn load_pool_with_environment_at(
         raw_needs_auth_normalization = active_entries.is_some_and(|rows| !rows.is_empty());
     }
 
-    let seed_result = seed_from_env(&provider, &mut entries, provider_config, snapshot);
-    let mut changed = raw_needs_sanitization || raw_needs_auth_normalization || seed_result.changed;
-    // Ordinary pool loads are non-destructive for env rows: another process
-    // may own the environment value even when this process does not.
-    changed |= prune_stale_seeded_entries(&mut entries, &seed_result.active_sources, false);
-    changed |= normalize_pool_priorities(&provider, &mut entries);
+    let mut changed = raw_needs_sanitization || raw_needs_auth_normalization;
+    if provider.starts_with("custom:") {
+        // PARITY: `load_pool` custom branch (3115–3119). Custom pools do not
+        // run singleton or environment seeders; only their config/model
+        // sources are active, and stale borrowed/env references are pruned.
+        let seed_result = seed_custom_pool(
+            &provider,
+            &mut entries,
+            inputs.custom_providers,
+            inputs.model_config,
+            &inputs.snapshot.suppressed_sources,
+        );
+        changed |= seed_result.changed;
+        changed |= prune_stale_seeded_entries(&mut entries, &seed_result.active_sources, true);
+    } else {
+        // PARITY: `load_pool` non-custom branch (3120–3138). Singleton state
+        // is applied before environment state, then env rows are retained on
+        // ordinary reads so one process cannot erase another process's source.
+        let singleton_result = seed_from_singletons(
+            &provider,
+            &mut entries,
+            inputs.singleton_state,
+            &inputs.snapshot.suppressed_sources,
+        );
+        let env_result = seed_from_env(
+            &provider,
+            &mut entries,
+            inputs.provider_config,
+            inputs.snapshot,
+        );
+        changed |= singleton_result.changed || env_result.changed;
+        let active_sources = singleton_result
+            .active_sources
+            .union(&env_result.active_sources)
+            .cloned()
+            .collect::<BTreeSet<_>>();
+        // Ordinary pool loads are non-destructive for env rows: another
+        // process may own the environment value even when this process does
+        // not. File-backed singleton rows still prune when absent.
+        changed |= prune_stale_seeded_entries(&mut entries, &active_sources, false);
+        changed |= normalize_pool_priorities(&provider, &mut entries);
+    }
 
     if changed {
         let new_ids: BTreeSet<String> = entries.iter().map(|entry| entry.id.clone()).collect();
@@ -838,7 +917,7 @@ pub fn load_pool_with_environment_at(
         persisted.sort_by_key(|entry| entry.priority);
         let payloads: Vec<Value> = persisted.iter().map(PooledCredential::to_json).collect();
         crate::credential_store::write_credential_pool_at(
-            profile_path,
+            inputs.profile_path,
             &provider,
             &payloads,
             &removed_ids,
@@ -847,7 +926,7 @@ pub fn load_pool_with_environment_at(
     Ok(CredentialPool::new(
         &provider,
         entries,
-        pool_strategy_from_config(&provider, pool_config),
+        pool_strategy_from_config(&provider, inputs.pool_config),
     ))
 }
 

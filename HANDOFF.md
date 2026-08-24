@@ -238,12 +238,18 @@ token/source/endpoint inputs in this crate. Two additional custom-pool source-
 derived `mock` tests bring the focused wave to 55 pool plus 15 persistence
 tests (70 total). Custom-pool seeding accepts explicit provider/model config
 and mirrors config/model API-key rows with normalized endpoint identity and
-suppression. The remaining full
-loader/config/custom-provider composition, Z.AI endpoint probing, OAuth
-refresh, leases, and logging throttles remain pending. Local source commit
-`2c7798500593d6ac290c235181da28a7ef81e8d2` was mirrored as GitHub
-`dadb41d8b1e8cf4da277d6b133a81e3314122ad1`; both refs resolve to tree
-`13b3e6306207c0e0b0f8b4d878208aea459b8d4f` with 273 matching tracked blobs.
+suppression. The current source checkpoint adds `PoolLoadInputs` and
+`load_pool_with_inputs_at`, preserving the upstream `custom:*` versus
+non-custom branch, singleton-then-environment ordering, non-destructive
+environment pruning, custom stale-row pruning, Anthropic priority
+normalization, strategy selection, and borrowed-safe persistence. Two more
+source-derived `mock` tests bring the focused wave to 57 pool plus 15
+persistence tests (72 total). One persistence assertion now allows the
+sub-microsecond precision loss introduced by JSON floating-point round trips;
+source behavior is unchanged. Configuration discovery, custom-provider
+configuration loading, Z.AI endpoint probing, OAuth refresh, leases, and
+logging throttles remain pending. The local/GitHub source and documentation
+mirror refs will be appended at the next handoff checkpoint.
 
 The preceding synchronized source unit extended `hermes-agent::credential_pool`
 through the lower environment-aware `load_pool` transaction. It added the
@@ -690,14 +696,15 @@ and 73 done / 11 partial / 1,019 missing production modules.
 
 ## Next actions, in order
 
-1. Continue `agent.credential_pool` through full singleton/config/custom-provider
-   `load_pool` composition, Z.AI probing, and
-   OAuth refresh; the row model,
+1. Continue `agent.credential_pool` through configuration discovery, custom-
+   provider configuration loading, Z.AI probing, and OAuth refresh; the row
+   model,
    serialization, source upsert, strategy, provider-boundary, selection,
    persistence, cooldown-recency merge, auth-store lock, and environment
-   seeding input boundary, lower environment-aware load transaction, and
-   Anthropic/Nous/Copilot/Qwen/MiniMax/OpenAI Codex/xAI singleton state boundaries are
-   and custom-pool config/model seeding boundary are now recorded.
+   seeding input boundary, lower environment-aware load transaction, explicit
+   full `load_pool` composition, Anthropic/Nous/Copilot/Qwen/MiniMax/OpenAI
+   Codex/xAI singleton state boundaries, and custom-pool config/model seeding
+   boundary are now recorded.
 2. Then connect the auxiliary-client concrete transport to credential-pool
    lifecycle, cancellation, and provider fallback seams without promoting
    either partial module prematurely.
@@ -730,9 +737,10 @@ The strict production formula is `done production modules / 1,103`; partial rows
 
 ## Fidelity notes
 
-- The credential environment seeder, lower `load_pool` transaction, and
-  Anthropic/Nous/Copilot/Qwen/MiniMax/OpenAI Codex/xAI singleton seeders plus
-  custom-pool config/model seeding keep the agent crate
+- The credential environment seeder, lower `load_pool` transaction, explicit
+  full `load_pool` composition, and Anthropic/Nous/Copilot/Qwen/MiniMax/OpenAI
+  Codex/xAI singleton seeders plus custom-pool config/model seeding keep the
+  agent crate
   bottom-up by taking provider registry metadata, pool config, resolved
   singleton state, secret-scope values, suppression state, and auth-store paths
   as explicit inputs. Anthropic's provider/API-key-path gates and resolved
@@ -741,8 +749,8 @@ The strict production formula is `done production modules / 1,103`; partial rows
   Copilot resolved exchanged-token/source/endpoint mapping, Qwen
   resolved-credential field copy, MiniMax OAuth state mapping, OpenAI Codex
   nested-token field copy, and xAI nested-token field copy are mirrored; the
-  full loader/config/custom-provider composition and the source's Z.AI network
-  endpoint probe remain deferred to the auth/provider layer.
+  config discovery, custom-provider configuration loading, and the source's
+  Z.AI network endpoint probe remain deferred to the auth/provider layer.
 - Desktop emitter is process-global like upstream; session-ID lookup remains a thread-local gateway seam.
 - Credential registration uses an ordered vector for Python dict insertion order; it remains thread-local rather than async-task-local.
 - Daemon pool rejects zero workers like Python; Rust Drop intentionally avoids joining wedged daemon workers.

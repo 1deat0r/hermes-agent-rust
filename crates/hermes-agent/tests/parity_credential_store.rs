@@ -408,7 +408,8 @@ fn write_pool_adopts_newer_live_cooldown_for_the_same_token() {
     assert_eq!(persisted["last_error_reason"], "rate_limit");
     assert_eq!(persisted["last_error_message"], "slow down");
     let reset_at = persisted["last_error_reset_at"].as_f64().unwrap();
-    assert!((reset_at - (now + 300.0)).abs() < 1e-9);
+    // JSON round-tripping an epoch f64 can lose sub-microsecond precision.
+    assert!((reset_at - (now + 300.0)).abs() < 1e-6);
 }
 
 // Tier: unit — mirrors the source's expired-cooldown non-resurrection guard.

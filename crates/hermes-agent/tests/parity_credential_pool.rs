@@ -5,7 +5,7 @@ use hermes_agent::credential_pool::{
     normalize_custom_pool_name, normalize_pool_priorities, pool_strategy_from_config,
     prune_stale_seeded_entries, seed_custom_pool, seed_from_env, seed_from_singletons,
     upsert_entry, CredentialPool, CredentialStatus, EnvironmentSnapshot, PoolErrorContext,
-    PoolStrategy, PooledCredential, ProviderCredentialConfig,
+    PoolLoadInputs, PoolStrategy, PooledCredential, ProviderCredentialConfig,
 };
 use hermes_agent::credential_store::{read_credential_pool_at, save_auth_store};
 use serde_json::{json, Value};
@@ -329,6 +329,180 @@ fn environment_pool_loader_collapses_duplicate_rows_and_keeps_first_identity() {
             .collect::<Vec<_>>(),
         vec![json!("current-row")]
     );
+}
+
+// Tier: mock — mirrors agent/credential_pool.py::load_pool's non-custom branch
+// and tests/agent/test_credential_pool.py's environment/singleton loader cases.
+#[test]
+fn composed_pool_loader_runs_singleton_and_env_seeding_and_prunes_stale_rows() {
+    let temp = tempfile::tempdir().unwrap();
+    let auth_path = temp.path().join("hermes/auth.json");
+    let mut store = serde_json::Map::new();
+    store.insert(
+        "credential_pool".into(),
+        json!({
+            "anthropic": [
+                {
+                    "id": "stale-claude-code",
+                    "source": "claude_code",
+                    "auth_type": "oauth",
+                    "access_token": "stale-oauth-token",
+                    "priority": 0,
+                    "label": "stale"
+                }
+            ]
+        }),
+    );
+    save_auth_store(&mut store, Some(&auth_path)).unwrap();
+
+    let snapshot = env_snapshot(&[], &[("ANTHROPIC_TOKEN", "sk-ant-api03-env")]);
+    let singleton = json!({
+        "provider_explicitly_configured": true,
+        "api_key_path_explicit": false,
+        "hermes_pkce": {
+            "accessToken": "sk-ant-oat01-pkce",
+            "refreshToken": "pkce-refresh",
+            "expiresAt": 1_900_000_000_000i64
+        }
+    });
+    let singleton = singleton.as_object().unwrap().clone();
+    let provider_config = ProviderCredentialConfig::api_key(
+        ["ANTHROPIC_API_KEY"],
+        None::<String>,
+        "https://api.anthropic.com/v1",
+    );
+
+    let pool = hermes_agent::credential_pool::load_pool_with_inputs_at(
+        "anthropic",
+        PoolLoadInputs {
+            provider_config: Some(&provider_config),
+            pool_config: None,
+            snapshot: &snapshot,
+            singleton_state: Some(&singleton),
+            custom_providers: &[],
+            model_config: None,
+            profile_path: &auth_path,
+            global_path: None,
+        },
+    )
+    .unwrap();
+
+    let loaded_entries = pool.entries();
+    let sources = loaded_entries
+        .iter()
+        .map(|entry| entry.source.as_str())
+        .collect::<BTreeSet<_>>();
+    assert_eq!(
+        sources,
+        BTreeSet::from(["env:ANTHROPIC_TOKEN", "hermes_pkce"])
+    );
+    assert!(loaded_entries
+        .iter()
+        .any(|entry| entry.access_token == "sk-ant-oat01-pkce"));
+    assert!(!loaded_entries
+        .iter()
+        .any(|entry| entry.source == "claude_code"));
+
+    let persisted = read_credential_pool_at(Some(&auth_path), None, Some("anthropic"))
+        .unwrap()
+        .as_array()
+        .unwrap()
+        .to_vec();
+    assert_eq!(persisted.len(), 2);
+    assert!(!persisted
+        .iter()
+        .any(|entry| entry["source"] == "claude_code"));
+}
+
+// Tier: mock — mirrors agent/credential_pool.py::load_pool's custom:* branch
+// and tests/agent/test_credential_pool.py::test_custom_endpoint_pool_seeds_*.
+#[test]
+fn composed_custom_pool_uses_custom_sources_without_singleton_or_env_seeding() {
+    let temp = tempfile::tempdir().unwrap();
+    let auth_path = temp.path().join("hermes/auth.json");
+    let mut store = serde_json::Map::new();
+    store.insert(
+        "credential_pool".into(),
+        json!({
+            "custom:relay": [
+                {
+                    "id": "stale-oauth",
+                    "source": "hermes_pkce",
+                    "auth_type": "oauth",
+                    "access_token": "stale-oauth-token",
+                    "priority": 0,
+                    "label": "stale"
+                },
+                {
+                    "id": "manual-row",
+                    "source": "manual",
+                    "auth_type": "api_key",
+                    "access_token": "manual-key",
+                    "priority": 1,
+                    "label": "manual"
+                }
+            ]
+        }),
+    );
+    save_auth_store(&mut store, Some(&auth_path)).unwrap();
+
+    let providers = vec![json!({
+        "name": "Relay",
+        "base_url": "https://relay.example/v1/",
+        "api_key": "config-key"
+    })];
+    let model = json!({
+        "provider": "custom",
+        "base_url": "https://relay.example/v1",
+        "api_key": "model-key"
+    });
+    let model = model.as_object().unwrap().clone();
+    let snapshot = env_snapshot(&[], &[("OPENROUTER_API_KEY", "must-not-seed")]);
+    let singleton = json!({
+        "hermes_pkce": {"accessToken": "must-not-seed"}
+    });
+    let singleton = singleton.as_object().unwrap().clone();
+
+    let pool = hermes_agent::credential_pool::load_pool_with_inputs_at(
+        "custom:relay",
+        PoolLoadInputs {
+            provider_config: None,
+            pool_config: None,
+            snapshot: &snapshot,
+            singleton_state: Some(&singleton),
+            custom_providers: &providers,
+            model_config: Some(&model),
+            profile_path: &auth_path,
+            global_path: None,
+        },
+    )
+    .unwrap();
+
+    let loaded_entries = pool.entries();
+    let sources = loaded_entries
+        .iter()
+        .map(|entry| entry.source.as_str())
+        .collect::<BTreeSet<_>>();
+    assert_eq!(
+        sources,
+        BTreeSet::from(["config:Relay", "manual", "model_config"])
+    );
+    assert!(!loaded_entries
+        .iter()
+        .any(|entry| entry.access_token == "must-not-seed"));
+    assert_eq!(
+        loaded_entries
+            .iter()
+            .find(|entry| entry.source == "config:Relay")
+            .and_then(|entry| entry.base_url.as_deref()),
+        Some("https://relay.example/v1")
+    );
+    let persisted_payload =
+        read_credential_pool_at(Some(&auth_path), None, Some("custom:relay")).unwrap();
+    let persisted = persisted_payload.as_array().unwrap();
+    assert!(!persisted
+        .iter()
+        .any(|entry| entry["source"] == "hermes_pkce"));
 }
 
 // Tier: mock — mirrors tests/agent/test_credential_pool.py::test_load_pool_mirrors_nous_invoke_jwt_agent_key_runtime_api_key.
