@@ -9,10 +9,10 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
 Current branch/HEAD: `main` is aligned with `origin/main` after the local and
-GitHub API mirror sequence for the lower environment-aware loader. The local
-source commit `d4322dded66b9ef9340212116514f6db63ee565a` was mirrored as
-GitHub `038a61c9f78b34426c07dcdf487df5fbd86ba808`; both refs resolve to tree
-`d3765b69460cc5c11e066f1e2268cb9b2354ec46` with 273 matching tracked blobs.
+GitHub API mirror sequence for the Nous singleton seeder. The local source
+commit `e0d804b3b851b49ccc7688ee5e044ccdef5e7f26` was mirrored as GitHub
+`a8e152495fe343c6f793c7e1980add0ccda466ce`; both refs resolve to tree
+`cca9c7bdb420b42dd7abb7bf7b443de3ce6da2da` with 273 matching tracked blobs.
 The connected GitHub API publishes each logical commit immediately as a
 sequential remote mirror. Its commit SHAs differ from the local sequence
 because the API cannot preserve local author/committer timestamps, but every
@@ -21,10 +21,14 @@ update. The local HTTPS Git client still has no credentials; use the connected
 GitHub API for future pushes until `gh auth login` or SSH is configured.
 
 Latest synchronized unit: local source
-`d4322dded66b9ef9340212116514f6db63ee565a` → GitHub
+`e0d804b3b851b49ccc7688ee5e044ccdef5e7f26` → GitHub
+`a8e152495fe343c6f793c7e1980add0ccda466ce`
+(`feat(agent): seed Nous singleton credentials @ b9aa928`), with the previous
+local source `d4322dded66b9ef9340212116514f6db63ee565a` → GitHub
 `038a61c9f78b34426c07dcdf487df5fbd86ba808`
 (`feat(agent): compose environment pool loader @ b9aa928`), with the previous
 local source `608f5d409848a35b9e10c8971269cbea662d7a74` → GitHub
+`628c0ee13a14ed5a77e59e88da6accfb083e4ff9`
 `628c0ee13a14ed5a77e59e88da6accfb083e4ff9`
 (`feat(agent): add environment credential seeding @ b9aa928`), with the
 previous local source `197c14819ebc37739d7a501aa1d94a2133ec4d32` → GitHub
@@ -183,9 +187,10 @@ scope, and TLS fields. Two source-derived `mock` tests were added first; the
 focused credential-pool wave now has 33 pool plus 15 persistence tests. The
 remaining singleton branches, full loader/config/custom-provider composition,
 Z.AI endpoint probing, OAuth refresh, leases, and logging throttles remain
-pending. The exact source and documentation mirror refs will be recorded in
-the next handoff checkpoint immediately after this source commit is
-published.
+pending. Local source commit
+`e0d804b3b851b49ccc7688ee5e044ccdef5e7f26` was mirrored as GitHub
+`a8e152495fe343c6f793c7e1980add0ccda466ce`; both refs resolve to tree
+`cca9c7bdb420b42dd7abb7bf7b443de3ce6da2da` with 273 matching tracked blobs.
 
 The preceding synchronized source unit extended `hermes-agent::credential_pool`
 through the lower environment-aware `load_pool` transaction. It added the
@@ -621,15 +626,14 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-The source commit for the Nous singleton seeder is ready for the immediate
-local/GitHub mirror sequence; its exact commit/tree refs will be written in
-the next documentation-only checkpoint. Before this unit, local `main` and
-`origin/main` were aligned at GitHub mirror commit
-`1dd92e55aa9fb83f6dd7c6207a000466f8a13c2c`, whose tree
-`ff9ca00ef53dff5392fe3bffaf8db05341a264d6` was verified recursively with 273
-blobs and no path/mode/SHA mismatches. No conversion-ledger status changed:
-the current summary is 73 done / 11 partial / 3,798 missing tracked modules
-and 73 done / 11 partial / 1,019 missing production modules.
+Local `main` and `origin/main` are aligned at GitHub mirror commit
+`a8e152495fe343c6f793c7e1980add0ccda466ce`. Its tree
+`cca9c7bdb420b42dd7abb7bf7b443de3ce6da2da` was verified recursively against
+the local source tree with 273 blobs and no path/mode/SHA mismatches; this
+handoff is the immediate documentation checkpoint for that mirror. No
+conversion-ledger status changed: the current summary is 73 done / 11 partial /
+3,798 missing tracked modules and 73 done / 11 partial / 1,019 missing
+production modules.
 
 ## Next actions, in order
 
