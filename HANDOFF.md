@@ -663,10 +663,11 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-After the Anthropic source mirror, local `main` and `origin/main` are aligned at
-GitHub mirror commit
-`502491d1a790c369613d717b64620c98c82b94fa`, whose tree
-`e60b32164a164b88f010aede28e80c2bd1d5edbf` was verified recursively with 273
+Local `main` and `origin/main` are aligned after the Anthropic source and
+documentation mirror sequence. The latest source snapshot, local
+`4659f291b9bdc3637d3ebe5a2109f2cb8ee33f65` → GitHub
+`502491d1a790c369613d717b64620c98c82b94fa`, has tree
+`e60b32164a164b88f010aede28e80c2bd1d5edbf`, verified recursively with 273
 blobs and no path/mode/SHA mismatches. No conversion-ledger status changed:
 the current summary is 73 done / 11 partial / 3,798 missing tracked modules
 and 73 done / 11 partial / 1,019 missing production modules.
