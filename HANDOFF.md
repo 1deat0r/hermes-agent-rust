@@ -1,6 +1,6 @@
 # Hermes Agent Rust — Next-session handoff
 
-Date: 2026-08-24 (Pacific/Auckland), session 4bf.
+Date: 2026-08-24 (Pacific/Auckland), session 4c0.
 
 ## Resume point
 
@@ -9,8 +9,7 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
 Current branch/HEAD: `main` is aligned with `origin/main` after the local and
-GitHub API mirror sequence for the auxiliary-client concrete transport unit
-and its handoff checkpoint.
+GitHub API mirror sequence for the final auxiliary-client handoff checkpoint.
 The connected GitHub API publishes each logical commit immediately as a
 sequential remote mirror. Its commit SHAs differ from the local sequence
 because the API cannot preserve local author/committer timestamps, but every
@@ -18,9 +17,11 @@ tree snapshot and commit message matches and is verified before each ref
 update. The local HTTPS Git client still has no credentials; use the connected
 GitHub API for future pushes until `gh auth login` or SSH is configured.
 
-Latest synchronized unit: local handoff `743fbcf` → GitHub `539b7c0`
-(`handoff: finalize auxiliary reqwest checkpoint @ b9aa928`), with the
-previous local handoff `5762c3c` → GitHub `2cd0262`
+Latest synchronized unit: local handoff `ffcdf32` → GitHub `2dec2f0`
+(`handoff: record final auxiliary docs refs @ b9aa928`), with the previous
+local handoff `743fbcf` → GitHub `539b7c0`
+(`handoff: finalize auxiliary reqwest checkpoint @ b9aa928`), the earlier
+local handoff `5762c3c` → GitHub `2cd0262`
 (`handoff: record auxiliary reqwest mirror refs @ b9aa928`), source local
 `56871db` → GitHub `7984aaa`
 (`feat(agent): construct auxiliary reqwest clients @ b9aa928`) and the
@@ -154,6 +155,21 @@ logging throttles, and cross-process locking remain pending. The required
 `/home/mustbearnold/.cargo/bin/cargo test --workspace` both passed; local
 `6fcc72f` was mirrored as GitHub `1d46bab`, and the remote/local tree is
 `b69eb818bc34145186f7432c8ebe8910e3f461da` with 270 matching tracked blobs.
+
+The current credential-pool model unit extends `PooledCredential` with the
+source's OAuth/provider metadata, JSON-only `extra` fields, defaulting and ISO
+timestamp rehydration, persisted `last_status`, Anthropic `sk-ant-oat` auth
+normalization, token labels, runtime base URLs, and Nous invoke-JWT scope/
+expiry filtering. `to_dict`/`to_json` applies the upstream borrowed-secret
+sanitizer and short SHA-256 fingerprint while preserving manual and
+provider-owned device-code state. Six source-derived `unit` tests were added
+first; the focused suite now has 14 passing pool tests. The workspace build
+passed. The default parallel workspace test reproduced the existing
+process-global `hermes-tools::parity_credential_files` race twice; the exact
+isolated test and serialized workspace test passed, with only the three
+intentional delegation/schema doc tests ignored. Auth-store orchestration,
+environment/config seeding, OAuth refresh, leases, random selection, logging
+throttles, and cross-process pool locking remain pending.
 
 The current auxiliary-client transport/pool unit adds
 `AuxiliaryHttpClientConfig` and `openai_client_config_with_transport` in
@@ -512,8 +528,8 @@ hardening remains in the preceding synchronized history.
 ## Exact working-tree state
 
 Local `main` and `origin/main` both resolve to GitHub's API-authored
-`2cd0262a01758bd404cf5e5f868606a60865f2e7`; their trees both resolve to
-`50d8e1644e1a59c8c241cce083e583f4f51427f4`. The recursive GitHub tree and
+`2dec2f04b56b652d49e6d866dce90f9d4250ed0e`; their trees both resolve to
+`7ec804d59c405122dad0ae12ed1321eea8956881`. The recursive GitHub tree and
 local `git ls-tree -r` contain 270 blobs with no path/mode/SHA mismatches, and
 the worktree is clean. No conversion-ledger status changed: the current
 summary is 73 done / 11 partial / 3,798 missing tracked modules and 73 done /
@@ -521,13 +537,12 @@ summary is 73 done / 11 partial / 3,798 missing tracked modules and 73 done /
 
 ## Next actions, in order
 
-1. Continue `agent.auxiliary_client` by connecting the concrete transport to
-   the credential-pool persistence/refresh
-   boundary; proxy/TLS policy, keepalive options, Codex headers, token
-   selection, and pool-first runtime projection are now recorded.
-2. Keep the adapter boundaries explicit; do not promote the module until
-   concrete client, async transport, cancellation, and fallback seams are
-   covered.
+1. Continue `agent.credential_pool` through auth-store persistence, provider
+   seeding, environment/config discovery, and OAuth refresh; the row model,
+   serialization, and deterministic selection core are now recorded.
+2. Then connect the auxiliary-client concrete transport to credential-pool
+   lifecycle, cancellation, and provider fallback seams without promoting
+   either partial module prematurely.
 3. For every future module, commit and publish each logical unit immediately;
    use the connected GitHub API until local GitHub CLI authentication exists.
 
@@ -684,6 +699,16 @@ The strict production formula is `done production modules / 1,103`; partial rows
 - `cargo fmt --all -- --check` reports many pre-existing unformatted foundation files outside this wave. Do not mass-reformat unrelated crates; use targeted formatting only if needed.
 
 ## Verification evidence
+
+For the current credential-pool model unit, the focused
+`/home/mustbearnold/.cargo/bin/cargo test -p hermes-agent --test parity_credential_pool`
+run passed all 14 tests, and `/home/mustbearnold/.cargo/bin/cargo build
+--workspace` passed. The default parallel workspace test reproduced the
+known process-global credential-file race in
+`hermes-tools::parity_credential_files::config_legitimate_file_works`; the
+exact isolated test and `/home/mustbearnold/.cargo/bin/cargo test --workspace
+-- --test-threads=1` passed. The active workspace suites otherwise passed;
+three delegation/schema doc tests remain intentionally ignored.
 
 The focused provider parity suites passed 9 base, 8 registry, 4 Custom, 3 Actual, 3 Ollama
 Cloud, 2 AI Gateway, 2 Alibaba, 2 Alibaba Coding Plan, 3 Anthropic, 3 Gemini,

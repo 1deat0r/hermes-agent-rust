@@ -354,7 +354,7 @@ rich/routing/cooldown/meta/reactions/conversation/delete modules.
 
 | Module / upstream surface | Status | Rust home, oracle, and evidence tier |
 |---|---|---|
-| `agent/credential_pool.py` (3,147 LOC) — deterministic in-memory selection, cooldown, terminal-failure, failed-key identity, and duplicate-key rotation sections | 🟡 | `hermes-agent::credential_pool`; 8 source-derived parity tests (`unit`) cover fill-first priority/current/peek, least-used counting, round-robin order, explicit reset timestamps, terminal `token_invalidated` → `DEAD` rotation, unmatched-key fail-open rotation, duplicate-key quarantine, and sole-credential transient-versus-billing cooldowns; persistence/auth-store seeding, serialization, environment/config discovery, OAuth refresh, lease locking, random strategy, logging throttles, and cross-process locking remain pending |
+| `agent/credential_pool.py` (3,147 LOC) — deterministic in-memory selection, cooldown, terminal-failure, failed-key identity, duplicate-key rotation, and pooled-row model/serialization sections | 🟡 | `hermes-agent::credential_pool`; 14 source-derived parity tests (`unit`) cover fill-first priority/current/peek, least-used counting, round-robin order, explicit reset timestamps, terminal `token_invalidated` → `DEAD` rotation, unmatched-key fail-open rotation, duplicate-key quarantine, sole-credential transient-versus-billing cooldowns, `PooledCredential` JSON defaults/metadata round-trip, Anthropic OAT auth normalization, borrowed-secret redaction/fingerprints, owned OAuth persistence exceptions, Nous invoke-JWT runtime selection, token labels, and runtime base URLs; auth-store orchestration/seeding, environment/config discovery, OAuth refresh, lease locking, random strategy, logging throttles, and cross-process locking remain pending |
 
 ### hermes-agent auxiliary client (Phase 2, upstream @ b9aa928)
 
@@ -530,6 +530,26 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   `/home/mustbearnold/.cargo/bin/cargo test --workspace` both passed; local
   source commit `6fcc72f` was mirrored as GitHub `1d46bab`, with verified tree
   `b69eb818bc34145186f7432c8ebe8910e3f461da` and 270 matching tracked blobs.
+
+- 2026-08-24 (session 4c0): Continued the partial
+  `agent.credential_pool` port (@ b9aa928, 3,147 LOC) with the
+  `PooledCredential` model boundary. The Rust row now mirrors the source's
+  optional OAuth/provider metadata, `_EXTRA_KEYS` JSON round-trip, missing-row
+  defaults, ISO status-timestamp rehydration, persisted `last_status` view,
+  Anthropic `sk-ant-oat` OAuth normalization, token-derived labels, provider
+  runtime base URLs, and Nous invoke-JWT scope/expiry filtering. Its
+  `to_dict`/`to_json` path also mirrors the borrowed-source sanitizer: raw
+  access/refresh/agent/secret fields are removed and replaced by a short
+  SHA-256 fingerprint, while manual and provider-owned device-code state stays
+  persistable. Added 6 source-derived `unit` parity tests first (14 total in
+  `parity_credential_pool.rs`); the focused suite and workspace build passed.
+  The default parallel workspace test command reproduced the existing
+  process-global `hermes-tools::parity_credential_files` race twice; its
+  exact isolated test and serialized `/home/mustbearnold/.cargo/bin/cargo test
+  --workspace -- --test-threads=1` both passed. Only the three intentional
+  delegation/schema doc tests remain ignored. Auth-store orchestration,
+  environment/config seeding, OAuth refresh, leases, and cross-process pool
+  locking remain the next credential-pool seams.
 
 - 2026-08-24 (session 4bd): Continued the partial
   `agent/auxiliary_client.py` port (@ b9aa928, 10,044 LOC) with the
