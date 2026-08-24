@@ -1,6 +1,6 @@
 # Hermes Agent Rust — Next-session handoff
 
-Date: 2026-08-24 (Pacific/Auckland), session 4b5.
+Date: 2026-08-24 (Pacific/Auckland), session 4b6.
 
 ## Resume point
 
@@ -17,7 +17,11 @@ update. The local HTTPS Git client still has no credentials; use the
 connected GitHub API for future pushes until `gh auth login` or SSH is
 configured.
 
-Latest synchronized unit: local source `ae1eb70` → GitHub `ac22bde`
+Latest synchronized unit: local source `37a31b4` → GitHub `241974f`
+(`agent.auxiliary_client` pool-runtime credential/base-URL projection,
+including current PLAN/inventory/ledger metadata), after local handoff source
+`6173619` → GitHub `cf9a083` (`HANDOFF.md` for the task-provider routing
+unit), after local source `ae1eb70` → GitHub `ac22bde`
 (`agent.auxiliary_client` task-provider routing extension, including current
 PLAN/inventory/ledger metadata), after local handoff source `008472a` →
 GitHub `38d93dd` (`HANDOFF.md` for the auxiliary predicate/wire unit), after
@@ -281,6 +285,13 @@ maps, MoA preset results, and provider-registry membership are explicit Rust
 adapter inputs; secret-scope/key-env lookup and client construction remain
 pending higher-layer seams.
 
+The pool-runtime credential/base-URL projection is included in the new
+`37a31b4` source commit and its `241974f` GitHub mirror. It mirrors the
+projected runtime-key/access-token fallback, runtime/inference/base/fallback
+URL precedence, whitespace/trailing-slash normalization, and the Nous-only
+inference base-URL override. Pool JWT validation, secret lookup, and actual
+SDK/client construction remain explicit auth/transport seams.
+
 The Qwen Portal bundled profile is included in the new `4e3894e` source
 commit and its `41482fc` GitHub mirror. The `qwen_portal` capability mirrors
 the source's string/list message normalization, unsupported-part filtering,
@@ -317,7 +328,7 @@ The new `hermes-providers` crate ports `providers/base.py` and
 model endpoint precedence, strict fail-open catalog parsing,
 credential-safe redirects, canonical/alias registry behavior, copy-safe
 caching, and sorted bundled/user/legacy discovery. The focused suites contain
-12 auxiliary-client routing/predicate/wire/error tests,
+15 auxiliary-client routing/predicate/wire/error/pool-runtime tests,
 9 base, 8 registry, 2 AI Gateway profile, 2 Alibaba profile, 2 Alibaba Coding
 Plan profile, 3 Anthropic profile, 3 Gemini profile, 2 Arcee profile, 2 Azure
 Foundry profile, 2 Bedrock profile, 3 Copilot profile, 2 Copilot ACP profile,
@@ -338,7 +349,8 @@ credential-resolution, transport, and fallback sections before promoting it.
 The ledger's next missing production unit is `run_agent` (8,206 LOC), but the
 active continuation seam is the partial auxiliary client.
 
-The required auxiliary-client routing workspace verification was green before
+The required auxiliary-client pool-runtime workspace verification was green
+before
 the synchronized
 commit:
 
@@ -358,18 +370,19 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-After the current auxiliary-client routing source commit `ae1eb70` is mirrored
-as `ac22bde` and this handoff commit is aligned
+After the current auxiliary-client pool-runtime source commit `37a31b4` is
+mirrored as `241974f` and this handoff commit is aligned
 to its remote mirror, the working tree is clean. The committed metadata
 includes `AGENTS.md`, `PLAN.md`, `tools/port_status.json`, generated
 `tools/inventory.json`, `CONVERSION-LEDGER.md`, and this handoff. No code or
-parity test is pending for the current routing slice; the
+parity test is pending for the current pool-runtime slice; the
 `agent.auxiliary_client` module remains partial.
 
 ## Next actions, in order
 
-1. Continue `agent.auxiliary_client` by reading the pinned client-construction/
-   credential-resolution source/tests and writing the next parity tests first.
+1. Continue `agent.auxiliary_client` by reading the pinned OpenAI-compatible
+   client-construction/credential-selection source/tests and writing the next
+   parity tests first.
 2. Keep the adapter boundaries explicit; do not promote the module until
    client, transport, cancellation, and fallback seams are covered.
 3. For every future module, commit and publish each logical unit immediately;
@@ -510,14 +523,15 @@ The strict production formula is `done production modules / 1,103`; partial rows
   independently so vendor-prefixed IDs still receive the native top-level
   `reasoning_effort`. The Rust adapter emits the same `thinking` body and
   fail-open empty maps for unsupported/no-config cases.
-- The auxiliary-client predicate and task-routing slices use explicit Rust
-  adapter inputs for Python hidden state: `main_provider`,
+- The auxiliary-client predicate, task-routing, and pool-runtime slices use
+  explicit Rust adapter inputs for Python hidden state: `main_provider`,
   `AuxiliaryTaskConfig`, MoA aggregator results, provider-registry IDs,
+  `AuxiliaryPoolEntry` projected credentials, the Nous inference override,
   OpenRouter/Nous credential-presence booleans, and `AuxiliaryError`
-  status/type/message. This preserves the source classification and
-  precedence order while leaving secret-scope/key-env lookup,
-  client/transport/fallback lifecycle semantics pending with the partial
-  module.
+  status/type/message. This preserves the source classification, precedence,
+  and normalization order while leaving secret-scope/key-env lookup,
+  credential-pool JWT validation, client/transport/fallback lifecycle
+  semantics pending with the partial module.
 
 - Platform cache-resetting tests are serialized because the production WSL and
   container detectors intentionally cache for process lifetime; the mutex is
@@ -532,7 +546,7 @@ Cloud, 2 AI Gateway, 2 Alibaba, 2 Alibaba Coding Plan, 3 Anthropic, 3 Gemini,
 2 Arcee, 2 Azure
 Foundry, 2 Bedrock, 3 Copilot, 2 Copilot ACP, 2 Fireworks, 2 GMI, 2 Kilo
 Code, 3 Kimi Coding, 2 NovitaAI, 2 NVIDIA, 2 StepFun, 3 Vertex, 2 DeepInfra,
-12 auxiliary-client routing/predicate/wire/error, 5 ZAI profile,
+15 auxiliary-client routing/predicate/wire/error/pool-runtime, 5 ZAI profile,
 2 DeepSeek, 3 Nous, 3 Minimax, 2 OpenAI Codex, 4 Qwen OAuth, 4 Upstage,
 2 Xiaomi, 2 XAI, and 2 Hugging Face profile
 tests. The
