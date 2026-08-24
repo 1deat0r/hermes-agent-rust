@@ -1,6 +1,6 @@
 # Hermes Agent Rust — Next-session handoff
 
-Date: 2026-08-24 (Pacific/Auckland), session 4c0.
+Date: 2026-08-24 (Pacific/Auckland), session 4c1.
 
 ## Resume point
 
@@ -145,7 +145,21 @@ because it cannot preserve the local author/committer timestamps.
 
 ## What landed this session
 
-The current unit adds `hermes-agent::credential_pool`'s deterministic
+The current unit adds `hermes-agent::credential_pool`'s source-upsert and
+provider-boundary orchestration helpers. It mirrors source-scoped upserts,
+duplicate-source collapse, changed-key failure-state clearing, Anthropic
+manual/seeded priority normalization, configured fill-first/round-robin/
+least-used/random strategy parsing and random selection, custom provider
+name/endpoint lookup, non-empty custom-pool listing, and provider-boundary
+matching. Seven source-derived `unit` tests were added; the focused suite now
+has 21 passing pool tests. Auth-store persistence and env/config seeding,
+provider OAuth refresh, leases, logging throttles, and cross-process pool
+locking remain pending. The required workspace build, default test, and
+serialized workspace test passed. Workspace Clippy was killed by the
+environment with exit 137; targeted `hermes-agent` Clippy reports only
+pre-existing auxiliary-client lint failures.
+
+The preceding unit added `hermes-agent::credential_pool`'s deterministic
 in-memory core. `CredentialPool` mirrors source priority fill-first,
 least-used, and round-robin selection; explicit reset timestamps and
 status-based cooldowns; terminal OAuth `DEAD` transitions; failed-key identity
@@ -158,7 +172,7 @@ logging throttles, and cross-process locking remain pending. The required
 `6fcc72f` was mirrored as GitHub `1d46bab`, and the remote/local tree is
 `b69eb818bc34145186f7432c8ebe8910e3f461da` with 270 matching tracked blobs.
 
-The current credential-pool model unit extends `PooledCredential` with the
+The preceding credential-pool model unit extends `PooledCredential` with the
 source's OAuth/provider metadata, JSON-only `extra` fields, defaulting and ISO
 timestamp rehydration, persisted `last_status`, Anthropic `sk-ant-oat` auth
 normalization, token labels, runtime base URLs, and Nous invoke-JWT scope/
@@ -544,7 +558,8 @@ summary is 73 done / 11 partial / 3,798 missing tracked modules and 73 done /
 
 1. Continue `agent.credential_pool` through auth-store persistence, provider
    seeding, environment/config discovery, and OAuth refresh; the row model,
-   serialization, and deterministic selection core are now recorded.
+   serialization, source upsert, strategy, provider-boundary, and selection
+   helpers are now recorded.
 2. Then connect the auxiliary-client concrete transport to credential-pool
    lifecycle, cancellation, and provider fallback seams without promoting
    either partial module prematurely.
@@ -705,15 +720,15 @@ The strict production formula is `done production modules / 1,103`; partial rows
 
 ## Verification evidence
 
-For the current credential-pool model unit, the focused
+For the current credential-pool orchestration unit, the focused
 `/home/mustbearnold/.cargo/bin/cargo test -p hermes-agent --test parity_credential_pool`
-run passed all 14 tests, and `/home/mustbearnold/.cargo/bin/cargo build
---workspace` passed. The default parallel workspace test reproduced the
-known process-global credential-file race in
-`hermes-tools::parity_credential_files::config_legitimate_file_works`; the
-exact isolated test and `/home/mustbearnold/.cargo/bin/cargo test --workspace
--- --test-threads=1` passed. The active workspace suites otherwise passed;
-three delegation/schema doc tests remain intentionally ignored.
+run passed all 21 tests, and `/home/mustbearnold/.cargo/bin/cargo build
+--workspace` passed. Both the default parallel `/home/mustbearnold/.cargo/bin/cargo
+test --workspace` and serialized `/home/mustbearnold/.cargo/bin/cargo test
+--workspace -- --test-threads=1` passed. Three delegation/schema doc tests
+remain intentionally ignored. Workspace Clippy was killed by the environment
+with exit 137; targeted `hermes-agent` Clippy reached only pre-existing
+`auxiliary_client` `too_many_arguments` and `needless_lifetimes` diagnostics.
 
 The focused provider parity suites passed 9 base, 8 registry, 4 Custom, 3 Actual, 3 Ollama
 Cloud, 2 AI Gateway, 2 Alibaba, 2 Alibaba Coding Plan, 3 Anthropic, 3 Gemini,

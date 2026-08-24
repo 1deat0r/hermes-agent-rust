@@ -1,7 +1,9 @@
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
 use hermes_agent::credential_pool::{
-    label_from_token, CredentialPool, CredentialStatus, PoolErrorContext, PoolStrategy,
-    PooledCredential,
+    credential_pool_matches_provider, custom_provider_config, custom_provider_pool_key,
+    label_from_token, list_custom_pool_providers, normalize_custom_pool_name,
+    normalize_pool_priorities, pool_strategy_from_config, upsert_entry, CredentialPool,
+    CredentialStatus, PoolErrorContext, PoolStrategy, PooledCredential,
 };
 use serde_json::{json, Value};
 
@@ -388,5 +390,291 @@ fn token_labels_and_provider_runtime_base_urls_follow_source_precedence() {
     assert_eq!(
         other.runtime_base_url(),
         Some("https://openrouter.example.test/v1")
+    );
+}
+
+// Tier: unit — mirrors tests/agent/test_credential_pool_key_rotation.py.
+#[test]
+fn upsert_key_rotation_clears_stale_exhaustion_state() {
+    let existing = PooledCredential::from_json(
+        "openrouter",
+        &json!({
+            "id": "cred-1",
+            "label": "OPENROUTER_API_KEY",
+            "auth_type": "api_key",
+            "priority": 0,
+            "source": "env:OPENROUTER_API_KEY",
+            "access_token": "old-key",
+            "last_status": "exhausted",
+            "last_status_at": 1000.0,
+            "last_error_code": 429,
+            "last_error_reason": "rate_limit",
+            "last_error_message": "Too many requests",
+            "last_error_reset_at": 2000.0,
+        }),
+    );
+    let mut entries = vec![existing];
+    let payload = json!({
+        "source": "env:OPENROUTER_API_KEY",
+        "auth_type": "api_key",
+        "access_token": "new-rotated-key",
+    });
+
+    assert!(upsert_entry(
+        &mut entries,
+        "openrouter",
+        "env:OPENROUTER_API_KEY",
+        payload.as_object().unwrap(),
+    ));
+    assert_eq!(entries[0].access_token, "new-rotated-key");
+    assert_eq!(entries[0].last_status, None);
+    assert_eq!(entries[0].status, None);
+    assert_eq!(entries[0].last_status_at, None);
+    assert_eq!(entries[0].last_error_code, None);
+    assert_eq!(entries[0].last_error_reason, None);
+    assert_eq!(entries[0].last_error_message, None);
+    assert_eq!(entries[0].last_error_reset_at, None);
+}
+
+// Tier: unit — mirrors tests/agent/test_credential_pool_key_rotation.py.
+#[test]
+fn upsert_same_key_preserves_exhaustion_state() {
+    let existing = PooledCredential::from_json(
+        "openrouter",
+        &json!({
+            "id": "cred-1",
+            "label": "OPENROUTER_API_KEY",
+            "auth_type": "api_key",
+            "priority": 0,
+            "source": "env:OPENROUTER_API_KEY",
+            "access_token": "same-key",
+            "last_status": "exhausted",
+            "last_status_at": 1000.0,
+            "last_error_code": 429,
+            "last_error_reason": "rate_limit",
+            "last_error_message": "Too many requests",
+            "last_error_reset_at": 2000.0,
+        }),
+    );
+    let mut entries = vec![existing];
+    let payload = json!({
+        "source": "env:OPENROUTER_API_KEY",
+        "auth_type": "api_key",
+        "access_token": "same-key",
+    });
+
+    assert!(!upsert_entry(
+        &mut entries,
+        "openrouter",
+        "env:OPENROUTER_API_KEY",
+        payload.as_object().unwrap(),
+    ));
+    assert_eq!(entries[0].last_status.as_deref(), Some("exhausted"));
+    assert_eq!(entries[0].status, Some(CredentialStatus::Exhausted));
+    assert_eq!(entries[0].last_error_reset_at, Some(2000.0));
+}
+
+// Tier: unit — mirrors agent/credential_pool.py _upsert_entry duplicate/source rules.
+#[test]
+fn upsert_collapses_duplicate_source_rows_and_keeps_first_identity() {
+    let first = PooledCredential::from_json(
+        "openrouter",
+        &json!({
+            "id": "first",
+            "label": "OPENROUTER_API_KEY",
+            "priority": 4,
+            "source": "env:OPENROUTER_API_KEY",
+            "access_token": "active",
+        }),
+    );
+    let duplicate = PooledCredential::from_json(
+        "openrouter",
+        &json!({
+            "id": "duplicate",
+            "label": "stale",
+            "priority": 9,
+            "source": "env:OPENROUTER_API_KEY",
+            "access_token": "stale",
+        }),
+    );
+    let mut entries = vec![first, duplicate];
+    let payload = json!({
+        "source": "env:OPENROUTER_API_KEY",
+        "access_token": "active",
+    });
+
+    assert!(upsert_entry(
+        &mut entries,
+        "openrouter",
+        "env:OPENROUTER_API_KEY",
+        payload.as_object().unwrap(),
+    ));
+    assert_eq!(entries.len(), 1);
+    assert_eq!(entries[0].id, "first");
+    assert_eq!(entries[0].priority, 4);
+}
+
+// Tier: unit — mirrors agent/credential_pool.py _normalize_pool_priorities.
+#[test]
+fn anthropic_priority_normalization_keeps_manual_rows_before_seeded_order() {
+    let make = |id: &str, source: &str, priority: i32, label: &str| {
+        PooledCredential::from_json(
+            "anthropic",
+            &json!({
+                "id": id,
+                "source": source,
+                "priority": priority,
+                "label": label,
+                "access_token": id,
+            }),
+        )
+    };
+    let mut entries = vec![
+        make("claude", "claude_code", 0, "claude"),
+        make("manual-b", "manual:second", 8, "manual-b"),
+        make("api", "env:ANTHROPIC_API_KEY", 1, "api"),
+        make("manual-a", "manual", 2, "manual-a"),
+        make("token", "env:ANTHROPIC_TOKEN", 9, "token"),
+    ];
+
+    assert!(normalize_pool_priorities("anthropic", &mut entries));
+    assert_eq!(
+        entries
+            .iter()
+            .map(|entry| (entry.id.as_str(), entry.priority))
+            .collect::<Vec<_>>(),
+        vec![
+            ("claude", 3),
+            ("manual-b", 1),
+            ("api", 4),
+            ("manual-a", 0),
+            ("token", 2),
+        ]
+    );
+    assert!(!normalize_pool_priorities("openrouter", &mut entries));
+}
+
+// Tier: unit — mirrors agent/credential_pool.py get_pool_strategy.
+#[test]
+fn configured_pool_strategy_accepts_supported_values_and_fails_open() {
+    let config = json!({
+        "credential_pool_strategies": {
+            "openrouter": "least_used",
+            "anthropic": "ROUND_ROBIN",
+            "bad": "not-a-strategy",
+        }
+    });
+    let object = config.as_object().unwrap();
+    assert_eq!(
+        pool_strategy_from_config("openrouter", Some(object)),
+        PoolStrategy::LeastUsed
+    );
+    assert_eq!(
+        pool_strategy_from_config("anthropic", Some(object)),
+        PoolStrategy::RoundRobin
+    );
+    let random_config = json!({
+        "credential_pool_strategies": {"openrouter": "random"}
+    });
+    assert_eq!(
+        pool_strategy_from_config("openrouter", random_config.as_object()),
+        PoolStrategy::Random
+    );
+    assert_eq!(
+        pool_strategy_from_config("bad", Some(object)),
+        PoolStrategy::FillFirst
+    );
+    assert_eq!(
+        pool_strategy_from_config("openrouter", None),
+        PoolStrategy::FillFirst
+    );
+}
+
+// Tier: unit — mirrors tests/agent/test_credential_pool_provider_boundary.py.
+#[test]
+fn custom_provider_pool_matching_is_scoped_by_normalized_endpoint() {
+    let providers = vec![json!({
+        "name": "Lab Provider",
+        "base_url": "https://lab.example/v1/",
+    })];
+    assert_eq!(
+        normalize_custom_pool_name("  Lab Provider "),
+        "lab-provider"
+    );
+    assert!(credential_pool_matches_provider(
+        Some("deepseek"),
+        Some("deepseek"),
+        None,
+        &[],
+    ));
+    assert!(!credential_pool_matches_provider(
+        Some("openai-codex"),
+        Some("deepseek"),
+        None,
+        &[],
+    ));
+    assert!(!credential_pool_matches_provider(
+        Some(""),
+        Some("deepseek"),
+        None,
+        &[],
+    ));
+    assert!(credential_pool_matches_provider(
+        Some("custom:lab-provider"),
+        Some("custom"),
+        Some(" https://lab.example/v1 "),
+        &providers,
+    ));
+    assert!(!credential_pool_matches_provider(
+        Some("custom:other"),
+        Some("custom"),
+        Some("https://lab.example/v1"),
+        &providers,
+    ));
+}
+
+// Tier: unit — mirrors agent/credential_pool.py custom-provider lookup helpers.
+#[test]
+fn custom_provider_lookup_prefers_name_and_lists_only_nonempty_pools() {
+    let providers = vec![
+        json!({
+            "name": "First",
+            "base_url": "https://shared.example/v1",
+            "api_key": "first-key",
+        }),
+        json!({
+            "name": "Second Provider",
+            "base_url": "https://shared.example/v1/",
+            "api_key": "second-key",
+        }),
+    ];
+    assert_eq!(
+        custom_provider_pool_key(
+            Some("https://shared.example/v1"),
+            Some("Second Provider"),
+            &providers,
+        ),
+        Some("custom:second-provider".into())
+    );
+    assert_eq!(
+        custom_provider_pool_key(Some("https://shared.example/v1/"), None, &providers),
+        Some("custom:first".into())
+    );
+    assert_eq!(
+        custom_provider_config("custom:second-provider", &providers).and_then(|entry| entry
+            .get("api_key")
+            .and_then(Value::as_str)
+            .map(str::to_owned)),
+        Some("second-key".into())
+    );
+
+    let pool_data = json!({
+        "custom:first": [],
+        "custom:second-provider": [{"id": "row"}],
+        "openrouter": [{"id": "row"}],
+    });
+    assert_eq!(
+        list_custom_pool_providers(pool_data.as_object().unwrap()),
+        vec!["custom:second-provider"]
     );
 }

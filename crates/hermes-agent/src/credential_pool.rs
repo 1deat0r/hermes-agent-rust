@@ -1,5 +1,5 @@
-//! Deterministic credential-pool selection and rotation from
-//! `agent/credential_pool.py`.
+//! Credential-pool selection, rotation, and source-compatible row helpers
+//! from `agent/credential_pool.py`.
 //!
 //! This slice keeps auth-store persistence orchestration, OAuth refresh,
 //! environment seeding, leases, and cross-process locking out of the core
@@ -9,6 +9,7 @@
 
 use base64::{engine::general_purpose::URL_SAFE, Engine as _};
 use chrono::{DateTime, NaiveDateTime};
+use rand::seq::IndexedRandom;
 use serde_json::{Map, Value};
 use sha2::{Digest, Sha256};
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -41,12 +42,13 @@ impl CredentialStatus {
     }
 }
 
-/// Selection strategies supported by the deterministic core.
+/// Selection strategies supported by the pool core.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PoolStrategy {
     FillFirst,
     RoundRobin,
     LeastUsed,
+    Random,
 }
 
 /// A loaded credential-pool row and the fields used by selection/rotation.
@@ -678,6 +680,511 @@ fn sanitize_borrowed_credential_payload(
     sanitized
 }
 
+/// Normalize a named custom provider for use in a persisted pool key.
+///
+/// PARITY: agent/credential_pool.py `_normalize_custom_pool_name`.
+pub fn normalize_custom_pool_name(name: &str) -> String {
+    name.trim().to_ascii_lowercase().replace(' ', "-")
+}
+
+/// Look up a `custom:<name>` pool key from explicit custom-provider config.
+///
+/// The config loader is intentionally an outer-layer dependency. This adapter
+/// takes its already-parsed list so the endpoint/name precedence remains
+/// testable without coupling `hermes-agent` to the future config crate.
+///
+/// PARITY: agent/credential_pool.py `get_custom_provider_pool_key`.
+pub fn custom_provider_pool_key(
+    base_url: Option<&str>,
+    provider_name: Option<&str>,
+    providers: &[Value],
+) -> Option<String> {
+    let base_url = base_url?.trim().trim_end_matches('/');
+    if base_url.is_empty() {
+        return None;
+    }
+
+    let valid = providers.iter().filter_map(Value::as_object);
+    if let Some(provider_name) = provider_name.filter(|name| !name.is_empty()) {
+        let normalized_name = normalize_custom_pool_name(provider_name);
+        for entry in providers.iter().filter_map(Value::as_object) {
+            let Some(name) = entry.get("name").and_then(Value::as_str) else {
+                continue;
+            };
+            if normalize_custom_pool_name(name) == normalized_name {
+                return Some(format!("custom:{normalized_name}"));
+            }
+        }
+    }
+
+    for entry in valid {
+        let Some(name) = entry.get("name").and_then(Value::as_str) else {
+            continue;
+        };
+        let entry_url = entry
+            .get("base_url")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .trim()
+            .trim_end_matches('/');
+        if !entry_url.is_empty() && entry_url == base_url {
+            return Some(format!("custom:{}", normalize_custom_pool_name(name)));
+        }
+    }
+    None
+}
+
+/// Return the parsed custom-provider config entry for a pool key.
+///
+/// PARITY: agent/credential_pool.py `_get_custom_provider_config`.
+pub fn custom_provider_config(pool_key: &str, providers: &[Value]) -> Option<Map<String, Value>> {
+    let suffix = pool_key.strip_prefix("custom:")?;
+    providers
+        .iter()
+        .filter_map(Value::as_object)
+        .find(|entry| {
+            entry
+                .get("name")
+                .and_then(Value::as_str)
+                .is_some_and(|name| normalize_custom_pool_name(name) == suffix)
+        })
+        .cloned()
+}
+
+/// List non-empty custom pool keys from a parsed credential-pool mapping.
+///
+/// PARITY: agent/credential_pool.py `list_custom_pool_providers`.
+pub fn list_custom_pool_providers(pool_data: &Map<String, Value>) -> Vec<String> {
+    let mut keys = pool_data
+        .iter()
+        .filter_map(|(key, value)| {
+            (key.starts_with("custom:") && value.as_array().is_some_and(|rows| !rows.is_empty()))
+                .then_some(key.clone())
+        })
+        .collect::<Vec<_>>();
+    keys.sort();
+    keys
+}
+
+/// Parse the configured selection strategy, failing open to fill-first.
+///
+/// PARITY: agent/credential_pool.py `get_pool_strategy`.
+pub fn pool_strategy_from_config(
+    provider: &str,
+    config: Option<&Map<String, Value>>,
+) -> PoolStrategy {
+    let Some(strategy) = config
+        .and_then(|config| config.get("credential_pool_strategies"))
+        .and_then(Value::as_object)
+        .and_then(|strategies| strategies.get(provider))
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .map(str::to_ascii_lowercase)
+    else {
+        return PoolStrategy::FillFirst;
+    };
+    match strategy.as_str() {
+        "round_robin" => PoolStrategy::RoundRobin,
+        "least_used" => PoolStrategy::LeastUsed,
+        "random" => PoolStrategy::Random,
+        "fill_first" => PoolStrategy::FillFirst,
+        _ => PoolStrategy::FillFirst,
+    }
+}
+
+/// Check whether a loaded pool belongs to the requested runtime provider.
+///
+/// `None` for `pool_provider` represents an old unscoped adapter and preserves
+/// the source's backward-compatible fail-open result. A present empty identity
+/// fails closed. Named custom pools are accepted only when their configured
+/// endpoint resolves to the same `custom:<name>` key.
+///
+/// PARITY: agent/credential_pool.py `credential_pool_matches_provider`.
+pub fn credential_pool_matches_provider(
+    pool_provider: Option<&str>,
+    provider: Option<&str>,
+    base_url: Option<&str>,
+    providers: &[Value],
+) -> bool {
+    let Some(raw_pool_provider) = pool_provider else {
+        return true;
+    };
+    let pool_provider = raw_pool_provider.trim().to_ascii_lowercase();
+    let provider = provider.unwrap_or_default().trim().to_ascii_lowercase();
+    if pool_provider.is_empty() || provider.is_empty() {
+        return false;
+    }
+    if pool_provider == provider {
+        return true;
+    }
+    if provider != "custom" || !pool_provider.starts_with("custom:") {
+        return false;
+    }
+    custom_provider_pool_key(base_url, None, providers)
+        .is_some_and(|key| key.eq_ignore_ascii_case(&pool_provider))
+}
+
+fn is_manual_source(source: &str) -> bool {
+    let normalized = source.trim().to_ascii_lowercase();
+    normalized == "manual" || normalized.starts_with("manual:")
+}
+
+fn next_priority(entries: &[PooledCredential]) -> i32 {
+    entries
+        .iter()
+        .map(|entry| entry.priority)
+        .max()
+        .unwrap_or(-1)
+        .saturating_add(1)
+}
+
+/// Upsert one source-owned row while preserving the first row's identity.
+///
+/// Rows are singleton-scoped by `source`. Duplicate rows after the first are
+/// removed. A changed access token clears stale failure state; an unchanged
+/// token preserves its cooldown exactly as the Python implementation does.
+///
+/// PARITY: agent/credential_pool.py `_upsert_entry`.
+pub fn upsert_entry(
+    entries: &mut Vec<PooledCredential>,
+    provider: &str,
+    source: &str,
+    payload: &Map<String, Value>,
+) -> bool {
+    let matching_indices = entries
+        .iter()
+        .enumerate()
+        .filter_map(|(index, entry)| (entry.source == source).then_some(index))
+        .collect::<Vec<_>>();
+    let existing_index = matching_indices.first().copied();
+    let had_duplicates = matching_indices.len() > 1;
+    if had_duplicates {
+        let duplicate_indices = matching_indices[1..]
+            .iter()
+            .copied()
+            .collect::<std::collections::HashSet<_>>();
+        *entries = entries
+            .iter()
+            .enumerate()
+            .filter_map(|(index, entry)| {
+                (!duplicate_indices.contains(&index)).then_some(entry.clone())
+            })
+            .collect();
+    }
+
+    let Some(existing_index) = existing_index else {
+        let mut inserted = payload.clone();
+        inserted
+            .entry("id")
+            .or_insert_with(|| Value::String(generated_credential_id()));
+        inserted
+            .entry("priority")
+            .or_insert_with(|| Value::from(next_priority(entries)));
+        inserted
+            .entry("label")
+            .or_insert_with(|| Value::String(source.to_owned()));
+        entries.push(PooledCredential::from_dict(provider, &inserted));
+        return true;
+    };
+
+    let existing = entries[existing_index].clone();
+    let token_changed = payload
+        .get("access_token")
+        .filter(|value| !value.is_null())
+        .and_then(Value::as_str)
+        .is_some_and(|token| token != existing.access_token);
+    let mut updated = existing.clone();
+    let mut field_changed = false;
+    let mut extra_changed = false;
+
+    for (key, value) in payload {
+        if matches!(key.as_str(), "id" | "priority") || value.is_null() {
+            continue;
+        }
+        if key == "label" && !existing.label.is_empty() {
+            continue;
+        }
+        if EXTRA_KEYS.contains(&key.as_str()) {
+            if updated.extra.get(key) != Some(value) {
+                updated.extra.insert(key.clone(), value.clone());
+                extra_changed = true;
+            }
+            if key == "failure_reason" {
+                let next = value.as_str().map(ToOwned::to_owned);
+                if updated.failure_reason != next {
+                    updated.failure_reason = next;
+                    field_changed = true;
+                }
+            }
+            continue;
+        }
+        let changed = match key.as_str() {
+            "label" => value.as_str().map(|next| {
+                if updated.label != next {
+                    updated.label = next.to_owned();
+                    true
+                } else {
+                    false
+                }
+            }),
+            "auth_type" => value.as_str().map(|next| {
+                let normalized = normalize_pool_auth_type(provider, &updated.access_token, next);
+                if updated.auth_type != normalized {
+                    updated.auth_type = normalized;
+                    true
+                } else {
+                    false
+                }
+            }),
+            "source" => value.as_str().map(|next| {
+                if updated.source != next {
+                    updated.source = next.to_owned();
+                    true
+                } else {
+                    false
+                }
+            }),
+            "access_token" => value.as_str().map(|next| {
+                if updated.access_token != next {
+                    updated.access_token = next.to_owned();
+                    true
+                } else {
+                    false
+                }
+            }),
+            "refresh_token" => value.as_str().map(|next| {
+                let next = Some(next.to_owned());
+                if updated.refresh_token != next {
+                    updated.refresh_token = next;
+                    true
+                } else {
+                    false
+                }
+            }),
+            "last_status" => value.as_str().map(|next| {
+                let next_status = Some(next.to_owned());
+                if updated.last_status != next_status {
+                    updated.last_status = next_status;
+                    updated.status = CredentialStatus::from_source(next);
+                    true
+                } else {
+                    false
+                }
+            }),
+            "last_status_at" => source_timestamp(Some(value)).map(|next| {
+                if updated.last_status_at != Some(next) {
+                    updated.last_status_at = Some(next);
+                    true
+                } else {
+                    false
+                }
+            }),
+            "last_error_code" => value
+                .as_u64()
+                .and_then(|next| u16::try_from(next).ok())
+                .map(|next| {
+                    if updated.last_error_code != Some(next) {
+                        updated.last_error_code = Some(next);
+                        true
+                    } else {
+                        false
+                    }
+                }),
+            "last_error_reason" => value.as_str().map(|next| {
+                let next = Some(next.to_owned());
+                if updated.last_error_reason != next {
+                    updated.last_error_reason = next;
+                    true
+                } else {
+                    false
+                }
+            }),
+            "last_error_message" => value.as_str().map(|next| {
+                let next = Some(next.to_owned());
+                if updated.last_error_message != next {
+                    updated.last_error_message = next;
+                    true
+                } else {
+                    false
+                }
+            }),
+            "last_error_reset_at" => value.as_f64().map(|next| {
+                if updated.last_error_reset_at != Some(next) {
+                    updated.last_error_reset_at = Some(next);
+                    true
+                } else {
+                    false
+                }
+            }),
+            "base_url" => value.as_str().map(|next| {
+                let next = Some(next.to_owned());
+                if updated.base_url != next {
+                    updated.base_url = next;
+                    true
+                } else {
+                    false
+                }
+            }),
+            "expires_at" => value.as_str().map(|next| {
+                let next = Some(next.to_owned());
+                if updated.expires_at != next {
+                    updated.expires_at = next;
+                    true
+                } else {
+                    false
+                }
+            }),
+            "expires_at_ms" => value.as_i64().map(|next| {
+                if updated.expires_at_ms != Some(next) {
+                    updated.expires_at_ms = Some(next);
+                    true
+                } else {
+                    false
+                }
+            }),
+            "last_refresh" => value.as_str().map(|next| {
+                let next = Some(next.to_owned());
+                if updated.last_refresh != next {
+                    updated.last_refresh = next;
+                    true
+                } else {
+                    false
+                }
+            }),
+            "inference_base_url" => value.as_str().map(|next| {
+                let next = Some(next.to_owned());
+                if updated.inference_base_url != next {
+                    updated.inference_base_url = next;
+                    true
+                } else {
+                    false
+                }
+            }),
+            "agent_key" => value.as_str().map(|next| {
+                let next = Some(next.to_owned());
+                if updated.agent_key != next {
+                    updated.agent_key = next;
+                    true
+                } else {
+                    false
+                }
+            }),
+            "agent_key_expires_at" => value.as_str().map(|next| {
+                let next = Some(next.to_owned());
+                if updated.agent_key_expires_at != next {
+                    updated.agent_key_expires_at = next;
+                    true
+                } else {
+                    false
+                }
+            }),
+            "request_count" => value.as_u64().map(|next| {
+                if updated.request_count != next {
+                    updated.request_count = next;
+                    true
+                } else {
+                    false
+                }
+            }),
+            _ => None,
+        };
+        field_changed |= changed.unwrap_or(false);
+    }
+
+    let normalized_auth_type =
+        normalize_pool_auth_type(provider, &updated.access_token, &updated.auth_type);
+    if updated.auth_type != normalized_auth_type {
+        updated.auth_type = normalized_auth_type;
+        field_changed = true;
+    }
+
+    if token_changed && existing.last_status.is_some() {
+        updated.last_status = None;
+        updated.status = None;
+        updated.last_status_at = None;
+        updated.last_error_code = None;
+        updated.last_error_reason = None;
+        updated.last_error_message = None;
+        updated.last_error_reset_at = None;
+        field_changed = true;
+    }
+
+    if field_changed || extra_changed {
+        entries[existing_index] = updated.clone();
+        return had_duplicates || existing.to_dict() != updated.to_dict();
+    }
+    had_duplicates
+}
+
+/// Reassign Anthropic priorities while keeping manual entries ahead of seeded
+/// credentials and preserving the source's stable source-rank tie-breakers.
+///
+/// PARITY: agent/credential_pool.py `_normalize_pool_priorities`.
+pub fn normalize_pool_priorities(provider: &str, entries: &mut [PooledCredential]) -> bool {
+    if provider != "anthropic" {
+        return false;
+    }
+    let source_rank = [
+        ("env:ANTHROPIC_TOKEN", 0usize),
+        ("env:CLAUDE_CODE_OAUTH_TOKEN", 1),
+        ("hermes_pkce", 2),
+        ("claude_code", 3),
+        ("env:ANTHROPIC_API_KEY", 4),
+    ];
+    let rank_for = |source: &str| {
+        source_rank
+            .iter()
+            .find_map(|(candidate, rank)| (*candidate == source).then_some(*rank))
+            .unwrap_or(source_rank.len())
+    };
+    let mut ordered = entries.iter().cloned().enumerate().collect::<Vec<_>>();
+    ordered.sort_by(|(left_index, left), (right_index, right)| {
+        let left_is_manual = is_manual_source(&left.source);
+        let right_is_manual = is_manual_source(&right.source);
+        let ordering = left_is_manual
+            .cmp(&right_is_manual)
+            .reverse()
+            .then_with(|| {
+                let left_rank = if left_is_manual {
+                    0
+                } else {
+                    rank_for(&left.source)
+                };
+                let right_rank = if right_is_manual {
+                    0
+                } else {
+                    rank_for(&right.source)
+                };
+                left_rank.cmp(&right_rank)
+            })
+            .then_with(|| left.priority.cmp(&right.priority))
+            .then_with(|| {
+                if left_is_manual {
+                    std::cmp::Ordering::Equal
+                } else {
+                    left.label.cmp(&right.label)
+                }
+            });
+        ordering.then_with(|| left_index.cmp(right_index))
+    });
+    let positions = entries
+        .iter()
+        .enumerate()
+        .map(|(index, entry)| (entry.id.clone(), index))
+        .collect::<std::collections::HashMap<_, _>>();
+    let mut changed = false;
+    for (new_priority, (_, entry)) in ordered.into_iter().enumerate() {
+        if entry.priority == new_priority as i32 {
+            continue;
+        }
+        if let Some(index) = positions.get(&entry.id) {
+            entries[*index].priority = new_priority as i32;
+            changed = true;
+        }
+    }
+    changed
+}
+
 /// Error metadata supplied to `mark_exhausted_and_rotate`.
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct PoolErrorContext {
@@ -905,6 +1412,7 @@ impl CredentialPool {
             PoolStrategy::LeastUsed => *available
                 .iter()
                 .min_by_key(|index| self.entries[**index].request_count)?,
+            PoolStrategy::Random => *available.choose(&mut rand::rng())?,
         };
 
         if self.strategy == PoolStrategy::LeastUsed && available.len() > 1 {

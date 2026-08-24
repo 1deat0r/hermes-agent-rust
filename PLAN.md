@@ -354,7 +354,7 @@ rich/routing/cooldown/meta/reactions/conversation/delete modules.
 
 | Module / upstream surface | Status | Rust home, oracle, and evidence tier |
 |---|---|---|
-| `agent/credential_pool.py` (3,147 LOC) — deterministic in-memory selection, cooldown, terminal-failure, failed-key identity, duplicate-key rotation, and pooled-row model/serialization sections | 🟡 | `hermes-agent::credential_pool`; 14 source-derived parity tests (`unit`) cover fill-first priority/current/peek, least-used counting, round-robin order, explicit reset timestamps, terminal `token_invalidated` → `DEAD` rotation, unmatched-key fail-open rotation, duplicate-key quarantine, sole-credential transient-versus-billing cooldowns, `PooledCredential` JSON defaults/metadata round-trip, Anthropic OAT auth normalization, borrowed-secret redaction/fingerprints, owned OAuth persistence exceptions, Nous invoke-JWT runtime selection, token labels, and runtime base URLs; auth-store orchestration/seeding, environment/config discovery, OAuth refresh, lease locking, random strategy, logging throttles, and cross-process locking remain pending |
+| `agent/credential_pool.py` (3,147 LOC) — selection/rotation, pooled-row model/serialization, source upsert, priority normalization, strategy parsing, and custom-provider identity sections | 🟡 | `hermes-agent::credential_pool`; 21 source-derived parity tests (`unit`) cover fill-first priority/current/peek, least-used counting, round-robin order, random selection support, explicit reset timestamps, terminal `token_invalidated` → `DEAD` rotation, unmatched-key fail-open rotation, duplicate-key quarantine, sole-credential transient-versus-billing cooldowns, `PooledCredential` JSON defaults/metadata round-trip, Anthropic OAT auth normalization and seeded-priority ordering, borrowed-secret redaction/fingerprints, owned OAuth persistence exceptions, Nous invoke-JWT runtime selection, token labels/runtime base URLs, source-key upsert and key rotation, configured strategies, and custom endpoint/name scoping; auth-store persistence, environment/config discovery, provider seeding, OAuth refresh, lease locking, logging throttles, and cross-process locking remain pending |
 
 ### hermes-agent auxiliary client (Phase 2, upstream @ b9aa928)
 
@@ -530,6 +530,22 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   `/home/mustbearnold/.cargo/bin/cargo test --workspace` both passed; local
   source commit `6fcc72f` was mirrored as GitHub `1d46bab`, with verified tree
   `b69eb818bc34145186f7432c8ebe8910e3f461da` and 270 matching tracked blobs.
+
+- 2026-08-24 (session 4c1): Continued the partial
+  `agent.credential_pool` port (@ b9aa928) through the pure orchestration
+  boundary after the row model. Rust now mirrors source-scoped `_upsert_entry`
+  identity preservation, duplicate-source collapse, changed-key failure-state
+  clearing, Anthropic seeded/manual priority normalization, configured
+  fill-first/round-robin/least-used/random strategy parsing and random
+  selection, custom provider name/endpoint pool-key lookup, non-empty custom
+  pool listing, provider-boundary matching, and custom config lookup. Added 7
+  source-derived `unit` parity tests first (21 total in
+  `parity_credential_pool.rs`). The required workspace build, default test,
+  and serialized workspace test all passed; workspace Clippy was killed by the
+  environment (exit 137), while targeted `hermes-agent` Clippy reports only
+  pre-existing auxiliary-client lint failures. Auth-store I/O, environment and
+  config loading, provider seeding, OAuth refresh, leases, logging throttles,
+  and cross-process locking remain pending.
 
 - 2026-08-24 (session 4c0): Continued the partial
   `agent.credential_pool` port (@ b9aa928, 3,147 LOC) with the

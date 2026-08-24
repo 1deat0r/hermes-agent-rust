@@ -481,6 +481,7 @@ dependencies = [
  "base64",
  "chrono",
  "hermes-utils",
+ "rand",
  "reqwest",
  "serde_json",
  "sha2 0.10.9",
