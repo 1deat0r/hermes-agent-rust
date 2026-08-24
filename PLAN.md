@@ -493,6 +493,23 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 ## 7. Session log
 
+- 2026-08-24 (session 4c4): Continued the partial `agent.credential_pool`
+  port (@ b9aa928) through cooldown-recency persistence merging. The Rust
+  writer now preserves a newer live `EXHAUSTED` cooldown or `DEAD` quarantine
+  from disk for the same credential token, rejects stale state after re-auth,
+  and does not resurrect expired cooldowns; timestamp parsing mirrors the
+  source's seconds/milliseconds/ISO fail-open path and explicit reset-time
+  precedence. Added four source-derived `unit` parity tests first, bringing
+  the focused credential-pool wave to 21 pool plus 13 persistence tests. The
+  required targeted parity suite, workspace build, and serialized workspace
+  test passed; the approved lifecycle leaf reverified 4/4 gates. Local source
+  commit `fd7e26d07e1efbab67885f56ca8d9eae2ce9b4a9` was mirrored as GitHub
+  `e022d323070e2672017e26e71fb9c24678412b4d`; both refs resolve to tree
+  `11def3079a8a63a329b59a963907afec98f041a0` with 273 matching tracked
+  blobs. Auth-store locks, environment/config discovery, provider seeding,
+  OAuth refresh, leases, logging throttles, and cross-process orchestration
+  remain pending.
+
 - 2026-08-24 (session 4c3): Continued the partial `agent.credential_pool`
   port (@ b9aa928) through the auth-store persistence boundary. Added
   `hermes-agent::credential_store`, which mirrors versioned empty-store

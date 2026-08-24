@@ -9,10 +9,10 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
 Current branch/HEAD: `main` is aligned with `origin/main` after the local and
-GitHub API mirror sequence for the credential-store persistence unit. The
-local source commit `43b4baf` was mirrored as GitHub
-`72976e0748ed6c1b708cc35465e463594806c6f1`; both refs resolve to tree
-`8b37b3b341423388e68c275c0f1e8d4467c43f61` with 273 matching tracked blobs.
+GitHub API mirror sequence for the credential cooldown-recency unit. The
+local source commit `fd7e26d07e1efbab67885f56ca8d9eae2ce9b4a9` was mirrored as
+GitHub `e022d323070e2672017e26e71fb9c24678412b4d`; both refs resolve to tree
+`11def3079a8a63a329b59a963907afec98f041a0` with 273 matching tracked blobs.
 The connected GitHub API publishes each logical commit immediately as a
 sequential remote mirror. Its commit SHAs differ from the local sequence
 because the API cannot preserve local author/committer timestamps, but every
@@ -20,8 +20,11 @@ tree snapshot and commit message matches and is verified before each ref
 update. The local HTTPS Git client still has no credentials; use the connected
 GitHub API for future pushes until `gh auth login` or SSH is configured.
 
-Latest synchronized unit: local source `43b4baf` → GitHub
-`72976e0748ed6c1b708cc35465e463594806c6f1`
+Latest synchronized unit: local source
+`fd7e26d07e1efbab67885f56ca8d9eae2ce9b4a9` → GitHub
+`e022d323070e2672017e26e71fb9c24678412b4d`
+(`feat(agent): merge credential cooldown state @ b9aa928`), with the previous
+local source `43b4baf` → GitHub `72976e0748ed6c1b708cc35465e463594806c6f1`
 (`feat(agent): port credential store persistence @ b9aa928`), with the
 previous local source `4ccaa7e` → GitHub `c2ecc258`
 (`feat(agent): port credential pool orchestration helpers @ b9aa928`), with the
@@ -581,7 +584,7 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-Local `main` and `origin/main` are aligned after the credential-store source
+Local `main` and `origin/main` are aligned after the credential cooldown source
 and handoff mirror sequence. The recursive GitHub tree and local
 `git ls-tree -r` verification contain 273 blobs with no path/mode/SHA
 mismatches, and the worktree is clean. No conversion-ledger status changed: the current
