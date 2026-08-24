@@ -1,8 +1,8 @@
 //! Parity oracles for plugins/model-providers/zai/__init__.py at upstream
 //! commit b9aa928.
 //!
-//! Tier: unit. The tests exercise the registered profile and its reasoning
-//! hook without contacting Z.AI.
+//! Tier: mock. Profile checks are unit-level; the concrete detector uses an
+//! injected callback and a loopback TCP server, never the external Z.AI API.
 
 use hermes_providers::base::FixedTemperature;
 use hermes_providers::registry::get_provider_profile;
@@ -248,6 +248,110 @@ fn zai_endpoint_chooser_uses_priority_not_probe_completion_order() {
 #[test]
 fn zai_endpoint_chooser_returns_none_when_all_probes_fail() {
     assert!(hermes_providers::choose_zai_endpoint(|_, _| false).is_none());
+}
+#[test]
+fn zai_parallel_detector_preserves_priority_when_completion_order_differs() {
+    use std::thread;
+    use std::time::Duration;
+
+    let result = hermes_providers::zai::detect_zai_endpoint_with_probe(|endpoint, model| {
+        if endpoint.id == "global" {
+            thread::sleep(Duration::from_millis(100));
+        }
+        matches!(endpoint.id, "global" | "cn") && model == endpoint.models[0]
+    });
+    assert_eq!(result.unwrap().id, "global");
+}
+
+#[test]
+fn zai_parallel_detector_returns_none_when_all_injected_probes_fail() {
+    assert!(hermes_providers::zai::detect_zai_endpoint_with_probe(|_, _| false).is_none());
+}
+
+#[test]
+fn zai_parallel_detector_returns_without_waiting_for_lower_priority_workers() {
+    use std::thread;
+    use std::time::{Duration, Instant};
+
+    let started = Instant::now();
+    let result = hermes_providers::zai::detect_zai_endpoint_with_probe(|endpoint, model| {
+        if endpoint.id != "global" {
+            thread::sleep(Duration::from_secs(2));
+        }
+        endpoint.id == "global" && model == endpoint.models[0]
+    });
+    assert_eq!(result.unwrap().id, "global");
+    assert!(
+        started.elapsed() < Duration::from_millis(500),
+        "detector waited for lower-priority workers"
+    );
+}
+#[test]
+fn zai_http_probe_sends_upstream_request_and_accepts_only_status_200() {
+    use std::io::{BufRead, BufReader, Read, Write};
+    use std::net::TcpListener;
+    use std::thread;
+    use std::time::Duration;
+
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let address = listener.local_addr().unwrap();
+    let base_url = format!("http://{address}");
+    let endpoint = hermes_providers::ZaiEndpointSpec {
+        id: "test",
+        base_url: "http://test.invalid",
+        models: &["probe-model"],
+        label: "Test",
+    };
+    let server = thread::spawn(move || {
+        let (stream, _) = listener.accept().unwrap();
+        let mut reader = BufReader::new(stream);
+        let mut request_line = String::new();
+        reader.read_line(&mut request_line).unwrap();
+        assert_eq!(request_line, "POST /chat/completions HTTP/1.1\r\n");
+        let mut headers = Vec::new();
+        let mut content_length = 0;
+        loop {
+            let mut line = String::new();
+            reader.read_line(&mut line).unwrap();
+            if line == "\r\n" {
+                break;
+            }
+            let lowercase = line.to_ascii_lowercase();
+            if lowercase.starts_with("authorization: ") {
+                let value = line
+                    .split_once(':')
+                    .map(|(_, value)| value.trim())
+                    .unwrap_or_default();
+                headers.push(value.to_owned());
+            }
+            if let Some(value) = lowercase.strip_prefix("content-length: ") {
+                content_length = value.trim().parse::<usize>().unwrap();
+            }
+        }
+        let mut body = vec![0; content_length];
+        reader.read_exact(&mut body).unwrap();
+        let body: serde_json::Value = serde_json::from_slice(&body).unwrap();
+        assert_eq!(headers, ["Bearer test-key"]);
+        assert_eq!(body["model"], "probe-model");
+        assert_eq!(body["stream"], false);
+        assert_eq!(body["max_tokens"], 1);
+        assert_eq!(
+            body["messages"],
+            serde_json::json!([{"role": "user", "content": "ping"}])
+        );
+        let mut stream = reader.into_inner();
+        stream
+            .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+            .unwrap();
+    });
+    let result = hermes_providers::zai::probe_zai_endpoint_http_at(
+        &endpoint,
+        &base_url,
+        "test-key",
+        Duration::from_secs(2),
+    );
+    assert_eq!(result.unwrap().model, "probe-model");
+    server.join().unwrap();
 }
 
 #[test]

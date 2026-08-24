@@ -2,7 +2,13 @@
 //!
 //! PARITY: plugins/model-providers/zai/__init__.py @ b9aa928.
 
+use std::sync::{mpsc, Arc};
+use std::thread;
+use std::time::Duration;
+
 use crate::base::ProviderProfile;
+use reqwest::blocking::Client;
+use reqwest::StatusCode;
 
 /// A Z.AI endpoint and its ordered candidate models.
 ///
@@ -125,6 +131,128 @@ where
     ZAI_ENDPOINTS
         .iter()
         .find_map(|endpoint| probe_zai_endpoint(endpoint, &mut request_succeeds))
+}
+/// Probe one endpoint with the concrete blocking HTTP transport.
+///
+/// This mirrors `_probe_single_zai_endpoint` in `hermes_cli/auth.py`
+/// lines 694–731: candidates are attempted in order, each request is a
+/// `POST` to `/chat/completions`, and only HTTP 200 is considered success.
+/// Request and transport errors fail open to the next candidate.
+pub fn probe_zai_endpoint_http(
+    endpoint: &ZaiEndpointSpec,
+    api_key: &str,
+    timeout: Duration,
+) -> Option<ZaiEndpointResult> {
+    probe_zai_endpoint_http_at(endpoint, endpoint.base_url, api_key, timeout)
+}
+
+/// Testable concrete HTTP probe with an explicit base URL.
+///
+/// The endpoint table intentionally stores static production URLs. This seam
+/// keeps that public table unchanged while allowing deterministic local HTTP
+/// tests without changing endpoint metadata ownership.
+pub fn probe_zai_endpoint_http_at(
+    endpoint: &ZaiEndpointSpec,
+    base_url: &str,
+    api_key: &str,
+    timeout: Duration,
+) -> Option<ZaiEndpointResult> {
+    let client = Client::builder().timeout(timeout).build().ok()?;
+    Some(probe_zai_endpoint(endpoint, |_, model| {
+        let url = format!("{}/chat/completions", base_url.trim_end_matches('/'));
+        client
+            .post(url)
+            .header(reqwest::header::AUTHORIZATION, format!("Bearer {api_key}"))
+            .header(reqwest::header::CONTENT_TYPE, "application/json")
+            .body(
+                serde_json::to_vec(&serde_json::json!({
+                    "model": model,
+                    "stream": false,
+                    "max_tokens": 1,
+                    "messages": [{"role": "user", "content": "ping"}],
+                }))
+                .unwrap_or_default(),
+            )
+            .send()
+            .map(|response| response.status() == StatusCode::OK)
+            .unwrap_or(false)
+    })?)
+}
+
+/// Probe all endpoints concurrently using an injected request callback.
+///
+/// This is the dependency-free equivalent of `detect_zai_endpoint` in
+/// `hermes_cli/auth.py` lines 734–779. Each endpoint gets one worker and
+/// preserves its candidate-model order. Results are consumed in completion
+/// order but selected only once every higher-priority endpoint has finished;
+/// this preserves static endpoint priority while allowing early return
+/// without joining slower lower-priority workers.
+pub fn detect_zai_endpoint_with_probe<F>(request_succeeds: F) -> Option<ZaiEndpointResult>
+where
+    F: Fn(&ZaiEndpointSpec, &str) -> bool + Send + Sync + 'static,
+{
+    let (sender, receiver) = mpsc::channel();
+    let request_succeeds = Arc::new(request_succeeds);
+
+    for (index, endpoint) in ZAI_ENDPOINTS.iter().enumerate() {
+        let sender = sender.clone();
+        let request_succeeds = Arc::clone(&request_succeeds);
+        thread::spawn(move || {
+            let result = probe_zai_endpoint(endpoint, |endpoint, model| {
+                request_succeeds(endpoint, model)
+            });
+            let _ = sender.send((index, result));
+        });
+    }
+    drop(sender);
+
+    let mut finished = [false; ZAI_ENDPOINTS.len()];
+    let mut results = [None; ZAI_ENDPOINTS.len()];
+    while let Ok((index, result)) = receiver.recv() {
+        finished[index] = true;
+        results[index] = result;
+        for index in 0..ZAI_ENDPOINTS.len() {
+            if !finished[index] {
+                break;
+            }
+            if let Some(result) = results[index] {
+                return Some(result);
+            }
+        }
+    }
+
+    results.into_iter().flatten().next()
+}
+
+/// Detect the highest-priority endpoint with the concrete HTTP transport.
+///
+/// Client construction errors and every request failure are treated as
+/// unavailable endpoints, matching the upstream fail-open detector.
+pub fn detect_zai_endpoint(api_key: &str, timeout: Duration) -> Option<ZaiEndpointResult> {
+    let client = Client::builder().timeout(timeout).build().ok()?;
+    let api_key = api_key.to_owned();
+    detect_zai_endpoint_with_probe(move |endpoint, model| {
+        let url = format!(
+            "{}/chat/completions",
+            endpoint.base_url.trim_end_matches('/')
+        );
+        client
+            .post(url)
+            .header(reqwest::header::AUTHORIZATION, format!("Bearer {api_key}"))
+            .header(reqwest::header::CONTENT_TYPE, "application/json")
+            .body(
+                serde_json::to_vec(&serde_json::json!({
+                    "model": model,
+                    "stream": false,
+                    "max_tokens": 1,
+                    "messages": [{"role": "user", "content": "ping"}],
+                }))
+                .unwrap_or_default(),
+            )
+            .send()
+            .map(|response| response.status() == StatusCode::OK)
+            .unwrap_or(false)
+    })
 }
 
 /// Resolve a Z.AI base URL without performing I/O.

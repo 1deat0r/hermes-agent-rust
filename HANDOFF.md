@@ -8,25 +8,34 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
-Current branch/HEAD: `main` is aligned with `origin/main` after publishing the
-parallel config-discovery and Z.AI unit plus its documentation-only
-checkpoints. The latest source commit
-`a092a8f21d4ea6deacac92503e67f7e4bdd809df` is mirrored on GitHub; its source
-tree is `68766578f9e2d002b4a4f8caee8c4a07e94cf1e7` with 273 matching tracked
-blobs. The documentation-only checkpoints
-`6ab58db089332d6c03571664d8875667f25c3a1d` and the subsequent handoff
-checkpoint are also mirrored; they do not change source or ledger content.
-The local HTTPS Git client authenticates through the logged-in `gh` keyring
-account; future logical units can use `git push origin main`.
+Current branch/HEAD: `main` is aligned with `origin/main`; the worktree is
+clean after publishing this source unit and its handoff checkpoint. The
+implementation commit
+`05d97ddefdf4d76fbbecc05a71c335463c1c81f6` is mirrored on GitHub; its source
+tree is `7b78875eada07074c192c772f6e0a19d49fb4403` with 275 matching tracked
+blobs. The current HEAD also contains the documentation checkpoint below;
+local/origin commit parity was re-verified after that checkpoint. The local
+HTTPS Git client authenticates through the logged-in `gh` keyring account;
+future logical units can use `git push origin main`.
+
+The preceding source commit `a092a8f21d4ea6deacac92503e67f7e4bdd809df`
+remains recorded below as the earlier config/Z.AI discovery seam.
 
 Latest synchronized source unit: local
+`05d97ddefdf4d76fbbecc05a71c335463c1c81f6` → GitHub
+`05d97ddefdf4d76fbbecc05a71c335463c1c81f6`
+(`feat(agent,providers): add merged config and ZAI HTTP detection @ b9aa928`).
+The current branch includes a later handoff checkpoint that preserves the
+same source tree and ledger state; exact local/origin parity was verified
+after publishing it. The previous source
 `a092a8f21d4ea6deacac92503e67f7e4bdd809df` → GitHub
-`a092a8f21d4ea6deac92503e67f7e4bdd809df`
-(`feat(agent,providers): add config and Z.AI discovery seams @ b9aa928`),
-with the documentation checkpoint
-`6ab58db089332d6c03571664d8875667f25c3a1d`
-(`handoff: record parallel config ZAI mirror refs @ b9aa928`), and the
-previous source `e568a282a692d65ee574ce2ca25db10741b95515` → GitHub
+`a092a8f21d4ea6deacac92503e67f7e4bdd809df`
+(`feat(agent,providers): add config and Z.AI discovery seams @ b9aa928`).
+The earlier documentation checkpoint
+`6ab58db089332d6c03571664d8875667f25c3a1d` remains mirrored without source
+or ledger changes, followed by the older logical units below.
+The next older source
+`e568a282a692d65ee574ce2ca25db10741b95515` → GitHub
 `e568a282a692d65ee574ce2ca25db10741b95515`
 (`feat(agent): compose full credential pool loader @ b9aa928`), with the
 previous local source `2c7798500593d6ac290c235181da28a7ef81e8d2` → GitHub
@@ -207,27 +216,24 @@ branches and the active credential-lifecycle leaf. These gates are intentionally
 unmet while the conversion remains partial.
 
 The current source unit was developed through two disjoint parallel leaves:
-`hermes-agent::config` and the public pure `hermes-providers::zai` endpoint
-helpers. The config leaf adds resolved/default and explicit-path snapshot
-loading, `(mtime_ns,size)` cache invalidation, root pool/model/custom-provider
-projection, missing/malformed/non-map fail-open behavior, and valid-to-
-malformed last-known-good retention. The Z.AI leaf adds the four upstream
-endpoint specs, candidate-model fallback, static-priority selection,
-all-fail behavior, and explicit env/cache/detected base-URL precedence without
-HTTP, threading, or auth-store writes. Seven config tests, five Z.AI tests,
-and one config-to-pool integration test were added first; the focused
-credential-pool wave now has 66 pool plus 15 persistence tests (81 total), and
-the Z.AI parity suite has 10 tests. Parallel child gates passed 3/3 each and
-the parent integration gate passed 3/3. Targeted rustfmt, focused leaf/
-integration tests, workspace build, and serialized workspace tests passed:
-1,125 tests passed, 5 ignored, 12 warnings. Local source commit
-`a092a8f21d4ea6deacac92503e67f7e4bdd809df` was mirrored as GitHub
-`a092a8f21d4ea6deacac92503e67f7e4bdd809df`; both refs resolve to tree
-`68766578f9e2d002b4a4f8caee8c4a07e94cf1e7` with 273 matching tracked blobs.
+`hermes-agent::config` and `hermes-providers::zai`. The config leaf adds the
+generic `load_merged_config_snapshot`/`load_merged_config_snapshot_at` seam:
+caller-supplied defaults, recursive merge, environment expansion,
+root/model/max-turns normalization, raw last-known-good retention, and cache
+invalidation on file signature, defaults, and referenced environment values.
+The Z.AI leaf adds concrete reqwest blocking `/chat/completions` probes,
+per-endpoint model fallback, static-priority concurrent detection, early exit,
+and root provider exports. The focused parity suites now pass 12 config tests
+and 14 Z.AI tests (`mock` evidence); the two new leaf ledgers are all met
+(6/6). Validation passed: targeted `/home/mustbearnold/.cargo/bin/rustfmt
+--edition 2021 --check` on the five changed Rust files,
+`cargo build --workspace`, `cargo test --workspace -- --test-threads=1`
+(1,134 passed, 5 ignored, 16 warnings), both focused suites, both crate
+checks, and `git diff --check`.
 No conversion-ledger status changed.
-Full merged CLI config discovery/loading, concrete Z.AI HTTP probing/cache,
-provider-specific OAuth transport/auth-store write-through, leases, and
-logging throttles remain pending.
+Managed CLI overlays/default-catalog integration, migrations/write-back,
+auth-store key-hash/write-through, provider-specific OAuth transport, leases,
+and logging throttles remain pending.
 
 The preceding source unit extends `hermes-agent::credential_pool` through the
 provider-singleton seeding boundary. It adds the explicit `seed_from_singletons`
@@ -727,19 +733,17 @@ summary is 73 done / 11 partial / 3,798 missing tracked modules and 73 done /
 
 ## Next actions, in order
 
-1. Continue through full merged CLI configuration discovery/loading and
-   concrete Z.AI HTTP/early-exit/cache integration; then address provider-
-   specific OAuth transport/auth-store write-through, leases, and logging
-   throttles. The lower row model, serialization, source upsert, strategy,
-   provider-boundary, selection, persistence, cooldown-recency merge,
-   auth-store lock, environment seeding, explicit `load_pool` composition,
-   singleton state boundaries, custom-provider compatibility, transport-neutral
-   refresh, config snapshot, and pure Z.AI chooser are now recorded.
-2. Then connect the auxiliary-client concrete transport to credential-pool
+1. Connect the merged config seam to the full CLI managed overlay and
+   default-catalog integration, then add auth-store key-hash cache
+   invalidation/write-through around concrete Z.AI detection.
+2. Continue through provider-specific OAuth transport/auth-store
+   persistence, leases, and logging throttles without moving those
+   higher-layer responsibilities into `hermes-agent::config` or
+   `hermes-providers::zai`.
+3. Connect the auxiliary-client concrete transport to credential-pool
    lifecycle, cancellation, and provider fallback seams without promoting
-   either partial module prematurely.
-3. Continue parallelizing only disjoint ownership slices; commit and publish
-   each logical unit immediately through the authenticated `gh` Git client.
+   either partial module prematurely. Continue parallelizing only disjoint
+   ownership slices; commit and publish each logical unit immediately.
 
 ## Current conversion ledger
 

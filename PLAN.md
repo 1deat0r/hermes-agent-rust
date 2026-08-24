@@ -375,13 +375,29 @@ planned dependency graph. Anthropic's explicit provider/API-key-path gates and
   OAuth state-to-pool field copy, OpenAI Codex nested-token field copy, xAI
   OAuth nested-token field copy, custom config/model API-key field copy, the
   custom-versus-non-custom loader branch ordering, and the pure custom-provider
-  compatibility adapter are mirrored; outer config discovery/loading and
-  Z.AI's network endpoint probe remain deferred to the owning auth/provider
-  layer rather than being silently guessed. The OAuth refresh boundary accepts
-  already-resolved provider results so this crate remains below the
-  auth/transport layers; network calls, cross-process auth-store write-through,
-  and provider-specific terminal quarantine remain deferred rather than
-  silently guessed.
+  compatibility adapter are mirrored.
+
+The generic merged configuration seam is now implemented in
+`hermes-agent::config::load_merged_config_snapshot_at`: caller-supplied
+defaults, recursive merge, environment expansion, root/model/max-turns
+normalization, raw last-known-good retention, and cache invalidation on file
+signature, defaults, or referenced environment values. Its 12 source-derived
+parity tests are `mock` evidence from
+`cargo test -p hermes-agent --test parity_config`. Managed CLI overlays,
+default-catalog integration, migrations/write-back, and auth-store
+key-hash/write-through remain deferred to their owning higher layers.
+
+The concrete Z.AI detector is now implemented in
+`hermes-providers::zai`: reqwest blocking probes issue the source-shaped
+`/chat/completions` request, candidate models fall back per endpoint, and
+concurrent probes preserve static endpoint priority with early exit. Its 14
+source-derived HTTP/concurrency tests are `mock` evidence from
+`cargo test -p hermes-providers --test parity_zai`; auth-store caching and
+provider transport integration remain deferred rather than guessed.
+The OAuth refresh boundary accepts already-resolved provider results so this
+crate remains below auth/transport layers; network calls, cross-process
+auth-store write-through, and provider-specific terminal quarantine remain
+deferred rather than silently guessed.
 
 ### hermes-agent auxiliary client (Phase 2, upstream @ b9aa928)
 
@@ -515,6 +531,27 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 + the exact command, e.g. `cargo test -p hermes-time (unit)`.
 
 ## 7. Session log
+
+- 2026-08-24 (session 4cf): Continued the partial `agent.credential_pool`
+  wave through the generic merged configuration and concrete Z.AI HTTP
+  seams using parallel implementation leaves. Added
+  `load_merged_config_snapshot`/`load_merged_config_snapshot_at` with
+  caller-supplied defaults, recursive merge, environment expansion,
+  root/model/max-turns normalization, raw last-known-good retention, and
+  cache invalidation on file signature, defaults, and referenced environment
+  values. Added concrete reqwest blocking Z.AI probes, per-endpoint model
+  fallback, static-priority concurrent detection, early exit, and public
+  provider exports. Added 5 config parity tests and 4 Z.AI parity tests;
+  focused suites now pass 12 and 14 tests respectively (`mock` evidence).
+  Validation passed: targeted `/home/mustbearnold/.cargo/bin/rustfmt
+  --edition 2021 --check` on the five changed Rust files,
+  `cargo build --workspace`, `cargo test --workspace
+  -- --test-threads=1` (1,134 passed, 5 ignored, 16 warnings), both focused
+  suites, both crate checks, and `git diff --check`. The two new leaf gates
+  are all met (6/6); no module-status or ledger change.
+  Managed CLI overlays/default-catalog integration,
+  auth-store key-hash/write-through, OAuth transport, leases, and logging
+  throttles remain pending as the next dependency-safe units.
 
 - 2026-08-24 (session 4cf): Continued the partial `agent.credential_pool`
   and Z.AI provider seams through parallel subagents. Added the read-only
