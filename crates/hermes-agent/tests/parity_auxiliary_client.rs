@@ -1,13 +1,14 @@
 use hermes_agent::auxiliary_client::{
     auxiliary_http_client_config, auxiliary_max_tokens_param, auxiliary_proxy_for_base_url,
-    auxiliary_proxy_from_env, codex_cloudflare_headers, is_anthropic_compatible_host,
-    is_model_incompatible_error, is_model_not_found_error, is_payment_error, is_rate_limit_error,
-    normalize_aux_provider, openai_client_config, openai_client_config_with_transport,
-    pool_runtime_api_key, pool_runtime_base_url, read_codex_access_token,
-    resolve_aux_task_provider_model, resolve_auxiliary_tls_verify,
+    auxiliary_proxy_from_env, build_auxiliary_http_client, codex_cloudflare_headers,
+    is_anthropic_compatible_host, is_model_incompatible_error, is_model_not_found_error,
+    is_payment_error, is_rate_limit_error, normalize_aux_provider, openai_client_config,
+    openai_client_config_with_transport, pool_runtime_api_key, pool_runtime_base_url,
+    read_codex_access_token, resolve_aux_task_provider_model, resolve_auxiliary_tls_verify,
     resolve_pool_first_runtime_credentials, select_auxiliary_pool_entry, to_openai_base_url,
-    AuxiliaryError, AuxiliaryHttpClientConfig, AuxiliaryPoolEntry, AuxiliaryRuntimeCredentials,
-    AuxiliarySslVerifySetting, AuxiliaryTaskConfig, AuxiliaryTlsVerify,
+    AuxiliaryError, AuxiliaryHttpClient, AuxiliaryHttpClientConfig, AuxiliaryPoolEntry,
+    AuxiliaryRuntimeCredentials, AuxiliarySslVerifySetting, AuxiliaryTaskConfig,
+    AuxiliaryTlsVerify,
 };
 use serde_json::json;
 use std::ffi::OsString;
@@ -669,6 +670,86 @@ fn openai_client_config_with_transport_injects_default_and_preserves_explicit_cl
     );
     assert_eq!(overridden.max_retries, 4);
     assert_eq!(overridden.http_client, Some(explicit));
+}
+
+// Tier: unit — mirrors agent/process_bootstrap.py build_keepalive_http_client.
+#[test]
+fn build_auxiliary_http_client_constructs_sync_and_async_variants() {
+    let _lock = AUXILIARY_ENV_MUTEX.lock().unwrap();
+    let _environment = EnvironmentSnapshot::new();
+    clear_auxiliary_env();
+
+    let sync = auxiliary_http_client_config(
+        Some("https://provider.example/v1"),
+        false,
+        AuxiliaryTlsVerify::Default,
+    );
+    assert!(matches!(
+        build_auxiliary_http_client(&sync),
+        Some(AuxiliaryHttpClient::Blocking(_))
+    ));
+
+    let async_config = auxiliary_http_client_config(
+        Some("https://provider.example/v1"),
+        true,
+        AuxiliaryTlsVerify::Disabled,
+    );
+    assert!(matches!(
+        build_auxiliary_http_client(&async_config),
+        Some(AuxiliaryHttpClient::Async(_))
+    ));
+}
+
+// Tier: unit — mirrors source proxy forwarding into the constructed client.
+#[test]
+fn build_auxiliary_http_client_accepts_explicit_proxy() {
+    let config = AuxiliaryHttpClientConfig {
+        proxy: Some("http://proxy.example:8080".into()),
+        plain_scheme_mounts: false,
+        ..auxiliary_http_client_config(
+            Some("https://provider.example/v1"),
+            false,
+            AuxiliaryTlsVerify::Default,
+        )
+    };
+
+    assert!(matches!(
+        build_auxiliary_http_client(&config),
+        Some(AuxiliaryHttpClient::Blocking(_))
+    ));
+}
+
+// Tier: unit — mirrors source builder's broad fail-open exception path.
+#[test]
+fn build_auxiliary_http_client_fails_open_for_unusable_ca_bundle() {
+    let _lock = AUXILIARY_ENV_MUTEX.lock().unwrap();
+    let _environment = EnvironmentSnapshot::new();
+    clear_auxiliary_env();
+
+    let config = auxiliary_http_client_config(
+        Some("https://provider.example/v1"),
+        false,
+        AuxiliaryTlsVerify::CaBundle("/definitely/missing/hermes-agent-rust-ca-bundle.pem".into()),
+    );
+    assert!(build_auxiliary_http_client(&config).is_none());
+}
+
+// Tier: unit — mirrors source's insecure verify forwarding to the client.
+#[test]
+fn build_auxiliary_http_client_accepts_explicit_insecure_tls_mode() {
+    let _lock = AUXILIARY_ENV_MUTEX.lock().unwrap();
+    let _environment = EnvironmentSnapshot::new();
+    clear_auxiliary_env();
+
+    let config = AuxiliaryHttpClientConfig {
+        verify: AuxiliaryTlsVerify::Disabled,
+        ..auxiliary_http_client_config(
+            Some("https://provider.example/v1"),
+            false,
+            AuxiliaryTlsVerify::Default,
+        )
+    };
+    assert!(build_auxiliary_http_client(&config).is_some());
 }
 
 // Tier: unit — mirrors agent/auxiliary_client.py _select_pool_entry.

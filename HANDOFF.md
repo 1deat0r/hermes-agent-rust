@@ -1,6 +1,6 @@
 # Hermes Agent Rust — Next-session handoff
 
-Date: 2026-08-24 (Pacific/Auckland), session 4be.
+Date: 2026-08-24 (Pacific/Auckland), session 4bf.
 
 ## Resume point
 
@@ -17,6 +17,12 @@ because the API cannot preserve local author/committer timestamps, but every
 tree snapshot and commit message matches and is verified before each ref
 update. The local HTTPS Git client still has no credentials; use the connected
 GitHub API for future pushes until `gh auth login` or SSH is configured.
+
+The next auxiliary-client concrete transport unit is currently in the working
+tree and has not yet received its source commit: it adds blocking/async
+reqwest construction, explicit proxy/no-proxy handling, and PEM-bundle TLS
+roots. The source and handoff commits will be mirrored immediately after the
+documentation gate passes.
 
 Latest synchronized unit: local `6fcc72f` → GitHub `1d46bab`
 (`feat(agent): port credential pool selection core @ b9aa928`), with the
@@ -164,6 +170,19 @@ still pending. The required workspace build and test commands passed. Local
 `895fbcf` was mirrored as GitHub `ead6b5f`; the remote and local trees both
 resolve to `d9720eddbe0198216912d7c3de6c8fb3693a45b1`, with 268 tracked blobs
 matching by path, mode, and SHA.
+
+The in-progress auxiliary-client construction unit adds
+`build_auxiliary_http_client`, which selects concrete blocking or async reqwest
+clients, disables ambient proxy lookup, forwards explicit proxy settings,
+applies connect/idle-pool settings, supports insecure TLS, and loads explicit
+PEM bundles as the certificate roots. Four source-derived `unit` tests were
+added first; the focused auxiliary suite now has 41 passing tests. The
+transport-neutral config retains the source's total-connection, write-timeout,
+and pool-acquisition values because reqwest's public builder does not expose
+those exact controls. Full SDK request/response integration, credential-pool
+persistence/refresh, cancellation, and provider fallback remain pending.
+The required workspace build and test commands passed; the source and GitHub
+mirror refs are intentionally recorded after the next commit.
 
 The tracked documentation/GitHub metadata hook workflow is included in local
 commit `0d2bcd4` and its `1af2de6` GitHub mirror. It is the current non-ledger
@@ -489,17 +508,19 @@ hardening remains in the preceding synchronized history.
 ## Exact working-tree state
 
 Local `main` and `origin/main` both resolve to GitHub's API-authored
-`1d46bab5fd4dbdbbe264931c13b2d2a8023e079f`; their trees both resolve to
-`b69eb818bc34145186f7432c8ebe8910e3f461da`. The recursive GitHub tree and
-local `git ls-tree -r` contain 270 blobs with no path/mode/SHA mismatches, and
-the worktree is clean. No conversion-ledger status changed: the current
-summary is 73 done / 11 partial / 3,798 missing tracked modules and 73 done /
-11 partial / 1,020 missing production modules.
+`bdfd901da275279ab5315fbc773d72f2b942d0fa` from the latest handoff
+checkpoint; their trees both resolve to
+`65a37520466d4fde11c269bebdc11117e97272ae`. The recursive GitHub tree and
+local `git ls-tree -r` contain 270 blobs with no path/mode/SHA mismatches. The
+worktree is currently dirty only with the in-progress auxiliary-client
+construction unit and its documentation updates. No conversion-ledger status
+changed: the current summary is 73 done / 11 partial / 3,798 missing tracked
+modules and 73 done / 11 partial / 1,019 missing production modules.
 
 ## Next actions, in order
 
-1. Continue `agent.auxiliary_client` with concrete SDK/network client
-   construction, then connect it to the credential-pool persistence/refresh
+1. Continue `agent.auxiliary_client` by connecting the concrete transport to
+   the credential-pool persistence/refresh
    boundary; proxy/TLS policy, keepalive options, Codex headers, token
    selection, and pool-first runtime projection are now recorded.
 2. Keep the adapter boundaries explicit; do not promote the module until
@@ -513,7 +534,7 @@ summary is 73 done / 11 partial / 3,798 missing tracked modules and 73 done /
 `CONVERSION-LEDGER.md` is generated and contains one row for every 3,882 upstream inventory modules: 1,103 production tasks plus 2,779 oracle/test tasks. Only `done` counts toward completion.
 
 - All tracked modules: 73 done / 11 partial / 3,798 missing = **1.88%**.
-- Production modules: 73 done / 11 partial / 1,020 missing = **6.62%**.
+- Production modules: 73 done / 11 partial / 1,019 missing = **6.62%**.
 
 The eleven partial production rows are `agent.auxiliary_client`,
 `agent.credential_pool`,
@@ -667,14 +688,14 @@ Cloud, 2 AI Gateway, 2 Alibaba, 2 Alibaba Coding Plan, 3 Anthropic, 3 Gemini,
 2 Arcee, 2 Azure
 Foundry, 2 Bedrock, 3 Copilot, 2 Copilot ACP, 2 Fireworks, 2 GMI, 2 Kilo
 Code, 3 Kimi Coding, 2 NovitaAI, 2 NVIDIA, 2 StepFun, 3 Vertex, 2 DeepInfra,
-32 auxiliary-client routing/predicate/wire/error/pool-runtime/endpoint/client-option/proxy/TLS/Codex-header/token-selection, 5 ZAI profile,
+41 auxiliary-client routing/predicate/wire/error/pool-runtime/endpoint/client-option/proxy/TLS/Codex-header/token-selection/client-construction, 5 ZAI profile,
 2 DeepSeek, 3 Nous, 3 Minimax, 2 OpenAI Codex, 4 Qwen OAuth, 4 Upstage,
 2 Xiaomi, 2 XAI, and 2 Hugging Face profile
 tests. The
 required workspace build and test also passed with the explicit cargo
 toolchain; three
 delegation/schema doc tests are intentionally ignored. Inventory and
-conversion ledger were regenerated and now record 73 done / 10 partial / 1,020
+conversion ledger were regenerated and now record 73 done / 11 partial / 1,019
 missing production modules.
 
 ## First command tomorrow

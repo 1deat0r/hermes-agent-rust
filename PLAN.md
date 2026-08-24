@@ -360,7 +360,7 @@ rich/routing/cooldown/meta/reactions/conversation/delete modules.
 
 | Module / upstream surface | Status | Rust home, oracle, and evidence tier |
 |---|---|---|
-| `agent/auxiliary_client.py` (10,044 LOC) — routing, wire-parameter, task-provider precedence, pool-runtime projection, endpoint normalization, client-option, proxy/TLS policy, Codex credential-header, Codex token-selection, keepalive transport options, and pool-first runtime credential sections | 🟡 | `hermes-agent::auxiliary_client`; 37 source-derived parity tests (`unit`) cover provider aliases/special forms, OpenAI-compatible max-token keyword selection, payment/quota and rate-limit classification, disjoint stale-model/capability errors, explicit/configured endpoint and key precedence, MoA unwrapping, direct OpenAI aliasing, `auto` model normalization, pool key fallback and fail-open selection states, URL precedence/normalization, the Nous-only base-URL override, MiniMax/Z.AI/Kimi OpenAI wire paths, exact Anthropic host validation, default/explicit SDK retry options, env proxy precedence/SOCKS normalization/`NO_PROXY` bypass, keepalive pool/timeout/mount options for sync and async modes, default/custom/insecure TLS verification, fail-open CA handling, Codex originator/User-Agent/account-ID header shaping, pool-first/auth-store Codex token selection, pool-first runtime credential fallback, JWT expiry filtering, and non-JWT fail-open behavior; concrete SDK/network client construction, full credential-pool lifecycle/rotation, cancellation, and provider fallback chains remain pending |
+| `agent/auxiliary_client.py` (10,044 LOC) — routing, wire-parameter, task-provider precedence, pool-runtime projection, endpoint normalization, client-option, proxy/TLS policy, Codex credential-header, Codex token-selection, keepalive transport options, concrete reqwest client construction, and pool-first runtime credential sections | 🟡 | `hermes-agent::auxiliary_client`; 41 source-derived parity tests (`unit`) cover provider aliases/special forms, OpenAI-compatible max-token keyword selection, payment/quota and rate-limit classification, disjoint stale-model/capability errors, explicit/configured endpoint and key precedence, MoA unwrapping, direct OpenAI aliasing, `auto` model normalization, pool key fallback and fail-open selection states, URL precedence/normalization, the Nous-only base-URL override, MiniMax/Z.AI/Kimi OpenAI wire paths, exact Anthropic host validation, default/explicit SDK retry options, env proxy precedence/SOCKS normalization/`NO_PROXY` bypass, keepalive pool/timeout/mount options for sync and async modes, concrete sync/async reqwest client selection, explicit proxy forwarding, full PEM-bundle TLS roots, insecure TLS, fail-open construction, Codex originator/User-Agent/account-ID header shaping, pool-first/auth-store Codex token selection, pool-first runtime credential fallback, JWT expiry filtering, and non-JWT fail-open behavior; full SDK request/response adapters, exact max-connection/write/pool-timeout wiring, full credential-pool lifecycle/rotation, cancellation, and provider fallback chains remain pending |
 
 ### hermes-providers base (Phase 2, upstream @ b9aa928)
 
@@ -448,7 +448,7 @@ oracle tests). Upstream oracle files currently mirrored:
 - `tests/tools/test_tool_output_limits.py` → `crates/hermes-tools/tests/parity_tool_output_limits.rs`
 - `tests/tools/test_working_diff.py` → `crates/hermes-tools/tests/parity_working_diff.rs`
 - `providers/base.py` + `tests/providers/test_fetch_models_base_url.py` → `crates/hermes-providers/tests/parity_base.rs` (9 profile/catalog/redirect parity tests; `unit`/`mock`)
-- `agent/auxiliary_client.py` + `agent/process_bootstrap.py` + `agent/ssl_verify.py` + proxy/TLS/Codex-header/token tests → `crates/hermes-agent/tests/parity_auxiliary_client.rs` (32 source-derived routing/wire/error/task-provider-resolution/pool-runtime/endpoint/client-option/proxy/TLS/Codex-header/token parity tests; `unit`; the Rust `AuxiliaryTlsVerify` value preserves source precedence and fail-open decisions, `codex_cloudflare_headers` preserves fixed-header/JWT extraction behavior, and `read_codex_access_token` preserves pool-first/auth-store/expiry behavior through explicit lookup adapters, while actual SDK/httpx and `ssl.SSLContext` construction, remaining credential pools, async transport, cancellation, and provider fallback oracles remain future sections)
+- `agent/auxiliary_client.py` + `agent/process_bootstrap.py` + `agent/ssl_verify.py` + proxy/TLS/Codex-header/token tests → `crates/hermes-agent/tests/parity_auxiliary_client.rs` (41 source-derived routing/wire/error/task-provider-resolution/pool-runtime/endpoint/client-option/proxy/TLS/Codex-header/token/client-construction parity tests; `unit`; the Rust `AuxiliaryTlsVerify` value preserves source precedence and fail-open decisions, `build_auxiliary_http_client` constructs concrete blocking/async reqwest clients with explicit proxy/no-proxy policy and PEM-bundle roots, `codex_cloudflare_headers` preserves fixed-header/JWT extraction behavior, and `read_codex_access_token` preserves pool-first/auth-store/expiry behavior through explicit lookup adapters, while full SDK request/response integration, exact max-connection/write/pool timeout wiring, remaining credential pools, cancellation, and provider fallback oracles remain future sections)
 - `providers/__init__.py` + `tests/providers/test_provider_registry.py` + `tests/providers/test_plugin_discovery.py` → `crates/hermes-providers/tests/parity_registry.rs` (8 registry/discovery parity tests; `unit`/`mock`)
 - `plugins/model-providers/ai-gateway/__init__.py` → `crates/hermes-providers/tests/parity_ai_gateway.rs` (2 source-derived profile/registration/reasoning-hook parity tests; `unit`; no dedicated upstream plugin-profile test; related CLI/model catalog tests remain future-crate oracles)
 - `plugins/model-providers/alibaba/__init__.py` → `crates/hermes-providers/tests/parity_alibaba.rs` (2 source-derived profile/registration parity tests; `unit`; no dedicated upstream test module)
@@ -488,6 +488,25 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 + the exact command, e.g. `cargo test -p hermes-time (unit)`.
 
 ## 7. Session log
+
+- 2026-08-24 (session 4bf): Continued the partial
+  `agent.auxiliary_client` port (@ b9aa928, 10,044 LOC) with concrete
+  keepalive client construction. The Rust `build_auxiliary_http_client`
+  selects blocking or async reqwest clients, preserves explicit proxy routing
+  while disabling ambient proxy lookup, applies connect and idle-pool settings,
+  forwards insecure TLS, and loads an explicit PEM CA bundle as the sole
+  certificate root set. Any concrete transport/build or unusable explicit
+  bundle error fails open to `None`; the existing resolver still falls back to
+  default roots for missing CA paths as upstream does. Added 4 source-derived
+  `unit` parity tests first (41 total in `parity_auxiliary_client.rs`). Reqwest
+  cannot express the source's total max-connection, write-timeout, and pool
+  acquisition limits through its public builder, so those values remain in the
+  transport-neutral config for the future lower-level adapter. The full SDK
+  request/response path, credential-pool persistence/refresh, cancellation,
+  and provider fallback chains remain pending. Required
+  `/home/mustbearnold/.cargo/bin/cargo build --workspace` and
+  `/home/mustbearnold/.cargo/bin/cargo test --workspace` both passed; the
+  source commit and GitHub mirror are the next checkpoint.
 
 - 2026-08-24 (session 4be): Continued the missing
   `agent.credential_pool` port (@ b9aa928, 3,147 LOC) with the deterministic

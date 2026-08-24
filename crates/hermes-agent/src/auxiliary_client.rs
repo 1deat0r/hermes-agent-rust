@@ -545,6 +545,104 @@ pub fn auxiliary_http_client_config(
     }
 }
 
+/// A concrete reqwest client for sync or async OpenAI-compatible requests.
+///
+/// The enum keeps the source's `httpx.Client`/`httpx.AsyncClient` choice
+/// explicit without forcing callers to depend on an async runtime merely to
+/// construct a client.
+pub enum AuxiliaryHttpClient {
+    Blocking(reqwest::blocking::Client),
+    Async(reqwest::Client),
+}
+
+fn auxiliary_ca_certificates(
+    verify: &AuxiliaryTlsVerify,
+) -> Result<(Vec<reqwest::Certificate>, bool), ()> {
+    match verify {
+        AuxiliaryTlsVerify::CaBundle(path) => {
+            let bytes = std::fs::read(path).map_err(|_| ())?;
+            let certificates = reqwest::Certificate::from_pem_bundle(&bytes).map_err(|_| ())?;
+            if certificates.is_empty() {
+                return Err(());
+            }
+            // Python's ssl.create_default_context(cafile=...) uses the
+            // explicit bundle as the trust store rather than adding it to
+            // httpx's default certifi roots.
+            Ok((certificates, true))
+        }
+        AuxiliaryTlsVerify::Default | AuxiliaryTlsVerify::Disabled => Ok((Vec::new(), false)),
+    }
+}
+
+/// Build the concrete sync/async keepalive client and fail open on any
+/// transport construction error, matching the source helper's broad
+/// `except Exception: return None` boundary.
+///
+/// Reqwest exposes the same idle-pool and connect-timeout controls directly.
+/// Its request timeout is intentionally left unset so streamed responses keep
+/// the source's `read=None` behavior; the remaining write/pool timeout values
+/// stay available in `AuxiliaryHttpClientConfig` for a future lower-level
+/// transport implementation.
+///
+/// PARITY: agent/process_bootstrap.py lines 145-213.
+pub fn build_auxiliary_http_client(
+    config: &AuxiliaryHttpClientConfig,
+) -> Option<AuxiliaryHttpClient> {
+    if config.async_mode {
+        build_auxiliary_async_client(config).map(AuxiliaryHttpClient::Async)
+    } else {
+        build_auxiliary_blocking_client(config).map(AuxiliaryHttpClient::Blocking)
+    }
+}
+
+fn build_auxiliary_blocking_client(
+    config: &AuxiliaryHttpClientConfig,
+) -> Option<reqwest::blocking::Client> {
+    let (certificates, custom_roots_only) = auxiliary_ca_certificates(&config.verify).ok()?;
+    let mut builder = reqwest::blocking::Client::builder()
+        .connect_timeout(config.connect_timeout)
+        .pool_max_idle_per_host(config.max_keepalive_connections)
+        .pool_idle_timeout(config.keepalive_expiry)
+        // Reqwest otherwise reads ambient proxy variables itself. The source
+        // has already applied its explicit base-URL/NO_PROXY policy.
+        .no_proxy();
+    if custom_roots_only {
+        builder = builder.tls_built_in_root_certs(false);
+    }
+    for certificate in certificates {
+        builder = builder.add_root_certificate(certificate);
+    }
+    if matches!(config.verify, AuxiliaryTlsVerify::Disabled) {
+        builder = builder.danger_accept_invalid_certs(true);
+    }
+    if let Some(proxy) = config.proxy.as_deref() {
+        builder = builder.proxy(reqwest::Proxy::all(proxy).ok()?);
+    }
+    builder.build().ok()
+}
+
+fn build_auxiliary_async_client(config: &AuxiliaryHttpClientConfig) -> Option<reqwest::Client> {
+    let (certificates, custom_roots_only) = auxiliary_ca_certificates(&config.verify).ok()?;
+    let mut builder = reqwest::Client::builder()
+        .connect_timeout(config.connect_timeout)
+        .pool_max_idle_per_host(config.max_keepalive_connections)
+        .pool_idle_timeout(config.keepalive_expiry)
+        .no_proxy();
+    if custom_roots_only {
+        builder = builder.tls_built_in_root_certs(false);
+    }
+    for certificate in certificates {
+        builder = builder.add_root_certificate(certificate);
+    }
+    if matches!(config.verify, AuxiliaryTlsVerify::Disabled) {
+        builder = builder.danger_accept_invalid_certs(true);
+    }
+    if let Some(proxy) = config.proxy.as_deref() {
+        builder = builder.proxy(reqwest::Proxy::all(proxy).ok()?);
+    }
+    builder.build().ok()
+}
+
 /// Options passed to the eventual OpenAI-compatible auxiliary SDK client.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AuxiliaryOpenAiClientConfig {
