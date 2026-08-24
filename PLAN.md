@@ -486,8 +486,9 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 - 2026-08-24 (session 4bc): Added the tracked documentation/GitHub metadata
   hook workflow. `.githooks/pre-commit` refreshes `tools/inventory.json`,
   `CONVERSION-LEDGER.md`, and the README status snapshot for source/parity/
-  tooling changes, stages generated outputs, and requires `PLAN.md` plus
-  `HANDOFF.md` in the same index. `.githooks/post-commit` synchronizes the
+  tooling changes (including manually staged generated outputs), stages
+  generated outputs, and requires `PLAN.md` plus `HANDOFF.md` in the same index.
+  `.githooks/post-commit` synchronizes the
   reviewed `.github/repository-description.txt` through the GitHub API and
   verifies the remote README without creating a second README commit; explicit
   Contents-API README writes remain opt-in. `tools/install_hooks.sh` configures

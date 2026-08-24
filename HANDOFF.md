@@ -17,10 +17,10 @@ tree snapshot and commit message matches and is verified before each ref
 update. The local HTTPS Git client still has no credentials; use the connected
 GitHub API for future pushes until `gh auth login` or SSH is configured.
 
-Latest synchronized unit: local hook/docs commit `0d2bcd4` → GitHub `1af2de6`
-(`chore: enforce documentation and GitHub metadata sync`), followed immediately
-by local handoff checkpoint `9df521f` → GitHub `fd80a73`, after local source
-`9a0bc98` → GitHub `1550e03`
+Latest synchronized unit: the documentation/GitHub metadata hook workflow and
+its handoff checkpoints were mirrored immediately after each local commit. The
+last auxiliary-client source unit before this workflow was local `9a0bc98` →
+GitHub `1550e03`; exact current refs and tree parity are rechecked below.
 (`agent.auxiliary_client` Codex token selection, including current
 PLAN/inventory/ledger metadata), after local handoff source `116bb97` →
 GitHub `9388f11` (`HANDOFF.md` for the Codex-header unit), after local source
@@ -452,15 +452,14 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-After local hook/docs commit `0d2bcd4` was mirrored as `1af2de6` and local
-handoff checkpoint `9df521f` was mirrored as `fd80a73`, the local `main` ref was
-aligned to the API-authored SHA. The local and remote trees both resolve to
-`3b5851e20e63457342d460acf765f873b32b4ad2`; all 268 tracked blobs match by
-path, mode, and SHA, and the worktree is clean. The committed hook workflow
-includes `AGENTS.md`, `PLAN.md`, `README.md`, `HANDOFF.md`, the generated
-inventory/ledger, both tracked hooks, the GitHub description source, and the
-three helper scripts. No conversion-ledger status changed; the
-`agent.auxiliary_client` module remains partial.
+The documentation/GitHub metadata hook workflow and its handoff checkpoints
+are synchronized. The final verification fetches `origin/main`, aligns local
+`main` to the API-authored SHA, compares every tracked blob by path/mode/SHA,
+and checks a clean worktree. The committed workflow includes `AGENTS.md`,
+`PLAN.md`, `README.md`, `HANDOFF.md`, the generated inventory/ledger, both
+tracked hooks, the GitHub description source, and the three helper scripts. No
+conversion-ledger status changed; the `agent.auxiliary_client` module remains
+partial.
 
 ## Next actions, in order
 

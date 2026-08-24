@@ -45,7 +45,7 @@ def is_source_change(path: str) -> bool:
             ".githooks/",
             ".github/",
         )
-    ) and path not in GENERATED_DOCS and path != DESCRIPTION_FILE
+    ) and path != DESCRIPTION_FILE
 
 
 def resolve_upstream() -> Path | None:
