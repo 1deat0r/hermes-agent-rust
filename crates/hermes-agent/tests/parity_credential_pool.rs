@@ -3,8 +3,8 @@ use hermes_agent::credential_pool::{
     credential_pool_matches_provider, custom_provider_config, custom_provider_pool_key,
     get_env_prefer_dotenv, label_from_token, list_custom_pool_providers, load_env_file,
     normalize_custom_pool_name, normalize_pool_priorities, pool_strategy_from_config,
-    prune_stale_seeded_entries, seed_from_env, upsert_entry, CredentialPool, CredentialStatus,
-    EnvironmentSnapshot, PoolErrorContext, PoolStrategy, PooledCredential,
+    prune_stale_seeded_entries, seed_from_env, seed_from_singletons, upsert_entry, CredentialPool,
+    CredentialStatus, EnvironmentSnapshot, PoolErrorContext, PoolStrategy, PooledCredential,
     ProviderCredentialConfig,
 };
 use hermes_agent::credential_store::{read_credential_pool_at, save_auth_store};
@@ -328,6 +328,104 @@ fn environment_pool_loader_collapses_duplicate_rows_and_keeps_first_identity() {
             .map(|row| row["id"].clone())
             .collect::<Vec<_>>(),
         vec![json!("current-row")]
+    );
+}
+
+// Tier: mock — mirrors tests/agent/test_credential_pool.py::test_load_pool_mirrors_nous_invoke_jwt_agent_key_runtime_api_key.
+#[test]
+fn nous_singleton_seed_materializes_invoke_jwt_agent_key() {
+    let token = jwt_with_claims(json!({
+        "scope": ["inference:invoke"],
+        "exp": 4_000_000_000i64,
+    }));
+    let state = json!({
+        "portal_base_url": "https://portal.example.com",
+        "inference_base_url": "https://inference.example.com/v1",
+        "client_id": "hermes-cli",
+        "token_type": "Bearer",
+        "scope": "inference:invoke",
+        "access_token": token,
+        "refresh_token": "refresh-token",
+        "expires_at": "2096-10-02T07:06:40+00:00",
+        "agent_key": token,
+        "agent_key_expires_at": "2096-10-02T07:06:40+00:00"
+    });
+    let state = state.as_object().unwrap().clone();
+    let mut entries = Vec::new();
+
+    let result = seed_from_singletons("nous", &mut entries, Some(&state), &BTreeSet::new());
+
+    assert!(result.changed);
+    assert_eq!(
+        result.active_sources,
+        BTreeSet::from([String::from("device_code")])
+    );
+    assert_eq!(entries.len(), 1);
+    assert_eq!(entries[0].source, "device_code");
+    assert_eq!(
+        entries[0].agent_key.as_deref(),
+        entries[0].access_token.as_str().into()
+    );
+    assert_eq!(entries[0].runtime_api_key(), entries[0].access_token);
+    assert_eq!(
+        entries[0].inference_base_url.as_deref(),
+        Some("https://inference.example.com/v1")
+    );
+}
+
+// Tier: mock — mirrors tests/agent/test_credential_pool.py::test_nous_seed_from_singletons_preserves_obtained_at_timestamps.
+#[test]
+fn nous_singleton_seed_preserves_obtained_at_and_refresh_metadata() {
+    let state = json!({
+        "access_token": "at_XXXXXXXX",
+        "refresh_token": "rt_YYYYYYYY",
+        "client_id": "hermes-cli",
+        "portal_base_url": "https://portal.nousresearch.com",
+        "inference_base_url": "https://inference.nousresearch.com/v1",
+        "token_type": "Bearer",
+        "scope": "openid profile",
+        "obtained_at": "2026-04-24T10:00:00+00:00",
+        "expires_at": "2026-04-24T11:00:00+00:00",
+        "expires_in": 3600,
+        "agent_key": "sk-nous-AAAA",
+        "agent_key_id": "ak_123",
+        "agent_key_expires_at": "2026-04-25T10:00:00+00:00",
+        "agent_key_expires_in": 86400,
+        "agent_key_reused": false,
+        "agent_key_obtained_at": "2026-04-24T10:00:05+00:00",
+        "tls": {"insecure": false, "ca_bundle": null}
+    });
+    let state = state.as_object().unwrap().clone();
+    let mut entries = Vec::new();
+
+    seed_from_singletons("nous", &mut entries, Some(&state), &BTreeSet::new());
+
+    assert_eq!(entries.len(), 1);
+    let entry = &entries[0];
+    assert_eq!(entry.access_token, "at_XXXXXXXX");
+    assert_eq!(entry.refresh_token.as_deref(), Some("rt_YYYYYYYY"));
+    assert_eq!(
+        entry.expires_at.as_deref(),
+        Some("2026-04-24T11:00:00+00:00")
+    );
+    assert_eq!(entry.agent_key.as_deref(), Some("sk-nous-AAAA"));
+    assert_eq!(
+        entry.agent_key_expires_at.as_deref(),
+        Some("2026-04-25T10:00:00+00:00")
+    );
+    assert_eq!(
+        entry.extra.get("obtained_at"),
+        Some(&json!("2026-04-24T10:00:00+00:00"))
+    );
+    assert_eq!(entry.extra.get("expires_in"), Some(&json!(3600)));
+    assert_eq!(entry.extra.get("agent_key_id"), Some(&json!("ak_123")));
+    assert_eq!(
+        entry.extra.get("agent_key_obtained_at"),
+        Some(&json!("2026-04-24T10:00:05+00:00"))
+    );
+    assert_eq!(
+        entry.extra.get("tls"),
+        Some(&json!({"insecure": false, "ca_bundle": null}))
     );
 }
 

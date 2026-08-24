@@ -358,16 +358,18 @@ rich/routing/cooldown/meta/reactions/conversation/delete modules.
 
 | Module / upstream surface | Status | Rust home, oracle, and evidence tier |
 |---|---|---|
-| `agent/credential_pool.py` (3,147 LOC) — selection/rotation, pooled-row model/serialization, source upsert, priority normalization, strategy parsing, and custom-provider identity sections | 🟡 | `hermes-agent::credential_pool` plus `hermes-agent::credential_store`; 46 source-derived parity tests (`unit`/`mock`, 31 pool + 15 persistence) cover fill-first priority/current/peek, least-used counting, round-robin order, random selection support, explicit reset timestamps, terminal `token_invalidated` → `DEAD` rotation, unmatched-key fail-open rotation, duplicate-key quarantine, sole-credential transient-versus-billing cooldowns, `PooledCredential` JSON defaults/metadata round-trip, Anthropic OAT auth normalization and seeded-priority ordering, borrowed-secret redaction/fingerprints, owned OAuth persistence exceptions, Nous invoke-JWT runtime selection, token labels/runtime base URLs, source-key upsert and key rotation, configured strategies, custom endpoint/name scoping, versioned auth-store defaults, legacy `systems` migration, stale Nous URL migration, corruption quarantine versus read-error propagation, atomic `0600`/`0700` writes, profile/global fallback reads, profile-scoped borrowed-secret-safe writes, newer/live cooldown recency merging with token-change and expiry guards, per-path reentrant cross-process auth-store locking, dotenv parsing, dotenv-over-process precedence, process fallback, env-source suppression/pruning, unresolved `op://` secret-scope substitution, Anthropic OAuth-prefix classification, and the lower environment-aware `load_pool` transaction; the environment seeding and loader boundaries now accept explicit provider/config/auth inputs, while singleton/config discovery, custom-provider composition, Z.AI endpoint probing, OAuth refresh, lease locking, and logging throttles remain pending |
+| `agent/credential_pool.py` (3,147 LOC) — selection/rotation, pooled-row model/serialization, source upsert, priority normalization, strategy parsing, and custom-provider identity sections | 🟡 | `hermes-agent::credential_pool` plus `hermes-agent::credential_store`; 48 source-derived parity tests (`unit`/`mock`, 33 pool + 15 persistence) cover fill-first priority/current/peek, least-used counting, round-robin order, random selection support, explicit reset timestamps, terminal `token_invalidated` → `DEAD` rotation, unmatched-key fail-open rotation, duplicate-key quarantine, sole-credential transient-versus-billing cooldowns, `PooledCredential` JSON defaults/metadata round-trip, Anthropic OAT auth normalization and seeded-priority ordering, borrowed-secret redaction/fingerprints, owned OAuth persistence exceptions, Nous invoke-JWT runtime selection, token labels/runtime base URLs, source-key upsert and key rotation, configured strategies, custom endpoint/name scoping, versioned auth-store defaults, legacy `systems` migration, stale Nous URL migration, corruption quarantine versus read-error propagation, atomic `0600`/`0700` writes, profile/global fallback reads, profile-scoped borrowed-secret-safe writes, newer/live cooldown recency merging with token-change and expiry guards, per-path reentrant cross-process auth-store locking, dotenv parsing, dotenv-over-process precedence, process fallback, env-source suppression/pruning, unresolved `op://` secret-scope substitution, Anthropic OAuth-prefix classification, the lower environment-aware `load_pool` transaction, and explicit Nous singleton state seeding with invoke-JWT agent-key/runtime metadata preservation; the environment and singleton boundaries now accept explicit provider/config/auth inputs, while the remaining singleton branches, loader composition, config discovery, custom-provider composition, Z.AI endpoint probing, OAuth refresh, lease locking, and logging throttles remain pending |
 
-Intentional credential-pool seam: the environment seeder and the lower
-environment-aware `load_pool` transaction receive provider registry metadata,
-pool config, secret-scope values, suppression state, and auth-store paths as
+Intentional credential-pool seam: the environment seeder, lower
+environment-aware `load_pool` transaction, and current Nous singleton seeder
+receive provider registry metadata, pool config, resolved `providers.nous`
+state, secret-scope values, suppression state, and auth-store paths as
 explicit inputs because `hermes-agent` is below the CLI/provider crates in the
-planned dependency graph. Kimi's pure key-prefix endpoint routing is mirrored;
-singleton/config discovery, custom-provider composition, and Z.AI's network
-endpoint probe remain deferred to the owning auth/provider layer rather than
-being silently guessed.
+planned dependency graph. Kimi's pure key-prefix endpoint routing and the
+Nous state-to-pool field copy are mirrored; the remaining singleton/config
+branches, custom-provider composition, and Z.AI's network endpoint probe
+remain deferred to the owning auth/provider layer rather than being silently
+guessed.
 
 ### hermes-agent auxiliary client (Phase 2, upstream @ b9aa928)
 
@@ -501,6 +503,22 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 + the exact command, e.g. `cargo test -p hermes-time (unit)`.
 
 ## 7. Session log
+
+- 2026-08-24 (session 4c8): Continued the partial `agent.credential_pool`
+  port (@ b9aa928) through the provider-singleton seeding boundary. Added the
+  explicit `seed_from_singletons` seam for the upstream Nous branch: device-code
+  source suppression, stale device-code removal when singleton state has no
+  runtime material, invoke-JWT agent-key/runtime selection, custom labels, and
+  direct/extra metadata preservation for access/refresh expiry, obtained-at,
+  agent-key, endpoint, scope, and TLS fields. Added two source-derived `mock`
+  parity tests first; the focused credential-pool wave now has 33 pool plus 15
+  persistence tests. Targeted rustfmt, focused tests, workspace build, the
+  clean serialized workspace test, and the approved leaf-gate recheck passed.
+  Targeted `hermes-agent` Clippy still reports only the two pre-existing
+  `auxiliary_client` lints. The remaining singleton branches, full loader/config
+  composition, Z.AI probing, OAuth refresh, leases, and logging throttles
+  remain pending. The source commit and immediate GitHub mirror refs will be
+  recorded in the next handoff checkpoint.
 
 - 2026-08-24 (session 4c7): Continued the partial `agent.credential_pool`
   port (@ b9aa928) through the lower environment-aware `load_pool` transaction.

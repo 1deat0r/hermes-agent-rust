@@ -1,6 +1,6 @@
 # Hermes Agent Rust — Next-session handoff
 
-Date: 2026-08-24 (Pacific/Auckland), session 4c7.
+Date: 2026-08-24 (Pacific/Auckland), session 4c8.
 
 ## Resume point
 
@@ -174,15 +174,26 @@ branches and the active credential-lifecycle leaf. These gates are intentionally
 unmet while the conversion remains partial.
 
 The current source unit extends `hermes-agent::credential_pool` through the
-lower environment-aware `load_pool` transaction. It adds the explicit
-profile/global pool paths and pool configuration inputs, mirrors source
-profile/global fallback reads, borrowed-secret and auth-type healing ownership,
-environment seeding, non-destructive env-row pruning, priority normalization,
-sorted borrowed-safe persistence, and configured strategy selection. Two
-source-derived `mock` tests were added first; the focused credential-pool wave
-now has 31 pool plus 15 persistence tests. Singleton/config/custom-provider
-composition, Z.AI endpoint probing, OAuth refresh, leases, and logging
-throttles remain pending. Local source commit
+provider-singleton seeding boundary. It adds the explicit `seed_from_singletons`
+seam for the upstream Nous branch: device-code source suppression, stale
+device-code removal when singleton state has no runtime material, invoke-JWT
+agent-key/runtime selection, custom labels, and direct/extra metadata
+preservation for access/refresh expiry, obtained-at, agent-key, endpoint,
+scope, and TLS fields. Two source-derived `mock` tests were added first; the
+focused credential-pool wave now has 33 pool plus 15 persistence tests. The
+remaining singleton branches, full loader/config/custom-provider composition,
+Z.AI endpoint probing, OAuth refresh, leases, and logging throttles remain
+pending. The exact source and documentation mirror refs will be recorded in
+the next handoff checkpoint immediately after this source commit is
+published.
+
+The preceding synchronized source unit extended `hermes-agent::credential_pool`
+through the lower environment-aware `load_pool` transaction. It added the
+explicit profile/global pool paths and pool configuration inputs, mirrored
+source profile/global fallback reads, borrowed-secret and auth-type healing
+ownership, environment seeding, non-destructive env-row pruning, priority
+normalization, sorted borrowed-safe persistence, and configured strategy
+selection. Local source commit
 `d4322dded66b9ef9340212116514f6db63ee565a` was mirrored as GitHub
 `038a61c9f78b34426c07dcdf487df5fbd86ba808`; both refs resolve to tree
 `d3765b69460cc5c11e066f1e2268cb9b2354ec46` with 273 matching tracked blobs.
@@ -610,23 +621,25 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-Local `main` and `origin/main` are aligned at GitHub mirror commit
-`038a61c9f78b34426c07dcdf487df5fbd86ba808`. Its tree
-`d3765b69460cc5c11e066f1e2268cb9b2354ec46` was verified recursively against
-the local source tree with 273 blobs and no path/mode/SHA mismatches; this
-handoff is the immediate documentation checkpoint for that mirror. No
-conversion-ledger status changed: the current summary is 73 done / 11 partial /
-3,798 missing tracked modules and 73 done / 11 partial / 1,019 missing
-production modules.
+The source commit for the Nous singleton seeder is ready for the immediate
+local/GitHub mirror sequence; its exact commit/tree refs will be written in
+the next documentation-only checkpoint. Before this unit, local `main` and
+`origin/main` were aligned at GitHub mirror commit
+`1dd92e55aa9fb83f6dd7c6207a000466f8a13c2c`, whose tree
+`ff9ca00ef53dff5392fe3bffaf8db05341a264d6` was verified recursively with 273
+blobs and no path/mode/SHA mismatches. No conversion-ledger status changed:
+the current summary is 73 done / 11 partial / 3,798 missing tracked modules
+and 73 done / 11 partial / 1,019 missing production modules.
 
 ## Next actions, in order
 
-1. Continue `agent.credential_pool` through singleton/config/custom-provider
-   `load_pool` composition, Z.AI probing, and OAuth refresh; the row model,
+1. Continue `agent.credential_pool` through the remaining singleton branches,
+   singleton/config/custom-provider `load_pool` composition, Z.AI probing, and
+   OAuth refresh; the row model,
    serialization, source upsert, strategy, provider-boundary, selection,
    persistence, cooldown-recency merge, auth-store lock, and environment
-   seeding input boundary and lower environment-aware load transaction are now
-   recorded.
+   seeding input boundary, lower environment-aware load transaction, and Nous
+   singleton state boundary are now recorded.
 2. Then connect the auxiliary-client concrete transport to credential-pool
    lifecycle, cancellation, and provider fallback seams without promoting
    either partial module prematurely.
@@ -659,12 +672,14 @@ The strict production formula is `done production modules / 1,103`; partial rows
 
 ## Fidelity notes
 
-- The credential environment seeder and lower `load_pool` transaction keep the
-  agent crate bottom-up by taking provider registry metadata, pool config,
-  secret-scope values, suppression state, and auth-store paths as explicit
-  inputs. Kimi's pure key-prefix endpoint routing is mirrored; singleton/config
-  discovery, custom-provider composition, and the source's Z.AI network
-  endpoint probe remain deferred to the auth/provider layer.
+- The credential environment seeder, lower `load_pool` transaction, and Nous
+  singleton seeder keep the agent crate bottom-up by taking provider registry
+  metadata, pool config, resolved singleton state, secret-scope values,
+  suppression state, and auth-store paths as explicit inputs. Kimi's pure
+  key-prefix endpoint routing and the Nous state-to-pool field copy are
+  mirrored; the remaining singleton/config branches, custom-provider
+  composition, and the source's Z.AI network endpoint probe remain deferred to
+  the auth/provider layer.
 - Desktop emitter is process-global like upstream; session-ID lookup remains a thread-local gateway seam.
 - Credential registration uses an ordered vector for Python dict insertion order; it remains thread-local rather than async-task-local.
 - Daemon pool rejects zero workers like Python; Rust Drop intentionally avoids joining wedged daemon workers.
@@ -793,9 +808,9 @@ The strict production formula is `done production modules / 1,103`; partial rows
 
 ## Verification evidence
 
-For the current lower-loader unit, targeted rustfmt, the focused
+For the current Nous-singleton unit, targeted rustfmt, the focused
 `/home/mustbearnold/.cargo/bin/cargo test -p hermes-agent --test parity_credential_pool`
-run passed all 31 tests, and `/home/mustbearnold/.cargo/bin/cargo build
+run passed all 33 tests, and `/home/mustbearnold/.cargo/bin/cargo build
 --workspace` passed. The required serialized `/home/mustbearnold/.cargo/bin/cargo
 test --workspace -- --test-threads=1` passed; three delegation/schema doc tests
 remain intentionally ignored. Targeted `hermes-agent` Clippy reached only the

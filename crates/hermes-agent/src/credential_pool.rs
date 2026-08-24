@@ -1,11 +1,12 @@
 //! Credential-pool selection, rotation, and source-compatible row helpers
 //! from `agent/credential_pool.py`.
 //!
-//! This slice keeps auth-store persistence orchestration, singleton/OAuth
-//! refresh, leases, and cross-process locking out of the core state machine.
-//! It includes the source-compatible row serialization, borrowed-secret disk
-//! boundary, and environment seeding input seam so the higher auth/config
-//! layer can compose the full loader without an upward crate dependency.
+//! This slice keeps auth-store persistence orchestration, OAuth refresh,
+//! leases, and cross-process locking out of the core state machine. It
+//! includes the source-compatible row serialization, borrowed-secret disk
+//! boundary, and explicit environment/singleton seeding seams so the higher
+//! auth/config layer can compose the full loader without an upward crate
+//! dependency.
 
 use base64::{engine::general_purpose::URL_SAFE, Engine as _};
 use chrono::{DateTime, NaiveDateTime};
@@ -152,6 +153,91 @@ impl EnvironmentSnapshot {
 pub struct SeedResult {
     pub changed: bool,
     pub active_sources: BTreeSet<String>,
+}
+
+/// Seed provider-owned singleton state without importing the higher auth
+/// store into this crate.
+///
+/// PARITY: `agent/credential_pool.py._seed_from_singletons` (2453–2603),
+/// currently the `nous` branch. The caller supplies the already-resolved
+/// `providers.nous` object and source suppression set; `None` means the
+/// provider state was absent, while `Some(empty/object-without-runtime)` means
+/// an existing provider state must remove stale device-code rows.
+pub fn seed_from_singletons(
+    provider: &str,
+    entries: &mut Vec<PooledCredential>,
+    state: Option<&Map<String, Value>>,
+    suppressed_sources: &BTreeSet<String>,
+) -> SeedResult {
+    let mut result = SeedResult::default();
+    if provider != "nous" {
+        return result;
+    }
+
+    let Some(state) = state else {
+        return result;
+    };
+    let has_runtime_material = ["access_token", "agent_key"].iter().any(|key| {
+        state
+            .get(*key)
+            .and_then(Value::as_str)
+            .is_some_and(|value| !value.trim().is_empty())
+    });
+    if !has_runtime_material {
+        let original_len = entries.len();
+        entries
+            .retain(|entry| entry.source != "device_code" && entry.source != "manual:device_code");
+        result.changed = entries.len() != original_len;
+        return result;
+    }
+    if suppressed_sources.contains("device_code") {
+        return result;
+    }
+
+    result.active_sources.insert("device_code".into());
+    let access_token = state
+        .get("access_token")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    let custom_label = state
+        .get("label")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .trim();
+    let seeded_label = if custom_label.is_empty() {
+        label_from_token(access_token, "device_code")
+    } else {
+        custom_label.to_owned()
+    };
+    let mut payload = Map::new();
+    payload.insert("source".into(), Value::String("device_code".into()));
+    payload.insert("auth_type".into(), Value::String(AUTH_TYPE_OAUTH.into()));
+    payload.insert("label".into(), Value::String(seeded_label));
+    for key in [
+        "access_token",
+        "refresh_token",
+        "expires_at",
+        "token_type",
+        "scope",
+        "client_id",
+        "portal_base_url",
+        "inference_base_url",
+        "agent_key",
+        "agent_key_expires_at",
+        "obtained_at",
+        "expires_in",
+        "agent_key_id",
+        "agent_key_expires_in",
+        "agent_key_reused",
+        "agent_key_obtained_at",
+        "tls",
+    ] {
+        if let Some(value) = state.get(key).filter(|value| !value.is_null()) {
+            payload.insert(key.into(), value.clone());
+        }
+    }
+    result.changed = upsert_entry(entries, provider, "device_code", &payload);
+    result
 }
 
 /// Parse the Hermes `.env` file into assignment values.
