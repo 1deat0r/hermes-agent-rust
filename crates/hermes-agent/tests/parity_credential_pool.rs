@@ -1,14 +1,226 @@
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
 use hermes_agent::credential_pool::{
     credential_pool_matches_provider, custom_provider_config, custom_provider_pool_key,
-    label_from_token, list_custom_pool_providers, normalize_custom_pool_name,
-    normalize_pool_priorities, pool_strategy_from_config, upsert_entry, CredentialPool,
-    CredentialStatus, PoolErrorContext, PoolStrategy, PooledCredential,
+    get_env_prefer_dotenv, label_from_token, list_custom_pool_providers, load_env_file,
+    normalize_custom_pool_name, normalize_pool_priorities, pool_strategy_from_config,
+    prune_stale_seeded_entries, seed_from_env, upsert_entry, CredentialPool, CredentialStatus,
+    EnvironmentSnapshot, PoolErrorContext, PoolStrategy, PooledCredential,
+    ProviderCredentialConfig,
 };
 use serde_json::{json, Value};
+use std::collections::BTreeSet;
+use std::fs;
+
+fn env_snapshot(dotenv: &[(&str, &str)], process: &[(&str, &str)]) -> EnvironmentSnapshot {
+    EnvironmentSnapshot {
+        dotenv: dotenv
+            .iter()
+            .map(|(key, value)| ((*key).into(), (*value).into()))
+            .collect(),
+        process: process
+            .iter()
+            .map(|(key, value)| ((*key).into(), (*value).into()))
+            .collect(),
+        ..EnvironmentSnapshot::default()
+    }
+}
 
 fn entry(id: &str, key: &str, priority: i32) -> PooledCredential {
     PooledCredential::new("openrouter", id, key, priority)
+}
+
+// Tier: unit — mirrors tests/agent/test_credential_pool.py::test_load_pool_seeds_env_api_key.
+#[test]
+fn environment_seed_discovers_openrouter_api_key() {
+    let snapshot = env_snapshot(&[], &[("OPENROUTER_API_KEY", "sk-or-seeded")]);
+    let mut entries = Vec::new();
+
+    let result = seed_from_env("openrouter", &mut entries, None, &snapshot);
+
+    assert!(result.changed);
+    assert_eq!(
+        result.active_sources,
+        BTreeSet::from([String::from("env:OPENROUTER_API_KEY")])
+    );
+    assert_eq!(entries.len(), 1);
+    assert_eq!(entries[0].source, "env:OPENROUTER_API_KEY");
+    assert_eq!(entries[0].access_token, "sk-or-seeded");
+    assert_eq!(
+        entries[0].base_url.as_deref(),
+        Some(hermes_constants::OPENROUTER_BASE_URL)
+    );
+}
+
+// Tier: unit — mirrors tests/tools/test_credential_pool_env_fallback.py dotenv precedence.
+#[test]
+fn environment_seed_prefers_dotenv_and_falls_back_to_process_environment() {
+    let config = ProviderCredentialConfig::api_key(
+        ["DEEPSEEK_API_KEY"],
+        None::<String>,
+        "https://api.deepseek.com/v1",
+    );
+    let fresh = env_snapshot(
+        &[("DEEPSEEK_API_KEY", "sk-dotenv-fresh")],
+        &[("DEEPSEEK_API_KEY", "sk-shell-stale")],
+    );
+    let mut entries = Vec::new();
+    seed_from_env("deepseek", &mut entries, Some(&config), &fresh);
+    assert_eq!(entries[0].access_token, "sk-dotenv-fresh");
+
+    let fallback = env_snapshot(&[], &[("DEEPSEEK_API_KEY", "sk-runtime-env")]);
+    let mut entries = Vec::new();
+    seed_from_env("deepseek", &mut entries, Some(&config), &fallback);
+    assert_eq!(entries[0].access_token, "sk-runtime-env");
+}
+
+// Tier: unit — mirrors tests/agent/test_credential_pool.py duplicate env rows.
+#[test]
+fn environment_seed_collapses_duplicate_source_rows_to_first_identity() {
+    let mut first = PooledCredential::from_json(
+        "openrouter",
+        &json!({
+            "id": "current-row",
+            "label": "OPENROUTER_API_KEY",
+            "source": "env:OPENROUTER_API_KEY",
+            "access_token": "old-key",
+        }),
+    );
+    first.priority = 4;
+    let duplicate = PooledCredential::from_json(
+        "openrouter",
+        &json!({
+            "id": "stale-duplicate",
+            "label": "OPENROUTER_API_KEY",
+            "source": "env:OPENROUTER_API_KEY",
+            "access_token": "stale-key",
+        }),
+    );
+    let mut entries = vec![first, duplicate];
+    let snapshot = env_snapshot(&[], &[("OPENROUTER_API_KEY", "active-key")]);
+
+    let result = seed_from_env("openrouter", &mut entries, None, &snapshot);
+
+    assert!(result.changed);
+    assert_eq!(entries.len(), 1);
+    assert_eq!(entries[0].id, "current-row");
+    assert_eq!(entries[0].priority, 4);
+    assert_eq!(entries[0].access_token, "active-key");
+}
+
+// Tier: unit — mirrors tests/tools/test_credential_pool_env_fallback.py
+// AnthropicEnvAuthTypeClassification.
+#[test]
+fn anthropic_oat_environment_token_is_oauth() {
+    let snapshot = env_snapshot(&[("CLAUDE_CODE_OAUTH_TOKEN", "sk-ant-oat-fake")], &[]);
+    let config = ProviderCredentialConfig::api_key(
+        [
+            "ANTHROPIC_API_KEY",
+            "ANTHROPIC_TOKEN",
+            "CLAUDE_CODE_OAUTH_TOKEN",
+        ],
+        None::<String>,
+        "https://api.anthropic.com",
+    );
+    let mut entries = Vec::new();
+
+    seed_from_env("anthropic", &mut entries, Some(&config), &snapshot);
+
+    assert_eq!(entries.len(), 1);
+    assert_eq!(entries[0].auth_type, "oauth");
+}
+
+// Tier: unit — mirrors the admin-key regression in
+// tests/tools/test_credential_pool_env_fallback.py.
+#[test]
+fn anthropic_non_oat_environment_token_remains_api_key() {
+    let snapshot = env_snapshot(&[("ANTHROPIC_API_KEY", "sk-ant-admin-fake")], &[]);
+    let config = ProviderCredentialConfig::api_key(
+        [
+            "ANTHROPIC_API_KEY",
+            "ANTHROPIC_TOKEN",
+            "CLAUDE_CODE_OAUTH_TOKEN",
+        ],
+        None::<String>,
+        "https://api.anthropic.com",
+    );
+    let mut entries = Vec::new();
+
+    seed_from_env("anthropic", &mut entries, Some(&config), &snapshot);
+
+    assert_eq!(entries.len(), 1);
+    assert_eq!(entries[0].auth_type, "api_key");
+}
+
+// Tier: unit — mirrors hermes_cli.config.load_env's quoted/export parser.
+#[test]
+fn dotenv_parser_preserves_assignment_values_and_supports_export() {
+    let temp = tempfile::tempdir().unwrap();
+    let path = temp.path().join(".env");
+    fs::write(
+        &path,
+        "# ignored\nexport API_KEY=plain\nQUOTED=\"a\\\"b\\\\c\"\nSINGLE='opaque value'\nOPAQUE=a=b=c\n",
+    )
+    .unwrap();
+
+    let parsed = load_env_file(&path).unwrap();
+
+    assert_eq!(parsed.get("API_KEY"), Some(&String::from("plain")));
+    assert_eq!(parsed.get("QUOTED"), Some(&String::from("a\"b\\c")));
+    assert_eq!(parsed.get("SINGLE"), Some(&String::from("opaque value")));
+    assert_eq!(parsed.get("OPAQUE"), Some(&String::from("a=b=c")));
+
+    assert!(load_env_file(&temp.path().join("missing.env"))
+        .unwrap()
+        .is_empty());
+}
+
+// Tier: unit — mirrors get_env_prefer_dotenv's op:// secret-scope exception.
+#[test]
+fn unresolved_dotenv_secret_uses_active_scope_value() {
+    let mut snapshot = env_snapshot(&[("OPENROUTER_API_KEY", "op://Vault/Item/key")], &[]);
+    snapshot
+        .secret_scope
+        .insert("OPENROUTER_API_KEY".into(), "resolved-secret".into());
+
+    assert_eq!(
+        get_env_prefer_dotenv("OPENROUTER_API_KEY", &snapshot),
+        "resolved-secret"
+    );
+}
+
+// Tier: unit — mirrors suppression and non-destructive env pruning behavior.
+#[test]
+fn environment_suppression_blocks_seed_and_missing_env_is_retained_unless_explicitly_pruned() {
+    let mut snapshot = env_snapshot(&[], &[("OPENROUTER_API_KEY", "suppressed")]);
+    snapshot
+        .suppressed_sources
+        .insert("env:OPENROUTER_API_KEY".into());
+    let mut entries = Vec::new();
+    let result = seed_from_env("openrouter", &mut entries, None, &snapshot);
+    assert!(!result.changed);
+    assert!(entries.is_empty());
+
+    let env_entry = PooledCredential::from_json(
+        "openrouter",
+        &json!({
+            "id": "env-row",
+            "source": "env:OPENROUTER_API_KEY",
+            "access_token": "runtime-only",
+        }),
+    );
+    let mut entries = vec![env_entry.clone()];
+    assert!(!prune_stale_seeded_entries(
+        &mut entries,
+        &BTreeSet::new(),
+        false,
+    ));
+    assert_eq!(entries, vec![env_entry]);
+    assert!(prune_stale_seeded_entries(
+        &mut entries,
+        &BTreeSet::new(),
+        true,
+    ));
+    assert!(entries.is_empty());
 }
 
 // Tier: unit — mirrors agent/credential_pool.py _select_unlocked fill-first path.

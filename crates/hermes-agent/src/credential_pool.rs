@@ -1,19 +1,29 @@
 //! Credential-pool selection, rotation, and source-compatible row helpers
 //! from `agent/credential_pool.py`.
 //!
-//! This slice keeps auth-store persistence orchestration, OAuth refresh,
-//! environment seeding, leases, and cross-process locking out of the core
-//! state machine. It does include the source-compatible row serialization and
-//! borrowed-secret disk boundary so callers can safely load and persist an
-//! entry once those higher-level seams are ported.
+//! This slice keeps auth-store persistence orchestration, singleton/OAuth
+//! refresh, leases, and cross-process locking out of the core state machine.
+//! It includes the source-compatible row serialization, borrowed-secret disk
+//! boundary, and environment seeding input seam so the higher auth/config
+//! layer can compose the full loader without an upward crate dependency.
 
 use base64::{engine::general_purpose::URL_SAFE, Engine as _};
 use chrono::{DateTime, NaiveDateTime};
 use rand::seq::IndexedRandom;
 use serde_json::{Map, Value};
 use sha2::{Digest, Sha256};
+use std::collections::{BTreeMap, BTreeSet};
+use std::fs;
+use std::io;
+use std::path::Path;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
+
+use hermes_constants::OPENROUTER_BASE_URL;
+
+/// Authentication type values persisted by the Python implementation.
+pub const AUTH_TYPE_API_KEY: &str = "api_key";
+pub const AUTH_TYPE_OAUTH: &str = "oauth";
 
 /// Pool entry status values persisted by the Python implementation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -49,6 +59,293 @@ pub enum PoolStrategy {
     RoundRobin,
     LeastUsed,
     Random,
+}
+
+/// Provider metadata required by the environment seeding boundary.
+///
+/// The upstream `ProviderConfig` lives in the higher CLI/auth layer. Keeping
+/// this small input type here preserves the bottom-up crate dependency while
+/// allowing that layer to supply the exact registry values later.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProviderCredentialConfig {
+    pub auth_type: String,
+    pub api_key_env_vars: Vec<String>,
+    pub base_url_env_var: Option<String>,
+    pub inference_base_url: String,
+}
+
+impl ProviderCredentialConfig {
+    pub fn api_key(
+        api_key_env_vars: impl IntoIterator<Item = impl Into<String>>,
+        base_url_env_var: Option<impl Into<String>>,
+        inference_base_url: impl Into<String>,
+    ) -> Self {
+        Self {
+            auth_type: AUTH_TYPE_API_KEY.into(),
+            api_key_env_vars: api_key_env_vars.into_iter().map(Into::into).collect(),
+            base_url_env_var: base_url_env_var.map(Into::into),
+            inference_base_url: inference_base_url.into(),
+        }
+    }
+}
+
+/// Runtime inputs visible to `_seed_from_env`.
+///
+/// `dotenv` wins over `process` for normal values. `secret_scope` models the
+/// upstream active secret resolver used when `.env` contains an unresolved
+/// `op://` reference. The source label map is metadata only; it never grants
+/// permission to persist the raw secret. `suppressed_sources` is supplied by
+/// the auth layer because suppression state is owned outside this crate.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct EnvironmentSnapshot {
+    pub dotenv: BTreeMap<String, String>,
+    pub process: BTreeMap<String, String>,
+    pub secret_scope: BTreeMap<String, String>,
+    pub secret_sources: BTreeMap<String, String>,
+    pub suppressed_sources: BTreeSet<String>,
+}
+
+impl EnvironmentSnapshot {
+    /// Capture the current process environment while using a caller-supplied
+    /// parsed `.env` map. This keeps tests deterministic and lets the higher
+    /// config layer control its existing dotenv cache.
+    pub fn from_process(dotenv: BTreeMap<String, String>) -> Self {
+        Self {
+            dotenv,
+            process: std::env::vars().collect(),
+            ..Self::default()
+        }
+    }
+
+    /// Load `.env` from disk and capture the current process environment.
+    pub fn from_dotenv_path(path: &Path) -> io::Result<Self> {
+        Ok(Self::from_process(load_env_file(path)?))
+    }
+
+    fn preferred_value(&self, key: &str) -> String {
+        let dotenv_value = self
+            .dotenv
+            .get(key)
+            .map(String::as_str)
+            .unwrap_or_default()
+            .trim();
+        let scoped_value = self
+            .secret_scope
+            .get(key)
+            .or_else(|| self.process.get(key))
+            .map(String::as_str)
+            .unwrap_or_default()
+            .trim();
+        if dotenv_value.starts_with("op://") && !scoped_value.is_empty() {
+            return scoped_value.to_owned();
+        }
+        if !dotenv_value.is_empty() {
+            dotenv_value.to_owned()
+        } else {
+            scoped_value.to_owned()
+        }
+    }
+}
+
+/// Result of one source-seeding pass.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct SeedResult {
+    pub changed: bool,
+    pub active_sources: BTreeSet<String>,
+}
+
+/// Parse the Hermes `.env` file into assignment values.
+///
+/// PARITY: `hermes_cli.config.load_env` and `_parse_env_value` (3668–3724).
+/// Reads are intentionally lossy UTF-8, preserve everything after the first
+/// `=`, accept `export KEY=...`, and fail only for filesystem read errors.
+pub fn load_env_file(path: &Path) -> io::Result<BTreeMap<String, String>> {
+    let raw = match fs::read(path) {
+        Ok(raw) => raw,
+        Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(BTreeMap::new()),
+        Err(error) => return Err(error),
+    };
+    let text = String::from_utf8_lossy(&raw);
+    let text = text.strip_prefix('\u{feff}').unwrap_or(&text);
+    let mut values = BTreeMap::new();
+    for raw_line in text.lines() {
+        let line = raw_line.trim();
+        if line.is_empty() || line.starts_with('#') || !line.contains('=') {
+            continue;
+        }
+        let assignment = line.strip_prefix("export ").unwrap_or(line);
+        let Some((key, raw_value)) = assignment.split_once('=') else {
+            continue;
+        };
+        let key = key.trim();
+        if key.is_empty() {
+            continue;
+        }
+        values.insert(key.to_owned(), parse_env_value(raw_value));
+    }
+    Ok(values)
+}
+
+fn parse_env_value(raw_value: &str) -> String {
+    let value = raw_value.trim();
+    if value.len() >= 2 && value.starts_with('"') && value.ends_with('"') {
+        let quoted = &value[1..value.len() - 1];
+        let mut parsed = String::with_capacity(quoted.len());
+        let mut chars = quoted.chars();
+        while let Some(character) = chars.next() {
+            if character == '\\' {
+                if let Some(next) = chars.next() {
+                    if matches!(next, '"' | '\\') {
+                        parsed.push(next);
+                    } else {
+                        parsed.push(character);
+                        parsed.push(next);
+                    }
+                    continue;
+                }
+            }
+            parsed.push(character);
+        }
+        return parsed;
+    }
+    if value.len() >= 2 && value.starts_with('\'') && value.ends_with('\'') {
+        return value[1..value.len() - 1].to_owned();
+    }
+    value.to_owned()
+}
+
+/// Resolve one credential value with the source's `.env` precedence.
+///
+/// PARITY: `agent/credential_pool.py.get_env_prefer_dotenv` (2841–2869).
+pub fn get_env_prefer_dotenv(key: &str, snapshot: &EnvironmentSnapshot) -> String {
+    snapshot.preferred_value(key)
+}
+
+/// Seed API-key credentials from `.env`/process environment.
+///
+/// PARITY: `agent/credential_pool.py._seed_from_env` (2849–2974). The
+/// provider registry, secret scope, and source-suppression lookup are passed
+/// in rather than imported upward from the CLI crate.
+pub fn seed_from_env(
+    provider: &str,
+    entries: &mut Vec<PooledCredential>,
+    config: Option<&ProviderCredentialConfig>,
+    snapshot: &EnvironmentSnapshot,
+) -> SeedResult {
+    let mut result = SeedResult::default();
+
+    // Copilot has a dedicated exchange path in the upstream singleton seeder;
+    // generic env seeding must never overwrite that exchanged token.
+    if provider == "copilot" {
+        return result;
+    }
+
+    let mut upsert = |env_var: &str, token: String, base_url: String| {
+        if token.is_empty() {
+            return;
+        }
+        let source = format!("env:{env_var}");
+        if snapshot.suppressed_sources.contains(&source) {
+            return;
+        }
+        result.active_sources.insert(source.clone());
+        let mut payload = Map::new();
+        payload.insert("source".into(), Value::String(source.clone()));
+        payload.insert("auth_type".into(), Value::String(AUTH_TYPE_API_KEY.into()));
+        payload.insert("access_token".into(), Value::String(token));
+        payload.insert("base_url".into(), Value::String(base_url));
+        payload.insert("label".into(), Value::String(env_var.into()));
+        if let Some(secret_source) = snapshot.secret_sources.get(env_var) {
+            if !secret_source.trim().is_empty() {
+                payload.insert(
+                    "secret_source".into(),
+                    Value::String(secret_source.trim().to_owned()),
+                );
+            }
+        }
+        result.changed |= upsert_entry(entries, provider, &source, &payload);
+    };
+
+    if provider == "openrouter" {
+        upsert(
+            "OPENROUTER_API_KEY",
+            get_env_prefer_dotenv("OPENROUTER_API_KEY", snapshot),
+            OPENROUTER_BASE_URL.into(),
+        );
+        return result;
+    }
+
+    let Some(config) = config.filter(|config| config.auth_type == AUTH_TYPE_API_KEY) else {
+        return result;
+    };
+    let base_url_override = config
+        .base_url_env_var
+        .as_deref()
+        .map(|key| {
+            get_env_prefer_dotenv(key, snapshot)
+                .trim_end_matches('/')
+                .to_owned()
+        })
+        .unwrap_or_default();
+
+    let env_vars: Vec<&str> = if provider == "anthropic" {
+        vec![
+            "ANTHROPIC_TOKEN",
+            "CLAUDE_CODE_OAUTH_TOKEN",
+            "ANTHROPIC_API_KEY",
+        ]
+    } else {
+        config.api_key_env_vars.iter().map(String::as_str).collect()
+    };
+    for env_var in env_vars {
+        let token = get_env_prefer_dotenv(env_var, snapshot);
+        if token.is_empty() {
+            continue;
+        }
+        let mut base_url = if base_url_override.is_empty() {
+            config.inference_base_url.clone()
+        } else {
+            base_url_override.clone()
+        };
+        if provider == "kimi-coding"
+            && base_url_override.is_empty()
+            && token.starts_with("sk-kimi-")
+        {
+            // PARITY: `_resolve_kimi_base_url` (585–598). Z.AI's equivalent
+            // endpoint probe is an auth-layer/network seam and is intentionally
+            // supplied by the future provider integration.
+            base_url = "https://api.kimi.com/coding".into();
+        }
+        upsert(env_var, token, base_url);
+    }
+    result
+}
+
+/// Remove file-backed seeded rows whose source was not active this pass.
+///
+/// PARITY: `agent/credential_pool.py._prune_stale_seeded_entries` (2976–3008).
+/// Environment rows are retained during ordinary loads so one process cannot
+/// erase another process's persisted env reference merely because its own
+/// environment is different.
+pub fn prune_stale_seeded_entries(
+    entries: &mut Vec<PooledCredential>,
+    active_sources: &BTreeSet<String>,
+    prune_env_sources: bool,
+) -> bool {
+    let original_len = entries.len();
+    entries.retain(|entry| {
+        if is_manual_source(&entry.source) || active_sources.contains(&entry.source) {
+            return true;
+        }
+        let prunable = if entry.source.starts_with("env:") {
+            prune_env_sources
+        } else {
+            is_borrowed_credential_source(&entry.source, &entry.provider)
+                || entry.source == "hermes_pkce"
+        };
+        !prunable
+    });
+    entries.len() != original_len
 }
 
 /// A loaded credential-pool row and the fields used by selection/rotation.

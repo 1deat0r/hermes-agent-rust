@@ -1,6 +1,6 @@
 # Hermes Agent Rust — Next-session handoff
 
-Date: 2026-08-24 (Pacific/Auckland), session 4c5.
+Date: 2026-08-24 (Pacific/Auckland), session 4c6.
 
 ## Resume point
 
@@ -166,6 +166,20 @@ evidence, exact local/GitHub tree parity, and end-to-end surface review. The
 ignored `.unlazy/hermes-conversion/` depth tree records the dependency-ordered
 branches and the active credential-lifecycle leaf. These gates are intentionally
 unmet while the conversion remains partial.
+
+The current source unit extends `hermes-agent::credential_pool` through the
+environment-seeding boundary. It adds an explicit bottom-up provider config
+input and environment snapshot, source-compatible `.env` parsing (including
+BOM/UTF-8-lossy input, `export`, quoted values, first-`=` preservation, and
+missing-file fail-open), dotenv-over-process precedence, unresolved `op://`
+secret-scope substitution, suppression metadata, generic API-key/OpenRouter
+seeding, Kimi key-prefix routing, stale env-row pruning, and Anthropic
+`sk-ant-oat` auth classification. Eight source-derived tests were added first;
+the focused credential-pool wave now has 29 pool plus 15 persistence tests.
+The full `load_pool` composition, provider singleton/config discovery, Z.AI
+endpoint probing, OAuth refresh, leases, and logging throttles remain pending.
+The exact source and documentation mirror refs will be recorded in the next
+handoff checkpoint immediately after this source commit is published.
 
 The latest synchronized unit adds `hermes-agent::credential_store` around the
 upstream auth-store boundary. It mirrors versioned empty-store defaults,
@@ -590,19 +604,21 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-Local `main` and `origin/main` are aligned after the auth-store lock source
-and handoff mirror sequence. The recursive GitHub tree and local
+Local `main` and `origin/main` were aligned at the auth-store lock checkpoint;
+this source unit is the current staged working-tree change and will be mirrored
+immediately after its local commit. The prior recursive GitHub tree and local
 `git ls-tree -r` verification contain 273 blobs with no path/mode/SHA
-mismatches, and the worktree is clean. No conversion-ledger status changed: the current
-summary is 73 done / 11 partial / 3,798 missing tracked modules and 73 done /
-11 partial / 1,019 missing production modules.
+mismatches. No conversion-ledger status changed: the current summary is 73
+done / 11 partial / 3,798 missing tracked modules and 73 done / 11 partial /
+1,019 missing production modules.
 
 ## Next actions, in order
 
-1. Continue `agent.credential_pool` through provider/environment/config
-   seeding and OAuth refresh; the row model,
+1. Continue `agent.credential_pool` through full `load_pool` composition,
+   provider singleton/config discovery, and OAuth refresh; the row model,
    serialization, source upsert, strategy, provider-boundary, selection,
-   persistence, cooldown-recency merge, and auth-store lock are now recorded.
+   persistence, cooldown-recency merge, auth-store lock, and environment
+   seeding input boundary are now recorded.
 2. Then connect the auxiliary-client concrete transport to credential-pool
    lifecycle, cancellation, and provider fallback seams without promoting
    either partial module prematurely.
@@ -635,6 +651,11 @@ The strict production formula is `done production modules / 1,103`; partial rows
 
 ## Fidelity notes
 
+- The credential environment seeder keeps the agent crate bottom-up by taking
+  provider registry metadata, secret-scope values, and suppression state as
+  explicit inputs. Kimi's pure key-prefix endpoint routing is mirrored; the
+  source's Z.AI network endpoint probe and full `load_pool`/singleton wiring
+  remain deferred to the auth/provider layer.
 - Desktop emitter is process-global like upstream; session-ID lookup remains a thread-local gateway seam.
 - Credential registration uses an ordered vector for Python dict insertion order; it remains thread-local rather than async-task-local.
 - Daemon pool rejects zero workers like Python; Rust Drop intentionally avoids joining wedged daemon workers.
@@ -763,15 +784,14 @@ The strict production formula is `done production modules / 1,103`; partial rows
 
 ## Verification evidence
 
-For the current credential-pool orchestration unit, the focused
+For the current environment-seeding unit, targeted rustfmt, the focused
 `/home/mustbearnold/.cargo/bin/cargo test -p hermes-agent --test parity_credential_pool`
-run passed all 21 tests, and `/home/mustbearnold/.cargo/bin/cargo build
---workspace` passed. Both the default parallel `/home/mustbearnold/.cargo/bin/cargo
-test --workspace` and serialized `/home/mustbearnold/.cargo/bin/cargo test
---workspace -- --test-threads=1` passed. Three delegation/schema doc tests
-remain intentionally ignored. Workspace Clippy was killed by the environment
-with exit 137; targeted `hermes-agent` Clippy reached only pre-existing
-`auxiliary_client` `too_many_arguments` and `needless_lifetimes` diagnostics.
+run passed all 29 tests, and `/home/mustbearnold/.cargo/bin/cargo build
+--workspace` passed. The required serialized `/home/mustbearnold/.cargo/bin/cargo
+test --workspace -- --test-threads=1` passed; three delegation/schema doc tests
+remain intentionally ignored. Targeted `hermes-agent` Clippy reached only the
+pre-existing `auxiliary_client` `too_many_arguments` and `needless_lifetimes`
+diagnostics.
 
 For the synchronized credential-store unit, `/home/mustbearnold/.cargo/bin/cargo
 test -p hermes-agent --test parity_credential_pool --test
