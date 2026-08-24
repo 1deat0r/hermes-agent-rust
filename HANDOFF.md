@@ -1,6 +1,6 @@
 # Hermes Agent Rust — Next-session handoff
 
-Date: 2026-08-24 (Pacific/Auckland), session 4b0.
+Date: 2026-08-24 (Pacific/Auckland), session 4b1.
 
 ## Resume point
 
@@ -17,8 +17,11 @@ update. The local HTTPS Git client still has no credentials; use the
 connected GitHub API for future pushes until `gh auth login` or SSH is
 configured.
 
-Latest synchronized unit: local source `4e3894e` → GitHub `41482fc`
-(`plugins.model-providers.qwen-oauth.__init__`, including current
+Latest synchronized unit: local source `034b2ea` → GitHub `d1bff84`
+(`plugins.model-providers.upstage.__init__`, including current plan/inventory
+metadata), after local handoff source `137d7aa` → GitHub `23d5ee9`
+(`HANDOFF.md` for the Qwen OAuth unit), after local source `4e3894e` → GitHub
+`41482fc` (`plugins.model-providers.qwen-oauth.__init__`, including current
 plan/inventory metadata), after local handoff source `4a1881e` → GitHub
 `c8ad87a` (`HANDOFF.md` and corrected PLAN metadata for the Custom unit),
 after local source `adf7332` → GitHub `6e88a75`
@@ -86,7 +89,8 @@ because it cannot preserve the local author/committer timestamps.
 ## What landed this session
 
 Module-sized commits are complete through
-`plugins.model-providers.qwen-oauth.__init__`: `4e3894e` locally, mirrored as
+`plugins.model-providers.upstage.__init__`: `034b2ea` locally, mirrored as
+`d1bff84` remotely; the Qwen OAuth profile is `4e3894e` locally, mirrored as
 `41482fc` remotely; the Custom profile is `adf7332` locally, mirrored as
 `6e88a75` remotely; the Minimax profiles are `54d7a3d` locally, mirrored as
 `9d44d76` remotely; the Ollama Cloud profile is `63db0cf` locally, mirrored as
@@ -205,6 +209,16 @@ adaptive thinking for any supplied config, explicit disabled thinking, and
 no thinking body when config is absent. Auxiliary-client, OAuth runtime,
 and broader agent/transport integration remain future higher-layer seams.
 
+The Upstage Solar bundled profile is included in the new `034b2ea` source
+commit and its `d1bff84` GitHub mirror. The `upstage_reasoning` capability
+mirrors the deny-listed `solar-mini`/`syn-pro` substring families, default
+medium reasoning for unset/empty effort, low/medium/high passthrough, minimal
+omission, high clamping for xhigh/max/ultra and unknown efforts, and explicit
+disabled omission. The profile mirrors Upstage's metadata, `solar` alias,
+ordered API-key/base-URL environment variables, Solar endpoint, and
+`solar-pro3` fallback; CLI provider overlay and full transport integration
+remain future higher-layer seams.
+
 The Qwen Portal bundled profile is included in the new `4e3894e` source
 commit and its `41482fc` GitHub mirror. The `qwen_portal` capability mirrors
 the source's string/list message normalization, unsupported-part filtering,
@@ -248,19 +262,19 @@ Foundry profile, 2 Bedrock profile, 3 Copilot profile, 2 Copilot ACP profile,
 2 NovitaAI profile,
 2 NVIDIA profile, 2 StepFun profile, 3 Vertex profile, 2 DeepInfra profile,
 2 DeepSeek profile, 3 Nous profile, 3 Actual profile, 3 Ollama Cloud profile,
-3 Minimax profile, 2 OpenAI Codex profile, 4 Qwen OAuth profile, 2 Xiaomi profile,
+3 Minimax profile, 2 OpenAI Codex profile, 4 Qwen OAuth profile, 4 Upstage profile,
 and 2 Hugging Face
 profile tests are green.
 The provider
 surface remains partial
 for the future CLI version/opener integration and remaining Rust plugin profile
-loaders. The next unit is `plugins.model-providers.upstage.__init__` (115 LOC).
+loaders. The next unit is `plugins.model-providers.kimi-coding.__init__` (121 LOC).
 
-The required Qwen workspace verification was green before the synchronized
+The required Upstage workspace verification was green before the synchronized
 commit:
 
 ```text
-PATH=/home/mustbearnold/.cargo/bin:$PATH cargo test -p hermes-providers --test parity_qwen_oauth --test parity_base --test parity_registry
+PATH=/home/mustbearnold/.cargo/bin:$PATH cargo test -p hermes-providers --test parity_upstage --test parity_base --test parity_registry
 PATH=/home/mustbearnold/.cargo/bin:$PATH cargo build --workspace
 PATH=/home/mustbearnold/.cargo/bin:$PATH cargo test --workspace --quiet
 ```
@@ -274,15 +288,15 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-After the current Qwen commit is mirrored and this handoff commit is aligned
+After the current Upstage commit is mirrored and this handoff commit is aligned
 to its remote mirror, the working tree is clean. The committed metadata
 includes `AGENTS.md`, `PLAN.md`, `tools/port_status.json`, generated
 `tools/inventory.json`, `CONVERSION-LEDGER.md`, and this handoff. No code or
-parity test is pending for the Qwen unit.
+parity test is pending for the Upstage unit.
 
 ## Next actions, in order
 
-1. Start `plugins.model-providers.upstage.__init__` (115 LOC) by reading its
+1. Start `plugins.model-providers.kimi-coding.__init__` (121 LOC) by reading its
    pinned source/tests and writing profile-registration parity tests first.
 2. Keep the static bundled-profile registration order and user-loader seam
    explicit while adding the next provider profile.
@@ -293,8 +307,8 @@ parity test is pending for the Qwen unit.
 
 `CONVERSION-LEDGER.md` is generated and contains one row for every 3,882 upstream inventory modules: 1,103 production tasks plus 2,779 oracle/test tasks. Only `done` counts toward completion.
 
-- All tracked modules: 70 done / 9 partial / 3,803 missing = **1.80%**.
-- Production modules: 70 done / 9 partial / 1,024 missing = **6.35%**.
+- All tracked modules: 71 done / 9 partial / 3,802 missing = **1.83%**.
+- Production modules: 71 done / 9 partial / 1,023 missing = **6.44%**.
 
 The nine partial production rows are `hermes_constants`, `providers.base`,
 `providers.__init__`, `tools.credential_files`,
@@ -406,6 +420,10 @@ The strict production formula is `done production modules / 1,103`; partial rows
   `serde_json::Value` adapter owns its returned tree and clones the complete
   message value while preserving the same normalization, cache-control, and
   input-mutation contract.
+- Upstage's source uses a deny-list substring predicate and identity comparison
+  for `enabled is False`; the Rust capability preserves both, including
+  medium defaulting for missing/empty effort, minimal omission, and high
+  fallback for stronger or unknown effort values.
 - Platform cache-resetting tests are serialized because the production WSL and
   container detectors intentionally cache for process lifetime; the mutex is
   test-only and does not change detector behavior.
@@ -419,12 +437,12 @@ Cloud, 2 AI Gateway, 2 Alibaba, 2 Alibaba Coding Plan, 3 Anthropic, 3 Gemini,
 2 Arcee, 2 Azure
 Foundry, 2 Bedrock, 3 Copilot, 2 Copilot ACP, 2 Fireworks, 2 GMI, 2 Kilo
 Code, 2 NovitaAI, 2 NVIDIA, 2 StepFun, 3 Vertex, 2 DeepInfra, 2 DeepSeek,
-3 Nous, 3 Minimax, 2 OpenAI Codex, 4 Qwen OAuth, 2 Xiaomi, 2 XAI, and 2 Hugging Face profile
+3 Nous, 3 Minimax, 2 OpenAI Codex, 4 Qwen OAuth, 4 Upstage, 2 Xiaomi, 2 XAI, and 2 Hugging Face profile
 tests. The
 required workspace build and test also passed with the explicit cargo
 toolchain; three
 delegation/schema doc tests are intentionally ignored. Inventory and
-conversion ledger were regenerated and now record 70 done / 9 partial / 1,024
+conversion ledger were regenerated and now record 71 done / 9 partial / 1,023
 missing production modules.
 
 ## First command tomorrow
