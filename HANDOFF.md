@@ -8,21 +8,20 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
-Current branch/HEAD: `main` is aligned with `origin/main` after the local and
-GitHub API mirror sequence for the pure custom-provider configuration
-compatibility unit. The local source commit
-`9216c3849362a39145b9147394630cfa112171e1` was mirrored as GitHub
-`1167a7381d7623247a37267edd4f16e2df7371e5`; both refs resolve to tree
-`9b6f57ac636b2f247cf5fb196b28fda08081ac3d` with 273 matching tracked blobs.
-The connected GitHub API publishes each logical commit immediately as a
-sequential remote mirror. Its commit SHAs differ from the local sequence
-because the API cannot preserve local author/committer timestamps, but every
-tree snapshot and commit message matches and is verified before each ref
-update. The local HTTPS Git client still has no credentials; use the connected
-GitHub API for future pushes until `gh auth login` or SSH is configured.
+Current branch/HEAD: `main` is aligned with `origin/main` after publishing the
+transport-neutral OAuth refresh/re-selection unit. Local source commit
+`e568a282a692d65ee574ce2ca25db10741b95515` is mirrored as GitHub
+`e568a282a692d65ee574ce2ca25db10741b95515`; both refs resolve to tree
+`646b395e0a3fc431aa0fb09401a3465f92f02022` with 273 matching tracked blobs.
+The local HTTPS Git client now authenticates through the logged-in `gh`
+keyring account; future logical units can use `git push origin main`, with the
+connected GitHub API/CLI available for metadata checks.
 
 Latest synchronized unit: local source
-`9216c3849362a39145b9147394630cfa112171e1` → GitHub
+`e568a282a692d65ee574ce2ca25db10741b95515` → GitHub
+`e568a282a692d65ee574ce2ca25db10741b95515`
+(`feat(agent): add OAuth refresh boundary @ b9aa928`), with the previous local
+source `9216c3849362a39145b9147394630cfa112171e1` → GitHub
 `1167a7381d7623247a37267edd4f16e2df7371e5`
 (`feat(agent): add custom provider config compatibility @ b9aa928`), with the
 previous local source `f6a266e6e5ef9417c9b49cf9f2d53563e0ac9ae4` → GitHub
@@ -192,9 +191,8 @@ GitHub `cf104bd` (`plugins.model-providers.stepfun.__init__`), local
 GitHub `11245d8` (`plugins.model-providers.arcee.__init__`), local `ec9db5aa`
 → GitHub `9f8f7f6` (`plugins.model-providers.alibaba.__init__`), local
 `c121ae3` → GitHub `3996dcb6` (`providers.base`), and local `0fdafeea` →
-GitHub `b1cb43a7` (`providers.__init__`), all at upstream `b9aa928`. `main`
-is aligned to the fetched remote mirror; the API-authored SHA differs only
-because it cannot preserve the local author/committer timestamps.
+`providers.__init__`, all at upstream `b9aa928`; the current `main` alignment is
+recorded above with the OAuth refresh source commit and its verified tree.
 
 ## What landed this session
 
@@ -215,14 +213,19 @@ deferred refresh/re-selection through an injected provider callback, fail-open
 refresh exhaustion, and borrowed-secret-safe serialization after refresh. Four
 source-derived `mock`/`unit` parity tests were added first; the focused
 credential-pool wave now has 65 pool plus 15 persistence tests (80 total).
-Validation passed: targeted rustfmt, focused pool/persistence/auxiliary tests,
-`cargo build --workspace`, `cargo test --workspace -- --test-threads=1`, and
-the approved 5/5-gate credential-lifecycle recheck. No conversion-ledger
-status changed. The source and documentation are pending the next logical
-commit; its exact local/GitHub refs will be recorded in the immediate
-checkpoint. Provider-specific OAuth transport/auth-store write-through, outer
-config discovery/loading, Z.AI endpoint probing, leases, and logging throttles
-remain pending.
+Validation passed: targeted `/home/mustbearnold/.cargo/bin/rustfmt --edition
+2021 crates/hermes-agent/src/credential_pool.rs
+crates/hermes-agent/tests/parity_credential_pool.rs`, focused
+`cargo test -p hermes-agent --test parity_credential_pool --test
+parity_credential_store --test parity_auxiliary_client`, `cargo build
+--workspace`, `cargo test --workspace -- --test-threads=1`, `git diff --check`,
+and the approved 5/5-gate credential-lifecycle recheck. Local source commit
+`e568a282a692d65ee574ce2ca25db10741b95515` was mirrored as GitHub
+`e568a282a692d65ee574ce2ca25db10741b95515`; both refs resolve to tree
+`646b395e0a3fc431aa0fb09401a3465f92f02022` with 273 matching tracked blobs.
+No conversion-ledger status changed. Provider-specific OAuth transport/
+auth-store write-through, outer config discovery/loading, Z.AI endpoint
+probing, leases, and logging throttles remain pending.
 
 The preceding source unit extends `hermes-agent::credential_pool` through the
 provider-singleton seeding boundary. It adds the explicit `seed_from_singletons`
@@ -712,14 +715,10 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-Local `main` and `origin/main` remain aligned at the preceding
-custom-provider compatibility snapshot while this refresh unit is pending
-commit. The working tree contains the transport-neutral OAuth
-refresh/re-selection implementation and its documentation checkpoint; the
-preceding synchronized source snapshot is local
-`9216c3849362a39145b9147394630cfa112171e1` → GitHub
-`1167a7381d7623247a37267edd4f16e2df7371e5`, tree
-`9b6f57ac636b2f247cf5fb196b28fda08081ac3d`, with 273 verified matching
+Local `main` and `origin/main` are aligned after publishing the
+transport-neutral OAuth refresh/re-selection unit. Local and remote refs are
+both `e568a282a692d65ee574ce2ca25db10741b95515`, resolving to tree
+`646b395e0a3fc431aa0fb09401a3465f92f02022`, with 273 verified matching
 tracked blobs. No conversion-ledger status changed: the current summary is
 73 done / 11 partial / 3,798 missing tracked modules and 73 done / 11 partial /
 1,019 missing production modules.

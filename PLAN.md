@@ -525,14 +525,21 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   fail-open refresh exhaustion, and borrowed-secret-safe serialization after
   refresh. Added four source-derived `mock`/`unit` parity tests first; the
   focused credential-pool wave now has 65 pool plus 15 persistence tests
-  (80 total). Validation passed: targeted rustfmt, `cargo test -p hermes-agent
-  --test parity_credential_pool --test parity_credential_store --test
-  parity_auxiliary_client`, `cargo build --workspace`, and
-  `cargo test --workspace -- --test-threads=1`. No ledger status changed:
+  (80 total). Validation passed: targeted `/home/mustbearnold/.cargo/bin/rustfmt
+  --edition 2021` on the two changed Rust files, focused
+  `cargo test -p hermes-agent --test parity_credential_pool --test
+  parity_credential_store --test parity_auxiliary_client`, `cargo build
+  --workspace`, `cargo test --workspace -- --test-threads=1`, `git diff
+  --check`, and the approved 5/5-gate credential-lifecycle recheck. No ledger
+  status changed:
   inventory remains 73 done / 11 partial / 3,798 missing tracked modules and
   73 done / 11 partial / 1,019 missing production modules. Provider-specific
   OAuth transport/auth-store write-through, outer config discovery/loading,
   Z.AI endpoint probing, leases, and logging throttles remain pending.
+  Local source commit `e568a282a692d65ee574ce2ca25db10741b95515` was
+  mirrored as GitHub `e568a282a692d65ee574ce2ca25db10741b95515`; both refs
+  resolve to tree `646b395e0a3fc431aa0fb09401a3465f92f02022` with 273 matching
+  tracked blobs.
 
 - 2026-08-24 (session 4cf): Continued the partial `agent.credential_pool`
   port (@ b9aa928) through the pure custom-provider configuration
