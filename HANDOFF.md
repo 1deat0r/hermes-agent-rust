@@ -1,6 +1,6 @@
 # Hermes Agent Rust — Next-session handoff
 
-Date: 2026-08-24 (Pacific/Auckland), session 4ac.
+Date: 2026-08-24 (Pacific/Auckland), session 4ad.
 
 ## Resume point
 
@@ -17,10 +17,14 @@ update. The local HTTPS Git client still has no credentials; use the
 connected GitHub API for future pushes until `gh auth login` or SSH is
 configured.
 
-Latest synchronized unit: local source `163edce` → GitHub `5b7efa2`
-(`plugins.model-providers.actual.__init__`, including current plan/inventory
-metadata), after local handoff source `15db2cd` → GitHub `2de863e1`
-(`HANDOFF.md` for the Nous unit), after local source `956fa19` → GitHub `6a3259f`
+Latest synchronized unit: local source `63db0cf` → GitHub `1262f1f`
+(`plugins.model-providers.ollama-cloud.__init__`, including current
+plan/inventory metadata), after local handoff source `18c9e03` → GitHub
+`420ec76` (`HANDOFF.md` for the Actual unit), after local source `163edce` →
+GitHub `5b7efa2` (`plugins.model-providers.actual.__init__`, including current
+plan/inventory metadata), after local handoff source `15db2cd` → GitHub
+`2de863e1` (`HANDOFF.md` for the Nous unit), after local source `956fa19` →
+GitHub `6a3259f`
 (`plugins.model-providers.nous.__init__`, including current plan/inventory
 metadata), after local docs source `2523860` → GitHub `a6c7179` (`AGENTS.md`
 documentation checkpoint), after local handoff source `e69136b` → GitHub
@@ -71,7 +75,8 @@ because it cannot preserve the local author/committer timestamps.
 ## What landed this session
 
 Module-sized commits are complete through
-`plugins.model-providers.actual.__init__`: `163edce` locally, mirrored as
+`plugins.model-providers.ollama-cloud.__init__`: `63db0cf` locally, mirrored as
+`1262f1f` remotely; the Actual profile is `163edce` locally, mirrored as
 `5b7efa2` remotely; the Nous profile is `956fa19` locally, mirrored as
 `6a3259f` remotely; the DeepSeek profile is `fd80752` locally, mirrored as
 `372dc02` remotely; the DeepInfra profile is `a7f45d2` locally, mirrored as
@@ -176,6 +181,16 @@ The `actual_catalog` capability isolates the custom `fetch_models` hook;
 runtime credential resolution, model-picker integration, and application
 transport/opener wiring remain future hermes-cli seams.
 
+The Ollama Cloud bundled profile is included in the new `63db0cf` source
+commit and its `1262f1f` GitHub mirror. It mirrors the profile metadata,
+alias, API-key environment, base URL, auxiliary model, and the top-level
+`reasoning_effort` hook. The `ollama_cloud_reasoning` capability preserves
+native thinking-capability gating, disabled/`none` off switch,
+xhigh/max/ultra normalization, standard effort passthrough, and unknown
+effort omission without an extra-body reasoning field. The `/api/show`
+probe, dynamic live+models.dev catalog merge, and hermes-cli
+credential/model-picker integration remain future higher-layer seams.
+
 The repository documentation checkpoint is included in the separate
 `2523860` local commit and `a6c7179` GitHub mirror (`AGENTS.md`).
 
@@ -189,18 +204,19 @@ Plan profile, 3 Anthropic profile, 3 Gemini profile, 2 Arcee profile, 2 Azure
 Foundry profile, 2 Bedrock profile, 3 Copilot profile, 2 Copilot ACP profile,
 2 Fireworks profile, 2 GMI profile, 2 Kilo Code profile, 2 NovitaAI profile,
 2 NVIDIA profile, 2 StepFun profile, 3 Vertex profile, 2 DeepInfra profile,
-2 DeepSeek profile, 3 Nous profile, 3 Actual profile, 2 OpenAI Codex profile, 2 Xiaomi profile,
-2 XAI profile, and 2 Hugging Face profile tests are green.
+2 DeepSeek profile, 3 Nous profile, 3 Actual profile, 3 Ollama Cloud profile,
+2 OpenAI Codex profile, 2 Xiaomi profile, 2 XAI profile, and 2 Hugging Face
+profile tests are green.
 The provider
 surface remains partial
 for the future CLI version/opener integration and remaining Rust plugin profile
-loaders. The next unit is `plugins.model-providers.ollama-cloud.__init__` (89 LOC).
+loaders. The next unit is `plugins.model-providers.minimax.__init__` (97 LOC).
 
-The required Actual workspace verification was green before the synchronized
+The required Ollama Cloud workspace verification was green before the synchronized
 commit:
 
 ```text
-PATH=/home/mustbearnold/.cargo/bin:$PATH cargo test -p hermes-providers --test parity_actual --test parity_base --test parity_registry
+PATH=/home/mustbearnold/.cargo/bin:$PATH cargo test -p hermes-providers --test parity_ollama_cloud --test parity_base --test parity_registry
 PATH=/home/mustbearnold/.cargo/bin:$PATH cargo build --workspace
 PATH=/home/mustbearnold/.cargo/bin:$PATH cargo test --workspace --quiet
 ```
@@ -214,15 +230,15 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-After the current Actual commit is mirrored and this handoff commit is aligned to
-its remote mirror, the working tree is clean. The committed metadata
+After the current Ollama Cloud commit is mirrored and this handoff commit is aligned
+to its remote mirror, the working tree is clean. The committed metadata
 includes `AGENTS.md`, `PLAN.md`, `tools/port_status.json`, generated
 `tools/inventory.json`, `CONVERSION-LEDGER.md`, and this handoff. No code or
-parity test is pending for the Actual unit.
+parity test is pending for the Ollama Cloud unit.
 
 ## Next actions, in order
 
-1. Start `plugins.model-providers.ollama-cloud.__init__` (89 LOC) by reading its
+1. Start `plugins.model-providers.minimax.__init__` (97 LOC) by reading its
    pinned source/tests and writing profile-registration parity tests first.
 2. Keep the static bundled-profile registration order and user-loader seam
    explicit while adding the next provider profile.
@@ -233,8 +249,8 @@ parity test is pending for the Actual unit.
 
 `CONVERSION-LEDGER.md` is generated and contains one row for every 3,882 upstream inventory modules: 1,103 production tasks plus 2,779 oracle/test tasks. Only `done` counts toward completion.
 
-- All tracked modules: 66 done / 9 partial / 3,807 missing = **1.70%**.
-- Production modules: 66 done / 9 partial / 1,028 missing = **5.98%**.
+- All tracked modules: 67 done / 9 partial / 3,806 missing = **1.73%**.
+- Production modules: 67 done / 9 partial / 1,027 missing = **6.07%**.
 
 The nine partial production rows are `hermes_constants`, `providers.base`,
 `providers.__init__`, `tools.credential_files`,
@@ -321,6 +337,13 @@ The strict production formula is `done production modules / 1,103`; partial rows
   list/`data` payload parsing, ID filtering, and fail-open errors are
   preserved; runtime credential/model-picker/transport integration remains a
   future hermes-cli seam.
+- Ollama Cloud's source `build_api_kwargs_extras` override is represented by
+  the explicit `ollama_cloud_reasoning` capability. It gates on
+  `supports_reasoning`, emits only top-level `reasoning_effort`, maps
+  xhigh/max/ultra to max, passes low/medium/high, uses none for
+  disabled/explicit none, and omits blank/unknown efforts; `/api/show`/native
+  capability probing and higher-layer catalog/credential/model picker
+  integration remain future seams.
 - Platform cache-resetting tests are serialized because the production WSL and
   container detectors intentionally cache for process lifetime; the mutex is
   test-only and does not change detector behavior.
@@ -329,15 +352,16 @@ The strict production formula is `done production modules / 1,103`; partial rows
 
 ## Verification evidence
 
-The focused provider parity suites passed 9 base, 8 registry, 3 Actual, 2 AI Gateway, 2
-Alibaba, 2 Alibaba Coding Plan, 3 Anthropic, 3 Gemini, 2 Arcee, 2 Azure
+The focused provider parity suites passed 9 base, 8 registry, 3 Actual, 3 Ollama
+Cloud, 2 AI Gateway, 2 Alibaba, 2 Alibaba Coding Plan, 3 Anthropic, 3 Gemini,
+2 Arcee, 2 Azure
 Foundry, 2 Bedrock, 3 Copilot, 2 Copilot ACP, 2 Fireworks, 2 GMI, 2 Kilo
 Code, 2 NovitaAI, 2 NVIDIA, 2 StepFun, 3 Vertex, 2 DeepInfra, 2 DeepSeek,
 3 Nous, 2 OpenAI Codex, 2 Xiaomi, 2 XAI, and 2 Hugging Face profile tests. The
 required workspace build and test also passed with the explicit cargo
 toolchain; three
 delegation/schema doc tests are intentionally ignored. Inventory and
-conversion ledger were regenerated and now record 66 done / 9 partial / 1,028
+conversion ledger were regenerated and now record 67 done / 9 partial / 1,027
 missing production modules.
 
 ## First command tomorrow
