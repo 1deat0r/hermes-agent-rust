@@ -23,6 +23,10 @@ different implementation language.
 6. **Coverage ledger stays current.** After each phase, regenerate the
    inventory (`tools/inventory.sh`) and update the parity matrix below.
    A stale ledger is a process failure.
+7. **Completion gates stay executable.** `GATES.md` is the root contract for
+   full-conversion closure; the `.unlazy/hermes-conversion/` depth tree records
+   leaf ownership, dependencies, and current evidence without replacing this
+   plan or the generated inventory.
 
 ## 1. What Hermes is
 
@@ -530,6 +534,18 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   `/home/mustbearnold/.cargo/bin/cargo test --workspace` both passed; local
   source commit `6fcc72f` was mirrored as GitHub `1d46bab`, with verified tree
   `b69eb818bc34145186f7432c8ebe8910e3f461da` and 270 matching tracked blobs.
+
+- 2026-08-24 (session 4c2): Added the root completion contract for the full
+  conversion. `GATES.md` now requires generated-inventory closure, serialized
+  workspace tests, formatting and documentation-hook validity, a clean
+  generated snapshot, source-derived parity evidence, exact local/GitHub tree
+  parity, and end-to-end surface review. The ignored `.unlazy/hermes-conversion`
+  depth tree records foundation, agent-core, providers, CLI, integrations,
+  surfaces, and root-integration branches; the active leaf is credential
+  lifecycle auth-store persistence and provider/environment seeding. Current
+  gates are intentionally unmet because the pinned inventory still reports 73
+  done / 11 partial / 3,798 missing tracked modules and 73 done / 11 partial /
+  1,019 missing production modules.
 
 - 2026-08-24 (session 4c1): Continued the partial
   `agent.credential_pool` port (@ b9aa928) through the pure orchestration

@@ -147,6 +147,14 @@ because it cannot preserve the local author/committer timestamps.
 
 ## What landed this session
 
+The full-conversion completion contract is now explicit in `GATES.md`. It
+requires inventory closure, serialized workspace verification, formatted code
+and valid documentation hooks, a refreshed generated snapshot, parity
+evidence, exact local/GitHub tree parity, and end-to-end surface review. The
+ignored `.unlazy/hermes-conversion/` depth tree records the dependency-ordered
+branches and the active credential-lifecycle leaf. These gates are intentionally
+unmet while the conversion remains partial.
+
 The current unit adds `hermes-agent::credential_pool`'s source-upsert and
 provider-boundary orchestration helpers. It mirrors source-scoped upserts,
 duplicate-source collapse, changed-key failure-state clearing, Anthropic
