@@ -8,17 +8,18 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
-Current branch/HEAD: `main` at API-authored mirror `1af2de6` for local hook/docs
-commit `0d2bcd4`. The connected GitHub API publishes each logical commit
-immediately as a sequential remote mirror. Its commit SHAs differ from the
-local sequence because the API cannot preserve local author/committer
-timestamps, but every tree snapshot and commit message matches and is verified
-before each ref update. The local HTTPS Git client still has no credentials;
-use the connected GitHub API for future pushes until `gh auth login` or SSH is
-configured.
+Current branch/HEAD: `main` is aligned with `origin/main` after the local and
+GitHub API mirror sequence for the hook/docs unit and its handoff checkpoint.
+The connected GitHub API publishes each logical commit immediately as a
+sequential remote mirror. Its commit SHAs differ from the local sequence
+because the API cannot preserve local author/committer timestamps, but every
+tree snapshot and commit message matches and is verified before each ref
+update. The local HTTPS Git client still has no credentials; use the connected
+GitHub API for future pushes until `gh auth login` or SSH is configured.
 
 Latest synchronized unit: local hook/docs commit `0d2bcd4` → GitHub `1af2de6`
-(`chore: enforce documentation and GitHub metadata sync`), after local source
+(`chore: enforce documentation and GitHub metadata sync`), followed immediately
+by local handoff checkpoint `9df521f` → GitHub `fd80a73`, after local source
 `9a0bc98` → GitHub `1550e03`
 (`agent.auxiliary_client` Codex token selection, including current
 PLAN/inventory/ledger metadata), after local handoff source `116bb97` →
@@ -451,13 +452,14 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-After local hook/docs commit `0d2bcd4` was mirrored as `1af2de6`, the local
-`main` ref was aligned to the API-authored SHA. The local and remote trees both
-resolve to `9791d8f624cf3e2e052f2068f0c978f66ef8d573`; all 268 tracked blobs
-match by path, mode, and SHA, and the worktree is clean. The committed hook
-workflow includes `AGENTS.md`, `PLAN.md`, `README.md`, `HANDOFF.md`, the
-generated inventory/ledger, both tracked hooks, the GitHub description source,
-and the three helper scripts. No conversion-ledger status changed; the
+After local hook/docs commit `0d2bcd4` was mirrored as `1af2de6` and local
+handoff checkpoint `9df521f` was mirrored as `fd80a73`, the local `main` ref was
+aligned to the API-authored SHA. The local and remote trees both resolve to
+`3b5851e20e63457342d460acf765f873b32b4ad2`; all 268 tracked blobs match by
+path, mode, and SHA, and the worktree is clean. The committed hook workflow
+includes `AGENTS.md`, `PLAN.md`, `README.md`, `HANDOFF.md`, the generated
+inventory/ledger, both tracked hooks, the GitHub description source, and the
+three helper scripts. No conversion-ledger status changed; the
 `agent.auxiliary_client` module remains partial.
 
 ## Next actions, in order
