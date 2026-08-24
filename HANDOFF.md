@@ -1,6 +1,6 @@
 # Hermes Agent Rust — Next-session handoff
 
-Date: 2026-08-24 (Pacific/Auckland), session 4b2.
+Date: 2026-08-24 (Pacific/Auckland), session 4b3.
 
 ## Resume point
 
@@ -17,9 +17,13 @@ update. The local HTTPS Git client still has no credentials; use the
 connected GitHub API for future pushes until `gh auth login` or SSH is
 configured.
 
-Latest synchronized unit: local source `7fe4f19` → GitHub `a85e7a2`
-(`plugins.model-providers.kimi-coding.__init__`, including current plan/inventory
-metadata), after local handoff source `edd9b4a` → GitHub `b2e1286`
+Latest synchronized unit: local source `0dfa448` → GitHub `df894bb`
+(`plugins.model-providers.zai.__init__`, including current plan/inventory
+metadata), after local handoff source `c7f93e5` → GitHub `db3df00`
+(`HANDOFF.md` for the Kimi Coding unit), after local source `7fe4f19` →
+GitHub `a85e7a2` (`plugins.model-providers.kimi-coding.__init__`, including
+current plan/inventory metadata), after local handoff source `edd9b4a` →
+GitHub `b2e1286`
 (`HANDOFF.md` for the Upstage unit), after local handoff source `137d7aa` →
 GitHub `23d5ee9`
 (`HANDOFF.md` for the Qwen OAuth unit), after local source `4e3894e` → GitHub
@@ -91,7 +95,8 @@ because it cannot preserve the local author/committer timestamps.
 ## What landed this session
 
 Module-sized commits are complete through
-`plugins.model-providers.kimi-coding.__init__`: `7fe4f19` locally, mirrored as
+`plugins.model-providers.zai.__init__`: `0dfa448` locally, mirrored as
+`df894bb` remotely; the Kimi Coding profile is `7fe4f19` locally, mirrored as
 `a85e7a2` remotely; the Upstage profile is `034b2ea` locally, mirrored as
 `d1bff84` remotely; the Qwen OAuth profile is `4e3894e` locally, mirrored as
 `41482fc` remotely; the Custom profile is `adf7332` locally, mirrored as
@@ -234,6 +239,17 @@ max-token cap, hermes-agent/1.0 header, and auxiliary model. CLI credential
 auto-detection and full transport integration remain future higher-layer
 seams.
 
+The Z.AI bundled profile is included in the new `0dfa448` source commit and
+its `df894bb` GitHub mirror. The `zai_reasoning` capability mirrors the
+source's GLM version predicate for GLM 4.5+ thinking, explicit enabled/
+disabled `thinking.type`, GLM-5.2 aliases (`glm-5.2`, `glm-5-2`, and
+`glm-5p2`), and the native top-level `reasoning_effort` mapping: standard
+efforts normalize to `high`, xhigh/max/ultra normalize to `max`, and
+empty/none/disabled configurations omit the effort field. The profile
+mirrors Z.AI's aliases, ordered API-key variables, endpoint, fallback models,
+and GLM-4.5 Flash auxiliary model; CLI credential/model-picker and full
+transport integration remain future higher-layer seams.
+
 The Qwen Portal bundled profile is included in the new `4e3894e` source
 commit and its `41482fc` GitHub mirror. The `qwen_portal` capability mirrors
 the source's string/list message normalization, unsupported-part filtering,
@@ -275,6 +291,7 @@ Plan profile, 3 Anthropic profile, 3 Gemini profile, 2 Arcee profile, 2 Azure
 Foundry profile, 2 Bedrock profile, 3 Copilot profile, 2 Copilot ACP profile,
 4 Custom profile, 2 Fireworks profile, 2 GMI profile, 2 Kilo Code profile,
 3 Kimi Coding profile,
+5 ZAI profile,
 2 NovitaAI profile,
 2 NVIDIA profile, 2 StepFun profile, 3 Vertex profile, 2 DeepInfra profile,
 2 DeepSeek profile, 3 Nous profile, 3 Actual profile, 3 Ollama Cloud profile,
@@ -284,13 +301,13 @@ profile tests are green.
 The provider
 surface remains partial
 for the future CLI version/opener integration and remaining Rust plugin profile
-loaders. The next unit is `plugins.model-providers.zai.__init__` (127 LOC).
+loaders. The next dependency-safe unit is `agent.auxiliary_client` (10,044 LOC).
 
-The required Kimi workspace verification was green before the synchronized
+The required ZAI workspace verification was green before the synchronized
 commit:
 
 ```text
-/home/mustbearnold/.cargo/bin/cargo test -p hermes-providers --test parity_kimi_coding --test parity_base --test parity_registry
+/home/mustbearnold/.cargo/bin/cargo test -p hermes-providers --test parity_zai --test parity_base --test parity_registry
 /home/mustbearnold/.cargo/bin/cargo build --workspace
 /home/mustbearnold/.cargo/bin/cargo test --workspace
 ```
@@ -304,18 +321,18 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-After the current Kimi source commit is mirrored and this handoff commit is aligned
+After the current ZAI source commit is mirrored and this handoff commit is aligned
 to its remote mirror, the working tree is clean. The committed metadata
 includes `AGENTS.md`, `PLAN.md`, `tools/port_status.json`, generated
 `tools/inventory.json`, `CONVERSION-LEDGER.md`, and this handoff. No code or
-parity test is pending for the Kimi Coding unit.
+parity test is pending for the ZAI unit.
 
 ## Next actions, in order
 
-1. Start `plugins.model-providers.zai.__init__` (127 LOC) by reading its
-   pinned source/tests and writing profile-registration parity tests first.
-2. Keep the static bundled-profile registration order and user-loader seam
-   explicit while adding the next provider profile.
+1. Start `agent.auxiliary_client` (10,044 LOC) by reading its pinned
+   source/tests and identifying the next dependency-safe Rust seam.
+2. Keep the TDD/parity-test-first protocol and record any higher-layer
+   adapter seams explicitly while adding the next module.
 3. For every future module, commit and publish each logical unit immediately;
    use the connected GitHub API until local GitHub CLI authentication exists.
 
@@ -323,8 +340,8 @@ parity test is pending for the Kimi Coding unit.
 
 `CONVERSION-LEDGER.md` is generated and contains one row for every 3,882 upstream inventory modules: 1,103 production tasks plus 2,779 oracle/test tasks. Only `done` counts toward completion.
 
-- All tracked modules: 72 done / 9 partial / 3,801 missing = **1.85%**.
-- Production modules: 72 done / 9 partial / 1,022 missing = **6.53%**.
+- All tracked modules: 73 done / 9 partial / 3,800 missing = **1.88%**.
+- Production modules: 73 done / 9 partial / 1,021 missing = **6.62%**.
 
 The nine partial production rows are `hermes_constants`, `providers.base`,
 `providers.__init__`, `tools.credential_files`,
@@ -447,6 +464,13 @@ The strict production formula is `done production modules / 1,103`; partial rows
   the /v1 normalization. The Rust malformed-URL test uses a cloned profile's
   models_url as the deterministic loopback equivalent of the upstream
   monkeypatched base fetcher.
+- Z.AI's `ZaiProfile` behavior is represented by the `zai_reasoning`
+  capability: the GLM version predicate is case/whitespace normalized and
+  preserves the GLM 4.5+ threshold, while GLM-5.2 alias tokens are matched
+  independently so vendor-prefixed IDs still receive the native top-level
+  `reasoning_effort`. The Rust adapter emits the same `thinking` body and
+  fail-open empty maps for unsupported/no-config cases.
+
 - Platform cache-resetting tests are serialized because the production WSL and
   container detectors intentionally cache for process lifetime; the mutex is
   test-only and does not change detector behavior.
@@ -460,13 +484,14 @@ Cloud, 2 AI Gateway, 2 Alibaba, 2 Alibaba Coding Plan, 3 Anthropic, 3 Gemini,
 2 Arcee, 2 Azure
 Foundry, 2 Bedrock, 3 Copilot, 2 Copilot ACP, 2 Fireworks, 2 GMI, 2 Kilo
 Code, 3 Kimi Coding, 2 NovitaAI, 2 NVIDIA, 2 StepFun, 3 Vertex, 2 DeepInfra,
+5 ZAI profile,
 2 DeepSeek, 3 Nous, 3 Minimax, 2 OpenAI Codex, 4 Qwen OAuth, 4 Upstage,
 2 Xiaomi, 2 XAI, and 2 Hugging Face profile
 tests. The
 required workspace build and test also passed with the explicit cargo
 toolchain; three
 delegation/schema doc tests are intentionally ignored. Inventory and
-conversion ledger were regenerated and now record 72 done / 9 partial / 1,022
+conversion ledger were regenerated and now record 73 done / 9 partial / 1,021
 missing production modules.
 
 ## First command tomorrow
