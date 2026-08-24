@@ -158,11 +158,12 @@ pub struct SeedResult {
 /// Seed provider-owned singleton state without importing the higher auth
 /// store into this crate.
 ///
-/// PARITY: `agent/credential_pool.py._seed_from_singletons` (2453–2603),
-/// currently the `nous` branch. The caller supplies the already-resolved
-/// `providers.nous` object and source suppression set; `None` means the
-/// provider state was absent, while `Some(empty/object-without-runtime)` means
-/// an existing provider state must remove stale device-code rows.
+/// PARITY: `agent/credential_pool.py._seed_from_singletons` (2453–2710),
+/// currently the `nous` and `qwen-oauth` branches. The caller supplies the
+/// already-resolved provider object and source suppression set; `None` means
+/// the provider state/resolver result was absent, while
+/// `Some(empty/object-without-runtime)` preserves each source branch's
+/// fail-open behavior.
 pub fn seed_from_singletons(
     provider: &str,
     entries: &mut Vec<PooledCredential>,
@@ -170,10 +171,54 @@ pub fn seed_from_singletons(
     suppressed_sources: &BTreeSet<String>,
 ) -> SeedResult {
     let mut result = SeedResult::default();
-    if provider != "nous" {
+
+    if provider == "qwen-oauth" {
+        let Some(state) = state else {
+            return result;
+        };
+        let token = state
+            .get("api_key")
+            .and_then(Value::as_str)
+            .unwrap_or_default();
+        if token.is_empty() {
+            return result;
+        }
+        let source = state
+            .get("source")
+            .and_then(Value::as_str)
+            .filter(|source| !source.is_empty())
+            .unwrap_or("qwen-cli");
+        if suppressed_sources.contains(source) {
+            return result;
+        }
+        result.active_sources.insert(source.into());
+        let mut payload = Map::new();
+        payload.insert("source".into(), Value::String(source.into()));
+        payload.insert("auth_type".into(), Value::String(AUTH_TYPE_OAUTH.into()));
+        payload.insert("access_token".into(), Value::String(token.into()));
+        payload.insert(
+            "label".into(),
+            Value::String(
+                state
+                    .get("auth_file")
+                    .and_then(Value::as_str)
+                    .filter(|label| !label.is_empty())
+                    .unwrap_or(source)
+                    .into(),
+            ),
+        );
+        for key in ["expires_at_ms", "base_url"] {
+            if let Some(value) = state.get(key).filter(|value| !value.is_null()) {
+                payload.insert(key.into(), value.clone());
+            }
+        }
+        result.changed = upsert_entry(entries, provider, source, &payload);
         return result;
     }
 
+    if provider != "nous" {
+        return result;
+    }
     let Some(state) = state else {
         return result;
     };

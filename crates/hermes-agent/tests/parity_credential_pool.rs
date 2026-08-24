@@ -429,6 +429,57 @@ fn nous_singleton_seed_preserves_obtained_at_and_refresh_metadata() {
     );
 }
 
+// Tier: mock — mirrors tests/agent/test_credential_pool.py::test_load_pool_seeds_qwen_oauth_via_cli_tokens.
+#[test]
+fn qwen_singleton_seed_materializes_cli_token_and_metadata() {
+    let state = json!({
+        "provider": "qwen-oauth",
+        "base_url": "https://portal.qwen.ai/v1",
+        "api_key": "qwen_fake_token_xyz",
+        "source": "qwen-cli",
+        "expires_at_ms": 1_900_000_000_000i64,
+        "auth_file": "/tmp/.qwen/oauth_creds.json"
+    });
+    let state = state.as_object().unwrap().clone();
+    let mut entries = Vec::new();
+
+    let result = seed_from_singletons("qwen-oauth", &mut entries, Some(&state), &BTreeSet::new());
+
+    assert!(result.changed);
+    assert_eq!(
+        result.active_sources,
+        BTreeSet::from([String::from("qwen-cli")])
+    );
+    assert_eq!(entries.len(), 1);
+    assert_eq!(entries[0].source, "qwen-cli");
+    assert_eq!(entries[0].auth_type, "oauth");
+    assert_eq!(entries[0].access_token, "qwen_fake_token_xyz");
+    assert_eq!(entries[0].expires_at_ms, Some(1_900_000_000_000));
+    assert_eq!(
+        entries[0].base_url.as_deref(),
+        Some("https://portal.qwen.ai/v1")
+    );
+    assert_eq!(entries[0].label, "/tmp/.qwen/oauth_creds.json");
+}
+
+// Tier: mock — mirrors tests/agent/test_credential_pool.py::test_load_pool_does_not_seed_qwen_oauth_when_no_token.
+#[test]
+fn qwen_singleton_seed_fails_open_when_cli_token_is_absent() {
+    let state = json!({
+        "provider": "qwen-oauth",
+        "source": "qwen-cli",
+        "api_key": ""
+    });
+    let state = state.as_object().unwrap().clone();
+    let mut entries = Vec::new();
+
+    let result = seed_from_singletons("qwen-oauth", &mut entries, Some(&state), &BTreeSet::new());
+
+    assert!(!result.changed);
+    assert!(result.active_sources.is_empty());
+    assert!(entries.is_empty());
+}
+
 // Tier: unit — mirrors agent/credential_pool.py _select_unlocked fill-first path.
 #[test]
 fn fill_first_selection_follows_priority_and_tracks_current_entry() {

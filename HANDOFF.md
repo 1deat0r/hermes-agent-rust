@@ -1,6 +1,6 @@
 # Hermes Agent Rust — Next-session handoff
 
-Date: 2026-08-24 (Pacific/Auckland), session 4c8.
+Date: 2026-08-24 (Pacific/Auckland), session 4c9.
 
 ## Resume point
 
@@ -179,18 +179,19 @@ unmet while the conversion remains partial.
 
 The current source unit extends `hermes-agent::credential_pool` through the
 provider-singleton seeding boundary. It adds the explicit `seed_from_singletons`
-seam for the upstream Nous branch: device-code source suppression, stale
-device-code removal when singleton state has no runtime material, invoke-JWT
-agent-key/runtime selection, custom labels, and direct/extra metadata
-preservation for access/refresh expiry, obtained-at, agent-key, endpoint,
-scope, and TLS fields. Two source-derived `mock` tests were added first; the
-focused credential-pool wave now has 33 pool plus 15 persistence tests. The
-remaining singleton branches, full loader/config/custom-provider composition,
-Z.AI endpoint probing, OAuth refresh, leases, and logging throttles remain
-pending. Local source commit
-`e0d804b3b851b49ccc7688ee5e044ccdef5e7f26` was mirrored as GitHub
-`a8e152495fe343c6f793c7e1980add0ccda466ce`; both refs resolve to tree
-`cca9c7bdb420b42dd7abb7bf7b443de3ce6da2da` with 273 matching tracked blobs.
+seam for the upstream Nous and Qwen branches: Nous device-code source
+suppression, stale device-code removal when singleton state has no runtime
+material, invoke-JWT agent-key/runtime selection, custom labels, and
+direct/extra metadata preservation for access/refresh expiry, obtained-at,
+agent-key, endpoint, scope, and TLS fields; Qwen CLI source/auth type, access
+token, expiry milliseconds, base URL, auth-file label, suppression, and
+absent-token fail-open behavior. Two source-derived `mock` tests were added
+first; the focused credential-pool wave now has 35 pool plus 15 persistence
+tests. The remaining singleton branches, full loader/config/custom-provider
+composition, Z.AI endpoint probing, OAuth refresh, leases, and logging
+throttles remain pending. The exact source and documentation mirror refs will
+be recorded in the next handoff checkpoint immediately after this source
+commit is published.
 
 The preceding synchronized source unit extended `hermes-agent::credential_pool`
 through the lower environment-aware `load_pool` transaction. It added the
@@ -626,14 +627,15 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-Local `main` and `origin/main` are aligned at GitHub mirror commit
-`a8e152495fe343c6f793c7e1980add0ccda466ce`. Its tree
-`cca9c7bdb420b42dd7abb7bf7b443de3ce6da2da` was verified recursively against
-the local source tree with 273 blobs and no path/mode/SHA mismatches; this
-handoff is the immediate documentation checkpoint for that mirror. No
-conversion-ledger status changed: the current summary is 73 done / 11 partial /
-3,798 missing tracked modules and 73 done / 11 partial / 1,019 missing
-production modules.
+The source commit for the Qwen OAuth singleton seeder is ready for the
+immediate local/GitHub mirror sequence; its exact commit/tree refs will be
+written in the next documentation-only checkpoint. Before this unit, local
+`main` and `origin/main` were aligned at GitHub mirror commit
+`62a344fa881ed17d40ae76a6191141c5040c9d76`, whose tree
+`88784ed1b0b2c61f567913561eaeaa7dc5636bdd` was verified recursively with 273
+blobs and no path/mode/SHA mismatches. No conversion-ledger status changed:
+the current summary is 73 done / 11 partial / 3,798 missing tracked modules
+and 73 done / 11 partial / 1,019 missing production modules.
 
 ## Next actions, in order
 
@@ -642,8 +644,8 @@ production modules.
    OAuth refresh; the row model,
    serialization, source upsert, strategy, provider-boundary, selection,
    persistence, cooldown-recency merge, auth-store lock, and environment
-   seeding input boundary, lower environment-aware load transaction, and Nous
-   singleton state boundary are now recorded.
+   seeding input boundary, lower environment-aware load transaction, and Nous/
+   Qwen singleton state boundaries are now recorded.
 2. Then connect the auxiliary-client concrete transport to credential-pool
    lifecycle, cancellation, and provider fallback seams without promoting
    either partial module prematurely.
@@ -676,14 +678,14 @@ The strict production formula is `done production modules / 1,103`; partial rows
 
 ## Fidelity notes
 
-- The credential environment seeder, lower `load_pool` transaction, and Nous
-  singleton seeder keep the agent crate bottom-up by taking provider registry
-  metadata, pool config, resolved singleton state, secret-scope values,
-  suppression state, and auth-store paths as explicit inputs. Kimi's pure
-  key-prefix endpoint routing and the Nous state-to-pool field copy are
-  mirrored; the remaining singleton/config branches, custom-provider
-  composition, and the source's Z.AI network endpoint probe remain deferred to
-  the auth/provider layer.
+- The credential environment seeder, lower `load_pool` transaction, and
+  Nous/Qwen singleton seeders keep the agent crate bottom-up by taking provider
+  registry metadata, pool config, resolved singleton state, secret-scope
+  values, suppression state, and auth-store paths as explicit inputs. Kimi's
+  pure key-prefix endpoint routing, Nous state-to-pool field copy, and Qwen
+  resolved-credential field copy are mirrored; the remaining singleton/config
+  branches, custom-provider composition, and the source's Z.AI network
+  endpoint probe remain deferred to the auth/provider layer.
 - Desktop emitter is process-global like upstream; session-ID lookup remains a thread-local gateway seam.
 - Credential registration uses an ordered vector for Python dict insertion order; it remains thread-local rather than async-task-local.
 - Daemon pool rejects zero workers like Python; Rust Drop intentionally avoids joining wedged daemon workers.
@@ -812,9 +814,9 @@ The strict production formula is `done production modules / 1,103`; partial rows
 
 ## Verification evidence
 
-For the current Nous-singleton unit, targeted rustfmt, the focused
+For the current Qwen-singleton unit, targeted rustfmt, the focused
 `/home/mustbearnold/.cargo/bin/cargo test -p hermes-agent --test parity_credential_pool`
-run passed all 33 tests, and `/home/mustbearnold/.cargo/bin/cargo build
+run passed all 35 tests, and `/home/mustbearnold/.cargo/bin/cargo build
 --workspace` passed. The required serialized `/home/mustbearnold/.cargo/bin/cargo
 test --workspace -- --test-threads=1` passed; three delegation/schema doc tests
 remain intentionally ignored. Targeted `hermes-agent` Clippy reached only the
