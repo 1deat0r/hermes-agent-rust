@@ -9,13 +9,10 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
 Current branch/HEAD: `main` is aligned with `origin/main` after the local and
-GitHub API mirror sequence for the MiniMax OAuth singleton seeder. The local
-source commit `5abcc34da3bca6ac682931743ce85023cef183eb` was mirrored as
-GitHub `f9f4c457df15052546da0cf498f847e4d7d53e26`; both refs resolve to tree
-`f2de2de704c4ba7d61a57b230f0c6770ee303ed3` with 273 matching tracked blobs.
-The current OpenAI Codex source unit is being recorded in this next logical
-checkpoint; its exact source and mirror refs will be added immediately after
-publication.
+GitHub API mirror sequence for the OpenAI Codex singleton seeder. The local
+source commit `aedda102d13da1515aa0ea7724702514a7d6a63d` was mirrored as
+GitHub `970720d0aba3a104423fb6b06b141e326d25854e`; both refs resolve to tree
+`c692cc51cfc473dcbb288ad0a5fad7dc097561a7` with 273 matching tracked blobs.
 The connected GitHub API publishes each logical commit immediately as a
 sequential remote mirror. Its commit SHAs differ from the local sequence
 because the API cannot preserve local author/committer timestamps, but every
@@ -24,7 +21,10 @@ update. The local HTTPS Git client still has no credentials; use the connected
 GitHub API for future pushes until `gh auth login` or SSH is configured.
 
 Latest synchronized unit: local source
-`5abcc34da3bca6ac682931743ce85023cef183eb` → GitHub
+`aedda102d13da1515aa0ea7724702514a7d6a63d` → GitHub
+`970720d0aba3a104423fb6b06b141e326d25854e`
+(`feat(agent): seed OpenAI Codex credentials @ b9aa928`), with the previous
+local source `5abcc34da3bca6ac682931743ce85023cef183eb` → GitHub
 `f9f4c457df15052546da0cf498f847e4d7d53e26`
 (`feat(agent): seed MiniMax OAuth credentials @ b9aa928`), with the previous
 local source `c471092747601784ee50b4d9503b6877c379bb25` → GitHub
@@ -210,9 +210,9 @@ cover the nested auth-store shape, but no direct singleton-seeding test exists.
 The remaining singleton branches, full
 loader/config/custom-provider composition, Z.AI endpoint probing, OAuth
 refresh, leases, and logging throttles remain pending. Local source commit
-`5abcc34da3bca6ac682931743ce85023cef183eb` remains the latest published
-source checkpoint; the Codex source and immediate GitHub mirror refs will be
-recorded in the next handoff checkpoint.
+`aedda102d13da1515aa0ea7724702514a7d6a63d` was mirrored as GitHub
+`970720d0aba3a104423fb6b06b141e326d25854e`; both refs resolve to tree
+`c692cc51cfc473dcbb288ad0a5fad7dc097561a7` with 273 matching tracked blobs.
 
 The preceding synchronized source unit extended `hermes-agent::credential_pool`
 through the lower environment-aware `load_pool` transaction. It added the
@@ -648,11 +648,10 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-Before the OpenAI Codex source unit, local `main` and `origin/main` were
-aligned at GitHub mirror commit `f9f4c457df15052546da0cf498f847e4d7d53e26`,
-whose tree `f2de2de704c4ba7d61a57b230f0c6770ee303ed3` was verified recursively
-with 273 blobs and no path/mode/SHA mismatches. No conversion-ledger status
-changed:
+Local `main` and `origin/main` are aligned at GitHub mirror commit
+`970720d0aba3a104423fb6b06b141e326d25854e`, whose tree
+`c692cc51cfc473dcbb288ad0a5fad7dc097561a7` was verified recursively with 273
+blobs and no path/mode/SHA mismatches. No conversion-ledger status changed:
 the current summary is 73 done / 11 partial / 3,798 missing tracked modules
 and 73 done / 11 partial / 1,019 missing production modules.
 
