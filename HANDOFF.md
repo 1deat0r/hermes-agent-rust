@@ -1,6 +1,6 @@
 # Hermes Agent Rust — Next-session handoff
 
-Date: 2026-08-24 (Pacific/Auckland), session 4ad.
+Date: 2026-08-24 (Pacific/Auckland), session 4ae.
 
 ## Resume point
 
@@ -17,7 +17,11 @@ update. The local HTTPS Git client still has no credentials; use the
 connected GitHub API for future pushes until `gh auth login` or SSH is
 configured.
 
-Latest synchronized unit: local source `63db0cf` → GitHub `1262f1f`
+Latest synchronized unit: local source `54d7a3d` → GitHub `9d44d76`
+(`plugins.model-providers.minimax.__init__`, including current
+plan/inventory metadata), after local handoff source `90d52cd` → GitHub
+`d880d1a` (`HANDOFF.md` for the Ollama Cloud unit), after local source
+`63db0cf` → GitHub `1262f1f`
 (`plugins.model-providers.ollama-cloud.__init__`, including current
 plan/inventory metadata), after local handoff source `18c9e03` → GitHub
 `420ec76` (`HANDOFF.md` for the Actual unit), after local source `163edce` →
@@ -75,7 +79,8 @@ because it cannot preserve the local author/committer timestamps.
 ## What landed this session
 
 Module-sized commits are complete through
-`plugins.model-providers.ollama-cloud.__init__`: `63db0cf` locally, mirrored as
+`plugins.model-providers.minimax.__init__`: `54d7a3d` locally, mirrored as
+`9d44d76` remotely; the Ollama Cloud profile is `63db0cf` locally, mirrored as
 `1262f1f` remotely; the Actual profile is `163edce` locally, mirrored as
 `5b7efa2` remotely; the Nous profile is `956fa19` locally, mirrored as
 `6a3259f` remotely; the DeepSeek profile is `fd80752` locally, mirrored as
@@ -181,6 +186,16 @@ The `actual_catalog` capability isolates the custom `fetch_models` hook;
 runtime credential resolution, model-picker integration, and application
 transport/opener wiring remain future hermes-cli seams.
 
+The MiniMax bundled profiles are included in the new `54d7a3d` source commit
+and its `9d44d76` GitHub mirror. The three registrations mirror the direct,
+China, and OAuth profile metadata, aliases, API modes, credentials, base
+URLs, OAuth description/signup fields, and auxiliary defaults. The
+`minimax_reasoning` capability preserves the shared M3 hook's exact
+`api.minimax.io/v1` and model/slug gating, mandatory `reasoning_split`,
+adaptive thinking for any supplied config, explicit disabled thinking, and
+no thinking body when config is absent. Auxiliary-client, OAuth runtime,
+and broader agent/transport integration remain future higher-layer seams.
+
 The Ollama Cloud bundled profile is included in the new `63db0cf` source
 commit and its `1262f1f` GitHub mirror. It mirrors the profile metadata,
 alias, API-key environment, base URL, auxiliary model, and the top-level
@@ -205,18 +220,19 @@ Foundry profile, 2 Bedrock profile, 3 Copilot profile, 2 Copilot ACP profile,
 2 Fireworks profile, 2 GMI profile, 2 Kilo Code profile, 2 NovitaAI profile,
 2 NVIDIA profile, 2 StepFun profile, 3 Vertex profile, 2 DeepInfra profile,
 2 DeepSeek profile, 3 Nous profile, 3 Actual profile, 3 Ollama Cloud profile,
-2 OpenAI Codex profile, 2 Xiaomi profile, 2 XAI profile, and 2 Hugging Face
+3 Minimax profile, 2 OpenAI Codex profile, 2 Xiaomi profile, 2 XAI profile,
+and 2 Hugging Face
 profile tests are green.
 The provider
 surface remains partial
 for the future CLI version/opener integration and remaining Rust plugin profile
-loaders. The next unit is `plugins.model-providers.minimax.__init__` (97 LOC).
+loaders. The next unit is `plugins.model-providers.custom.__init__` (103 LOC).
 
-The required Ollama Cloud workspace verification was green before the synchronized
+The required Minimax workspace verification was green before the synchronized
 commit:
 
 ```text
-PATH=/home/mustbearnold/.cargo/bin:$PATH cargo test -p hermes-providers --test parity_ollama_cloud --test parity_base --test parity_registry
+PATH=/home/mustbearnold/.cargo/bin:$PATH cargo test -p hermes-providers --test parity_minimax --test parity_base --test parity_registry
 PATH=/home/mustbearnold/.cargo/bin:$PATH cargo build --workspace
 PATH=/home/mustbearnold/.cargo/bin:$PATH cargo test --workspace --quiet
 ```
@@ -230,15 +246,15 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-After the current Ollama Cloud commit is mirrored and this handoff commit is aligned
+After the current Minimax commit is mirrored and this handoff commit is aligned
 to its remote mirror, the working tree is clean. The committed metadata
 includes `AGENTS.md`, `PLAN.md`, `tools/port_status.json`, generated
 `tools/inventory.json`, `CONVERSION-LEDGER.md`, and this handoff. No code or
-parity test is pending for the Ollama Cloud unit.
+parity test is pending for the Minimax unit.
 
 ## Next actions, in order
 
-1. Start `plugins.model-providers.minimax.__init__` (97 LOC) by reading its
+1. Start `plugins.model-providers.custom.__init__` (103 LOC) by reading its
    pinned source/tests and writing profile-registration parity tests first.
 2. Keep the static bundled-profile registration order and user-loader seam
    explicit while adding the next provider profile.
@@ -249,8 +265,8 @@ parity test is pending for the Ollama Cloud unit.
 
 `CONVERSION-LEDGER.md` is generated and contains one row for every 3,882 upstream inventory modules: 1,103 production tasks plus 2,779 oracle/test tasks. Only `done` counts toward completion.
 
-- All tracked modules: 67 done / 9 partial / 3,806 missing = **1.73%**.
-- Production modules: 67 done / 9 partial / 1,027 missing = **6.07%**.
+- All tracked modules: 68 done / 9 partial / 3,805 missing = **1.75%**.
+- Production modules: 68 done / 9 partial / 1,026 missing = **6.17%**.
 
 The nine partial production rows are `hermes_constants`, `providers.base`,
 `providers.__init__`, `tools.credential_files`,
@@ -344,6 +360,14 @@ The strict production formula is `done production modules / 1,103`; partial rows
   disabled/explicit none, and omits blank/unknown efforts; `/api/show`/native
   capability probing and higher-layer catalog/credential/model picker
   integration remain future seams.
+- MiniMax's source `build_api_kwargs_extras` override is represented by the
+  explicit `minimax_reasoning` capability. It gates on the parsed
+  `api.minimax.io/v1` path and normalized M3 model names, always emits
+  `reasoning_split`, selects adaptive for any supplied config, selects
+  disabled only for explicit `enabled=False`, and omits the thinking field
+  when config is absent. Query-bearing `/v1` paths remain accepted per the
+  upstream `urlparse(...).path` predicate; auxiliary/OAuth/transport seams
+  remain future higher-layer integrations.
 - Platform cache-resetting tests are serialized because the production WSL and
   container detectors intentionally cache for process lifetime; the mutex is
   test-only and does not change detector behavior.
@@ -357,11 +381,12 @@ Cloud, 2 AI Gateway, 2 Alibaba, 2 Alibaba Coding Plan, 3 Anthropic, 3 Gemini,
 2 Arcee, 2 Azure
 Foundry, 2 Bedrock, 3 Copilot, 2 Copilot ACP, 2 Fireworks, 2 GMI, 2 Kilo
 Code, 2 NovitaAI, 2 NVIDIA, 2 StepFun, 3 Vertex, 2 DeepInfra, 2 DeepSeek,
-3 Nous, 2 OpenAI Codex, 2 Xiaomi, 2 XAI, and 2 Hugging Face profile tests. The
+3 Nous, 3 Minimax, 2 OpenAI Codex, 2 Xiaomi, 2 XAI, and 2 Hugging Face profile
+tests. The
 required workspace build and test also passed with the explicit cargo
 toolchain; three
 delegation/schema doc tests are intentionally ignored. Inventory and
-conversion ledger were regenerated and now record 67 done / 9 partial / 1,027
+conversion ledger were regenerated and now record 68 done / 9 partial / 1,026
 missing production modules.
 
 ## First command tomorrow
