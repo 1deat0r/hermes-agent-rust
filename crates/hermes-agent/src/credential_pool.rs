@@ -1581,6 +1581,107 @@ pub fn custom_provider_config(pool_key: &str, providers: &[Value]) -> Option<Map
         .cloned()
 }
 
+/// Seed a custom endpoint pool from explicit provider and model config.
+///
+/// PARITY: `agent/credential_pool.py._seed_custom_pool` (3011–3075). Config
+/// loading and suppression ownership remain outside this crate; the caller
+/// supplies the parsed custom-provider list, optional model map, and active
+/// suppression set.
+pub fn seed_custom_pool(
+    pool_key: &str,
+    entries: &mut Vec<PooledCredential>,
+    providers: &[Value],
+    model_config: Option<&Map<String, Value>>,
+    suppressed_sources: &BTreeSet<String>,
+) -> SeedResult {
+    let mut result = SeedResult::default();
+
+    if let Some(config) = custom_provider_config(pool_key, providers) {
+        let api_key = config
+            .get("api_key")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .trim();
+        let base_url = config
+            .get("base_url")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .trim()
+            .trim_end_matches('/');
+        let name = config
+            .get("name")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .trim();
+        if !api_key.is_empty() {
+            let source = format!("config:{name}");
+            if !suppressed_sources.contains(&source) {
+                result.active_sources.insert(source.clone());
+                let mut payload = Map::new();
+                payload.insert("source".into(), Value::String(source.clone()));
+                payload.insert("auth_type".into(), Value::String(AUTH_TYPE_API_KEY.into()));
+                payload.insert("access_token".into(), Value::String(api_key.into()));
+                payload.insert("base_url".into(), Value::String(base_url.into()));
+                payload.insert(
+                    "label".into(),
+                    Value::String(if name.is_empty() {
+                        source.clone()
+                    } else {
+                        name.into()
+                    }),
+                );
+                result.changed |= upsert_entry(entries, pool_key, &source, &payload);
+            }
+        }
+    }
+
+    if let Some(model) = model_config {
+        let model_provider = model
+            .get("provider")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .trim()
+            .to_ascii_lowercase();
+        let model_base_url = model
+            .get("base_url")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .trim()
+            .trim_end_matches('/');
+        let model_api_key = ["api_key", "api"].iter().find_map(|key| {
+            model
+                .get(*key)
+                .and_then(Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+        });
+        if model_provider == "custom" && !model_base_url.is_empty() {
+            if let Some(model_api_key) = model_api_key {
+                if custom_provider_pool_key(Some(model_base_url), None, providers).as_deref()
+                    == Some(pool_key)
+                {
+                    let source = "model_config";
+                    if !suppressed_sources.contains(source) {
+                        result.active_sources.insert(source.into());
+                        let mut payload = Map::new();
+                        payload.insert("source".into(), Value::String(source.into()));
+                        payload.insert("auth_type".into(), Value::String(AUTH_TYPE_API_KEY.into()));
+                        payload.insert(
+                            "access_token".into(),
+                            Value::String(model_api_key.to_owned()),
+                        );
+                        payload.insert("base_url".into(), Value::String(model_base_url.to_owned()));
+                        payload.insert("label".into(), Value::String(source.into()));
+                        result.changed |= upsert_entry(entries, pool_key, source, &payload);
+                    }
+                }
+            }
+        }
+    }
+
+    result
+}
+
 /// List non-empty custom pool keys from a parsed credential-pool mapping.
 ///
 /// PARITY: agent/credential_pool.py `list_custom_pool_providers`.

@@ -3,9 +3,9 @@ use hermes_agent::credential_pool::{
     credential_pool_matches_provider, custom_provider_config, custom_provider_pool_key,
     get_env_prefer_dotenv, label_from_token, list_custom_pool_providers, load_env_file,
     normalize_custom_pool_name, normalize_pool_priorities, pool_strategy_from_config,
-    prune_stale_seeded_entries, seed_from_env, seed_from_singletons, upsert_entry, CredentialPool,
-    CredentialStatus, EnvironmentSnapshot, PoolErrorContext, PoolStrategy, PooledCredential,
-    ProviderCredentialConfig,
+    prune_stale_seeded_entries, seed_custom_pool, seed_from_env, seed_from_singletons,
+    upsert_entry, CredentialPool, CredentialStatus, EnvironmentSnapshot, PoolErrorContext,
+    PoolStrategy, PooledCredential, ProviderCredentialConfig,
 };
 use hermes_agent::credential_store::{read_credential_pool_at, save_auth_store};
 use serde_json::{json, Value};
@@ -1674,4 +1674,77 @@ fn custom_provider_lookup_prefers_name_and_lists_only_nonempty_pools() {
         list_custom_pool_providers(pool_data.as_object().unwrap()),
         vec!["custom:second-provider"]
     );
+}
+
+// Tier: mock — mirrors tests/agent/test_credential_pool.py::
+// test_custom_endpoint_pool_seeds_from_config.
+#[test]
+fn custom_pool_seed_materializes_configured_api_key() {
+    let providers = vec![json!({
+        "name": "Together.ai",
+        "base_url": "https://api.together.ai/v1/",
+        "api_key": "sk-config-seeded"
+    })];
+    let mut entries = Vec::new();
+
+    let result = seed_custom_pool(
+        "custom:together.ai",
+        &mut entries,
+        &providers,
+        None,
+        &BTreeSet::new(),
+    );
+
+    assert!(result.changed);
+    assert_eq!(
+        result.active_sources,
+        BTreeSet::from([String::from("config:Together.ai")])
+    );
+    assert_eq!(entries.len(), 1);
+    assert_eq!(entries[0].source, "config:Together.ai");
+    assert_eq!(entries[0].access_token, "sk-config-seeded");
+    assert_eq!(
+        entries[0].base_url.as_deref(),
+        Some("https://api.together.ai/v1")
+    );
+    assert_eq!(entries[0].label, "Together.ai");
+}
+
+// Tier: mock — mirrors tests/agent/test_credential_pool.py::
+// test_custom_endpoint_pool_seeds_from_model_config.
+#[test]
+fn custom_pool_seed_materializes_matching_model_config_key() {
+    let providers = vec![json!({
+        "name": "Together.ai",
+        "base_url": "https://api.together.ai/v1"
+    })];
+    let model = json!({
+        "provider": "custom",
+        "base_url": "https://api.together.ai/v1/",
+        "api_key": "sk-model-key"
+    });
+    let model = model.as_object().unwrap().clone();
+    let mut entries = Vec::new();
+
+    let result = seed_custom_pool(
+        "custom:together.ai",
+        &mut entries,
+        &providers,
+        Some(&model),
+        &BTreeSet::new(),
+    );
+
+    assert!(result.changed);
+    assert_eq!(
+        result.active_sources,
+        BTreeSet::from([String::from("model_config")])
+    );
+    assert_eq!(entries.len(), 1);
+    assert_eq!(entries[0].source, "model_config");
+    assert_eq!(entries[0].access_token, "sk-model-key");
+    assert_eq!(
+        entries[0].base_url.as_deref(),
+        Some("https://api.together.ai/v1")
+    );
+    assert_eq!(entries[0].label, "model_config");
 }

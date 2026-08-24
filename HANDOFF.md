@@ -1,6 +1,6 @@
 # Hermes Agent Rust — Next-session handoff
 
-Date: 2026-08-24 (Pacific/Auckland), session 4ce.
+Date: 2026-08-24 (Pacific/Auckland), session 4cf.
 
 ## Resume point
 
@@ -9,7 +9,9 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
 Current branch/HEAD: `main` is aligned with `origin/main` after the local and
-GitHub API mirror sequence for the Copilot singleton seeder. The local source
+GitHub API mirror sequence for the Copilot singleton seeder. The next local
+source unit adds the custom-pool seeding boundary; its exact refs will be
+recorded immediately after publication. The local source
 commit `19d0adb6efd8dbaf52d92c053d625a56993c2ea9` was mirrored as GitHub
 `33187eafa6a98fd0e7c22e582449e41bf102bb96`; both refs resolve to tree
 `00f4120fe2d977522030ba41a17ca571370629ca` with 273 matching tracked blobs.
@@ -231,7 +233,11 @@ materialization and suppression. Four additional Anthropic source-derived
 additional Copilot source-derived `mock` tests bring the focused wave to 53
 pool plus 15 persistence tests (68 total). Copilot's higher-layer `gh auth
 token` resolver and network exchange are represented by explicit resolved
-token/source/endpoint inputs in this crate. The remaining singleton branches, full
+token/source/endpoint inputs in this crate. Two additional custom-pool source-
+derived `mock` tests bring the focused wave to 55 pool plus 15 persistence
+tests (70 total). Custom-pool seeding accepts explicit provider/model config
+and mirrors config/model API-key rows with normalized endpoint identity and
+suppression. The remaining full
 loader/config/custom-provider composition, Z.AI endpoint probing, OAuth
 refresh, leases, and logging throttles remain pending. Local source commit
 `19d0adb6efd8dbaf52d92c053d625a56993c2ea9` was mirrored as GitHub
@@ -672,8 +678,9 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-Local `main` and `origin/main` are aligned after the Copilot source and
-documentation mirror sequence. The latest source snapshot, local
+Before the custom-pool source unit, local `main` and `origin/main` were aligned
+after the Copilot source and documentation mirror sequence. The latest source
+snapshot, local
 `19d0adb6efd8dbaf52d92c053d625a56993c2ea9` → GitHub
 `33187eafa6a98fd0e7c22e582449e41bf102bb96`, has tree
 `00f4120fe2d977522030ba41a17ca571370629ca`, verified recursively with 273
@@ -683,14 +690,14 @@ and 73 done / 11 partial / 1,019 missing production modules.
 
 ## Next actions, in order
 
-1. Continue `agent.credential_pool` through the remaining singleton branches,
-   singleton/config/custom-provider `load_pool` composition, Z.AI probing, and
+1. Continue `agent.credential_pool` through full singleton/config/custom-provider
+   `load_pool` composition, Z.AI probing, and
    OAuth refresh; the row model,
    serialization, source upsert, strategy, provider-boundary, selection,
    persistence, cooldown-recency merge, auth-store lock, and environment
    seeding input boundary, lower environment-aware load transaction, and
    Anthropic/Nous/Copilot/Qwen/MiniMax/OpenAI Codex/xAI singleton state boundaries are
-   now recorded.
+   and custom-pool config/model seeding boundary are now recorded.
 2. Then connect the auxiliary-client concrete transport to credential-pool
    lifecycle, cancellation, and provider fallback seams without promoting
    either partial module prematurely.
@@ -724,7 +731,8 @@ The strict production formula is `done production modules / 1,103`; partial rows
 ## Fidelity notes
 
 - The credential environment seeder, lower `load_pool` transaction, and
-  Anthropic/Nous/Copilot/Qwen/MiniMax/OpenAI Codex/xAI singleton seeders keep the agent crate
+  Anthropic/Nous/Copilot/Qwen/MiniMax/OpenAI Codex/xAI singleton seeders plus
+  custom-pool config/model seeding keep the agent crate
   bottom-up by taking provider registry metadata, pool config, resolved
   singleton state, secret-scope values, suppression state, and auth-store paths
   as explicit inputs. Anthropic's provider/API-key-path gates and resolved
@@ -733,9 +741,8 @@ The strict production formula is `done production modules / 1,103`; partial rows
   Copilot resolved exchanged-token/source/endpoint mapping, Qwen
   resolved-credential field copy, MiniMax OAuth state mapping, OpenAI Codex
   nested-token field copy, and xAI nested-token field copy are mirrored; the
-  remaining singleton/config branches, custom-provider composition, and the
-  source's Z.AI network endpoint probe remain deferred to the auth/provider
-  layer.
+  full loader/config/custom-provider composition and the source's Z.AI network
+  endpoint probe remain deferred to the auth/provider layer.
 - Desktop emitter is process-global like upstream; session-ID lookup remains a thread-local gateway seam.
 - Credential registration uses an ordered vector for Python dict insertion order; it remains thread-local rather than async-task-local.
 - Daemon pool rejects zero workers like Python; Rust Drop intentionally avoids joining wedged daemon workers.
