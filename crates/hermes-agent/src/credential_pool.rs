@@ -348,6 +348,95 @@ pub fn prune_stale_seeded_entries(
     entries.len() != original_len
 }
 
+/// Load, environment-seed, prune, normalize, and persist one provider pool.
+///
+/// PARITY: `agent/credential_pool.py.load_pool` (3084–3165), limited to the
+/// environment/config-independent portion currently owned by this crate. The
+/// higher auth layer will compose singleton and custom-provider seeders around
+/// this transaction once those source contracts are ported.
+pub fn load_pool_with_environment_at(
+    provider: &str,
+    provider_config: Option<&ProviderCredentialConfig>,
+    pool_config: Option<&Map<String, Value>>,
+    snapshot: &EnvironmentSnapshot,
+    profile_path: &Path,
+    global_path: Option<&Path>,
+) -> io::Result<CredentialPool> {
+    let provider = provider.trim().to_ascii_lowercase();
+    let raw = crate::credential_store::read_credential_pool_at(
+        Some(profile_path),
+        global_path,
+        Some(&provider),
+    )?;
+    let raw_entries = raw.as_array().cloned().unwrap_or_default();
+    let disk_ids: BTreeSet<String> = raw_entries
+        .iter()
+        .filter_map(|entry| entry.get("id").and_then(Value::as_str))
+        .filter(|id| !id.is_empty())
+        .map(ToOwned::to_owned)
+        .collect();
+    let raw_needs_sanitization = raw_entries.iter().any(|payload| {
+        payload.as_object().is_some_and(|payload| {
+            sanitize_borrowed_credential_payload(payload.clone(), &provider) != *payload
+        })
+    });
+    let mut entries: Vec<PooledCredential> = raw_entries
+        .iter()
+        .map(|payload| PooledCredential::from_json(&provider, payload))
+        .collect();
+    let mut raw_needs_auth_normalization = raw_entries.iter().any(|payload| {
+        let Some(payload) = payload.as_object() else {
+            return false;
+        };
+        let access_token = payload
+            .get("access_token")
+            .and_then(Value::as_str)
+            .unwrap_or_default();
+        let auth_type = payload
+            .get("auth_type")
+            .and_then(Value::as_str)
+            .unwrap_or(AUTH_TYPE_API_KEY);
+        normalize_pool_auth_type(&provider, access_token, auth_type) != auth_type
+    });
+    if raw_needs_auth_normalization {
+        // A global fallback is read-only. Only heal auth-type normalization
+        // when the active profile actually owns a non-empty provider pool.
+        let active_store = crate::credential_store::load_auth_store(Some(profile_path))?;
+        let active_entries = active_store
+            .get("credential_pool")
+            .and_then(Value::as_object)
+            .and_then(|pool| pool.get(&provider))
+            .and_then(Value::as_array);
+        raw_needs_auth_normalization = active_entries.is_some_and(|rows| !rows.is_empty());
+    }
+
+    let seed_result = seed_from_env(&provider, &mut entries, provider_config, snapshot);
+    let mut changed = raw_needs_sanitization || raw_needs_auth_normalization || seed_result.changed;
+    // Ordinary pool loads are non-destructive for env rows: another process
+    // may own the environment value even when this process does not.
+    changed |= prune_stale_seeded_entries(&mut entries, &seed_result.active_sources, false);
+    changed |= normalize_pool_priorities(&provider, &mut entries);
+
+    if changed {
+        let new_ids: BTreeSet<String> = entries.iter().map(|entry| entry.id.clone()).collect();
+        let removed_ids: Vec<String> = disk_ids.difference(&new_ids).cloned().collect();
+        let mut persisted = entries.clone();
+        persisted.sort_by_key(|entry| entry.priority);
+        let payloads: Vec<Value> = persisted.iter().map(PooledCredential::to_json).collect();
+        crate::credential_store::write_credential_pool_at(
+            profile_path,
+            &provider,
+            &payloads,
+            &removed_ids,
+        )?;
+    }
+    Ok(CredentialPool::new(
+        &provider,
+        entries,
+        pool_strategy_from_config(&provider, pool_config),
+    ))
+}
+
 /// A loaded credential-pool row and the fields used by selection/rotation.
 #[derive(Debug, Clone, PartialEq)]
 pub struct PooledCredential {

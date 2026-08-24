@@ -7,6 +7,7 @@ use hermes_agent::credential_pool::{
     EnvironmentSnapshot, PoolErrorContext, PoolStrategy, PooledCredential,
     ProviderCredentialConfig,
 };
+use hermes_agent::credential_store::{read_credential_pool_at, save_auth_store};
 use serde_json::{json, Value};
 use std::collections::BTreeSet;
 use std::fs;
@@ -221,6 +222,113 @@ fn environment_suppression_blocks_seed_and_missing_env_is_retained_unless_explic
         true,
     ));
     assert!(entries.is_empty());
+}
+
+// Tier: mock — mirrors tests/agent/test_credential_pool.py::test_load_pool_does_not_persist_env_seeded_secret_value.
+#[test]
+fn environment_pool_loader_persists_metadata_without_borrowed_secret() {
+    let temp = tempfile::tempdir().unwrap();
+    let auth_path = temp.path().join("hermes/auth.json");
+    let mut store = serde_json::Map::new();
+    store.insert("providers".into(), json!({}));
+    save_auth_store(&mut store, Some(&auth_path)).unwrap();
+    let snapshot = env_snapshot(
+        &[],
+        &[("OPENROUTER_API_KEY", "S3NTINEL_DO_NOT_PERSIST_OPENROUTER")],
+    );
+
+    let pool = hermes_agent::credential_pool::load_pool_with_environment_at(
+        "openrouter",
+        None,
+        None,
+        &snapshot,
+        &auth_path,
+        None,
+    )
+    .unwrap();
+
+    assert_eq!(pool.entries().len(), 1);
+    assert_eq!(
+        pool.entries()[0].access_token,
+        "S3NTINEL_DO_NOT_PERSIST_OPENROUTER"
+    );
+    let raw = fs::read_to_string(&auth_path).unwrap();
+    assert!(!raw.contains("S3NTINEL_DO_NOT_PERSIST_OPENROUTER"));
+    let persisted = read_credential_pool_at(Some(&auth_path), None, Some("openrouter")).unwrap();
+    let row = persisted
+        .as_array()
+        .unwrap()
+        .first()
+        .unwrap()
+        .as_object()
+        .unwrap();
+    assert_eq!(row["source"], "env:OPENROUTER_API_KEY");
+    assert_eq!(row["label"], "OPENROUTER_API_KEY");
+    assert_eq!(row["priority"], 0);
+    assert!(row.get("access_token").is_none());
+    assert!(row["secret_fingerprint"]
+        .as_str()
+        .unwrap()
+        .starts_with("sha256:"));
+}
+
+// Tier: mock — mirrors tests/agent/test_credential_pool.py::test_load_pool_collapses_duplicate_env_rows_to_active_key.
+#[test]
+fn environment_pool_loader_collapses_duplicate_rows_and_keeps_first_identity() {
+    let temp = tempfile::tempdir().unwrap();
+    let auth_path = temp.path().join("hermes/auth.json");
+    let mut store = serde_json::Map::new();
+    store.insert(
+        "credential_pool".into(),
+        json!({
+            "openrouter": [
+                {
+                    "id": "current-row",
+                    "label": "OPENROUTER_API_KEY",
+                    "auth_type": "api_key",
+                    "priority": 0,
+                    "source": "env:OPENROUTER_API_KEY"
+                },
+                {
+                    "id": "stale-duplicate",
+                    "label": "OPENROUTER_API_KEY",
+                    "auth_type": "api_key",
+                    "priority": 1,
+                    "source": "env:OPENROUTER_API_KEY"
+                }
+            ]
+        }),
+    );
+    save_auth_store(&mut store, Some(&auth_path)).unwrap();
+    let snapshot = env_snapshot(&[], &[("OPENROUTER_API_KEY", "active-key")]);
+
+    let pool = hermes_agent::credential_pool::load_pool_with_environment_at(
+        "openrouter",
+        None,
+        None,
+        &snapshot,
+        &auth_path,
+        None,
+    )
+    .unwrap();
+
+    assert_eq!(
+        pool.entries()
+            .iter()
+            .map(|entry| (entry.id.clone(), entry.access_token.clone()))
+            .collect::<Vec<_>>(),
+        vec![("current-row".into(), "active-key".into())]
+    );
+    let persisted = read_credential_pool_at(Some(&auth_path), None, Some("openrouter")).unwrap();
+    assert_eq!(
+        persisted
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|row| row["id"].clone())
+            .collect::<Vec<_>>(),
+        vec![json!("current-row")]
+    );
 }
 
 // Tier: unit — mirrors agent/credential_pool.py _select_unlocked fill-first path.
