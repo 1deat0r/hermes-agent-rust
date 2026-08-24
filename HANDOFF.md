@@ -9,11 +9,13 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
 Current branch/HEAD: `main` is aligned with `origin/main` after publishing the
-parallel config-discovery and Z.AI unit plus its documentation checkpoint.
-Source commit `a092a8f21d4ea6deacac92503e67f7e4bdd809df` and documentation
-checkpoint `6ab58db089332d6c03571664d8875667f25c3a1d` are both mirrored on
-GitHub; final local/remote refs resolve to tree
-`944d8fb53de333a9fbc96e790c643f5d62b46748` with 273 matching tracked blobs.
+parallel config-discovery and Z.AI unit plus its documentation-only
+checkpoints. The latest source commit
+`a092a8f21d4ea6deacac92503e67f7e4bdd809df` is mirrored on GitHub; its source
+tree is `68766578f9e2d002b4a4f8caee8c4a07e94cf1e7` with 273 matching tracked
+blobs. The documentation-only checkpoints
+`6ab58db089332d6c03571664d8875667f25c3a1d` and the subsequent handoff
+checkpoint are also mirrored; they do not change source or ledger content.
 The local HTTPS Git client authenticates through the logged-in `gh` keyring
 account; future logical units can use `git push origin main`.
 
@@ -716,12 +718,12 @@ hardening remains in the preceding synchronized history.
 ## Exact working-tree state
 
 Local `main` and `origin/main` are aligned after publishing the parallel
-config-discovery and Z.AI unit plus its documentation checkpoint. Local and
-remote refs are both `6ab58db089332d6c03571664d8875667f25c3a1d`, resolving to
-tree `944d8fb53de333a9fbc96e790c643f5d62b46748`, with 273 verified matching
-tracked blobs. No conversion-ledger status changed: the current summary is
-73 done / 11 partial / 3,798 missing tracked modules and 73 done / 11 partial /
-1,019 missing production modules.
+config-discovery and Z.AI unit plus its documentation-only checkpoints. The
+latest source snapshot is local/remote `a092a8f21d4ea6deacac92503e67f7e4bdd809df`,
+resolving to tree `68766578f9e2d002b4a4f8caee8c4a07e94cf1e7` with 273 verified
+matching tracked blobs. No conversion-ledger status changed: the current
+summary is 73 done / 11 partial / 3,798 missing tracked modules and 73 done /
+11 partial / 1,019 missing production modules.
 
 ## Next actions, in order
 
