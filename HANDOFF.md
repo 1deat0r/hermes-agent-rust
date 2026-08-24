@@ -9,11 +9,11 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
 Current branch/HEAD: `main` is aligned with `origin/main` after the local and
-GitHub API mirror sequence for the full credential-pool loader composition.
-The local source commit `f6a266e6e5ef9417c9b49cf9f2d53563e0ac9ae4` was
-mirrored as GitHub `940ead9f102e6aba3ea0d2c308d7cb9c732cbd5e`; both refs
-resolve to tree `450e2757900fb773f3295e593782ec1a153b077f` with 273 matching
-tracked blobs.
+GitHub API mirror sequence for the pure custom-provider configuration
+compatibility unit. The local source commit
+`9216c3849362a39145b9147394630cfa112171e1` was mirrored as GitHub
+`1167a7381d7623247a37267edd4f16e2df7371e5`; both refs resolve to tree
+`9b6f57ac636b2f247cf5fb196b28fda08081ac3d` with 273 matching tracked blobs.
 The connected GitHub API publishes each logical commit immediately as a
 sequential remote mirror. Its commit SHAs differ from the local sequence
 because the API cannot preserve local author/committer timestamps, but every
@@ -22,7 +22,10 @@ update. The local HTTPS Git client still has no credentials; use the connected
 GitHub API for future pushes until `gh auth login` or SSH is configured.
 
 Latest synchronized unit: local source
-`f6a266e6e5ef9417c9b49cf9f2d53563e0ac9ae4` → GitHub
+`9216c3849362a39145b9147394630cfa112171e1` → GitHub
+`1167a7381d7623247a37267edd4f16e2df7371e5`
+(`feat(agent): add custom provider config compatibility @ b9aa928`), with the
+previous local source `f6a266e6e5ef9417c9b49cf9f2d53563e0ac9ae4` → GitHub
 `940ead9f102e6aba3ea0d2c308d7cb9c732cbd5e`
 (`feat(agent): compose full credential pool loader @ b9aa928`), with the
 previous local source `2c7798500593d6ac290c235181da28a7ef81e8d2` → GitHub
@@ -213,8 +216,11 @@ immutability, and malformed-legacy fail-open behavior. Four source-derived
 `unit` parity tests were added first; the focused credential-pool wave now has
 61 pool plus 15 persistence tests (76 total). Outer config discovery/loading,
 Z.AI endpoint probing, OAuth refresh, leases, and logging throttles remain
-pending. The source commit and its immediate GitHub mirror will be recorded
-below after the local commit is created and recursively verified.
+pending. The source commit and its immediate GitHub mirror are recorded above;
+the source tree was recursively verified before the branch was aligned. Local
+commit `9216c3849362a39145b9147394630cfa112171e1` was mirrored as GitHub
+`1167a7381d7623247a37267edd4f16e2df7371e5`; both refs resolve to tree
+`9b6f57ac636b2f247cf5fb196b28fda08081ac3d` with 273 matching tracked blobs.
 
 The preceding source unit extends `hermes-agent::credential_pool` through the
 provider-singleton seeding boundary. It adds the explicit `seed_from_singletons`
@@ -704,11 +710,11 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-Local `main` and `origin/main` are aligned after the full credential-pool
-loader source and documentation mirror sequence. The latest source snapshot,
-local `f6a266e6e5ef9417c9b49cf9f2d53563e0ac9ae4` → GitHub
-`940ead9f102e6aba3ea0d2c308d7cb9c732cbd5e`, has tree
-`450e2757900fb773f3295e593782ec1a153b077f`, verified recursively with 273
+Local `main` and `origin/main` are aligned after the custom-provider
+compatibility source mirror sequence. The latest source snapshot, local
+`9216c3849362a39145b9147394630cfa112171e1` → GitHub
+`1167a7381d7623247a37267edd4f16e2df7371e5`, has tree
+`9b6f57ac636b2f247cf5fb196b28fda08081ac3d`, verified recursively with 273
 blobs and no path/mode/SHA mismatches. No conversion-ledger status changed:
 the current summary is 73 done / 11 partial / 3,798 missing tracked modules
 and 73 done / 11 partial / 1,019 missing production modules.

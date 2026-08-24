@@ -525,7 +525,10 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   Clippy review, and the approved 4/4-gate leaf recheck passed. Targeted
   `hermes-agent` Clippy still reports only the two pre-existing
   `auxiliary_client` lints. Outer config discovery/loading, Z.AI endpoint
-  probing, OAuth refresh, leases, and logging throttles remain pending.
+  probing, OAuth refresh, leases, and logging throttles remain pending. Local
+  source commit `9216c3849362a39145b9147394630cfa112171e1` was mirrored as
+  GitHub `1167a7381d7623247a37267edd4f16e2df7371e5`; both refs resolve to tree
+  `9b6f57ac636b2f247cf5fb196b28fda08081ac3d` with 273 matching tracked blobs.
 
 - 2026-08-24 (session 4cf): Continued the partial `agent.credential_pool`
   port (@ b9aa928) through the full explicit-input `load_pool` composition
