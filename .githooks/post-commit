@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -u
+
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root"
+
+set +e
+python3 tools/sync_github_metadata.py --description-mode sync --readme-mode verify
+status=$?
+set -e
+
+if (( status != 0 )); then
+  if [[ "${HERMES_GITHUB_SYNC_REQUIRED:-}" =~ ^(1|true|yes|on)$ ]] || \
+     [[ "$(git config --get hermes.githubSyncRequired || true)" =~ ^(1|true|yes|on)$ ]]; then
+    echo "post-commit: required GitHub metadata synchronization failed" >&2
+    exit "$status"
+  fi
+  echo "post-commit: GitHub metadata synchronization is pending; commit remains local" >&2
+fi
+
+exit 0

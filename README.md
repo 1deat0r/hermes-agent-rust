@@ -89,6 +89,30 @@ Each Codex task must update or verify the ledger, plan, and handoff before it
 reports completion. One logical unit is committed and pushed at a time; remote
 synchronization must be verified rather than assumed.
 
+## Commit hooks and GitHub metadata
+
+Install the tracked hooks once per checkout:
+
+```bash
+tools/install_hooks.sh
+```
+
+The `pre-commit` hook refreshes `tools/inventory.json`,
+`CONVERSION-LEDGER.md`, and the README status snapshot whenever source,
+parity, inventory, or hook files are staged. It also requires staged updates to
+`PLAN.md` and `HANDOFF.md` for those changes. The `.github/repository-description.txt`
+file is the reviewed source for the GitHub repository description.
+
+The `post-commit` hook synchronizes that description through the GitHub API and
+verifies that the remote `README.md` matches the committed file. README changes
+are intentionally published by the normal local/remote commit mirror or push,
+so the hook does not manufacture a second README commit. Set
+`HERMES_GITHUB_TOKEN`, `GH_TOKEN`, or `GITHUB_TOKEN` for metadata access; use
+`tools/install_hooks.sh --strict` when missing credentials or a remote mismatch
+should be treated as an error. To explicitly update a remote README through the
+Contents API, run `HERMES_GITHUB_README_MODE=sync python3
+tools/sync_github_metadata.py` outside the exact-mirror commit path.
+
 ## Build and test
 
 ```bash

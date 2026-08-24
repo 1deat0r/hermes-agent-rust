@@ -56,6 +56,20 @@ it ends blocked or with a failing test:
    then verify `PLAN.md`, `HANDOFF.md`, `tools/inventory.json`, and
    `CONVERSION-LEDGER.md` agree.
 
+## 2B. Tracked commit hooks
+
+Install the versioned hooks with `tools/install_hooks.sh`. The pre-commit hook
+refreshes the inventory, conversion ledger, and README status snapshot for
+source/parity/tooling changes, stages those generated files, and requires
+`PLAN.md` plus `HANDOFF.md` in the same index. The post-commit hook synchronizes
+`.github/repository-description.txt` to the GitHub repository metadata and
+checks the remote README. README publication remains part of the exact local
+commit/GitHub mirror; the hook must not create a second README commit unless
+explicitly invoked with `HERMES_GITHUB_README_MODE=sync` outside that mirror.
+Set `HERMES_GITHUB_TOKEN`, `GH_TOKEN`, or `GITHUB_TOKEN` for API access, and use
+`tools/install_hooks.sh --strict` when missing credentials or a failed remote
+check must be surfaced as an error.
+
 The final Codex response must name the documentation files updated or verified,
 quote the current ledger percentages, list exact validation commands, and state
 the next unit or blocker. A session that stops before this gate must leave a

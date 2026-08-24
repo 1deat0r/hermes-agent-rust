@@ -1,6 +1,6 @@
 # Hermes Agent Rust — Next-session handoff
 
-Date: 2026-08-24 (Pacific/Auckland), session 4bb.
+Date: 2026-08-24 (Pacific/Auckland), session 4bc.
 
 ## Resume point
 
@@ -8,13 +8,14 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
-Current branch/HEAD: `main` at the committed implementation and metadata
-sequence. The connected GitHub API publishes each logical commit immediately
-as a sequential remote mirror. Its commit SHAs differ from the local sequence
-because the API cannot preserve local author/committer timestamps, but every
-tree snapshot and commit message matches and is verified before each ref
-update. The local HTTPS Git client still has no credentials; use the
-connected GitHub API for future pushes until `gh auth login` or SSH is
+Current branch/HEAD: `main` at the last synchronized implementation and
+metadata sequence, with the tracked documentation-hook workflow currently
+being prepared. The connected GitHub API publishes each logical commit
+immediately as a sequential remote mirror. Its commit SHAs differ from the
+local sequence because the API cannot preserve local author/committer
+timestamps, but every tree snapshot and commit message matches and is verified
+before each ref update. The local HTTPS Git client still has no credentials;
+use the connected GitHub API for future pushes until `gh auth login` or SSH is
 configured.
 
 Latest synchronized unit: local source `9a0bc98` → GitHub `1550e03`
@@ -125,6 +126,16 @@ is aligned to the fetched remote mirror; the API-authored SHA differs only
 because it cannot preserve the local author/committer timestamps.
 
 ## What landed this session
+
+The tracked documentation/GitHub metadata hook workflow is the current
+non-ledger unit. Its `pre-commit` hook refreshes the generated inventory and
+conversion ledger, updates the README status snapshot, stages those generated
+files, and requires `PLAN.md` plus `HANDOFF.md` for source/parity/tooling
+changes. Its `post-commit` hook synchronizes the repository description through
+the GitHub API and verifies README parity without creating a second README
+commit. No conversion-ledger status changed in this unit: 73 done / 10 partial
+/ 3,799 missing tracked modules and 73 done / 10 partial / 1,020 missing
+production modules.
 
 The synchronized auxiliary-client predicate/wire slice is `b119001` locally,
 mirrored as `dfc21ed` remotely; its task-provider routing extension is

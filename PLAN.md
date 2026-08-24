@@ -483,6 +483,22 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 ## 7. Session log
 
+- 2026-08-24 (session 4bc): Added the tracked documentation/GitHub metadata
+  hook workflow. `.githooks/pre-commit` refreshes `tools/inventory.json`,
+  `CONVERSION-LEDGER.md`, and the README status snapshot for source/parity/
+  tooling changes, stages generated outputs, and requires `PLAN.md` plus
+  `HANDOFF.md` in the same index. `.githooks/post-commit` synchronizes the
+  reviewed `.github/repository-description.txt` through the GitHub API and
+  verifies the remote README without creating a second README commit; explicit
+  Contents-API README writes remain opt-in. `tools/install_hooks.sh` configures
+  the tracked hooks, while `tools/pre_commit_docs.py`, `tools/refresh_docs.py`,
+  and `tools/sync_github_metadata.py` keep the workflow reviewable. No ledger
+  change: 73 done / 10 partial / 3,799 missing tracked modules and 73 done /
+  10 partial / 1,020 missing production modules. Validation is recorded after
+  the hook smoke checks and workspace checks complete. The next conversion unit
+  remains concrete `agent.auxiliary_client` SDK/httpx construction and broader
+  credential-pool selection.
+
 - 2026-08-24 (session 4bb): Continued the partial
   `agent/auxiliary_client.py` port (@ b9aa928, 10,044 LOC) with Codex
   access-token selection. The Rust `read_codex_access_token` helper mirrors

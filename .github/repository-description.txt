@@ -1,0 +1,1 @@
+A parity-focused 1:1 Rust port of Nous Research's Hermes Agent, preserving its CLI, state, provider, tool, and wire contracts.
