@@ -1,6 +1,6 @@
 # Hermes Agent Rust — Next-session handoff
 
-Date: 2026-08-24 (Pacific/Auckland), session 4z.
+Date: 2026-08-24 (Pacific/Auckland), session 4aa.
 
 ## Resume point
 
@@ -17,9 +17,12 @@ update. The local HTTPS Git client still has no credentials; use the
 connected GitHub API for future pushes until `gh auth login` or SSH is
 configured.
 
-Latest synchronized units: local source `a7f45d2` → GitHub `984bf1e`
-(`plugins.model-providers.deepinfra.__init__`, including current plan/inventory
-metadata), after local handoff source `6310352` → GitHub `abf4720`
+Latest synchronized units: local source `fd80752` → GitHub `372dc02`
+(`plugins.model-providers.deepseek.__init__`, including current plan/inventory
+metadata), after local handoff source `f9b2994` → GitHub `9baf32d`
+(`HANDOFF.md` for the DeepInfra unit), after local source `a7f45d2` → GitHub
+`984bf1e` (`plugins.model-providers.deepinfra.__init__`, including current
+plan/inventory metadata), after local handoff source `6310352` → GitHub `abf4720`
 (`HANDOFF.md` for the Vertex unit), after local source `1dca197` → GitHub `bb20257`
 (`plugins.model-providers.vertex.__init__`, including current plan/inventory
 metadata), after local test-hardening source `b2c1f4f` → GitHub `1682e21`
@@ -61,7 +64,8 @@ because it cannot preserve the local author/committer timestamps.
 ## What landed this session
 
 Module-sized commits are complete through
-`plugins.model-providers.deepinfra.__init__`: `a7f45d2` locally, mirrored as
+`plugins.model-providers.deepseek.__init__`: `fd80752` locally, mirrored as
+`372dc02` remotely; the DeepInfra profile is `a7f45d2` locally, mirrored as
 `984bf1e` remotely; the Vertex profile is `1dca197` locally, mirrored as
 `bb20257` remotely; the required platform-cache test hardening is
 `b2c1f4f` locally, mirrored as `1682e21` remotely; `db23d7c`
@@ -138,6 +142,14 @@ selection, base-URL catalog cache, negative-cache fail-open path, and Bearer
 request; profile-scoped secret resolution and the CLI opener remain future
 higher-layer seams.
 
+The DeepSeek bundled profile is included in the new `fd80752` source commit
+and its `372dc02` GitHub mirror. It mirrors DeepSeek's metadata, alias,
+fallbacks, auxiliary model, and V4+ reasoning wire hook. The
+`deepseek_reasoning` capability emits the explicit thinking body, preserves
+disabled/no-op behavior, and maps effort levels to the top-level
+`reasoning_effort`; broader reasoning-content history repair remains a future
+agent/transport seam.
+
 The new `hermes-providers` crate ports `providers/base.py` and
 `providers/__init__.py` @ `b9aa928`: declarative profile defaults and hooks,
 model endpoint precedence, strict fail-open catalog parsing,
@@ -148,15 +160,14 @@ Plan profile, 3 Anthropic profile, 3 Gemini profile, 2 Arcee profile, 2 Azure
 Foundry profile, 2 Bedrock profile, 3 Copilot profile, 2 Copilot ACP profile,
 2 Fireworks profile, 2 GMI profile, 2 Kilo Code profile, 2 NovitaAI profile,
 2 NVIDIA profile, 2 StepFun profile, 3 Vertex profile, 2 DeepInfra profile,
-2 OpenAI Codex profile, 2 Xiaomi profile, 2 XAI profile, and 2 Hugging Face
-profile tests are green.
+2 DeepSeek profile, 2 OpenAI Codex profile, 2 Xiaomi profile, 2 XAI profile,
+and 2 Hugging Face profile tests are green.
 The provider
 surface remains partial
 for the future CLI version/opener integration and remaining Rust plugin profile
-loaders. The next unit is `plugins.model-providers.deepseek.__init__` (102
-LOC).
+loaders. The next unit is `plugins.model-providers.nous.__init__` (88 LOC).
 
-The required DeepInfra workspace verification was green before the synchronized
+The required DeepSeek workspace verification was green before the synchronized
 commit:
 
 ```text
@@ -173,15 +184,15 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-After the current DeepInfra commit is mirrored and this handoff commit is aligned to
+After the current DeepSeek commit is mirrored and this handoff commit is aligned to
 its remote mirror, the working tree is clean. The committed metadata
 includes `PLAN.md`, `tools/port_status.json`, generated `tools/inventory.json`,
 `CONVERSION-LEDGER.md`, and this handoff. No code or parity test is pending
-for the DeepInfra unit.
+for the DeepSeek unit.
 
 ## Next actions, in order
 
-1. Start `plugins.model-providers.deepseek.__init__` (102 LOC) by reading its
+1. Start `plugins.model-providers.nous.__init__` (88 LOC) by reading its
    pinned source/tests and writing profile-registration parity tests first.
 2. Keep the static bundled-profile registration order and user-loader seam
    explicit while adding the next provider profile.
@@ -192,8 +203,8 @@ for the DeepInfra unit.
 
 `CONVERSION-LEDGER.md` is generated and contains one row for every 3,882 upstream inventory modules: 1,103 production tasks plus 2,779 oracle/test tasks. Only `done` counts toward completion.
 
-- All tracked modules: 63 done / 9 partial / 3,810 missing = **1.62%**.
-- Production modules: 63 done / 9 partial / 1,031 missing = **5.71%**.
+- All tracked modules: 64 done / 9 partial / 3,809 missing = **1.65%**.
+- Production modules: 64 done / 9 partial / 1,030 missing = **5.80%**.
 
 The nine partial production rows are `hermes_constants`, `providers.base`,
 `providers.__init__`, `tools.credential_files`,
@@ -263,6 +274,11 @@ The strict production formula is `done production modules / 1,103`; partial rows
   catalog to chat+vision models with the upstream legacy exclusion fallback,
   and preserves positive/negative cache semantics; the higher-layer opener
   integration remains a future CLI seam.
+- DeepSeek's source `build_api_kwargs_extras` override is represented by
+  the explicit `deepseek_reasoning` capability. V4+ model gating, explicit
+  enabled/disabled thinking, and low/medium/high versus max effort mapping
+  are preserved; broader reasoning-content replay/history repair remains a
+  future agent/transport seam.
 - Platform cache-resetting tests are serialized because the production WSL and
   container detectors intentionally cache for process lifetime; the mutex is
   test-only and does not change detector behavior.
@@ -274,12 +290,12 @@ The strict production formula is `done production modules / 1,103`; partial rows
 The focused provider parity suites passed 9 base, 8 registry, 2 AI Gateway, 2
 Alibaba, 2 Alibaba Coding Plan, 3 Anthropic, 3 Gemini, 2 Arcee, 2 Azure
 Foundry, 2 Bedrock, 3 Copilot, 2 Copilot ACP, 2 Fireworks, 2 GMI, 2 Kilo
-Code, 2 NovitaAI, 2 NVIDIA, 2 StepFun, 3 Vertex, 2 DeepInfra, 2 OpenAI Codex,
-2 Xiaomi, 2 XAI, and 2 Hugging Face profile tests. The
+Code, 2 NovitaAI, 2 NVIDIA, 2 StepFun, 3 Vertex, 2 DeepInfra, 2 DeepSeek, 2 OpenAI
+Codex, 2 Xiaomi, 2 XAI, and 2 Hugging Face profile tests. The
 required workspace build and test also passed with the explicit cargo
 toolchain; three
 delegation/schema doc tests are intentionally ignored. Inventory and
-conversion ledger were regenerated and now record 63 done / 9 partial / 1,031
+conversion ledger were regenerated and now record 64 done / 9 partial / 1,030
 missing production modules.
 
 ## First command tomorrow
