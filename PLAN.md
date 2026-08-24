@@ -358,7 +358,7 @@ rich/routing/cooldown/meta/reactions/conversation/delete modules.
 
 | Module / upstream surface | Status | Rust home, oracle, and evidence tier |
 |---|---|---|
-| `agent/credential_pool.py` (3,147 LOC) — selection/rotation, pooled-row model/serialization, source upsert, priority normalization, strategy parsing, and custom-provider identity sections | 🟡 | `hermes-agent::credential_pool` plus `hermes-agent::credential_store`; 81 source-derived parity tests (`unit`/`mock`, 66 pool + 15 persistence) cover fill-first priority/current/peek, least-used counting, round-robin order, random selection support, explicit reset timestamps, terminal `token_invalidated` → `DEAD` rotation, unmatched-key fail-open rotation, duplicate-key quarantine, sole-credential transient-versus-billing cooldowns, `PooledCredential` JSON defaults/metadata round-trip, Anthropic OAT auth normalization and seeded-priority ordering, borrowed-secret redaction/fingerprints, owned OAuth persistence exceptions, Nous invoke-JWT runtime selection, token labels/runtime base URLs, source-key upsert and key rotation, configured strategies, custom endpoint/name scoping, versioned auth-store defaults, legacy `systems` migration, stale Nous URL migration, corruption quarantine versus read-error propagation, atomic `0600`/`0700` writes, profile/global fallback reads, profile-scoped borrowed-secret-safe writes, newer/live cooldown recency merging with token-change and expiry guards, per-path reentrant cross-process auth-store locking, dotenv parsing, dotenv-over-process precedence, process fallback, env-source suppression/pruning, unresolved `op://` secret-scope substitution, Anthropic OAuth-prefix classification, the lower environment-aware `load_pool` transaction, explicit Nous singleton state seeding with invoke-JWT agent-key/runtime metadata preservation, Qwen CLI OAuth token/source/expiry/base-URL/label seeding with absent-token fail-open, MiniMax OAuth token/refresh/ISO-expiry/base-URL/label seeding with suppression, OpenAI Codex nested-token/fixed-endpoint/last-refresh/label seeding with suppression, xAI OAuth nested-token/fixed-endpoint/last-refresh/label seeding with suppression, Anthropic resolved `hermes_pkce`/`claude_code` OAuth seeding with provider opt-in, API-key-path pruning, and source suppression, Copilot resolved exchanged-token seeding with CLI/env source classification, all-source/per-source suppression, and enterprise/default endpoint mapping, custom-pool config/model API-key seeding with normalized endpoints and suppression, the explicit full `load_pool` composition boundary with custom-versus-non-custom branch selection, singleton/environment ordering, stale-row pruning, priority normalization, and persistence, the pure custom-provider compatibility adapter with legacy/keyed schema merge, URL precedence, aliases, model normalization, enablement filtering, deduplication, and fail-open malformed legacy handling, the transport-neutral OAuth refresh result/application boundary with expiry-skewed deferred re-selection, fail-open refresh exhaustion, and borrowed-safe refresh sanitization, and the read-only config snapshot/signature cache with config-to-pool projection; the environment, singleton, loader, compatibility, refresh, and config snapshot boundaries now accept explicit provider/config/auth inputs, while full merged CLI config discovery/loading, concrete Z.AI HTTP probing/cache, provider-specific OAuth transport/auth-store write-through, lease locking, and logging throttles remain pending |
+| `agent/credential_pool.py` (3,147 LOC) — selection/rotation, pooled-row model/serialization, source upsert, priority normalization, strategy parsing, and custom-provider identity sections | 🟡 | `hermes-agent::credential_pool` plus `hermes-agent::credential_store`; 85 source-derived parity tests (`unit`/`mock`, 66 pool + 19 persistence) cover fill-first priority/current/peek, least-used counting, round-robin order, random selection support, explicit reset timestamps, terminal `token_invalidated` → `DEAD` rotation, unmatched-key fail-open rotation, duplicate-key quarantine, sole-credential transient-versus-billing cooldowns, `PooledCredential` JSON defaults/metadata round-trip, Anthropic OAT auth normalization and seeded-priority ordering, borrowed-secret redaction/fingerprints, owned OAuth persistence exceptions, Nous invoke-JWT runtime selection, token labels/runtime base URLs, source-key upsert and key rotation, configured strategies, custom endpoint/name scoping, versioned auth-store defaults, legacy `systems` migration, stale Nous URL migration, corruption quarantine versus read-error propagation, atomic `0600`/`0700` writes, profile/global fallback reads, profile-scoped borrowed-secret-safe writes, newer/live cooldown recency merging with token-change and expiry guards, per-path reentrant cross-process auth-store locking, dotenv parsing, dotenv-over-process precedence, process fallback, env-source suppression/pruning, unresolved `op://` secret-scope substitution, Anthropic OAuth-prefix classification, the lower environment-aware `load_pool` transaction, explicit Nous singleton state seeding with invoke-JWT agent-key/runtime metadata preservation, Qwen CLI OAuth token/source/expiry/base-URL/label seeding with absent-token fail-open, MiniMax OAuth token/refresh/ISO-expiry/base-URL/label seeding with suppression, OpenAI Codex nested-token/fixed-endpoint/last-refresh/label seeding with suppression, xAI OAuth nested-token/fixed-endpoint/last-refresh/label seeding with suppression, Anthropic resolved `hermes_pkce`/`claude_code` OAuth seeding with provider opt-in, API-key-path pruning, and source suppression, Copilot resolved exchanged-token seeding with CLI/env source classification, all-source/per-source suppression, and enterprise/default endpoint mapping, custom-pool config/model API-key seeding with normalized endpoints and suppression, the explicit full `load_pool` composition boundary with custom-versus-non-custom branch selection, singleton/environment ordering, stale-row pruning, priority normalization, and persistence, the pure custom-provider compatibility adapter with legacy/keyed schema merge, URL precedence, aliases, model normalization, enablement filtering, deduplication, and fail-open malformed legacy handling, the transport-neutral OAuth refresh result/application boundary with expiry-skewed deferred re-selection, fail-open refresh exhaustion, and borrowed-safe refresh sanitization, and the read-only config snapshot/signature cache with config-to-pool projection; the environment, singleton, loader, compatibility, refresh, config snapshot, and provider-state boundaries now accept explicit provider/config/auth inputs, while full merged CLI config discovery/loading, Z.AI auth-store orchestration/provider transport, lease locking, and logging throttles remain pending |
 
 Intentional credential-pool seam: the environment seeder, lower
   environment-aware `load_pool` transaction, current Anthropic/Nous/Copilot/
@@ -378,26 +378,39 @@ planned dependency graph. Anthropic's explicit provider/API-key-path gates and
   compatibility adapter are mirrored.
 
 The generic merged configuration seam is now implemented in
-`hermes-agent::config::load_merged_config_snapshot_at`: caller-supplied
-defaults, recursive merge, environment expansion, root/model/max-turns
-normalization, raw last-known-good retention, and cache invalidation on file
-signature, defaults, or referenced environment values. Its 12 source-derived
-parity tests are `mock` evidence from
-`cargo test -p hermes-agent --test parity_config`. Managed CLI overlays,
-default-catalog integration, migrations/write-back, and auth-store
-key-hash/write-through remain deferred to their owning higher layers.
+`hermes-agent::config::load_merged_config_snapshot_at`, with
+`load_merged_config_snapshot_with_overlay_at` accepting an explicit managed
+overlay. Caller-supplied defaults, recursive merge, independent user/managed
+environment expansion, root/model/max-turns normalization, raw last-known-good
+retention, and cache invalidation on file signature, defaults, overlay, or
+referenced environment values are covered by 15 source-derived `mock` tests
+from `cargo test -p hermes-agent --test parity_config`. The overlay remains a
+read-only higher-layer input: managed-directory discovery, default-catalog
+integration, migrations, and write-back remain deferred to a future
+hermes-cli crate.
+
+`hermes-agent::credential_store` now exposes source-shaped provider-state
+load/fallback, object-only clone, active-provider update, and locked
+write-through helpers (`load_provider_state`, `load_provider_state_at`,
+`store_provider_state`, and `persist_provider_state_at`). The focused
+`parity_credential_store` suite has 19 source-derived `unit`/`mock` tests;
+provider-specific Z.AI orchestration remains above this storage boundary.
 
 The concrete Z.AI detector is now implemented in
 `hermes-providers::zai`: reqwest blocking probes issue the source-shaped
 `/chat/completions` request, candidate models fall back per endpoint, and
-concurrent probes preserve static endpoint priority with early exit. Its 14
-source-derived HTTP/concurrency tests are `mock` evidence from
-`cargo test -p hermes-providers --test parity_zai`; auth-store caching and
-provider transport integration remain deferred rather than guessed.
+concurrent probes preserve static endpoint priority with early exit. Its
+cache seam now includes the source SHA-256 key fingerprint, matching cached
+endpoint validation, exact state serialization, and cache-aware resolver
+precedence. Its 18 source-derived `mock` tests pass from
+`cargo test -p hermes-providers --test parity_zai`; auth-store orchestration,
+provider transport integration, and CLI credential/model-picker integration
+remain deferred rather than guessed.
 The OAuth refresh boundary accepts already-resolved provider results so this
 crate remains below auth/transport layers; network calls, cross-process
-auth-store write-through, and provider-specific terminal quarantine remain
-deferred rather than silently guessed.
+auth-store write-through orchestration, and provider-specific terminal
+quarantine remain deferred rather than silently guessed.
+
 
 ### hermes-agent auxiliary client (Phase 2, upstream @ b9aa928)
 
@@ -450,7 +463,7 @@ deferred rather than silently guessed.
 | plugins/model-providers/openai-codex/__init__.py (15 LOC) | ✅ | `hermes-providers::profiles::openai_codex`; 2 source-derived parity tests (`unit`); no dedicated upstream plugin-profile test module; related CLI/TUI tests remain future-crate oracles |
 | plugins/model-providers/xiaomi/__init__.py (16 LOC) | ✅ | `hermes-providers::profiles::xiaomi`; 2 source-derived parity tests (`unit`); no dedicated upstream plugin-profile test module; related CLI/agent tests remain future-crate oracles |
 | plugins/model-providers/xai/__init__.py (17 LOC) | ✅ | `hermes-providers::profiles::xai`; 2 source-derived parity tests (`unit`); no dedicated upstream plugin-profile test module; pinned `Hermes-Agent/0.20.0` header awaits future CLI-version wiring; related CLI/agent tests remain future-crate oracles |
-| plugins/model-providers/zai/__init__.py (127 LOC) | ✅ | `hermes-providers::profiles::zai` plus the public pure endpoint helpers in `hermes-providers::zai`; 10 source-derived profile/GLM-gating/endpoint parity tests (`unit`) cover metadata, aliases, GLM 4.5+ thinking toggles, GLM-5.2 aliases/effort mapping, the four auth endpoint specs, candidate-model fallback, priority selection, all-fail behavior, and env/cache/detected URL precedence; concrete HTTP probing, early-exit threading, auth-store cache persistence, and CLI credential/model-picker integration remain future higher-layer seams |
+| plugins/model-providers/zai/__init__.py (127 LOC) | ✅ | `hermes-providers::profiles::zai` plus the public pure endpoint/cache helpers in `hermes-providers::zai`; 18 source-derived profile/GLM-gating/endpoint/cache parity tests (`unit`/`mock`) cover metadata, aliases, GLM 4.5+ thinking toggles, GLM-5.2 aliases/effort mapping, the four auth endpoint specs, candidate-model fallback, priority selection, all-fail behavior, env/cache/detected URL precedence, API-key fingerprinting, cached endpoint validation, and endpoint-state serialization; concrete auth-store orchestration, provider transport, and CLI credential/model-picker integration remain future higher-layer seams |
 | plugins/model-providers/nous/__init__.py (88 LOC) | ✅ | `hermes-providers::profiles::nous`; 3 source-derived profile/registration/Portal-hook parity tests (`unit`); pinned `HermesAgent/0.20.0` client tag and explicit conversation-context adapter preserve the current source contract while runtime CLI version/context propagation remain future higher-layer seams |
 | plugins/model-providers/ollama-cloud/__init__.py (89 LOC) | ✅ | `hermes-providers::profiles::ollama_cloud`; 3 source-derived profile/reasoning-wire parity tests (`unit`); top-level `reasoning_effort` capability gate, disable/`none` switch, xhigh/max/ultra normalization, standard effort passthrough, and unknown-effort omission are ported; `/api/show` capability probing, dynamic catalog merging, and CLI credential/model-picker seams remain future higher-layer oracles |
 
@@ -520,7 +533,7 @@ oracle tests). Upstream oracle files currently mirrored:
 - `plugins/model-providers/openai-codex/__init__.py` → `crates/hermes-providers/tests/parity_openai_codex.rs` (2 source-derived profile/registration parity tests; `unit`; no dedicated upstream plugin-profile test module)
 - `plugins/model-providers/xiaomi/__init__.py` → `crates/hermes-providers/tests/parity_xiaomi.rs` (2 source-derived profile/registration parity tests; `unit`; no dedicated upstream plugin-profile test module)
 - `plugins/model-providers/xai/__init__.py` → `crates/hermes-providers/tests/parity_xai.rs` (2 source-derived profile/registration parity tests; `unit`; no dedicated upstream plugin-profile test module)
-- `plugins/model-providers/zai/__init__.py` + `tests/plugins/model_providers/test_zai_profile.py` + provider wiring/transport cases → `crates/hermes-providers/tests/parity_zai.rs` (5 source-derived profile/GLM-gating/reasoning parity tests; `unit`; CLI credential/model-picker and full transport integration remain future higher-layer oracles)
+- `plugins/model-providers/zai/__init__.py` + `tests/plugins/model_providers/test_zai_profile.py` + provider wiring/transport cases → `crates/hermes-providers/tests/parity_zai.rs` (18 source-derived profile/GLM-gating/endpoint/cache parity tests; `unit`/`mock`; API-key fingerprinting, cached endpoint validation, endpoint-state serialization, and cache-aware URL precedence are covered; CLI credential/model-picker and provider transport integration remain future higher-layer oracles)
 
 - `plugins/model-providers/nous/__init__.py` + `tests/providers/test_provider_profiles.py` + `tests/agent/transports/test_chat_completions.py` → `crates/hermes-providers/tests/parity_nous.rs` (3 source-derived profile/registration/Portal-hook parity tests; `unit`; pinned CLI version and ambient conversation propagation remain future higher-layer seams)
 - `plugins/model-providers/ollama-cloud/__init__.py` + `tests/plugins/model_providers/test_ollama_cloud_profile.py` → `crates/hermes-providers/tests/parity_ollama_cloud.rs` (3 source-derived profile/reasoning-wire parity tests; `unit`; `/api/show` capability probing, dynamic catalog merging, and CLI credential/model-picker cases remain future higher-layer oracles)
@@ -532,6 +545,7 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 ## 7. Session log
 
+- 2026-08-24 (session 4cf): Continued the partial `agent.credential_pool` wave through three disjoint leaves. Added the explicit managed-overlay input to `hermes-agent::config`, including independent environment expansion, managed-last deep-merge precedence, wholesale list replacement, and overlay-aware cache identity. Added source-shaped provider-state load/fallback and locked write-through helpers in `hermes-agent::credential_store`, preserving profile shadowing, global fail-open fallback, atomic owner-only persistence, and non-activating writes. Extended `hermes-providers::zai` with the truncated SHA-256 API-key fingerprint, cached endpoint validation/state serialization, and cache-aware URL precedence while preserving the existing blocking HTTP detector. Focused suites pass 15 config, 19 credential-store, and 18 Z.AI tests (`mock`/`unit` evidence); workspace validation passes 1,145 tests with 5 ignored and 20 warnings. Exact checks: `/home/mustbearnold/.cargo/bin/cargo build --workspace`, `/home/mustbearnold/.cargo/bin/cargo test --workspace -- --test-threads=1`, targeted `/home/mustbearnold/.cargo/bin/rustfmt --edition 2021 --check`, and `git diff --check`. The nine hermes-conversion leaf gates are all met (29/29 in scope); no module-status or ledger change. `tools/inventory.sh` and `python3 tools/conversion_ledger.py` regenerate 73 done / 11 partial / 3,798 missing tracked modules and 73 done / 11 partial / 1,019 missing production modules: 1.88% all-tracked strict completion and 6.62% production-only. The next dependency-safe unit is higher-layer provider/auth transport or auxiliary-client integration; full managed CLI overlay/default-catalog wiring is blocked until a hermes-cli crate exists.
 - 2026-08-24 (session 4cf): Continued the partial `agent.credential_pool`
   wave through the generic merged configuration and concrete Z.AI HTTP
   seams using parallel implementation leaves. Added

@@ -401,3 +401,129 @@ fn zai_base_url_precedence_matches_upstream_lines_784_801() {
         "https://default.example"
     );
 }
+
+#[test]
+fn zai_api_key_hash_matches_upstream_sha256_prefix() {
+    assert_eq!(
+        hermes_providers::zai::zai_api_key_hash("test-key"),
+        "62af8704764faf8e"
+    );
+}
+
+#[test]
+fn zai_cached_endpoint_requires_matching_non_empty_key_hash_and_url() {
+    let state = serde_json::json!({
+        "detected_endpoint": {
+            "base_url": "https://cached.example",
+            "key_hash": "62af8704764faf8e"
+        }
+    });
+    let state = state.as_object().unwrap();
+    assert_eq!(
+        hermes_providers::zai::cached_zai_base_url(state, "test-key"),
+        Some("https://cached.example".to_owned())
+    );
+    assert_eq!(
+        hermes_providers::zai::cached_zai_base_url(state, "other-key"),
+        None
+    );
+
+    for malformed in [
+        serde_json::json!({}),
+        serde_json::json!({"detected_endpoint": null}),
+        serde_json::json!({"detected_endpoint": "https://cached.example"}),
+        serde_json::json!({"detected_endpoint": {"base_url": "", "key_hash": "62af8704764faf8e"}}),
+        serde_json::json!({"detected_endpoint": {"base_url": "https://cached.example", "key_hash": 62}}),
+    ] {
+        assert_eq!(
+            hermes_providers::zai::cached_zai_base_url(malformed.as_object().unwrap(), "test-key"),
+            None
+        );
+    }
+}
+
+#[test]
+fn zai_endpoint_state_serialization_matches_upstream_fields_exactly() {
+    let result = hermes_providers::ZaiEndpointResult {
+        id: "coding-global",
+        base_url: "https://coding.example",
+        model: "glm-5.2",
+        label: "Coding Global",
+    };
+    let state = hermes_providers::zai::serialize_zai_endpoint_result(&result, "test-key");
+    assert_eq!(
+        state,
+        serde_json::json!({
+            "base_url": "https://coding.example",
+            "endpoint_id": "coding-global",
+            "model": "glm-5.2",
+            "label": "Coding Global",
+            "key_hash": "62af8704764faf8e"
+        })
+        .as_object()
+        .unwrap()
+        .clone()
+    );
+}
+
+#[test]
+fn zai_cache_aware_base_url_resolution_preserves_upstream_precedence() {
+    let cached = serde_json::json!({
+        "detected_endpoint": {
+            "base_url": "https://cached.example",
+            "key_hash": "62af8704764faf8e"
+        }
+    });
+    let cached = cached.as_object().unwrap();
+
+    assert_eq!(
+        hermes_providers::zai::resolve_zai_base_url_with_cache(
+            "test-key",
+            "https://default.example",
+            "https://override.example",
+            Some(cached),
+            Some("https://detected.example"),
+        ),
+        "https://override.example"
+    );
+    assert_eq!(
+        hermes_providers::zai::resolve_zai_base_url_with_cache(
+            "",
+            "https://default.example",
+            "",
+            Some(cached),
+            Some("https://detected.example"),
+        ),
+        "https://default.example"
+    );
+    assert_eq!(
+        hermes_providers::zai::resolve_zai_base_url_with_cache(
+            "test-key",
+            "https://default.example",
+            "",
+            Some(cached),
+            Some("https://detected.example"),
+        ),
+        "https://cached.example"
+    );
+    assert_eq!(
+        hermes_providers::zai::resolve_zai_base_url_with_cache(
+            "other-key",
+            "https://default.example",
+            "",
+            Some(cached),
+            Some("https://detected.example"),
+        ),
+        "https://detected.example"
+    );
+    assert_eq!(
+        hermes_providers::zai::resolve_zai_base_url_with_cache(
+            "other-key",
+            "https://default.example",
+            "",
+            Some(cached),
+            None,
+        ),
+        "https://default.example"
+    );
+}

@@ -9,6 +9,8 @@ use std::time::Duration;
 use crate::base::ProviderProfile;
 use reqwest::blocking::Client;
 use reqwest::StatusCode;
+use serde_json::{Map, Value};
+use sha2::{Digest, Sha256};
 
 /// A Z.AI endpoint and its ordered candidate models.
 ///
@@ -255,6 +257,85 @@ pub fn detect_zai_endpoint(api_key: &str, timeout: Duration) -> Option<ZaiEndpoi
     })
 }
 
+/// Return the first 16 lowercase hexadecimal characters of the API key's
+/// SHA-256 digest, matching `hashlib.sha256(api_key.encode()).hexdigest()[:16]`.
+pub fn zai_api_key_hash(api_key: &str) -> String {
+    let mut digest = format!("{:x}", Sha256::digest(api_key.as_bytes()));
+    digest.truncate(16);
+    digest
+}
+
+/// Read a cached detected endpoint from a Z.AI provider-state JSON map.
+///
+/// The cache is valid only when `detected_endpoint` is an object containing a
+/// non-empty string `base_url` and a `key_hash` matching the supplied API key.
+/// Malformed or mismatched state is treated as an unavailable cache entry.
+pub fn cached_zai_base_url(provider_state: &Map<String, Value>, api_key: &str) -> Option<String> {
+    let endpoint = provider_state.get("detected_endpoint")?.as_object()?;
+    let base_url = endpoint.get("base_url")?.as_str()?;
+    let key_hash = endpoint.get("key_hash")?.as_str()?;
+    if base_url.is_empty() || key_hash != zai_api_key_hash(api_key) {
+        return None;
+    }
+    Some(base_url.to_owned())
+}
+
+/// Serialize a successful endpoint detection into the persisted cache fields.
+///
+/// The returned map intentionally contains exactly the fields written by
+/// upstream `auth.py`: `base_url`, `endpoint_id`, `model`, `label`, and
+/// `key_hash`.
+pub fn serialize_zai_endpoint_result(
+    result: &ZaiEndpointResult,
+    api_key: &str,
+) -> Map<String, Value> {
+    Map::from_iter([
+        (
+            "base_url".to_owned(),
+            Value::String(result.base_url.to_owned()),
+        ),
+        (
+            "endpoint_id".to_owned(),
+            Value::String(result.id.to_owned()),
+        ),
+        ("model".to_owned(), Value::String(result.model.to_owned())),
+        ("label".to_owned(), Value::String(result.label.to_owned())),
+        (
+            "key_hash".to_owned(),
+            Value::String(zai_api_key_hash(api_key)),
+        ),
+    ])
+}
+
+/// Resolve a Z.AI base URL using an optional provider-state cache.
+///
+/// A non-empty explicit override wins first. If no API key is configured, the
+/// default is returned without consulting the cache. Otherwise a matching
+/// cached endpoint wins, followed by a newly detected URL, and finally the
+/// default fail-open fallback.
+pub fn resolve_zai_base_url_with_cache(
+    api_key: &str,
+    default_url: &str,
+    env_override: &str,
+    provider_state: Option<&Map<String, Value>>,
+    detected_url: Option<&str>,
+) -> String {
+    if !env_override.is_empty() {
+        return env_override.to_owned();
+    }
+    if api_key.is_empty() {
+        return default_url.to_owned();
+    }
+    let cached_url = provider_state.and_then(|state| cached_zai_base_url(state, api_key));
+    resolve_zai_base_url(
+        api_key,
+        default_url,
+        "",
+        cached_url.as_deref(),
+        detected_url,
+    )
+}
+
 /// Resolve a Z.AI base URL without performing I/O.
 ///
 /// This is the pure precedence seam for `auth.py` lines 784–815:
@@ -268,15 +349,15 @@ pub fn resolve_zai_base_url(
     cached_url: Option<&str>,
     detected_url: Option<&str>,
 ) -> String {
-    if !env_override.trim().is_empty() {
+    if !env_override.is_empty() {
         return env_override.to_owned();
     }
-    if api_key.trim().is_empty() {
+    if api_key.is_empty() {
         return default_url.to_owned();
     }
     cached_url
-        .filter(|url| !url.trim().is_empty())
-        .or_else(|| detected_url.filter(|url| !url.trim().is_empty()))
+        .filter(|url| !url.is_empty())
+        .or_else(|| detected_url.filter(|url| !url.is_empty()))
         .unwrap_or(default_url)
         .to_owned()
 }

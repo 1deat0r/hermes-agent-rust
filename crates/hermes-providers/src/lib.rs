@@ -5,9 +5,10 @@ pub mod base;
 pub mod zai;
 
 pub use zai::{
-    choose_zai_endpoint, detect_zai_endpoint, detect_zai_endpoint_with_probe, probe_zai_endpoint,
-    probe_zai_endpoint_http, probe_zai_endpoint_http_at, resolve_zai_base_url, zai_endpoint_specs,
-    ZaiEndpointResult, ZaiEndpointSpec, ZAI_ENDPOINTS,
+    cached_zai_base_url, choose_zai_endpoint, detect_zai_endpoint, detect_zai_endpoint_with_probe,
+    probe_zai_endpoint, probe_zai_endpoint_http, probe_zai_endpoint_http_at, resolve_zai_base_url,
+    resolve_zai_base_url_with_cache, serialize_zai_endpoint_result, zai_api_key_hash,
+    zai_endpoint_specs, ZaiEndpointResult, ZaiEndpointSpec, ZAI_ENDPOINTS,
 };
 pub(crate) mod profiles;
 pub mod registry;

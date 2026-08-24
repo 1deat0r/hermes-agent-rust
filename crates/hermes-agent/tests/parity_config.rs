@@ -1,5 +1,6 @@
 use hermes_agent::config::{
-    load_config_snapshot_at, load_merged_config_snapshot_at, ConfigSnapshot,
+    load_config_snapshot_at, load_merged_config_snapshot_at,
+    load_merged_config_snapshot_with_overlay_at, ConfigSnapshot,
 };
 use serde_json::{json, Map, Value};
 use std::env;
@@ -257,4 +258,74 @@ fn merged_loader_retains_last_known_good_on_malformed_revision() {
     let retained = load_merged_config_snapshot_at(&path, &defaults);
 
     assert_eq!(retained, first);
+}
+#[test]
+fn managed_overlay_wins_after_user_expansion_and_replaces_lists_wholesale() {
+    let td = tempdir().expect("tempdir");
+    let path = td.path().join("config.yaml");
+    write_config(
+        &path,
+        "model:\n  default: ${PARITY_MANAGED_SHADOW}\ntoolsets:\n  enabled: [user-a, user-b]\n",
+    );
+    env::set_var("PARITY_MANAGED_SHADOW", "user/model");
+    let overlay = map(json!({
+        "model": {"default": "managed/model"},
+        "toolsets": {"enabled": ["managed-only"]}
+    }));
+
+    let snapshot = load_merged_config_snapshot_with_overlay_at(&path, &Map::new(), &overlay);
+
+    assert_eq!(
+        snapshot.pool_config()["model"]["default"],
+        json!("managed/model")
+    );
+    assert_eq!(
+        snapshot.pool_config()["toolsets"]["enabled"],
+        json!(["managed-only"])
+    );
+    env::remove_var("PARITY_MANAGED_SHADOW");
+}
+
+#[test]
+fn managed_overlay_environment_refs_invalidate_the_merged_cache() {
+    let td = tempdir().expect("tempdir");
+    let path = td.path().join("config.yaml");
+    write_config(&path, "model:\n  default: user/model\n");
+    let overlay = map(json!({"model": {"default": "${PARITY_MANAGED_MODEL}"}}));
+
+    env::set_var("PARITY_MANAGED_MODEL", "managed/first");
+    let first = load_merged_config_snapshot_with_overlay_at(&path, &Map::new(), &overlay);
+    env::set_var("PARITY_MANAGED_MODEL", "managed/second");
+    let second = load_merged_config_snapshot_with_overlay_at(&path, &Map::new(), &overlay);
+
+    assert_eq!(
+        first.pool_config()["model"]["default"],
+        json!("managed/first")
+    );
+    assert_eq!(
+        second.pool_config()["model"]["default"],
+        json!("managed/second")
+    );
+    env::remove_var("PARITY_MANAGED_MODEL");
+}
+
+#[test]
+fn managed_overlay_is_part_of_the_cache_key() {
+    let td = tempdir().expect("tempdir");
+    let path = td.path().join("config.yaml");
+    write_config(&path, "model:\n  default: user/model\n");
+    let first_overlay = map(json!({"model": {"default": "managed/first"}}));
+    let second_overlay = map(json!({"model": {"default": "managed/second"}}));
+
+    let first = load_merged_config_snapshot_with_overlay_at(&path, &Map::new(), &first_overlay);
+    let second = load_merged_config_snapshot_with_overlay_at(&path, &Map::new(), &second_overlay);
+
+    assert_eq!(
+        first.pool_config()["model"]["default"],
+        json!("managed/first")
+    );
+    assert_eq!(
+        second.pool_config()["model"]["default"],
+        json!("managed/second")
+    );
 }

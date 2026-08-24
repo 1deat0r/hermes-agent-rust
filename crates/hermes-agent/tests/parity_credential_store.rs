@@ -1,6 +1,7 @@
 use hermes_agent::credential_store::{
-    auth_store_lock, auth_store_lock_with_timeout, load_auth_store, read_credential_pool_at,
-    save_auth_store, write_credential_pool_at, AUTH_STORE_VERSION,
+    auth_store_lock, auth_store_lock_with_timeout, load_auth_store, load_provider_state,
+    load_provider_state_at, persist_provider_state_at, read_credential_pool_at, save_auth_store,
+    write_credential_pool_at, AUTH_STORE_VERSION,
 };
 use serde_json::{json, Map, Value};
 use std::fs;
@@ -21,6 +22,114 @@ fn write_json(path: &Path, value: &Value) {
     fs::write(path, serde_json::to_vec_pretty(value).unwrap()).unwrap();
 }
 
+// Tier: unit — mirrors _load_provider_state's object-only cloned return.
+#[test]
+fn load_provider_state_returns_a_clone_only_for_object_entries() {
+    let store: Map<String, Value> = serde_json::from_value(json!({
+        "providers": {
+            "nous": {"access_token": "original"},
+            "null-provider": null
+        }
+    }))
+    .unwrap();
+
+    let mut state = load_provider_state(&store, "nous").expect("object provider state");
+    state.insert("access_token".into(), json!("changed"));
+    assert_eq!(store["providers"]["nous"]["access_token"], "original");
+    assert!(load_provider_state(&store, "null-provider").is_none());
+    assert!(load_provider_state(&store, "missing").is_none());
+}
+
+// Tier: unit — mirrors profile provider shadowing and global fallback.
+#[test]
+fn load_provider_state_at_shadows_profile_and_falls_back_to_global() {
+    let temp = tempfile::tempdir().unwrap();
+    let profile = temp.path().join("profiles/coder/auth.json");
+    let global = temp.path().join("auth.json");
+    write_json(
+        &global,
+        &json!({"version": 1, "providers": {
+            "nous": {"access_token": "global"},
+            "openrouter": {"api_key": "global-key"}
+        }}),
+    );
+    write_json(
+        &profile,
+        &json!({"version": 1, "providers": {
+            "nous": {"access_token": "profile"}
+        }}),
+    );
+
+    assert_eq!(
+        load_provider_state_at(Some(&profile), Some(&global), "nous")
+            .unwrap()
+            .unwrap()["access_token"],
+        "profile"
+    );
+    assert_eq!(
+        load_provider_state_at(Some(&profile), Some(&global), "openrouter")
+            .unwrap()
+            .unwrap()["api_key"],
+        "global-key"
+    );
+}
+
+// Tier: unit — mirrors the source's fail-open malformed/unreadable global fallback.
+#[test]
+fn load_provider_state_at_ignores_malformed_or_unreadable_global() {
+    let temp = tempfile::tempdir().unwrap();
+    let profile = temp.path().join("profiles/coder/auth.json");
+    let malformed_global = temp.path().join("malformed/auth.json");
+    write_json(&profile, &json!({"version": 1, "providers": {}}));
+    fs::create_dir_all(malformed_global.parent().unwrap()).unwrap();
+    fs::write(&malformed_global, b"{not valid json").unwrap();
+
+    assert_eq!(
+        load_provider_state_at(Some(&profile), Some(&malformed_global), "nous").unwrap(),
+        None
+    );
+
+    let unreadable_global = temp.path().join("unreadable/auth.json");
+    fs::create_dir_all(&unreadable_global).unwrap();
+    assert_eq!(
+        load_provider_state_at(Some(&profile), Some(&unreadable_global), "nous").unwrap(),
+        None
+    );
+}
+
+// Tier: unit — mirrors locked atomic provider write-through and set_active control.
+#[test]
+fn persist_provider_state_at_updates_one_provider_and_controls_active_provider() {
+    let temp = tempfile::tempdir().unwrap();
+    let path = store_path(temp.path());
+    write_json(
+        &path,
+        &json!({
+            "version": 1,
+            "active_provider": "openrouter",
+            "providers": {
+                "nous": {"access_token": "old"},
+                "openrouter": {"api_key": "keep"},
+                "other": {"value": true}
+            }
+        }),
+    );
+    let state: Map<String, Value> = serde_json::from_value(json!({"access_token": "new"})).unwrap();
+
+    assert_eq!(
+        persist_provider_state_at(&path, "nous", &state, false).unwrap(),
+        path
+    );
+    let after_preserve = load_auth_store(Some(&path)).unwrap();
+    assert_eq!(after_preserve["providers"]["nous"]["access_token"], "new");
+    assert_eq!(after_preserve["providers"]["openrouter"]["api_key"], "keep");
+    assert_eq!(after_preserve["providers"]["other"]["value"], true);
+    assert_eq!(after_preserve["active_provider"], "openrouter");
+
+    persist_provider_state_at(&path, "nous", &state, true).unwrap();
+    let after_activate = load_auth_store(Some(&path)).unwrap();
+    assert_eq!(after_activate["active_provider"], "nous");
+}
 // Tier: unit — mirrors hermes_cli.auth._load_auth_store missing-file behavior.
 #[test]
 fn missing_auth_store_returns_versioned_empty_shape() {

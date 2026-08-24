@@ -269,20 +269,43 @@ fn normalize_user_max_turns(mut config: Map<String, Value>) -> Map<String, Value
 /// Load defaults plus the process-default user config path.
 ///
 /// `defaults` is caller-supplied because the full CLI default catalog lives
-/// above this crate. This function intentionally does not apply managed
-/// overlays or persist migrations.
+/// above this crate. This function intentionally does not discover managed
+/// directories or persist migrations.
 pub fn load_merged_config_snapshot(defaults: &Map<String, Value>) -> MergedConfigSnapshot {
     load_merged_config_snapshot_at(&get_config_path(), defaults)
 }
 
 /// Load defaults plus a user config at an explicit path.
 ///
-/// The cache is valid only while the raw file signature, defaults map, and
-/// current values of all referenced environment variables are unchanged.
-/// A malformed revision reuses the raw loader's last-known-good snapshot.
+/// This is the unmanaged compatibility entry point. Callers that already
+/// resolved a managed-scope overlay should use
+/// [`load_merged_config_snapshot_with_overlay_at`].
 pub fn load_merged_config_snapshot_at(
     path: &Path,
     defaults: &Map<String, Value>,
+) -> MergedConfigSnapshot {
+    load_merged_config_snapshot_with_overlay_at(path, defaults, &Map::new())
+}
+
+/// Load defaults plus a user config and an explicit managed overlay.
+///
+/// The user document is expanded before the overlay, then the overlay is
+/// expanded independently and merged last. This preserves the source
+/// precedence rule that a user-controlled `${VAR}` cannot shadow a managed
+/// literal. The overlay is an input seam: directory discovery, permissions,
+/// migrations, and write-back remain owned by the higher CLI layer.
+///
+/// The cache is valid only while the raw file signature, defaults map, overlay
+/// map, and current values of all referenced environment variables are
+/// unchanged. A malformed revision reuses the raw loader's last-known-good
+/// snapshot before applying the same overlay.
+///
+/// PARITY: `_load_config_impl` managed merge (upstream `hermes_cli/config.py`
+/// lines 3319–3423) layered over the existing merged config normalization.
+pub fn load_merged_config_snapshot_with_overlay_at(
+    path: &Path,
+    defaults: &Map<String, Value>,
+    managed_overlay: &Map<String, Value>,
 ) -> MergedConfigSnapshot {
     let raw = load_config_snapshot_at(path);
     let signature = raw.signature;
@@ -291,7 +314,9 @@ pub fn load_merged_config_snapshot_at(
     let mut config = deep_merge(defaults, &user_config);
     config = normalize_max_turns_config(config);
     config = normalize_root_model_keys(config);
-    let env_snapshot = env_ref_snapshot(&Value::Object(config.clone()));
+
+    let mut env_snapshot = env_ref_snapshot(&Value::Object(config.clone()));
+    env_snapshot.extend(env_ref_snapshot(&Value::Object(managed_overlay.clone())));
 
     let mut cache = MERGED_CACHE
         .lock()
@@ -299,14 +324,19 @@ pub fn load_merged_config_snapshot_at(
     if let Some(entry) = cache.get(&path) {
         if entry.signature == signature
             && entry.defaults == *defaults
+            && entry.managed_overlay == *managed_overlay
             && entry.env_snapshot == env_snapshot
         {
             return entry.snapshot.clone();
         }
     }
 
-    let expanded = match expand_env_vars(&Value::Object(config)) {
+    let expanded_user = match expand_env_vars(&Value::Object(config)) {
         Value::Object(config) => config,
+        _ => unreachable!("object expansion remains an object"),
+    };
+    let expanded = match expand_env_vars(&Value::Object(managed_overlay.clone())) {
+        Value::Object(managed) => deep_merge(&expanded_user, &managed),
         _ => unreachable!("object expansion remains an object"),
     };
     let snapshot = MergedConfigSnapshot::from_config(path.clone(), signature, expanded);
@@ -315,6 +345,7 @@ pub fn load_merged_config_snapshot_at(
         MergedCacheEntry {
             signature,
             defaults: defaults.clone(),
+            managed_overlay: managed_overlay.clone(),
             env_snapshot,
             snapshot: snapshot.clone(),
         },
@@ -444,9 +475,11 @@ impl MergedConfigSnapshot {
 struct MergedCacheEntry {
     signature: Option<ConfigSignature>,
     defaults: Map<String, Value>,
+    managed_overlay: Map<String, Value>,
     env_snapshot: HashMap<String, Option<String>>,
     snapshot: MergedConfigSnapshot,
 }
+
 #[derive(Debug, Clone)]
 struct CacheEntry {
     signature: Option<ConfigSignature>,

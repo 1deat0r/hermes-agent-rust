@@ -234,8 +234,97 @@ pub fn load_auth_store(auth_file: Option<&Path>) -> io::Result<Map<String, Value
     Ok(empty_auth_store())
 }
 
-/// Save one auth store atomically with owner-only file permissions.
+/// Return a cloned provider state only when `providers.<provider_id>` is an
+/// object.
 ///
+/// The clone prevents callers from mutating the loaded auth store without an
+/// explicit write-through. Non-object and absent provider entries are treated
+/// as missing, matching `hermes_cli.auth._load_provider_state`.
+pub fn load_provider_state(
+    auth_store: &Map<String, Value>,
+    provider_id: &str,
+) -> Option<Map<String, Value>> {
+    auth_store
+        .get("providers")
+        .and_then(Value::as_object)
+        .and_then(|providers| providers.get(provider_id))
+        .and_then(Value::as_object)
+        .cloned()
+}
+
+/// Load one provider state from an active profile, falling back per provider
+/// to an explicit global auth store.
+///
+/// A profile entry shadows the global entry. Global malformed or unreadable
+/// stores fail open as an absent fallback; errors loading the active profile
+/// itself are returned. Explicit paths keep profile parity tests deterministic
+/// and avoid any managed-directory discovery.
+pub fn load_provider_state_at(
+    profile_path: Option<&Path>,
+    global_path: Option<&Path>,
+    provider_id: &str,
+) -> io::Result<Option<Map<String, Value>>> {
+    let profile_store = load_auth_store(profile_path)?;
+    if let Some(state) = load_provider_state(&profile_store, provider_id) {
+        return Ok(Some(state));
+    }
+
+    let Some(global_path) = global_path else {
+        return Ok(None);
+    };
+    let global_store = match load_auth_store(Some(global_path)) {
+        Ok(store) => store,
+        Err(_) => return Ok(None),
+    };
+    Ok(load_provider_state(&global_store, provider_id))
+}
+
+/// Update one provider state in an in-memory auth store.
+///
+/// Only the selected provider entry is replaced. `active_provider` is left
+/// untouched unless `set_active` is true, preserving a user's active-provider
+/// choice during token refresh write-through.
+pub fn store_provider_state(
+    auth_store: &mut Map<String, Value>,
+    provider_id: &str,
+    state: &Map<String, Value>,
+    set_active: bool,
+) {
+    if !auth_store.get("providers").is_some_and(Value::is_object) {
+        auth_store.insert("providers".into(), Value::Object(Map::new()));
+    }
+    auth_store
+        .get_mut("providers")
+        .and_then(Value::as_object_mut)
+        .expect("providers was initialized as an object")
+        .insert(provider_id.to_owned(), Value::Object(state.clone()));
+    if set_active {
+        auth_store.insert(
+            "active_provider".into(),
+            Value::String(provider_id.to_owned()),
+        );
+    }
+}
+
+/// Persist one provider state under its auth-store lock and atomic owner-only
+/// writer.
+///
+/// The latest store is loaded after acquiring the lock, so unrelated provider
+/// updates are preserved. This explicit path adapter is deterministic and
+/// does not discover profile or global directories.
+pub fn persist_provider_state_at(
+    path: &Path,
+    provider_id: &str,
+    state: &Map<String, Value>,
+    set_active: bool,
+) -> io::Result<PathBuf> {
+    let _lock = auth_store_lock(Some(path))?;
+    let mut auth_store = load_auth_store(Some(path))?;
+    store_provider_state(&mut auth_store, provider_id, state, set_active);
+    save_auth_store(&mut auth_store, Some(path))
+}
+
+/// Save one auth store atomically with owner-only file permissions.
 /// The temporary file is created with `create_new`/`0o600` before any token
 /// bytes are written, then flushed, replaced, and followed by a best-effort
 /// directory fsync. The parent is tightened to `0o700` through the shared
