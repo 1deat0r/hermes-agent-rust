@@ -9,8 +9,8 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
 Current branch/HEAD: `main` is aligned with `origin/main` after the local and
-GitHub API mirror sequence for the auxiliary-client concrete transport unit;
-the handoff checkpoint for that unit is being recorded next.
+GitHub API mirror sequence for the auxiliary-client concrete transport unit
+and its handoff checkpoint.
 The connected GitHub API publishes each logical commit immediately as a
 sequential remote mirror. Its commit SHAs differ from the local sequence
 because the API cannot preserve local author/committer timestamps, but every
@@ -18,8 +18,10 @@ tree snapshot and commit message matches and is verified before each ref
 update. The local HTTPS Git client still has no credentials; use the connected
 GitHub API for future pushes until `gh auth login` or SSH is configured.
 
-Latest synchronized unit: local source `56871db` → GitHub `7984aaa`
-(`feat(agent): construct auxiliary reqwest clients @ b9aa928`), with the
+Latest synchronized unit: local handoff `5762c3c` → GitHub `2cd0262`
+(`handoff: record auxiliary reqwest mirror refs @ b9aa928`), with source local
+`56871db` → GitHub `7984aaa`
+(`feat(agent): construct auxiliary reqwest clients @ b9aa928`) and the
 previous local handoff `7fa7cdd` → GitHub `bdfd901`
 (`handoff: record credential pool mirror refs @ b9aa928`) and source local
 `6fcc72f` → GitHub `1d46bab` (`feat(agent): port credential pool selection
@@ -178,10 +180,11 @@ and pool-acquisition values because reqwest's public builder does not expose
 those exact controls. Full SDK request/response integration, credential-pool
 persistence/refresh, cancellation, and provider fallback remain pending.
 The required workspace build and test commands passed. Local source commit
-`56871db` was mirrored as GitHub `7984aaa`; the remote/local tree is
+`56871db` was mirrored as GitHub `7984aaa`, followed by local handoff
+`5762c3c` mirrored as GitHub `2cd0262`; the remote/local tree is
 `cabc30ddb12626e265c4a2ec186c97e06b686815` with 270 matching tracked blobs.
-The source and handoff commits remain sequentially mirrored through the
-connected GitHub API.
+The final handoff tree is
+`50d8e1644e1a59c8c241cce083e583f4f51427f4` with the same 270 matching blobs.
 
 The tracked documentation/GitHub metadata hook workflow is included in local
 commit `0d2bcd4` and its `1af2de6` GitHub mirror. It is the current non-ledger
@@ -507,8 +510,8 @@ hardening remains in the preceding synchronized history.
 ## Exact working-tree state
 
 Local `main` and `origin/main` both resolve to GitHub's API-authored
-`7984aaaf366417469082f7e173f3670a9c76ce6f`; their trees both resolve to
-`cabc30ddb12626e265c4a2ec186c97e06b686815`. The recursive GitHub tree and
+`2cd0262a01758bd404cf5e5f868606a60865f2e7`; their trees both resolve to
+`50d8e1644e1a59c8c241cce083e583f4f51427f4`. The recursive GitHub tree and
 local `git ls-tree -r` contain 270 blobs with no path/mode/SHA mismatches, and
 the worktree is clean. No conversion-ledger status changed: the current
 summary is 73 done / 11 partial / 3,798 missing tracked modules and 73 done /
