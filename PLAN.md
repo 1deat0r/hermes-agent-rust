@@ -521,8 +521,10 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   CLI/provider layers. Targeted rustfmt, focused tests, workspace build,
   serialized workspace test, and the approved 4/4-gate leaf recheck passed.
   Targeted `hermes-agent` Clippy still reports only the two pre-existing
-  `auxiliary_client` lints. The local/GitHub source and documentation mirror
-  refs will be appended at the next handoff checkpoint.
+  `auxiliary_client` lints. Local source commit
+  `4659f291b9bdc3637d3ebe5a2109f2cb8ee33f65` was mirrored as GitHub
+  `502491d1a790c369613d717b64620c98c82b94fa`; both refs resolve to tree
+  `e60b32164a164b88f010aede28e80c2bd1d5edbf` with 273 matching tracked blobs.
 
 - 2026-08-24 (session 4cc): Continued the partial `agent.credential_pool`
   port (@ b9aa928) through the xAI OAuth singleton branch. Added the explicit
