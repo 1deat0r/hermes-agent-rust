@@ -1,6 +1,6 @@
 # Hermes Agent Rust — Next-session handoff
 
-Date: 2026-08-24 (Pacific/Auckland), session 4ba.
+Date: 2026-08-24 (Pacific/Auckland), session 4bb.
 
 ## Resume point
 
@@ -17,7 +17,11 @@ update. The local HTTPS Git client still has no credentials; use the
 connected GitHub API for future pushes until `gh auth login` or SSH is
 configured.
 
-Latest synchronized unit: local source `4d229c2` → GitHub `40fd571`
+Latest synchronized unit: local source `9a0bc98` → GitHub `1550e03`
+(`agent.auxiliary_client` Codex token selection, including current
+PLAN/inventory/ledger metadata), after local handoff source `116bb97` →
+GitHub `9388f11` (`HANDOFF.md` for the Codex-header unit), after local source
+`4d229c2` → GitHub `40fd571`
 (`agent.auxiliary_client` Codex credential-header wire helper, including
 current PLAN/inventory/ledger metadata), after local handoff source `8850d73`
 → GitHub `a8e9a5e` (`HANDOFF.md` for the proxy/TLS unit), after local source
@@ -340,6 +344,13 @@ exact `ChatGPT-Account-ID` casing, and fail-open handling for empty, malformed,
 or claim-less tokens. Concrete SDK client construction and credential-pool
 selection remain pending.
 
+The Codex access-token selection helper is included in the new `9a0bc98` source
+commit and its `1550e03` GitHub mirror. It mirrors pool-first runtime-key
+selection, trimmed Hermes auth-store fallback, strict JWT expiry filtering, and
+fail-open use of malformed/non-JWT tokens. Pool selection and auth-store reads
+are explicit Rust inputs; auth-file locking, credential-pool rotation, and
+concrete SDK client construction remain pending.
+
 The Qwen Portal bundled profile is included in the new `4e3894e` source
 commit and its `41482fc` GitHub mirror. The `qwen_portal` capability mirrors
 the source's string/list message normalization, unsupported-part filtering,
@@ -376,7 +387,7 @@ The new `hermes-providers` crate ports `providers/base.py` and
 model endpoint precedence, strict fail-open catalog parsing,
 credential-safe redirects, canonical/alias registry behavior, copy-safe
 caching, and sorted bundled/user/legacy discovery. The focused suites contain
-28 auxiliary-client routing/predicate/wire/error/pool-runtime/endpoint/client-option/proxy/TLS/Codex-header tests,
+32 auxiliary-client routing/predicate/wire/error/pool-runtime/endpoint/client-option/proxy/TLS/Codex-header/token-selection tests,
 9 base, 8 registry, 2 AI Gateway profile, 2 Alibaba profile, 2 Alibaba Coding
 Plan profile, 3 Anthropic profile, 3 Gemini profile, 2 Arcee profile, 2 Azure
 Foundry profile, 2 Bedrock profile, 3 Copilot profile, 2 Copilot ACP profile,
@@ -397,7 +408,7 @@ credential-resolution, transport, and fallback sections before promoting it.
 The ledger's next missing production unit is `run_agent` (8,206 LOC), but the
 active continuation seam is the partial auxiliary client.
 
-The required auxiliary-client Codex-header workspace verification was green
+The required auxiliary-client Codex-token-selection workspace verification was green
 before
 the synchronized
 commit:
@@ -418,20 +429,20 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-After the current auxiliary-client Codex-header source commit `4d229c2` is
-mirrored as `40fd571` and this handoff commit is aligned
+After the current auxiliary-client Codex-token-selection source commit `9a0bc98` is
+mirrored as `1550e03` and this handoff commit is aligned
 to its remote mirror, the working tree is clean. The committed metadata
 includes `AGENTS.md`, `PLAN.md`, `tools/port_status.json`, generated
 `tools/inventory.json`, `CONVERSION-LEDGER.md`, and this handoff. No code or
-parity test is pending for the current Codex-header slice; the
+parity test is pending for the current Codex-token-selection slice; the
 `agent.auxiliary_client` module remains partial.
 
 ## Next actions, in order
 
 1. Continue `agent.auxiliary_client` by reading the pinned OpenAI SDK/httpx
-   client-construction and credential-pool selection source/tests and writing
-   the next parity tests first; proxy/TLS policy and Codex headers are now
-   recorded.
+   client-construction and broader credential-pool selection source/tests and
+   writing the next parity tests first; proxy/TLS policy, Codex headers, and
+   Codex token selection are now recorded.
 2. Keep the adapter boundaries explicit; do not promote the module until
    client, transport, cancellation, and fallback seams are covered.
 3. For every future module, commit and publish each logical unit immediately;
@@ -595,7 +606,7 @@ Cloud, 2 AI Gateway, 2 Alibaba, 2 Alibaba Coding Plan, 3 Anthropic, 3 Gemini,
 2 Arcee, 2 Azure
 Foundry, 2 Bedrock, 3 Copilot, 2 Copilot ACP, 2 Fireworks, 2 GMI, 2 Kilo
 Code, 3 Kimi Coding, 2 NovitaAI, 2 NVIDIA, 2 StepFun, 3 Vertex, 2 DeepInfra,
-28 auxiliary-client routing/predicate/wire/error/pool-runtime/endpoint/client-option/proxy/TLS/Codex-header, 5 ZAI profile,
+32 auxiliary-client routing/predicate/wire/error/pool-runtime/endpoint/client-option/proxy/TLS/Codex-header/token-selection, 5 ZAI profile,
 2 DeepSeek, 3 Nous, 3 Minimax, 2 OpenAI Codex, 4 Qwen OAuth, 4 Upstage,
 2 Xiaomi, 2 XAI, and 2 Hugging Face profile
 tests. The
