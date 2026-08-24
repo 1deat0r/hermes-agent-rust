@@ -91,7 +91,7 @@ Hermes-Agent-Rust/
     hermes-logging/        # hermes_logging.py                (Phase 1)
     hermes-state/          # hermes_state{,_schema,_common,_portability,_search}.py  (Phase 1, open — common/schema/lifecycle landed)
     hermes-toolsets/       # toolsets.py ✅, toolset_distributions.py ✅, model_tools.py 🟡 (schema/coercion surface landed; handle_function_call deferred with agent loop)   (Phase 2)
-    hermes-providers/      # providers/base.py + providers/__init__.py + bundled profiles (Phase 2; base/registry plus Actual/AI Gateway/Alibaba/Alibaba Coding Plan/Anthropic/Arcee/Azure Foundry/Bedrock/Copilot/Copilot ACP/Custom/DeepInfra/DeepSeek/Fireworks/Gemini/GMI/Kilo/Minimax/Novita/NVIDIA/Nous/Ollama Cloud/StepFun/Vertex/OpenAI Codex/XAI/Xiaomi/Hugging Face profiles landed, CLI-version/opener and remaining loaders remain)
+    hermes-providers/      # providers/base.py + providers/__init__.py + bundled profiles (Phase 2; base/registry plus Actual/AI Gateway/Alibaba/Alibaba Coding Plan/Anthropic/Arcee/Azure Foundry/Bedrock/Copilot/Copilot ACP/Custom/DeepInfra/DeepSeek/Fireworks/Gemini/GMI/Kilo/Minimax/Novita/NVIDIA/Nous/Ollama Cloud/OpenAI Codex/Qwen OAuth/StepFun/Vertex/XAI/Xiaomi/Hugging Face profiles landed, CLI-version/opener and remaining loaders remain)
     hermes-agent/          # run_agent.py + agent/            (Phase 2, next after toolsets)
     hermes-tools/          # tools/ (✅ registry, schema_sanitizer, ansi_strip, clarify_tool, session_search_tool, file_safety, read_extract, file_state, path_security, binary_extensions, budget_config, tool_result_storage, tts_text_normalize)   (Phase 2)
     hermes-batch/          # batch_runner.py, trajectory_compressor.py, mini_swe_runner.py (Phase 2)
@@ -130,11 +130,11 @@ config (config crate), node/profile constants remainder. Phase 2 (agent
 core: toolsets, run_agent, agent/, tools/, batch) is open.
 
 **P2 status: 🟡 OPEN — hermes-tools support wave and provider profile
-base/registry/Actual/AI Gateway/Alibaba/Alibaba Coding Plan/Anthropic/Arcee/Azure Foundry/Bedrock/Copilot/Copilot ACP/Custom/DeepInfra/DeepSeek/Fireworks/Gemini/GMI/Kilo/Minimax/Novita/NVIDIA/Nous/Ollama Cloud/StepFun/Vertex/OpenAI Codex/XAI/Xiaomi/Hugging Face profiles landed (2026-08-24).** The support wave below
+base/registry/Actual/AI Gateway/Alibaba/Alibaba Coding Plan/Anthropic/Arcee/Azure Foundry/Bedrock/Copilot/Copilot ACP/Custom/DeepInfra/DeepSeek/Fireworks/Gemini/GMI/Kilo/Minimax/Novita/NVIDIA/Nous/Ollama Cloud/OpenAI Codex/Qwen OAuth/StepFun/Vertex/XAI/Xiaomi/Hugging Face profiles landed (2026-08-24).** The support wave below
 ports small, dependency-light modules needed by the agent surface.
 `hermes-providers` now contains the declarative `providers.base` profile,
 secure model-catalog probe, process-global registry/discovery cache, and the
-first statically linked bundled profiles (`actual`, `ai-gateway`, `alibaba`, `alibaba-coding-plan`, `anthropic`, `arcee`, `azure-foundry`, `bedrock`, `copilot`, `copilot-acp`, `custom`, `deepinfra`, `deepseek`, `fireworks`, `gemini`, `gmi`, `huggingface`, `kilocode`, `minimax`, `novita`, `nvidia`, `nous`, `ollama-cloud`, `openai-codex`, `stepfun`, `vertex`, `xai`, `xiaomi`). The provider surface
+first statically linked bundled profiles (`actual`, `ai-gateway`, `alibaba`, `alibaba-coding-plan`, `anthropic`, `arcee`, `azure-foundry`, `bedrock`, `copilot`, `copilot-acp`, `custom`, `deepinfra`, `deepseek`, `fireworks`, `gemini`, `gmi`, `huggingface`, `kilocode`, `minimax`, `novita`, `nvidia`, `nous`, `ollama-cloud`, `openai-codex`, `qwen-oauth`, `stepfun`, `vertex`, `xai`, `xiaomi`). The provider surface
 remains partial until the future CLI crate supplies the runtime version used
 in `_profile_user_agent`, the application-installed urllib opener policy is
 represented, and the remaining bundled/user provider plugin profiles have
@@ -340,12 +340,14 @@ rich/routing/cooldown/meta/reactions/conversation/delete modules.
 
 | Module / upstream surface | Status | Rust home, oracle, and evidence tier |
 |---|---|---|
+| plugins/model-providers/qwen-oauth/__init__.py (108 LOC) | ✅ | `hermes-providers::profiles::qwen_oauth`; 4 source-derived profile/message-normalization/request-hook parity tests (`unit`); aliases, QWEN_API_KEY, Portal URL/OAuth auth, 65,536 max-token cap, first-system cache metadata, nested image retry-copy guard, high-resolution image body, and top-level session metadata are ported; Qwen CLI OAuth credential resolution and full transport integration remain future higher-layer seams |
 | providers/base.py (238 LOC) — declarative profile fields/defaults and no-op hooks | ✅ | `hermes-providers::base`; 9 parity tests (`unit`/`mock`); Actual environment-aware catalog discovery, AI Gateway reasoning passthrough, Anthropic native model discovery, Gemini and Vertex thinking translation, Copilot catalog-gated reasoning, Custom/Ollama reasoning and user-catalog gating, DeepInfra vision-catalog discovery, DeepSeek V4+ reasoning-wire mapping, Nous Portal tags/reasoning omission, Ollama Cloud top-level reasoning-effort translation, and MiniMax M3 route-gated reasoning are represented by profile capabilities |
 | `get_hostname`, `get_max_tokens`, and `OMIT_TEMPERATURE` | ✅ | `base.rs`; included in the focused profile tests (`unit`) |
 | `fetch_models` endpoint precedence, JSON shaping, strict fail-open behavior | ✅ | `base.rs`; loopback standard and Anthropic-native catalog tests (`mock`) |
 | credential-safe redirects (same-origin retention, cross-origin `accept`/`user-agent` allowlist) | ✅ | `base.rs`; 2 redirect tests (`mock`) |
 | `_profile_user_agent` runtime CLI version and installed urllib opener policy | 🟡 | stable fallback is implemented; CLI-version injection and application opener integration remain with `hermes-cli` |
 | providers/__init__.py canonical/alias registry, cache, and lazy discovery order | ✅ | `hermes-providers::registry`; 8 parity tests (`unit`/`mock`) |
+| Qwen Portal bundled registration and alias resolution | ✅ | `hermes-providers::profiles::qwen_oauth`; covered by `parity_qwen_oauth.rs` and the registry order assertions (`unit`) |
 | providers/__init__.py bundled/user/legacy import execution | 🟡 | filesystem scan and explicit loader seam are implemented; statically linked Actual, AI Gateway, Alibaba, Alibaba Coding Plan, Anthropic, Arcee, Azure Foundry, Bedrock, Copilot, Copilot ACP, Custom, DeepInfra, DeepSeek, Fireworks, Gemini, GMI, Hugging Face, Kilo, MiniMax (three profiles), Novita, NVIDIA, Nous, Ollama Cloud, OpenAI Codex, StepFun, Vertex, XAI, and Xiaomi are wired, remaining Rust plugin profiles/loaders remain pending |
 | plugins/model-providers/actual/__init__.py (89 LOC) | ✅ | `hermes-providers::profiles::actual`; 3 source-derived profile/catalog parity tests (`unit`/`mock`) mirror aliases, environment-precedence URL normalization, optional Bearer auth, headers, list/`data` response shapes, and fail-open parsing; runtime credentials/model-picker/transport integration remains a future hermes-cli seam |
 | plugins/model-providers/ai-gateway/__init__.py (43 LOC) | ✅ | `hermes-providers::profiles::ai_gateway`; 2 source-derived profile/registration/reasoning-hook parity tests (`unit`); `reasoning_passthrough` represents the upstream `build_api_kwargs_extras` override; related CLI/model catalog tests remain future-crate oracles |
@@ -443,11 +445,36 @@ oracle tests). Upstream oracle files currently mirrored:
 
 - `plugins/model-providers/nous/__init__.py` + `tests/providers/test_provider_profiles.py` + `tests/agent/transports/test_chat_completions.py` → `crates/hermes-providers/tests/parity_nous.rs` (3 source-derived profile/registration/Portal-hook parity tests; `unit`; pinned CLI version and ambient conversation propagation remain future higher-layer seams)
 - `plugins/model-providers/ollama-cloud/__init__.py` + `tests/plugins/model_providers/test_ollama_cloud_profile.py` → `crates/hermes-providers/tests/parity_ollama_cloud.rs` (3 source-derived profile/reasoning-wire parity tests; `unit`; `/api/show` capability probing, dynamic catalog merging, and CLI credential/model-picker cases remain future higher-layer oracles)
+- `plugins/model-providers/qwen-oauth/__init__.py` + `tests/providers/test_provider_profiles.py` + `tests/providers/test_profile_wiring.py` + `tests/providers/test_transport_parity.py` → `crates/hermes-providers/tests/parity_qwen_oauth.rs` (4 source-derived profile/message-normalization/request-hook parity tests; `unit`; Qwen CLI OAuth credential resolution and full transport integration remain future higher-layer oracles)
 
 Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 + the exact command, e.g. `cargo test -p hermes-time (unit)`.
 
 ## 7. Session log
+
+- 2026-08-24 (session 4b0): Ported
+  `plugins/model-providers/qwen-oauth/__init__.py` (@ b9aa928, 108 LOC) through
+  a source-derived TDD pass against the Qwen provider-profile, profile-wiring,
+  and chat-completions transport cases. Added the explicit `qwen_portal`
+  capability for message normalization: string and mixed content parts become
+  text dictionaries, unsupported parts are filtered when normalized content is
+  non-empty, nested `image_url` objects are copied for retry safety, and the
+  last part of the first system message receives
+  `cache_control={"type":"ephemeral"}`. The profile always emits
+  `vl_high_resolution_images=true` in `extra_body` and keeps non-empty
+  `qwen_session_metadata` at top-level `metadata`, never in `extra_body`.
+  Because the Rust adapter owns `serde_json::Value` trees, it clones the
+  complete message value rather than selectively sharing immutable parts;
+  this is the ownership-equivalent of the source's nested-image retry guard.
+  Added the `qwen-oauth` profile, its three aliases, OAuth metadata, and
+  65,536 default max-token cap; wired sorted bundled/user loading and added 4
+  `unit` parity tests. Focused Qwen/base/registry regressions,
+  `/home/mustbearnold/.cargo/bin/cargo build --workspace`, and
+  `/home/mustbearnold/.cargo/bin/cargo test --workspace --quiet` are green.
+  Inventory and conversion ledger now record 70 done / 9 partial / 3,803
+  missing tracked modules and 70 done / 9 partial / 1,024 missing production
+  modules. The next dependency-safe production unit is
+  `plugins.model-providers.upstage.__init__` (115 LOC).
 
 - 2026-08-24 (session 4af): Ported
   `plugins/model-providers/custom/__init__.py` (@ b9aa928, 103 LOC) through

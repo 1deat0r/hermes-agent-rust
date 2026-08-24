@@ -52,6 +52,8 @@ mod nvidia;
 mod ollama_cloud;
 #[path = "openai_codex.rs"]
 mod openai_codex;
+#[path = "qwen_oauth.rs"]
+mod qwen_oauth;
 #[path = "stepfun.rs"]
 mod stepfun;
 #[path = "vertex.rs"]
@@ -93,6 +95,7 @@ pub(crate) fn register_builtin_profiles() {
     register_provider(nous::profile());
     register_provider(ollama_cloud::profile());
     register_provider(openai_codex::profile());
+    register_provider(qwen_oauth::profile());
     register_provider(stepfun::profile());
     register_provider(vertex::profile());
     register_provider(xai::profile());
@@ -129,6 +132,7 @@ pub(crate) fn load_profile(
             Some("nous") => return Ok(Some(nous::profile())),
             Some("ollama-cloud") => return Ok(Some(ollama_cloud::profile())),
             Some("openai-codex") => return Ok(Some(openai_codex::profile())),
+            Some("qwen-oauth") => return Ok(Some(qwen_oauth::profile())),
             Some("stepfun") => return Ok(Some(stepfun::profile())),
             Some("vertex") => return Ok(Some(vertex::profile())),
             Some("xai") => return Ok(Some(xai::profile())),

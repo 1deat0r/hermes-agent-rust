@@ -79,6 +79,8 @@ pub struct ProviderProfile {
     pub minimax_reasoning: bool,
     /// Apply Custom/Ollama local reasoning and user-configured catalog hooks.
     pub custom_provider: bool,
+    /// Apply Qwen Portal message normalization and request metadata hooks.
+    pub qwen_portal: bool,
     /// Route Copilot reasoning through the live model-catalog effort list.
     pub copilot_reasoning: bool,
     /// Route the reasoning configuration through `extra_body.reasoning`.
@@ -119,6 +121,7 @@ impl ProviderProfile {
             ollama_cloud_reasoning: false,
             minimax_reasoning: false,
             custom_provider: false,
+            qwen_portal: false,
             copilot_reasoning: false,
             reasoning_passthrough: false,
         }
@@ -139,6 +142,9 @@ impl ProviderProfile {
     }
 
     pub fn prepare_messages(&self, messages: &[Value]) -> Vec<Value> {
+        if self.qwen_portal {
+            return prepare_qwen_messages(messages);
+        }
         messages.to_vec()
     }
 
@@ -156,6 +162,9 @@ impl ProviderProfile {
         if self.gemini_thinking {
             return build_gemini_extra_body(self, context);
         }
+        if self.qwen_portal {
+            return build_qwen_extra_body();
+        }
         Map::new()
     }
 
@@ -164,6 +173,9 @@ impl ProviderProfile {
         reasoning_config: Option<&Map<String, Value>>,
         context: &Map<String, Value>,
     ) -> (Map<String, Value>, Map<String, Value>) {
+        if self.qwen_portal {
+            return build_qwen_api_kwargs_extras(context);
+        }
         if self.nous_portal {
             return build_nous_api_kwargs_extras(reasoning_config, context);
         }
@@ -707,6 +719,120 @@ fn cross_origin_safe_headers(headers: &HeaderMap) -> HeaderMap {
         safe.insert(USER_AGENT, value.clone());
     }
     safe
+}
+
+fn prepare_qwen_messages(messages: &[Value]) -> Vec<Value> {
+    // PARITY: QwenProfile.prepare_messages() makes a top-level copy, converts
+    // string/list content to text parts, clones mutable image_url payloads,
+    // and annotates the last part of the first system message.
+    let mut prepared = messages.to_vec();
+    if prepared.is_empty() {
+        return prepared;
+    }
+
+    let mut system_idx = None;
+    for (idx, message) in messages.iter().enumerate() {
+        let Some(message_object) = message.as_object() else {
+            continue;
+        };
+        if system_idx.is_none()
+            && message_object.get("role").and_then(Value::as_str) == Some("system")
+        {
+            system_idx = Some(idx);
+        }
+
+        match message_object.get("content") {
+            Some(Value::String(text)) => {
+                let mut message_copy = message_object.clone();
+                message_copy.insert(
+                    "content".into(),
+                    serde_json::json!([{"type": "text", "text": text}]),
+                );
+                prepared[idx] = Value::Object(message_copy);
+            }
+            Some(Value::Array(parts)) => {
+                let mut normalized_parts = Vec::new();
+                let mut changed = false;
+                for part in parts {
+                    match part {
+                        Value::String(text) => {
+                            normalized_parts
+                                .push(serde_json::json!({"type": "text", "text": text}));
+                            changed = true;
+                        }
+                        Value::Object(part_object) => {
+                            let (normalized_part, copied) = copy_qwen_part(part_object);
+                            normalized_parts.push(normalized_part);
+                            changed |= copied;
+                        }
+                        _ => changed = true,
+                    }
+                }
+                if !normalized_parts.is_empty() && changed {
+                    let mut message_copy = message_object.clone();
+                    message_copy.insert("content".into(), Value::Array(normalized_parts));
+                    prepared[idx] = Value::Object(message_copy);
+                }
+            }
+            _ => {}
+        }
+    }
+
+    // PARITY: The upstream hook annotates only the first system message and
+    // only when its final content part is a mapping.
+    let system_update = system_idx.and_then(|idx| {
+        let message = prepared.get(idx)?.as_object()?;
+        let content = message.get("content")?.as_array()?;
+        let last_part = content.last()?.as_object()?;
+
+        let mut last_part_copy = last_part.clone();
+        last_part_copy.insert(
+            "cache_control".into(),
+            serde_json::json!({"type": "ephemeral"}),
+        );
+        let mut content_copy = content.clone();
+        let last_index = content_copy.len() - 1;
+        content_copy[last_index] = Value::Object(last_part_copy);
+        let mut message_copy = message.clone();
+        message_copy.insert("content".into(), Value::Array(content_copy));
+        Some((idx, Value::Object(message_copy)))
+    });
+    if let Some((idx, message)) = system_update {
+        prepared[idx] = message;
+    }
+
+    prepared
+}
+
+fn copy_qwen_part(part: &Map<String, Value>) -> (Value, bool) {
+    if let Some(image_url) = part.get("image_url").and_then(Value::as_object) {
+        let mut copied = part.clone();
+        copied.insert("image_url".into(), Value::Object(image_url.clone()));
+        return (Value::Object(copied), true);
+    }
+    (Value::Object(part.clone()), false)
+}
+
+fn build_qwen_extra_body() -> Map<String, Value> {
+    // PARITY: QwenProfile.build_extra_body() always enables the Portal image
+    // resolution request field.
+    Map::from_iter([("vl_high_resolution_images".into(), Value::Bool(true))])
+}
+
+fn build_qwen_api_kwargs_extras(
+    context: &Map<String, Value>,
+) -> (Map<String, Value>, Map<String, Value>) {
+    // PARITY: QwenProfile.build_api_kwargs_extras() keeps session metadata at
+    // the top-level API kwargs, and Python's empty-dict falsiness omits it.
+    let mut top_level = Map::new();
+    if let Some(metadata) = context
+        .get("qwen_session_metadata")
+        .and_then(Value::as_object)
+        .filter(|metadata| !metadata.is_empty())
+    {
+        top_level.insert("metadata".into(), Value::Object(metadata.clone()));
+    }
+    (Map::new(), top_level)
 }
 
 fn build_gemini_extra_body(
