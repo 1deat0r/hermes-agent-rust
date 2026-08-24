@@ -9,13 +9,10 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
 Current branch/HEAD: `main` is aligned with `origin/main` after the local and
-GitHub API mirror sequence for the Qwen OAuth documentation checkpoint. The
-local handoff commit `c1b680befa8f01d0e527ab8237bcf4607de85002` was mirrored
-as GitHub `7fd193cc547d1287b3d884fb943f76ce2fc1cd96`; both refs resolve to
-tree `fbf58ece3ec7df375ef73971936d32dea6b402ba` with 273 matching tracked
-blobs. The current MiniMax OAuth source unit is being recorded in this next
-logical checkpoint; its exact source and mirror refs will be added immediately
-after publication.
+GitHub API mirror sequence for the MiniMax OAuth singleton seeder. The local
+source commit `5abcc34da3bca6ac682931743ce85023cef183eb` was mirrored as
+GitHub `f9f4c457df15052546da0cf498f847e4d7d53e26`; both refs resolve to tree
+`f2de2de704c4ba7d61a57b230f0c6770ee303ed3` with 273 matching tracked blobs.
 The connected GitHub API publishes each logical commit immediately as a
 sequential remote mirror. Its commit SHAs differ from the local sequence
 because the API cannot preserve local author/committer timestamps, but every
@@ -24,7 +21,10 @@ update. The local HTTPS Git client still has no credentials; use the connected
 GitHub API for future pushes until `gh auth login` or SSH is configured.
 
 Latest synchronized unit: local source
-`c471092747601784ee50b4d9503b6877c379bb25` → GitHub
+`5abcc34da3bca6ac682931743ce85023cef183eb` → GitHub
+`f9f4c457df15052546da0cf498f847e4d7d53e26`
+(`feat(agent): seed MiniMax OAuth credentials @ b9aa928`), with the previous
+local source `c471092747601784ee50b4d9503b6877c379bb25` → GitHub
 `e4bd1f2199e3290a5adf381888c06f1bd0f3337d`
 (`feat(agent): seed Qwen OAuth singleton credentials @ b9aa928`), with the
 previous local source
@@ -200,8 +200,10 @@ tests were added first; the focused credential-pool wave now has 38 pool plus
 singleton-seeding test, so its implementation is the code oracle and that
 gap is recorded in PLAN.md. The remaining singleton branches, full
 loader/config/custom-provider composition, Z.AI endpoint probing, OAuth
-refresh, leases, and logging throttles remain pending. The source commit and
-immediate GitHub mirror refs will be recorded in the next handoff checkpoint.
+refresh, leases, and logging throttles remain pending. Local source commit
+`5abcc34da3bca6ac682931743ce85023cef183eb` was mirrored as GitHub
+`f9f4c457df15052546da0cf498f847e4d7d53e26`; both refs resolve to tree
+`f2de2de704c4ba7d61a57b230f0c6770ee303ed3` with 273 matching tracked blobs.
 
 The preceding synchronized source unit extended `hermes-agent::credential_pool`
 through the lower environment-aware `load_pool` transaction. It added the
@@ -637,9 +639,9 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-Before the MiniMax source unit, local `main` and `origin/main` were aligned at
-GitHub mirror commit `7fd193cc547d1287b3d884fb943f76ce2fc1cd96`, whose tree
-`fbf58ece3ec7df375ef73971936d32dea6b402ba` was verified recursively with 273
+Local `main` and `origin/main` are aligned at GitHub mirror commit
+`f9f4c457df15052546da0cf498f847e4d7d53e26`, whose tree
+`f2de2de704c4ba7d61a57b230f0c6770ee303ed3` was verified recursively with 273
 blobs and no path/mode/SHA mismatches. No conversion-ledger status changed:
 the current summary is 73 done / 11 partial / 3,798 missing tracked modules
 and 73 done / 11 partial / 1,019 missing production modules.
