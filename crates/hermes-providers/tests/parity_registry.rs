@@ -85,7 +85,7 @@ fn discovery_is_lazy_and_loader_order_matches_upstream() {
 
     // A normal registry access marks discovery complete and registers the
     // statically linked bundled profiles before the user loader seam runs.
-    assert_eq!(list_providers().len(), 31);
+    assert_eq!(list_providers().len(), 32);
     assert!(get_provider_profile("actual").is_some());
     assert!(get_provider_profile("ai-gateway").is_some());
     assert!(get_provider_profile("alibaba").is_some());
@@ -110,6 +110,7 @@ fn discovery_is_lazy_and_loader_order_matches_upstream() {
     assert!(get_provider_profile("openai-codex").is_some());
     assert!(get_provider_profile("qwen-oauth").is_some());
     assert!(get_provider_profile("stepfun").is_some());
+    assert!(get_provider_profile("upstage").is_some());
     assert!(get_provider_profile("deepinfra").is_some());
     assert!(get_provider_profile("deepseek").is_some());
     assert!(get_provider_profile("nous").is_some());
@@ -152,6 +153,7 @@ fn discovery_is_lazy_and_loader_order_matches_upstream() {
             "openai-codex",
             "qwen-oauth",
             "stepfun",
+            "upstage",
             "vertex",
             "xai",
             "xiaomi"

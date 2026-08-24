@@ -81,6 +81,8 @@ pub struct ProviderProfile {
     pub custom_provider: bool,
     /// Apply Qwen Portal message normalization and request metadata hooks.
     pub qwen_portal: bool,
+    /// Translate Upstage Solar reasoning into top-level reasoning_effort.
+    pub upstage_reasoning: bool,
     /// Route Copilot reasoning through the live model-catalog effort list.
     pub copilot_reasoning: bool,
     /// Route the reasoning configuration through `extra_body.reasoning`.
@@ -122,6 +124,7 @@ impl ProviderProfile {
             minimax_reasoning: false,
             custom_provider: false,
             qwen_portal: false,
+            upstage_reasoning: false,
             copilot_reasoning: false,
             reasoning_passthrough: false,
         }
@@ -175,6 +178,9 @@ impl ProviderProfile {
     ) -> (Map<String, Value>, Map<String, Value>) {
         if self.qwen_portal {
             return build_qwen_api_kwargs_extras(context);
+        }
+        if self.upstage_reasoning {
+            return build_upstage_reasoning(reasoning_config, context);
         }
         if self.nous_portal {
             return build_nous_api_kwargs_extras(reasoning_config, context);
@@ -833,6 +839,70 @@ fn build_qwen_api_kwargs_extras(
         top_level.insert("metadata".into(), Value::Object(metadata.clone()));
     }
     (Map::new(), top_level)
+}
+
+fn build_upstage_reasoning(
+    reasoning_config: Option<&Map<String, Value>>,
+    context: &Map<String, Value>,
+) -> (Map<String, Value>, Map<String, Value>) {
+    // PARITY: UpstageProfile denies only the known non-reasoning Solar
+    // families; unknown and future model names remain reasoning-capable.
+    let model = context
+        .get("model")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .trim()
+        .to_ascii_lowercase();
+    if ["solar-mini", "syn-pro"]
+        .iter()
+        .any(|marker| model.contains(marker))
+    {
+        return (Map::new(), Map::new());
+    }
+
+    // PARITY: An unset/empty config defaults Solar reasoning on at medium,
+    // matching the source's `_DEFAULT_REASONING_EFFORT`.
+    let Some(reasoning_config) = reasoning_config else {
+        return top_level_reasoning_effort("medium");
+    };
+    if reasoning_config.is_empty() {
+        return top_level_reasoning_effort("medium");
+    }
+
+    // The source checks identity against False, not general falsiness.
+    if reasoning_config
+        .get("enabled")
+        .and_then(Value::as_bool)
+        .is_some_and(|enabled| !enabled)
+    {
+        return (Map::new(), Map::new());
+    }
+
+    let effort = reasoning_config
+        .get("effort")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .trim()
+        .to_ascii_lowercase();
+    if effort.is_empty() {
+        return top_level_reasoning_effort("medium");
+    }
+
+    let mapped = match effort.as_str() {
+        "minimal" => None,
+        "low" => Some("low"),
+        "medium" => Some("medium"),
+        "high" => Some("high"),
+        _ => Some("high"),
+    };
+    mapped.map_or_else(|| (Map::new(), Map::new()), top_level_reasoning_effort)
+}
+
+fn top_level_reasoning_effort(effort: &str) -> (Map<String, Value>, Map<String, Value>) {
+    (
+        Map::new(),
+        Map::from_iter([("reasoning_effort".into(), Value::String(effort.into()))]),
+    )
 }
 
 fn build_gemini_extra_body(

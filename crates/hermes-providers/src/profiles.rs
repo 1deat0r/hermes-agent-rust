@@ -56,6 +56,8 @@ mod openai_codex;
 mod qwen_oauth;
 #[path = "stepfun.rs"]
 mod stepfun;
+#[path = "upstage.rs"]
+mod upstage;
 #[path = "vertex.rs"]
 mod vertex;
 #[path = "xai.rs"]
@@ -97,6 +99,7 @@ pub(crate) fn register_builtin_profiles() {
     register_provider(openai_codex::profile());
     register_provider(qwen_oauth::profile());
     register_provider(stepfun::profile());
+    register_provider(upstage::profile());
     register_provider(vertex::profile());
     register_provider(xai::profile());
     register_provider(xiaomi::profile());
@@ -134,6 +137,7 @@ pub(crate) fn load_profile(
             Some("openai-codex") => return Ok(Some(openai_codex::profile())),
             Some("qwen-oauth") => return Ok(Some(qwen_oauth::profile())),
             Some("stepfun") => return Ok(Some(stepfun::profile())),
+            Some("upstage") => return Ok(Some(upstage::profile())),
             Some("vertex") => return Ok(Some(vertex::profile())),
             Some("xai") => return Ok(Some(xai::profile())),
             Some("xiaomi") => return Ok(Some(xiaomi::profile())),

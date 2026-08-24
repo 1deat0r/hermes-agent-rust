@@ -119,6 +119,9 @@
   "plugins.model-providers.qwen-oauth.__init__": {
     "status": "done"
   },
+  "plugins.model-providers.upstage.__init__": {
+    "status": "done"
+  },
   "plugins.model-providers.xiaomi.__init__": {
     "status": "done"
   },
