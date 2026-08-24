@@ -159,7 +159,7 @@ pub struct SeedResult {
 /// store into this crate.
 ///
 /// PARITY: `agent/credential_pool.py._seed_from_singletons` (2453–2835),
-/// currently the `anthropic`, `nous`, `qwen-oauth`, `minimax-oauth`,
+/// currently the `anthropic`, `nous`, `copilot`, `qwen-oauth`, `minimax-oauth`,
 /// `openai-codex`, and `xai-oauth` branches. The caller supplies the
 /// already-resolved provider object and source suppression set; `None` means
 /// the provider state/resolver result was absent, while
@@ -169,6 +169,9 @@ pub struct SeedResult {
 /// `provider_explicitly_configured`, `api_key_path_explicit`, and the
 /// `hermes_pkce`/`claude_code` credential-file results so this crate does not
 /// import the CLI or adapter layers.
+/// For `copilot`, the resolved map carries the final exchanged `api_token`,
+/// resolver `source`, and optional enterprise endpoint; the CLI token
+/// resolution and network exchange stay in the higher auth layer.
 pub fn seed_from_singletons(
     provider: &str,
     entries: &mut Vec<PooledCredential>,
@@ -242,6 +245,68 @@ pub fn seed_from_singletons(
             );
             result.changed |= upsert_entry(entries, provider, source, &payload);
         }
+        return result;
+    }
+
+    if provider == "copilot" {
+        // PARITY: `_seed_from_singletons` (2605–2681) checks every known
+        // Copilot source before spawning `gh auth token` or exchanging a token.
+        // The resolved input map is the bottom-up equivalent of that adapter
+        // boundary, so an all-suppressed pool load remains a no-op here.
+        let all_sources = [
+            "gh_cli",
+            "env:COPILOT_GITHUB_TOKEN",
+            "env:GH_TOKEN",
+            "env:GITHUB_TOKEN",
+        ];
+        if all_sources
+            .iter()
+            .all(|source| suppressed_sources.contains(*source))
+        {
+            return result;
+        }
+
+        let Some(state) = state else {
+            return result;
+        };
+        let Some(api_token) = state
+            .get("api_token")
+            .and_then(Value::as_str)
+            .filter(|token| !token.is_empty())
+        else {
+            return result;
+        };
+        let Some(resolver_source) = state
+            .get("source")
+            .and_then(Value::as_str)
+            .filter(|source| !source.is_empty())
+        else {
+            return result;
+        };
+        // The upstream resolver uses the exact CLI description for the gh
+        // subprocess and the environment variable name for env resolution.
+        let source = if resolver_source == "gh auth token" {
+            "gh_cli".to_owned()
+        } else {
+            format!("env:{resolver_source}")
+        };
+        if suppressed_sources.contains(&source) {
+            return result;
+        }
+
+        result.active_sources.insert(source.clone());
+        let base_url = state
+            .get("enterprise_base_url")
+            .and_then(Value::as_str)
+            .filter(|url| !url.is_empty())
+            .unwrap_or("https://api.githubcopilot.com");
+        let mut payload = Map::new();
+        payload.insert("source".into(), Value::String(source.clone()));
+        payload.insert("auth_type".into(), Value::String(AUTH_TYPE_API_KEY.into()));
+        payload.insert("access_token".into(), Value::String(api_token.to_owned()));
+        payload.insert("base_url".into(), Value::String(base_url.into()));
+        payload.insert("label".into(), Value::String(resolver_source.to_owned()));
+        result.changed = upsert_entry(entries, provider, &source, &payload);
         return result;
     }
 

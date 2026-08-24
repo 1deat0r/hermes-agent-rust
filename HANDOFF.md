@@ -1,6 +1,6 @@
 # Hermes Agent Rust — Next-session handoff
 
-Date: 2026-08-24 (Pacific/Auckland), session 4cd.
+Date: 2026-08-24 (Pacific/Auckland), session 4ce.
 
 ## Resume point
 
@@ -9,7 +9,9 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
 Current branch/HEAD: `main` is aligned with `origin/main` after the local and
-GitHub API mirror sequence for the Anthropic OAuth singleton seeder. The local
+GitHub API mirror sequence for the Anthropic OAuth singleton seeder. The next
+local source unit adds the Copilot singleton seeder; its exact refs will be
+recorded immediately after publication. The local
 source commit `4659f291b9bdc3637d3ebe5a2109f2cb8ee33f65` was mirrored as GitHub
 `502491d1a790c369613d717b64620c98c82b94fa`; both refs resolve to tree
 `e60b32164a164b88f010aede28e80c2bd1d5edbf` with 273 matching tracked blobs.
@@ -195,15 +197,18 @@ unmet while the conversion remains partial.
 
 The current source unit extends `hermes-agent::credential_pool` through the
 provider-singleton seeding boundary. It adds the explicit `seed_from_singletons`
-seam for the upstream Anthropic, Nous, Qwen, MiniMax, OpenAI Codex, and xAI
-branches: Anthropic provider opt-in/API-key-path gates, resolved
+seam for the upstream Anthropic, Nous, Copilot, Qwen, MiniMax, OpenAI Codex, and
+xAI branches: Anthropic provider opt-in/API-key-path gates, resolved
 `hermes_pkce`/`claude_code` credential-file access/refresh/expiry/label mapping,
 source suppression, and stale autodiscovered-row pruning; Nous
 device-code source
 suppression, stale device-code removal when singleton state has no runtime
 material, invoke-JWT agent-key/runtime selection, custom labels, and
 direct/extra metadata preservation for access/refresh expiry, obtained-at,
-agent-key, endpoint, scope, and TLS fields; Qwen CLI source/auth type, access
+agent-key, endpoint, scope, and TLS fields; Copilot resolved exchanged-token
+source classification (`gh_cli` versus `env:<VAR>`), all-source/per-source
+suppression, enterprise/default endpoint mapping, API-key persistence, and
+source labels; Qwen CLI source/auth type, access
 token, expiry milliseconds, base URL, auth-file label, suppression, and
 absent-token fail-open behavior; MiniMax OAuth source/auth type, access and
 refresh tokens, ISO expiry milliseconds, trailing-slash-stripped base URL,
@@ -221,8 +226,11 @@ The xAI OAuth branch adds nested tokens, the fixed xAI endpoint,
 additional source-derived `mock` tests bring the focused wave to 44 pool plus
 15 persistence tests. Dedicated upstream xAI pool-seeding tests cover
 materialization and suppression. Four additional Anthropic source-derived
-`mock` tests bring the focused wave to 48 pool plus 15 persistence tests (63
-total). The remaining singleton branches, full
+`mock` tests bring the focused wave to 48 pool plus 15 persistence tests; five
+additional Copilot source-derived `mock` tests bring the focused wave to 53
+pool plus 15 persistence tests (68 total). Copilot's higher-layer `gh auth
+token` resolver and network exchange are represented by explicit resolved
+token/source/endpoint inputs in this crate. The remaining singleton branches, full
 loader/config/custom-provider composition, Z.AI endpoint probing, OAuth
 refresh, leases, and logging throttles remain pending. Local source commit
 `4659f291b9bdc3637d3ebe5a2109f2cb8ee33f65` was mirrored as GitHub
@@ -663,8 +671,8 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-Local `main` and `origin/main` are aligned after the Anthropic source and
-documentation mirror sequence. The latest source snapshot, local
+Before the Copilot source unit, local `main` and `origin/main` were aligned
+after the Anthropic source and documentation mirror sequence. The latest source snapshot, local
 `4659f291b9bdc3637d3ebe5a2109f2cb8ee33f65` → GitHub
 `502491d1a790c369613d717b64620c98c82b94fa`, has tree
 `e60b32164a164b88f010aede28e80c2bd1d5edbf`, verified recursively with 273
@@ -680,7 +688,7 @@ and 73 done / 11 partial / 1,019 missing production modules.
    serialization, source upsert, strategy, provider-boundary, selection,
    persistence, cooldown-recency merge, auth-store lock, and environment
    seeding input boundary, lower environment-aware load transaction, and
-   Anthropic/Nous/Qwen/MiniMax/OpenAI Codex/xAI singleton state boundaries are
+   Anthropic/Nous/Copilot/Qwen/MiniMax/OpenAI Codex/xAI singleton state boundaries are
    now recorded.
 2. Then connect the auxiliary-client concrete transport to credential-pool
    lifecycle, cancellation, and provider fallback seams without promoting
@@ -715,13 +723,14 @@ The strict production formula is `done production modules / 1,103`; partial rows
 ## Fidelity notes
 
 - The credential environment seeder, lower `load_pool` transaction, and
-  Anthropic/Nous/Qwen/MiniMax/OpenAI Codex/xAI singleton seeders keep the agent crate
+  Anthropic/Nous/Copilot/Qwen/MiniMax/OpenAI Codex/xAI singleton seeders keep the agent crate
   bottom-up by taking provider registry metadata, pool config, resolved
   singleton state, secret-scope values, suppression state, and auth-store paths
   as explicit inputs. Anthropic's provider/API-key-path gates and resolved
   `hermes_pkce`/`claude_code` credential-file outputs are represented in that
   seam. Kimi's pure key-prefix endpoint routing, Nous state-to-pool field copy,
-  Qwen resolved-credential field copy, MiniMax OAuth state mapping, OpenAI Codex
+  Copilot resolved exchanged-token/source/endpoint mapping, Qwen
+  resolved-credential field copy, MiniMax OAuth state mapping, OpenAI Codex
   nested-token field copy, and xAI nested-token field copy are mirrored; the
   remaining singleton/config branches, custom-provider composition, and the
   source's Z.AI network endpoint probe remain deferred to the auth/provider

@@ -883,6 +883,131 @@ fn anthropic_singleton_seed_respects_source_suppression() {
     assert_eq!(entries[0].source, "hermes_pkce");
 }
 
+// Tier: mock — mirrors tests/agent/test_credential_pool.py::
+// test_load_pool_seeds_copilot_via_gh_auth_token.
+#[test]
+fn copilot_singleton_seed_materializes_gh_cli_token_and_default_endpoint() {
+    let state = json!({
+        "token": "gho_raw_token",
+        "source": "gh auth token",
+        "api_token": "capi_exchanged_token"
+    });
+    let state = state.as_object().unwrap().clone();
+    let mut entries = Vec::new();
+
+    let result = seed_from_singletons("copilot", &mut entries, Some(&state), &BTreeSet::new());
+
+    assert!(result.changed);
+    assert_eq!(
+        result.active_sources,
+        BTreeSet::from([String::from("gh_cli")])
+    );
+    assert_eq!(entries.len(), 1);
+    assert_eq!(entries[0].source, "gh_cli");
+    assert_eq!(entries[0].auth_type, "api_key");
+    assert_eq!(entries[0].access_token, "capi_exchanged_token");
+    assert_eq!(
+        entries[0].base_url.as_deref(),
+        Some("https://api.githubcopilot.com")
+    );
+    assert_eq!(entries[0].label, "gh auth token");
+}
+
+// Tier: mock — mirrors tests/agent/test_credential_pool.py::
+// test_load_pool_skips_exchange_for_suppressed_copilot.
+#[test]
+fn copilot_singleton_seed_respects_gh_cli_suppression() {
+    let state = json!({
+        "token": "gho_raw_token",
+        "source": "gh auth token",
+        "api_token": "capi_exchanged_token"
+    });
+    let state = state.as_object().unwrap().clone();
+    let mut entries = Vec::new();
+    let suppressed = BTreeSet::from([String::from("gh_cli")]);
+
+    let result = seed_from_singletons("copilot", &mut entries, Some(&state), &suppressed);
+
+    assert!(!result.changed);
+    assert!(result.active_sources.is_empty());
+    assert!(entries.is_empty());
+}
+
+// Tier: mock — mirrors tests/agent/test_credential_pool.py::
+// test_load_pool_respects_env_var_copilot_suppression.
+#[test]
+fn copilot_singleton_seed_respects_env_source_suppression() {
+    let state = json!({
+        "token": "gho_raw_token",
+        "source": "GH_TOKEN",
+        "api_token": "capi_exchanged_token"
+    });
+    let state = state.as_object().unwrap().clone();
+    let mut entries = Vec::new();
+    let suppressed = BTreeSet::from([String::from("env:GH_TOKEN")]);
+
+    let result = seed_from_singletons("copilot", &mut entries, Some(&state), &suppressed);
+
+    assert!(!result.changed);
+    assert!(result.active_sources.is_empty());
+    assert!(entries.is_empty());
+}
+
+// Tier: mock — mirrors tests/agent/test_credential_pool.py::
+// test_load_pool_gh_cli_suppression_does_not_block_env_tokens.
+#[test]
+fn copilot_singleton_seed_keeps_env_token_when_gh_cli_is_suppressed() {
+    let state = json!({
+        "token": "gho_raw_env_token",
+        "source": "GH_TOKEN",
+        "api_token": "capi_exchanged_token",
+        "enterprise_base_url": "https://enterprise.githubcopilot.com"
+    });
+    let state = state.as_object().unwrap().clone();
+    let mut entries = Vec::new();
+    let suppressed = BTreeSet::from([String::from("gh_cli")]);
+
+    let result = seed_from_singletons("copilot", &mut entries, Some(&state), &suppressed);
+
+    assert!(result.changed);
+    assert_eq!(
+        result.active_sources,
+        BTreeSet::from([String::from("env:GH_TOKEN")])
+    );
+    assert_eq!(entries.len(), 1);
+    assert_eq!(entries[0].source, "env:GH_TOKEN");
+    assert_eq!(entries[0].access_token, "capi_exchanged_token");
+    assert_eq!(
+        entries[0].base_url.as_deref(),
+        Some("https://enterprise.githubcopilot.com")
+    );
+}
+
+// Tier: mock — mirrors tests/agent/test_credential_pool.py::
+// test_load_pool_skips_resolve_when_all_copilot_sources_suppressed.
+#[test]
+fn copilot_singleton_seed_fails_open_when_all_sources_are_suppressed() {
+    let state = json!({
+        "token": "gho_raw_token",
+        "source": "gh auth token",
+        "api_token": "capi_exchanged_token"
+    });
+    let state = state.as_object().unwrap().clone();
+    let mut entries = Vec::new();
+    let suppressed = BTreeSet::from([
+        String::from("gh_cli"),
+        String::from("env:COPILOT_GITHUB_TOKEN"),
+        String::from("env:GH_TOKEN"),
+        String::from("env:GITHUB_TOKEN"),
+    ]);
+
+    let result = seed_from_singletons("copilot", &mut entries, Some(&state), &suppressed);
+
+    assert!(!result.changed);
+    assert!(result.active_sources.is_empty());
+    assert!(entries.is_empty());
+}
+
 // Tier: unit — mirrors agent/credential_pool.py _select_unlocked fill-first path.
 #[test]
 fn fill_first_selection_follows_priority_and_tracks_current_entry() {
