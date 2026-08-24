@@ -1,14 +1,16 @@
 use hermes_agent::auxiliary_client::{
     auxiliary_http_client_config, auxiliary_max_tokens_param, auxiliary_proxy_for_base_url,
     auxiliary_proxy_from_env, build_auxiliary_http_client, codex_cloudflare_headers,
-    is_anthropic_compatible_host, is_model_incompatible_error, is_model_not_found_error,
-    is_payment_error, is_rate_limit_error, normalize_aux_provider, openai_client_config,
-    openai_client_config_with_transport, pool_runtime_api_key, pool_runtime_base_url,
-    read_codex_access_token, resolve_aux_task_provider_model, resolve_auxiliary_tls_verify,
+    compression_threshold_for_model, fixed_temperature_for_model, is_anthropic_compatible_host,
+    is_arcee_trinity_thinking, is_codex_gpt54_or_gpt55, is_codex_spark, is_kimi_model,
+    is_model_incompatible_error, is_model_not_found_error, is_payment_error, is_rate_limit_error,
+    normalize_aux_provider, openai_client_config, openai_client_config_with_transport,
+    pool_runtime_api_key, pool_runtime_base_url, read_codex_access_token,
+    resolve_aux_task_provider_model, resolve_auxiliary_tls_verify,
     resolve_pool_first_runtime_credentials, select_auxiliary_pool_entry, to_openai_base_url,
     AuxiliaryError, AuxiliaryHttpClient, AuxiliaryHttpClientConfig, AuxiliaryPoolEntry,
     AuxiliaryRuntimeCredentials, AuxiliarySslVerifySetting, AuxiliaryTaskConfig,
-    AuxiliaryTlsVerify,
+    AuxiliaryTemperaturePolicy, AuxiliaryTlsVerify,
 };
 use serde_json::json;
 use std::ffi::OsString;
@@ -67,6 +69,164 @@ fn clear_auxiliary_env() {
 
 fn error(status_code: Option<u16>, type_name: &str, message: &str) -> AuxiliaryError {
     AuxiliaryError::new(status_code, type_name, message)
+}
+// Tier: unit — mirrors agent/auxiliary_client.py lines 560-697 and
+// tests/agent/test_arcee_trinity_overrides.py,
+// tests/hermes_cli/test_gpt56_registration.py, and
+// tests/agent/test_auxiliary_client.py lines 2159-2212.
+#[test]
+fn auxiliary_model_policy_normalizes_kimi_and_arcee_models() {
+    assert!(is_kimi_model(Some("  provider/KIMI-k2.5  ")));
+    assert!(is_kimi_model(Some("kimi")));
+    assert!(!is_kimi_model(Some("moonshot-v1")));
+    assert!(!is_kimi_model(Some("kimiish")));
+
+    for model in [
+        Some("trinity-large-thinking"),
+        Some("arcee-ai/trinity-large-thinking"),
+        Some(" Arcee-AI/Trinity-Large-Thinking "),
+    ] {
+        assert!(is_arcee_trinity_thinking(model));
+    }
+    for model in [
+        Some("trinity-large-preview"),
+        Some("trinity-large-thinking-pro"),
+        Some("arcee-ai/trinity-large-thinking-mini"),
+    ] {
+        assert!(!is_arcee_trinity_thinking(model));
+    }
+}
+
+#[test]
+fn auxiliary_temperature_policy_preserves_source_directives() {
+    assert_eq!(
+        fixed_temperature_for_model(Some("moonshot-v1"), None),
+        AuxiliaryTemperaturePolicy::Default
+    );
+    assert_eq!(
+        fixed_temperature_for_model(Some("openrouter/KIMI-k2.5"), None),
+        AuxiliaryTemperaturePolicy::Omit
+    );
+    assert_eq!(
+        fixed_temperature_for_model(Some("arcee-ai/trinity-large-thinking"), None),
+        AuxiliaryTemperaturePolicy::Fixed(0.5)
+    );
+    assert_eq!(
+        fixed_temperature_for_model(Some("trinity-large-thinking-pro"), None),
+        AuxiliaryTemperaturePolicy::Default
+    );
+    assert_eq!(
+        fixed_temperature_for_model(Some("gpt-5.6"), None),
+        AuxiliaryTemperaturePolicy::Default
+    );
+}
+
+#[test]
+fn auxiliary_codex_model_predicates_require_exact_route_and_suffix_boundaries() {
+    for family in ["gpt-5.4", "gpt-5.5", "gpt-5.6"] {
+        for suffix in ["", "-pro", ".sol"] {
+            let model = format!(" openai/{family}{suffix} ");
+            assert!(is_codex_gpt54_or_gpt55(
+                Some(model.as_str()),
+                Some(" OPENAI-CODEX ")
+            ));
+        }
+    }
+    for model in [
+        "gpt-5.45", "gpt-5.50", "gpt-5.55", "gpt-5.40", "gpt-5.60", "gpt-5",
+    ] {
+        assert!(!is_codex_gpt54_or_gpt55(Some(model), Some("openai-codex")));
+    }
+    for provider in ["openai", "openrouter", "github-copilot", " OPENAI "] {
+        assert!(!is_codex_gpt54_or_gpt55(
+            Some("openai/gpt-5.6-sol"),
+            Some(provider)
+        ));
+    }
+}
+
+#[test]
+fn auxiliary_spark_predicate_is_exact_and_codex_route_only() {
+    assert!(is_codex_spark(
+        Some(" openai/GPT-5.3-CODEX-SPARK "),
+        Some(" OPENAI-CODEX ")
+    ));
+    for model in [
+        "gpt-5.5",
+        "gpt-5.3-codex",
+        "gpt-5.3",
+        "gpt-5.3-codex-spark-mini",
+    ] {
+        assert!(!is_codex_spark(Some(model), Some("openai-codex")));
+    }
+    assert!(!is_codex_spark(
+        Some("gpt-5.3-codex-spark"),
+        Some("openrouter")
+    ));
+}
+
+#[test]
+fn auxiliary_compression_threshold_precedence_and_flag_gating_match_source() {
+    assert_eq!(
+        compression_threshold_for_model(
+            Some("arcee-ai/trinity-large-thinking"),
+            Some("openai-codex"),
+            true
+        ),
+        Some(0.75)
+    );
+    assert_eq!(
+        compression_threshold_for_model(Some("gpt-5.5"), Some("openai-codex"), true),
+        Some(0.85)
+    );
+    assert_eq!(
+        compression_threshold_for_model(
+            Some("trinity-large-thinking"),
+            Some("openai-codex"),
+            false
+        ),
+        Some(0.75)
+    );
+    assert_eq!(
+        compression_threshold_for_model(Some("gpt-5.4-pro"), Some("openai-codex"), true),
+        Some(0.85)
+    );
+    assert_eq!(
+        compression_threshold_for_model(Some("gpt-5.5"), Some("openai-codex"), false),
+        None
+    );
+    assert_eq!(
+        compression_threshold_for_model(Some("gpt-5.6-luna"), Some("openai-codex"), true),
+        Some(0.85)
+    );
+    assert_eq!(
+        compression_threshold_for_model(Some("gpt-5.6-sol"), Some("openai"), true),
+        None
+    );
+    assert_eq!(
+        compression_threshold_for_model(Some("openai/gpt-5.6-sol"), Some("openrouter"), true),
+        None
+    );
+    assert_eq!(
+        compression_threshold_for_model(Some("gpt-5.6-luna"), Some("openrouter"), true),
+        None
+    );
+    assert_eq!(
+        compression_threshold_for_model(Some("gpt-5.3-codex-spark"), Some("openai-codex"), false),
+        Some(0.70)
+    );
+    assert_eq!(
+        compression_threshold_for_model(
+            Some("gpt-5.3-codex-spark-mini"),
+            Some("openai-codex"),
+            true
+        ),
+        None
+    );
+    assert_eq!(
+        compression_threshold_for_model(Some("claude-sonnet-4.6"), None, true),
+        None
+    );
 }
 
 #[test]

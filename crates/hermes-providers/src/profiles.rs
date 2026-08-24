@@ -54,6 +54,8 @@ mod nvidia;
 mod ollama_cloud;
 #[path = "openai_codex.rs"]
 mod openai_codex;
+#[path = "opencode_zen.rs"]
+mod opencode_zen;
 #[path = "qwen_oauth.rs"]
 mod qwen_oauth;
 #[path = "stepfun.rs"]
@@ -102,6 +104,8 @@ pub(crate) fn register_builtin_profiles() {
     register_provider(nvidia::profile());
     register_provider(nous::profile());
     register_provider(ollama_cloud::profile());
+    register_provider(opencode_zen::go_profile());
+    register_provider(opencode_zen::zen_profile());
     register_provider(openai_codex::profile());
     register_provider(qwen_oauth::profile());
     register_provider(stepfun::profile());
@@ -139,13 +143,14 @@ pub(crate) fn load_profile(
             Some("kimi-coding") => return Ok(Some(kimi_coding::profile())),
             Some("kimi-coding-cn") => return Ok(Some(kimi_coding::china_profile())),
             Some("minimax") => return Ok(Some(minimax::profile())),
+            Some("nous") => return Ok(Some(nous::profile())),
             Some("novita") => return Ok(Some(novita::profile())),
             Some("nvidia") => return Ok(Some(nvidia::profile())),
-            Some("nous") => return Ok(Some(nous::profile())),
             Some("ollama-cloud") => return Ok(Some(ollama_cloud::profile())),
+            Some("opencode-go") => return Ok(Some(opencode_zen::go_profile())),
+            Some("opencode-zen") => return Ok(Some(opencode_zen::zen_profile())),
             Some("openai-codex") => return Ok(Some(openai_codex::profile())),
             Some("qwen-oauth") => return Ok(Some(qwen_oauth::profile())),
-            Some("stepfun") => return Ok(Some(stepfun::profile())),
             Some("upstage") => return Ok(Some(upstage::profile())),
             Some("vertex") => return Ok(Some(vertex::profile())),
             Some("xai") => return Ok(Some(xai::profile())),

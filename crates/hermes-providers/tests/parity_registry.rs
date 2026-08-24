@@ -85,42 +85,51 @@ fn discovery_is_lazy_and_loader_order_matches_upstream() {
 
     // A normal registry access marks discovery complete and registers the
     // statically linked bundled profiles before the user loader seam runs.
-    assert_eq!(list_providers().len(), 35);
-    assert!(get_provider_profile("actual").is_some());
-    assert!(get_provider_profile("ai-gateway").is_some());
-    assert!(get_provider_profile("alibaba").is_some());
-    assert!(get_provider_profile("alibaba-coding-plan").is_some());
-    assert!(get_provider_profile("anthropic").is_some());
-    assert!(get_provider_profile("arcee").is_some());
-    assert!(get_provider_profile("azure-foundry").is_some());
-    assert!(get_provider_profile("bedrock").is_some());
-    assert!(get_provider_profile("copilot").is_some());
-    assert!(get_provider_profile("copilot-acp").is_some());
-    assert!(get_provider_profile("custom").is_some());
-    assert!(get_provider_profile("fireworks").is_some());
-    assert!(get_provider_profile("gemini").is_some());
-    assert!(get_provider_profile("gmi").is_some());
-    assert!(get_provider_profile("huggingface").is_some());
-    assert!(get_provider_profile("kilocode").is_some());
-    assert!(get_provider_profile("kimi-coding").is_some());
-    assert!(get_provider_profile("kimi-coding-cn").is_some());
-    assert!(get_provider_profile("zai").is_some());
-    assert!(get_provider_profile("minimax").is_some());
-    assert!(get_provider_profile("minimax-cn").is_some());
-    assert!(get_provider_profile("minimax-oauth").is_some());
-    assert!(get_provider_profile("novita").is_some());
-    assert!(get_provider_profile("nvidia").is_some());
-    assert!(get_provider_profile("openai-codex").is_some());
-    assert!(get_provider_profile("qwen-oauth").is_some());
-    assert!(get_provider_profile("stepfun").is_some());
-    assert!(get_provider_profile("upstage").is_some());
-    assert!(get_provider_profile("deepinfra").is_some());
-    assert!(get_provider_profile("deepseek").is_some());
-    assert!(get_provider_profile("nous").is_some());
-    assert!(get_provider_profile("ollama-cloud").is_some());
-    assert!(get_provider_profile("vertex").is_some());
-    assert!(get_provider_profile("xiaomi").is_some());
-    assert!(get_provider_profile("xai").is_some());
+    assert_eq!(list_providers().len(), 37);
+    for name in [
+        "actual",
+        "ai-gateway",
+        "alibaba",
+        "alibaba-coding-plan",
+        "anthropic",
+        "arcee",
+        "azure-foundry",
+        "bedrock",
+        "copilot",
+        "copilot-acp",
+        "custom",
+        "deepinfra",
+        "deepseek",
+        "fireworks",
+        "gemini",
+        "gmi",
+        "huggingface",
+        "kilocode",
+        "kimi-coding",
+        "kimi-coding-cn",
+        "minimax",
+        "minimax-cn",
+        "minimax-oauth",
+        "novita",
+        "nvidia",
+        "nous",
+        "ollama-cloud",
+        "opencode-go",
+        "opencode-zen",
+        "openai-codex",
+        "qwen-oauth",
+        "stepfun",
+        "upstage",
+        "vertex",
+        "xai",
+        "xiaomi",
+        "zai",
+    ] {
+        assert!(
+            get_provider_profile(name).is_some(),
+            "missing builtin profile {name}"
+        );
+    }
     let names: Vec<_> = list_providers()
         .into_iter()
         .map(|profile| profile.name)
@@ -155,6 +164,8 @@ fn discovery_is_lazy_and_loader_order_matches_upstream() {
             "nvidia",
             "nous",
             "ollama-cloud",
+            "opencode-go",
+            "opencode-zen",
             "openai-codex",
             "qwen-oauth",
             "stepfun",

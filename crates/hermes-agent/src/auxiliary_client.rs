@@ -114,6 +114,111 @@ fn normalized_model(value: Option<&str>) -> Option<String> {
     }
 }
 
+/// Temperature behavior required by an auxiliary model contract.
+///
+/// `Default` preserves the caller's temperature behavior, `Omit` removes the
+/// parameter so the provider selects it, and `Fixed` replaces it with a
+/// specific value.
+#[derive(Debug, Clone, PartialEq)]
+pub enum AuxiliaryTemperaturePolicy {
+    Default,
+    Omit,
+    Fixed(f64),
+}
+
+fn auxiliary_model_suffix(model: Option<&str>) -> String {
+    model
+        .unwrap_or("")
+        .trim()
+        .to_ascii_lowercase()
+        .rsplit('/')
+        .next()
+        .unwrap_or("")
+        .to_owned()
+}
+
+/// Return whether a model belongs to the Kimi family.
+///
+/// PARITY: agent/auxiliary_client.py lines 560-563.
+pub fn is_kimi_model(model: Option<&str>) -> bool {
+    let bare = auxiliary_model_suffix(model);
+    bare == "kimi" || bare.starts_with("kimi-")
+}
+
+/// Return whether a model is exactly Arcee Trinity Large Thinking.
+///
+/// PARITY: agent/auxiliary_client.py lines 566-570.
+pub fn is_arcee_trinity_thinking(model: Option<&str>) -> bool {
+    auxiliary_model_suffix(model) == "trinity-large-thinking"
+}
+
+/// Return whether a model is a gpt-5.4/5.5/5.6 Codex OAuth variant.
+///
+/// The historical source name is retained even though gpt-5.6 is included.
+///
+/// PARITY: agent/auxiliary_client.py lines 596-622.
+pub fn is_codex_gpt54_or_gpt55(model: Option<&str>, provider: Option<&str>) -> bool {
+    let provider = provider.unwrap_or("").trim().to_ascii_lowercase();
+    if provider != "openai-codex" {
+        return false;
+    }
+    let bare = auxiliary_model_suffix(model);
+    ["gpt-5.4", "gpt-5.5", "gpt-5.6"].iter().any(|family| {
+        bare == *family
+            || bare
+                .strip_prefix(family)
+                .is_some_and(|suffix| suffix.starts_with('-') || suffix.starts_with('.'))
+    })
+}
+
+/// Return whether a model is the exact Codex OAuth Spark model.
+///
+/// PARITY: agent/auxiliary_client.py lines 625-637.
+pub fn is_codex_spark(model: Option<&str>, provider: Option<&str>) -> bool {
+    let provider = provider.unwrap_or("").trim().to_ascii_lowercase();
+    provider == "openai-codex" && auxiliary_model_suffix(model) == "gpt-5.3-codex-spark"
+}
+
+/// Resolve the source's model-specific temperature directive.
+///
+/// The base URL is accepted to preserve the source helper's call shape; these
+/// policies depend only on the normalized model.
+///
+/// PARITY: agent/auxiliary_client.py lines 640-659.
+pub fn fixed_temperature_for_model(
+    model: Option<&str>,
+    _base_url: Option<&str>,
+) -> AuxiliaryTemperaturePolicy {
+    if is_kimi_model(model) {
+        AuxiliaryTemperaturePolicy::Omit
+    } else if is_arcee_trinity_thinking(model) {
+        AuxiliaryTemperaturePolicy::Fixed(0.5)
+    } else {
+        AuxiliaryTemperaturePolicy::Default
+    }
+}
+
+/// Return a model/route-specific context-compression threshold override.
+///
+/// `None` leaves the caller's configured threshold unchanged.
+///
+/// PARITY: agent/auxiliary_client.py lines 662-697.
+pub fn compression_threshold_for_model(
+    model: Option<&str>,
+    provider: Option<&str>,
+    allow_codex_gpt55_autoraise: bool,
+) -> Option<f64> {
+    if is_arcee_trinity_thinking(model) {
+        Some(0.75)
+    } else if allow_codex_gpt55_autoraise && is_codex_gpt54_or_gpt55(model, provider) {
+        Some(0.85)
+    } else if is_codex_spark(model, provider) {
+        Some(0.70)
+    } else {
+        None
+    }
+}
+
 fn is_known_aux_provider(provider: &str, known_provider_ids: &[&str]) -> bool {
     known_provider_ids
         .iter()

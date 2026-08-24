@@ -90,6 +90,8 @@ pub struct ProviderProfile {
     pub zai_reasoning: bool,
     /// Route Copilot reasoning through the live model-catalog effort list.
     pub copilot_reasoning: bool,
+    /// Translate OpenCode Go model-specific reasoning controls.
+    pub opencode_go_reasoning: bool,
     /// Route the reasoning configuration through `extra_body.reasoning`.
     pub reasoning_passthrough: bool,
 }
@@ -133,6 +135,7 @@ impl ProviderProfile {
             kimi_coding: false,
             zai_reasoning: false,
             copilot_reasoning: false,
+            opencode_go_reasoning: false,
             reasoning_passthrough: false,
         }
     }
@@ -185,6 +188,9 @@ impl ProviderProfile {
     ) -> (Map<String, Value>, Map<String, Value>) {
         if self.qwen_portal {
             return build_qwen_api_kwargs_extras(context);
+        }
+        if self.opencode_go_reasoning {
+            return build_opencode_go_reasoning(reasoning_config, context);
         }
         if self.kimi_coding {
             return build_kimi_reasoning(reasoning_config, context);
@@ -246,7 +252,10 @@ impl ProviderProfile {
         None
     }
 
-    pub fn get_max_tokens(&self, _model: Option<&str>) -> Option<u32> {
+    pub fn get_max_tokens(&self, model: Option<&str>) -> Option<u32> {
+        if self.opencode_go_reasoning && flat_model_name(model) == "mimo-v2.5-pro" {
+            return Some(131_072);
+        }
         self.default_max_tokens
     }
 
@@ -1333,6 +1342,165 @@ fn is_gemini_openai_compat_base_url(base_url: &str) -> bool {
     !normalized.is_empty()
         && normalized.contains("generativelanguage.googleapis.com")
         && normalized.ends_with("/openai")
+}
+
+fn flat_model_name(model: Option<&str>) -> String {
+    model
+        .unwrap_or_default()
+        .trim()
+        .rsplit('/')
+        .next()
+        .unwrap_or_default()
+        .to_lowercase()
+}
+
+fn build_opencode_go_reasoning(
+    reasoning_config: Option<&Map<String, Value>>,
+    context: &Map<String, Value>,
+) -> (Map<String, Value>, Map<String, Value>) {
+    // PARITY: OpenCode Go profile lines 18–125 normalizes model IDs, then
+    // applies model-specific GLM/Kimi/DeepSeek reasoning controls.
+    let model = flat_model_name(context.get("model").and_then(Value::as_str));
+
+    if model.contains("glm-5.2") || model.contains("glm-5-2") || model.contains("glm-5p2") {
+        // PARITY: OpenCode Go profile lines 64–77 leaves disabled, none,
+        // unset, and missing configs empty; enabled values map to high/max.
+        let Some(config) = reasoning_config else {
+            return (Map::new(), Map::new());
+        };
+        if config
+            .get("enabled")
+            .and_then(Value::as_bool)
+            .is_some_and(|enabled| !enabled)
+        {
+            return (Map::new(), Map::new());
+        }
+        let Some(effort) = config
+            .get("effort")
+            .and_then(Value::as_str)
+            .map(str::trim)
+            .filter(|effort| !effort.is_empty())
+            .map(str::to_ascii_lowercase)
+        else {
+            return (Map::new(), Map::new());
+        };
+        if effort == "none" {
+            return (Map::new(), Map::new());
+        }
+        let effort = if matches!(effort.as_str(), "xhigh" | "max" | "ultra") {
+            "max"
+        } else {
+            "high"
+        };
+        return (
+            Map::new(),
+            Map::from_iter([("reasoning_effort".into(), Value::String(effort.into()))]),
+        );
+    }
+
+    if model.starts_with("kimi-k2") {
+        // PARITY: OpenCode Go profile lines 79–102 emits Kimi's disabled
+        // thinking toggle, or one of its mutually exclusive effort shapes.
+        let Some(config) = reasoning_config else {
+            return (Map::new(), Map::new());
+        };
+        if config
+            .get("enabled")
+            .and_then(Value::as_bool)
+            .is_some_and(|enabled| !enabled)
+        {
+            return (
+                Map::from_iter([(
+                    "thinking".into(),
+                    Value::Object(Map::from_iter([(
+                        "type".into(),
+                        Value::String("disabled".into()),
+                    )])),
+                )]),
+                Map::new(),
+            );
+        }
+        let effort = config
+            .get("effort")
+            .and_then(Value::as_str)
+            .map(str::trim)
+            .filter(|effort| !effort.is_empty())
+            .map(str::to_ascii_lowercase);
+        let effort = match effort.as_deref() {
+            Some("xhigh" | "max" | "ultra") => Some("high"),
+            Some("low" | "medium" | "high") => effort.as_deref(),
+            _ => None,
+        };
+        if let Some(effort) = effort {
+            return (
+                Map::new(),
+                Map::from_iter([("reasoning_effort".into(), Value::String(effort.into()))]),
+            );
+        }
+        return (
+            Map::from_iter([(
+                "thinking".into(),
+                Value::Object(Map::from_iter([(
+                    "type".into(),
+                    Value::String("enabled".into()),
+                )])),
+            )]),
+            Map::new(),
+        );
+    }
+
+    if !((model.starts_with("deepseek-v") && !model.starts_with("deepseek-v3"))
+        || model == "deepseek-reasoner")
+    {
+        return (Map::new(), Map::new());
+    }
+
+    // PARITY: OpenCode Go profile lines 104–125 uses DeepSeek's same
+    // mutually exclusive thinking/reasoning_effort shape, with xhigh/max/
+    // ultra normalized to max.
+    let enabled = !reasoning_config
+        .and_then(|config| config.get("enabled"))
+        .and_then(Value::as_bool)
+        .is_some_and(|enabled| !enabled);
+    if !enabled {
+        return (
+            Map::from_iter([(
+                "thinking".into(),
+                Value::Object(Map::from_iter([(
+                    "type".into(),
+                    Value::String("disabled".into()),
+                )])),
+            )]),
+            Map::new(),
+        );
+    }
+    let effort = reasoning_config
+        .and_then(|config| config.get("effort"))
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|effort| !effort.is_empty())
+        .map(str::to_ascii_lowercase);
+    let effort = match effort.as_deref() {
+        Some("xhigh" | "max" | "ultra") => Some("max"),
+        Some("low" | "medium" | "high") => effort.as_deref(),
+        _ => None,
+    };
+    if let Some(effort) = effort {
+        return (
+            Map::new(),
+            Map::from_iter([("reasoning_effort".into(), Value::String(effort.into()))]),
+        );
+    }
+    (
+        Map::from_iter([(
+            "thinking".into(),
+            Value::Object(Map::from_iter([(
+                "type".into(),
+                Value::String("enabled".into()),
+            )])),
+        )]),
+        Map::new(),
+    )
 }
 
 fn build_deepseek_reasoning(
