@@ -5,8 +5,9 @@
 //! provider fallback chains remain higher-layer sections of the 10,044-line
 //! upstream module.
 
-use hermes_utils::{base_url_hostname, model_forces_max_completion_tokens};
+use hermes_utils::{base_url_hostname, model_forces_max_completion_tokens, normalize_proxy_url};
 use serde_json::{json, Value};
+use std::path::Path;
 use thiserror::Error;
 
 /// Minimal exception-shaped adapter used by the source error classifiers.
@@ -454,6 +455,162 @@ pub fn openai_client_config(
         base_url: base_url.to_owned(),
         max_retries: explicit_max_retries.unwrap_or(0),
     }
+}
+
+const AUXILIARY_PROXY_ENV_KEYS: &[&str] = &[
+    "HTTPS_PROXY",
+    "HTTP_PROXY",
+    "ALL_PROXY",
+    "https_proxy",
+    "http_proxy",
+    "all_proxy",
+];
+
+/// Read the environment proxy used by auxiliary OpenAI-compatible clients.
+///
+/// The source checks uppercase names before lowercase names and normalizes the
+/// first non-empty value through `normalize_proxy_url`.
+///
+/// PARITY: agent/process_bootstrap.py lines 112-124.
+pub fn auxiliary_proxy_from_env() -> Option<String> {
+    AUXILIARY_PROXY_ENV_KEYS.iter().find_map(|key| {
+        let value = std::env::var(key).ok()?;
+        normalize_proxy_url(Some(&value))
+    })
+}
+
+fn auxiliary_no_proxy_value() -> Option<String> {
+    // urllib.request.getproxies_environment() gives lowercase `_proxy`
+    // variables precedence over their uppercase counterparts. An explicitly
+    // empty lowercase variable removes the inherited uppercase value.
+    match std::env::var("no_proxy") {
+        Ok(value) if !value.is_empty() => Some(value),
+        Ok(_) => None,
+        Err(_) => std::env::var("NO_PROXY")
+            .ok()
+            .filter(|value| !value.is_empty()),
+    }
+}
+
+fn auxiliary_no_proxy_bypasses(host: &str) -> bool {
+    let Some(no_proxy) = auxiliary_no_proxy_value() else {
+        return false;
+    };
+    if no_proxy == "*" {
+        return true;
+    }
+
+    let host = host.to_lowercase();
+    no_proxy.split(',').any(|raw_name| {
+        let name = raw_name.trim().trim_start_matches('.').to_lowercase();
+        if name.is_empty() {
+            return false;
+        }
+        host == name || host.ends_with(&format!(".{name}"))
+    })
+}
+
+/// Return the environment proxy unless `NO_PROXY` excludes the base URL.
+///
+/// A missing or malformed hostname fails open to the configured proxy, just
+/// like the source's `proxy_bypass_environment` call.
+///
+/// PARITY: agent/process_bootstrap.py lines 126-145.
+pub fn auxiliary_proxy_for_base_url(base_url: Option<&str>) -> Option<String> {
+    let proxy = auxiliary_proxy_from_env();
+    let Some(base_url) = base_url.filter(|value| !value.is_empty()) else {
+        return proxy;
+    };
+    let host = base_url_hostname(base_url);
+    if host.is_empty() {
+        return proxy;
+    }
+    if auxiliary_no_proxy_bypasses(&host) {
+        return None;
+    }
+    proxy
+}
+
+/// Input shape for the source's dynamically typed `ssl_verify` setting.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum AuxiliarySslVerifySetting {
+    Boolean(bool),
+    Text(String),
+}
+
+/// Transport-independent representation of the `httpx verify` choice.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum AuxiliaryTlsVerify {
+    Default,
+    Disabled,
+    CaBundle(String),
+}
+
+fn auxiliary_ssl_verification_disabled(setting: Option<&AuxiliarySslVerifySetting>) -> bool {
+    match setting {
+        Some(AuxiliarySslVerifySetting::Boolean(false)) => true,
+        Some(AuxiliarySslVerifySetting::Text(value)) => matches!(
+            value.trim().to_ascii_lowercase().as_str(),
+            "false" | "0" | "no" | "off"
+        ),
+        _ => false,
+    }
+}
+
+fn auxiliary_expand_user(path: &str) -> String {
+    if path == "~" || path.starts_with("~/") {
+        if let Some(home) = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")) {
+            let home = home.to_string_lossy();
+            return if path == "~" {
+                home.into_owned()
+            } else {
+                format!("{home}/{}", &path[2..])
+            };
+        }
+    }
+    path.to_owned()
+}
+
+fn auxiliary_effective_ca_bundle(ca_bundle: Option<&str>) -> Option<String> {
+    // The source's `or` chain means a non-empty explicit path wins even when
+    // it is stale; a missing explicit path therefore falls back to the default
+    // certificates rather than silently trying a lower-priority env path.
+    let env_value = |key: &str| {
+        std::env::var(key)
+            .ok()
+            .map(|value| value.trim().to_owned())
+            .filter(|value| !value.is_empty())
+    };
+    let explicit = ca_bundle
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(ToOwned::to_owned);
+    let configured = explicit
+        .or_else(|| env_value("HERMES_CA_BUNDLE"))
+        .or_else(|| env_value("SSL_CERT_FILE"))
+        .or_else(|| env_value("REQUESTS_CA_BUNDLE"))
+        .or_else(|| env_value("CURL_CA_BUNDLE"))?;
+    let expanded = auxiliary_expand_user(&configured);
+    Path::new(&expanded).is_file().then_some(expanded)
+}
+
+/// Resolve the source's `httpx verify` setting without binding the Rust port
+/// to a particular HTTP client implementation.
+///
+/// The caller supplies the already-resolved provider TLS fields. A missing or
+/// invalid CA path fails open to the HTTP client's default certificate store.
+///
+/// PARITY: agent/ssl_verify.py lines 14-65.
+pub fn resolve_auxiliary_tls_verify(
+    ca_bundle: Option<&str>,
+    ssl_verify: Option<&AuxiliarySslVerifySetting>,
+) -> AuxiliaryTlsVerify {
+    if auxiliary_ssl_verification_disabled(ssl_verify) {
+        return AuxiliaryTlsVerify::Disabled;
+    }
+    auxiliary_effective_ca_bundle(ca_bundle)
+        .map(AuxiliaryTlsVerify::CaBundle)
+        .unwrap_or(AuxiliaryTlsVerify::Default)
 }
 
 /// Normalize an auxiliary provider name and its source aliases.

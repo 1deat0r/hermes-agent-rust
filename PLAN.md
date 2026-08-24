@@ -354,7 +354,7 @@ rich/routing/cooldown/meta/reactions/conversation/delete modules.
 
 | Module / upstream surface | Status | Rust home, oracle, and evidence tier |
 |---|---|---|
-| `agent/auxiliary_client.py` (10,044 LOC) — routing, wire-parameter, task-provider precedence, pool-runtime projection, endpoint normalization, and client-option sections | 🟡 | `hermes-agent::auxiliary_client`; 19 source-derived parity tests (`unit`) cover provider aliases/special forms, OpenAI-compatible max-token keyword selection, payment/quota and rate-limit classification, disjoint stale-model/capability errors, explicit/configured endpoint and key precedence, MoA unwrapping, direct OpenAI aliasing, `auto` model normalization, pool key fallback, URL precedence/normalization, the Nous-only base-URL override, MiniMax/Z.AI/Kimi OpenAI wire paths, exact Anthropic host validation, and default/explicit SDK retry options; SDK/httpx construction, credential pools, async transport, cancellation, and fallback chains remain pending |
+| `agent/auxiliary_client.py` (10,044 LOC) — routing, wire-parameter, task-provider precedence, pool-runtime projection, endpoint normalization, client-option, and proxy/TLS policy sections | 🟡 | `hermes-agent::auxiliary_client`; 25 source-derived parity tests (`unit`) cover provider aliases/special forms, OpenAI-compatible max-token keyword selection, payment/quota and rate-limit classification, disjoint stale-model/capability errors, explicit/configured endpoint and key precedence, MoA unwrapping, direct OpenAI aliasing, `auto` model normalization, pool key fallback, URL precedence/normalization, the Nous-only base-URL override, MiniMax/Z.AI/Kimi OpenAI wire paths, exact Anthropic host validation, default/explicit SDK retry options, env proxy precedence/SOCKS normalization/`NO_PROXY` bypass, default/custom/insecure TLS verification, and fail-open CA handling; SDK/httpx construction, credential pools, async transport, cancellation, and fallback chains remain pending |
 
 ### hermes-providers base (Phase 2, upstream @ b9aa928)
 
@@ -442,7 +442,7 @@ oracle tests). Upstream oracle files currently mirrored:
 - `tests/tools/test_tool_output_limits.py` → `crates/hermes-tools/tests/parity_tool_output_limits.rs`
 - `tests/tools/test_working_diff.py` → `crates/hermes-tools/tests/parity_working_diff.rs`
 - `providers/base.py` + `tests/providers/test_fetch_models_base_url.py` → `crates/hermes-providers/tests/parity_base.rs` (9 profile/catalog/redirect parity tests; `unit`/`mock`)
-- `agent/auxiliary_client.py` + `tests/agent/test_auxiliary_client.py` → `crates/hermes-agent/tests/parity_auxiliary_client.rs` (19 source-derived routing/wire/error/task-provider-resolution/pool-runtime/endpoint/client-option parity tests; `unit`; SDK/httpx client construction, credential pools, async transport, cancellation, and provider fallback oracles remain future sections)
+- `agent/auxiliary_client.py` + `agent/process_bootstrap.py` + `agent/ssl_verify.py` + proxy/TLS tests → `crates/hermes-agent/tests/parity_auxiliary_client.rs` (25 source-derived routing/wire/error/task-provider-resolution/pool-runtime/endpoint/client-option/proxy/TLS parity tests; `unit`; the Rust `AuxiliaryTlsVerify` value preserves source precedence and fail-open decisions while actual SDK/httpx and `ssl.SSLContext` construction, credential pools, async transport, cancellation, and provider fallback oracles remain future sections)
 - `providers/__init__.py` + `tests/providers/test_provider_registry.py` + `tests/providers/test_plugin_discovery.py` → `crates/hermes-providers/tests/parity_registry.rs` (8 registry/discovery parity tests; `unit`/`mock`)
 - `plugins/model-providers/ai-gateway/__init__.py` → `crates/hermes-providers/tests/parity_ai_gateway.rs` (2 source-derived profile/registration/reasoning-hook parity tests; `unit`; no dedicated upstream plugin-profile test; related CLI/model catalog tests remain future-crate oracles)
 - `plugins/model-providers/alibaba/__init__.py` → `crates/hermes-providers/tests/parity_alibaba.rs` (2 source-derived profile/registration parity tests; `unit`; no dedicated upstream test module)
@@ -482,6 +482,27 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 + the exact command, e.g. `cargo test -p hermes-time (unit)`.
 
 ## 7. Session log
+
+- 2026-08-24 (session 4b9): Continued the partial
+  `agent/auxiliary_client.py` port (@ b9aa928, 10,044 LOC) with the
+  transport-independent proxy/TLS policy boundary. The Rust adapter mirrors
+  `process_bootstrap.py` proxy precedence (`HTTPS_PROXY`, `HTTP_PROXY`,
+  `ALL_PROXY`, then lowercase forms), SOCKS URL normalization,
+  `NO_PROXY` suffix matching, and fail-open behavior for absent or malformed
+  base URLs. Its `AuxiliaryTlsVerify` value mirrors `ssl_verify.py`'s insecure
+  setting precedence, explicit/provider and `HERMES_CA_BUNDLE` →
+  `SSL_CERT_FILE` → `REQUESTS_CA_BUNDLE` → `CURL_CA_BUNDLE` lookup order,
+  user expansion, existing-file check, and default-certificate fallback.
+  Python's httpx client and SSL context are intentionally represented as a
+  transport-neutral value until the SDK/transport seam is ported. Added 6
+  source-derived `unit` parity tests first (25 total in
+  `parity_auxiliary_client.rs`). The focused suite, required
+  `/home/mustbearnold/.cargo/bin/cargo build --workspace`, and the complete
+  `/home/mustbearnold/.cargo/bin/cargo test --workspace` all passed; only the
+  three intentional delegation/schema doc tests remain ignored. Inventory and
+  conversion ledger remain at 73 done / 10 partial / 3,799 missing tracked
+  modules and 73 done / 10 partial / 1,020 missing production modules. The
+  next seam is concrete SDK/httpx client construction and credential selection.
 
 - 2026-08-24 (session 4b8): Continued the partial
   `agent/auxiliary_client.py` port (@ b9aa928, 10,044 LOC) with the

@@ -1,11 +1,65 @@
 use hermes_agent::auxiliary_client::{
-    auxiliary_max_tokens_param, is_anthropic_compatible_host, is_model_incompatible_error,
-    is_model_not_found_error, is_payment_error, is_rate_limit_error, normalize_aux_provider,
-    openai_client_config, pool_runtime_api_key, pool_runtime_base_url,
-    resolve_aux_task_provider_model, to_openai_base_url, AuxiliaryError, AuxiliaryPoolEntry,
-    AuxiliaryTaskConfig,
+    auxiliary_max_tokens_param, auxiliary_proxy_for_base_url, auxiliary_proxy_from_env,
+    is_anthropic_compatible_host, is_model_incompatible_error, is_model_not_found_error,
+    is_payment_error, is_rate_limit_error, normalize_aux_provider, openai_client_config,
+    pool_runtime_api_key, pool_runtime_base_url, resolve_aux_task_provider_model,
+    resolve_auxiliary_tls_verify, to_openai_base_url, AuxiliaryError, AuxiliaryPoolEntry,
+    AuxiliarySslVerifySetting, AuxiliaryTaskConfig, AuxiliaryTlsVerify,
 };
 use serde_json::json;
+use std::ffi::OsString;
+use std::sync::Mutex;
+
+const AUXILIARY_ENV_KEYS: &[&str] = &[
+    "HTTPS_PROXY",
+    "HTTP_PROXY",
+    "ALL_PROXY",
+    "https_proxy",
+    "http_proxy",
+    "all_proxy",
+    "NO_PROXY",
+    "no_proxy",
+    "HERMES_CA_BUNDLE",
+    "SSL_CERT_FILE",
+    "REQUESTS_CA_BUNDLE",
+    "CURL_CA_BUNDLE",
+];
+
+static AUXILIARY_ENV_MUTEX: Mutex<()> = Mutex::new(());
+
+struct EnvironmentSnapshot {
+    values: Vec<(&'static str, Option<OsString>)>,
+}
+
+impl EnvironmentSnapshot {
+    fn new() -> Self {
+        Self {
+            values: AUXILIARY_ENV_KEYS
+                .iter()
+                .map(|key| (*key, std::env::var_os(key)))
+                .collect(),
+        }
+    }
+}
+
+impl Drop for EnvironmentSnapshot {
+    fn drop(&mut self) {
+        for (key, value) in &self.values {
+            unsafe {
+                match value {
+                    Some(value) => std::env::set_var(key, value),
+                    None => std::env::remove_var(key),
+                }
+            }
+        }
+    }
+}
+
+fn clear_auxiliary_env() {
+    for key in AUXILIARY_ENV_KEYS {
+        unsafe { std::env::remove_var(key) };
+    }
+}
 
 fn error(status_code: Option<u16>, type_name: &str, message: &str) -> AuxiliaryError {
     AuxiliaryError::new(status_code, type_name, message)
@@ -518,4 +572,116 @@ fn openai_client_config_disables_sdk_retries_by_default() {
 fn openai_client_config_preserves_explicit_retry_override() {
     let config = openai_client_config("api-key", "https://provider.example/v1", Some(5));
     assert_eq!(config.max_retries, 5);
+}
+
+// Tier: unit — mirrors tests/run_agent/test_create_openai_client_proxy_env.py.
+#[test]
+fn auxiliary_proxy_from_env_prefers_https_then_http_then_all() {
+    let _lock = AUXILIARY_ENV_MUTEX.lock().unwrap();
+    let _environment = EnvironmentSnapshot::new();
+    clear_auxiliary_env();
+
+    assert_eq!(auxiliary_proxy_from_env(), None);
+
+    unsafe { std::env::set_var("ALL_PROXY", "http://all:1") };
+    assert_eq!(auxiliary_proxy_from_env(), Some("http://all:1".into()));
+
+    unsafe { std::env::set_var("HTTP_PROXY", "http://http:2") };
+    assert_eq!(auxiliary_proxy_from_env(), Some("http://http:2".into()));
+
+    unsafe { std::env::set_var("HTTPS_PROXY", "http://https:3") };
+    assert_eq!(auxiliary_proxy_from_env(), Some("http://https:3".into()));
+}
+
+// Tier: unit — mirrors tests/run_agent/test_create_openai_client_proxy_env.py.
+#[test]
+fn auxiliary_proxy_from_env_normalizes_socks_alias() {
+    let _lock = AUXILIARY_ENV_MUTEX.lock().unwrap();
+    let _environment = EnvironmentSnapshot::new();
+    clear_auxiliary_env();
+
+    unsafe { std::env::set_var("ALL_PROXY", "socks://127.0.0.1:1080/") };
+    assert_eq!(
+        auxiliary_proxy_from_env(),
+        Some("socks5://127.0.0.1:1080/".into())
+    );
+}
+
+// Tier: unit — mirrors tests/agent/test_auxiliary_client_proxy_env.py.
+#[test]
+fn auxiliary_proxy_for_base_url_respects_no_proxy() {
+    let _lock = AUXILIARY_ENV_MUTEX.lock().unwrap();
+    let _environment = EnvironmentSnapshot::new();
+    clear_auxiliary_env();
+
+    unsafe {
+        std::env::set_var("HTTPS_PROXY", "http://127.0.0.1:7897");
+        std::env::set_var("NO_PROXY", "internal.example.com");
+    }
+    assert_eq!(
+        auxiliary_proxy_for_base_url(Some("https://litellm.internal.example.com/v1")),
+        None
+    );
+    assert_eq!(
+        auxiliary_proxy_for_base_url(Some("https://api.openai.com/v1")),
+        Some("http://127.0.0.1:7897".into())
+    );
+}
+
+// Tier: unit — mirrors tests/agent/test_ssl_verify.py.
+#[test]
+fn auxiliary_tls_verify_defaults_to_httpx_certificates() {
+    let _lock = AUXILIARY_ENV_MUTEX.lock().unwrap();
+    let _environment = EnvironmentSnapshot::new();
+    clear_auxiliary_env();
+
+    assert_eq!(
+        resolve_auxiliary_tls_verify(None, None),
+        AuxiliaryTlsVerify::Default
+    );
+}
+
+// Tier: unit — mirrors tests/agent/test_ssl_verify.py and
+// tests/run_agent/test_create_openai_client_ssl_verify.py.
+#[test]
+fn auxiliary_tls_verify_uses_existing_ca_bundle_and_explicit_precedence() {
+    let _lock = AUXILIARY_ENV_MUTEX.lock().unwrap();
+    let _environment = EnvironmentSnapshot::new();
+    clear_auxiliary_env();
+    let ca_bundle = std::env::current_exe().unwrap();
+    let ca_bundle = ca_bundle.to_string_lossy().into_owned();
+
+    unsafe { std::env::set_var("HERMES_CA_BUNDLE", "missing-ca-bundle.pem") };
+    assert_eq!(
+        resolve_auxiliary_tls_verify(Some(&ca_bundle), None),
+        AuxiliaryTlsVerify::CaBundle(ca_bundle.clone())
+    );
+
+    unsafe { std::env::remove_var("HERMES_CA_BUNDLE") };
+    unsafe { std::env::set_var("HERMES_CA_BUNDLE", &ca_bundle) };
+    assert_eq!(
+        resolve_auxiliary_tls_verify(None, None),
+        AuxiliaryTlsVerify::CaBundle(ca_bundle)
+    );
+}
+
+// Tier: unit — mirrors tests/agent/test_auxiliary_client_ssl_verify.py.
+#[test]
+fn auxiliary_tls_verify_accepts_false_settings_and_fails_open_for_missing_ca() {
+    let _lock = AUXILIARY_ENV_MUTEX.lock().unwrap();
+    let _environment = EnvironmentSnapshot::new();
+    clear_auxiliary_env();
+
+    assert_eq!(
+        resolve_auxiliary_tls_verify(None, Some(&AuxiliarySslVerifySetting::Boolean(false)),),
+        AuxiliaryTlsVerify::Disabled
+    );
+    assert_eq!(
+        resolve_auxiliary_tls_verify(None, Some(&AuxiliarySslVerifySetting::Text("off".into())),),
+        AuxiliaryTlsVerify::Disabled
+    );
+    assert_eq!(
+        resolve_auxiliary_tls_verify(Some("missing-ca-bundle.pem"), None),
+        AuxiliaryTlsVerify::Default
+    );
 }
