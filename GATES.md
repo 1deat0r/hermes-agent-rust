@@ -15,10 +15,11 @@ The conversion is decomposed into these dependency-ordered branches:
 5. Surfaces: TUI, ACP, scripts, bundled skills, and remaining top-level modules.
 6. Root integration: full-workspace tests, live/mock contract checks, docs/ledger closure, and local/GitHub mirror verification.
 
-The active leaf is Agent core → credential lifecycle. Its current
-dependency-safe unit is the transport-neutral OAuth refresh/re-selection
-boundary; its next unit is outer configuration discovery/loading. Later leaves
-must not be marked verified while a lower-layer contract remains partial.
+The active leaves are Agent core → config discovery and Providers → Z.AI
+endpoint chooser. Both current units are transport-neutral explicit-input
+boundaries; their next dependency-safe work is full merged config loading and
+concrete Z.AI HTTP/cache integration. Later leaves must not be marked verified
+while a lower-layer contract remains partial.
 
 - [ ] G1: every tracked upstream module is marked done in the generated inventory
   CHECK: /usr/bin/python3 -c "import json; s=json.load(open('tools/inventory.json', encoding='utf-8'))['summary']; assert s['modules'] == 3882 and s['status_counts'] == {'done': 3882}, s; assert s['production_modules'] == 1103 and s['prod_status_counts'] == {'done': 1103}, s; print('inventory closure passed')"

@@ -1,6 +1,13 @@
 //! Provider profiles and registry surfaces from `providers/`.
 
 pub mod base;
+/// Pure and injected Z.AI endpoint discovery helpers.
+pub mod zai;
+
+pub use zai::{
+    choose_zai_endpoint, probe_zai_endpoint, resolve_zai_base_url, zai_endpoint_specs,
+    ZaiEndpointResult, ZaiEndpointSpec, ZAI_ENDPOINTS,
+};
 pub(crate) mod profiles;
 pub mod registry;
 

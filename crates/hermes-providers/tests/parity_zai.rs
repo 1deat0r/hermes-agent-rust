@@ -170,3 +170,130 @@ fn provider_profile_default_is_not_zai_capable() {
     let profile = ProviderProfile::new("test");
     assert!(!profile.zai_reasoning);
 }
+#[test]
+fn zai_endpoint_table_matches_upstream_auth_lines_685_691() {
+    let endpoints = hermes_providers::zai_endpoint_specs();
+    assert_eq!(endpoints.len(), 4);
+    assert_eq!(
+        endpoints
+            .iter()
+            .map(|endpoint| (
+                endpoint.id,
+                endpoint.base_url,
+                endpoint.models,
+                endpoint.label,
+            ))
+            .collect::<Vec<_>>(),
+        vec![
+            (
+                "global",
+                "https://api.z.ai/api/paas/v4",
+                &["glm-5"][..],
+                "Global",
+            ),
+            (
+                "cn",
+                "https://open.bigmodel.cn/api/paas/v4",
+                &["glm-5"][..],
+                "China",
+            ),
+            (
+                "coding-global",
+                "https://api.z.ai/api/coding/paas/v4",
+                &["glm-5.2", "glm-5.1", "glm-5v-turbo", "glm-4.7"][..],
+                "Global (Coding Plan)",
+            ),
+            (
+                "coding-cn",
+                "https://open.bigmodel.cn/api/coding/paas/v4",
+                &["glm-5.2", "glm-5.1", "glm-5v-turbo", "glm-4.7"][..],
+                "China (Coding Plan)",
+            ),
+        ]
+    );
+}
+
+#[test]
+fn zai_endpoint_probe_falls_back_through_models_in_order() {
+    let endpoint = hermes_providers::zai_endpoint_specs()
+        .iter()
+        .find(|endpoint| endpoint.id == "coding-global")
+        .unwrap();
+    let mut attempted: Vec<String> = Vec::new();
+    let result = hermes_providers::probe_zai_endpoint(endpoint, |_, model| {
+        attempted.push(model.to_owned());
+        model == "glm-4.7"
+    });
+    assert_eq!(
+        attempted,
+        ["glm-5.2", "glm-5.1", "glm-5v-turbo", "glm-4.7"].map(str::to_owned)
+    );
+    assert_eq!(result.unwrap().model, "glm-4.7");
+}
+
+#[test]
+fn zai_endpoint_chooser_uses_priority_not_probe_completion_order() {
+    let mut attempted: Vec<(&'static str, String)> = Vec::new();
+    let result = hermes_providers::choose_zai_endpoint(|endpoint, model| {
+        attempted.push((endpoint.id, model.to_owned()));
+        matches!(endpoint.id, "cn" | "coding-global") && model == endpoint.models[0]
+    });
+    assert_eq!(result.unwrap().id, "cn");
+    assert_eq!(
+        attempted,
+        vec![("global", "glm-5".into()), ("cn", "glm-5".into())]
+    );
+}
+
+#[test]
+fn zai_endpoint_chooser_returns_none_when_all_probes_fail() {
+    assert!(hermes_providers::choose_zai_endpoint(|_, _| false).is_none());
+}
+
+#[test]
+fn zai_base_url_precedence_matches_upstream_lines_784_801() {
+    assert_eq!(
+        hermes_providers::resolve_zai_base_url(
+            "key",
+            "https://default.example",
+            "https://override.example",
+            Some("https://cached.example"),
+            Some("https://detected.example"),
+        ),
+        "https://override.example"
+    );
+    assert_eq!(
+        hermes_providers::resolve_zai_base_url(
+            "",
+            "https://default.example",
+            "",
+            Some("https://cached.example"),
+            Some("https://detected.example"),
+        ),
+        "https://default.example"
+    );
+    assert_eq!(
+        hermes_providers::resolve_zai_base_url(
+            "key",
+            "https://default.example",
+            "",
+            Some("https://cached.example"),
+            Some("https://detected.example"),
+        ),
+        "https://cached.example"
+    );
+    assert_eq!(
+        hermes_providers::resolve_zai_base_url(
+            "key",
+            "https://default.example",
+            "",
+            None,
+            Some("https://detected.example"),
+        ),
+        "https://detected.example"
+    );
+    assert_eq!(
+        hermes_providers::resolve_zai_base_url("key", "https://default.example", "", None, None,),
+        "https://default.example"
+    );
+}

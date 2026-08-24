@@ -1,4 +1,5 @@
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
+use hermes_agent::config::load_config_snapshot_at;
 use hermes_agent::credential_pool::{
     credential_pool_matches_provider, custom_provider_config, custom_provider_pool_key,
     get_compatible_custom_providers, get_env_prefer_dotenv, label_from_token,
@@ -2219,4 +2220,51 @@ fn refreshed_borrowed_entry_stays_metadata_only_on_disk() {
     assert!(!payload.to_string().contains("new-borrowed-refresh"));
     assert_eq!(payload["source"], "env:OPENROUTER_API_KEY");
     assert!(payload["secret_fingerprint"].as_str().is_some());
+}
+
+// Tier: mock — verifies the discovered snapshot feeds the existing
+// credential-pool composition contract without importing the CLI config layer.
+#[test]
+fn config_snapshot_projects_into_pool_strategy_and_custom_seeding() {
+    let directory = tempfile::tempdir().expect("tempdir");
+    let path = directory.path().join("config.yaml");
+    fs::write(
+        &path,
+        r#"credential_pool_strategies:
+  openrouter: round_robin
+custom_providers:
+  - name: Relay
+    base_url: https://relay.example/v1
+    api_key: config-key
+model:
+  provider: custom
+  base_url: https://relay.example/v1
+  api_key: model-key
+"#,
+    )
+    .expect("write config");
+
+    let snapshot = load_config_snapshot_at(&path);
+    assert_eq!(
+        pool_strategy_from_config("openrouter", Some(snapshot.pool_config())),
+        PoolStrategy::RoundRobin
+    );
+    assert_eq!(snapshot.custom_providers().len(), 1);
+
+    let mut entries = Vec::new();
+    let seed = seed_custom_pool(
+        "custom:relay",
+        &mut entries,
+        snapshot.custom_providers(),
+        snapshot.model_config(),
+        &BTreeSet::new(),
+    );
+    assert!(seed.changed);
+    assert_eq!(
+        entries
+            .iter()
+            .map(|entry| entry.source.as_str())
+            .collect::<Vec<_>>(),
+        vec!["config:Relay", "model_config"]
+    );
 }
