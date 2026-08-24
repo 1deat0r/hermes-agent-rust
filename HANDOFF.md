@@ -9,23 +9,23 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
 Current branch/HEAD: `main` is aligned with `origin/main` after publishing the
-transport-neutral OAuth refresh/re-selection unit. Local source commit
-`e568a282a692d65ee574ce2ca25db10741b95515` is mirrored as GitHub
-`e568a282a692d65ee574ce2ca25db10741b95515`; both refs resolve to tree
-`646b395e0a3fc431aa0fb09401a3465f92f02022` with 273 matching tracked blobs.
-The local HTTPS Git client now authenticates through the logged-in `gh`
-keyring account; future logical units can use `git push origin main`, with the
-connected GitHub API/CLI available for metadata checks.
+parallel config-discovery and Z.AI pure endpoint unit. Local source commit
+`a092a8f21d4ea6deacac92503e67f7e4bdd809df` is mirrored as GitHub
+`a092a8f21d4ea6deacac92503e67f7e4bdd809df`; both refs resolve to tree
+`68766578f9e2d002b4a4f8caee8c4a07e94cf1e7` with 273 matching tracked blobs.
+The local HTTPS Git client authenticates through the logged-in `gh` keyring
+account; future logical units can use `git push origin main`.
 
 Latest synchronized unit: local source
+`a092a8f21d4ea6deacac92503e67f7e4bdd809df` → GitHub
+`a092a8f21d4ea6deacac92503e67f7e4bdd809df`
+(`feat(agent,providers): add config and Z.AI discovery seams @ b9aa928`),
+with the previous local source
 `e568a282a692d65ee574ce2ca25db10741b95515` → GitHub
 `e568a282a692d65ee574ce2ca25db10741b95515`
-(`feat(agent): add OAuth refresh boundary @ b9aa928`), with the previous local
-source `9216c3849362a39145b9147394630cfa112171e1` → GitHub
+(`feat(agent): add OAuth refresh boundary @ b9aa928`), with the previous
+local source `9216c3849362a39145b9147394630cfa112171e1` → GitHub
 `1167a7381d7623247a37267edd4f16e2df7371e5`
-(`feat(agent): add custom provider config compatibility @ b9aa928`), with the
-previous local source `f6a266e6e5ef9417c9b49cf9f2d53563e0ac9ae4` → GitHub
-`940ead9f102e6aba3ea0d2c308d7cb9c732cbd5e`
 (`feat(agent): compose full credential pool loader @ b9aa928`), with the
 previous local source `2c7798500593d6ac290c235181da28a7ef81e8d2` → GitHub
 `dadb41d8b1e8cf4da277d6b133a81e3314122ad1`
@@ -192,7 +192,7 @@ GitHub `11245d8` (`plugins.model-providers.arcee.__init__`), local `ec9db5aa`
 → GitHub `9f8f7f6` (`plugins.model-providers.alibaba.__init__`), local
 `c121ae3` → GitHub `3996dcb6` (`providers.base`), and local `0fdafeea` →
 `providers.__init__`, all at upstream `b9aa928`; the current `main` alignment is
-recorded above with the OAuth refresh source commit and its verified tree.
+recorded above with the config/Z.AI source commit and its verified tree.
 
 ## What landed this session
 
@@ -218,8 +218,11 @@ credential-pool wave now has 66 pool plus 15 persistence tests (81 total), and
 the Z.AI parity suite has 10 tests. Parallel child gates passed 3/3 each and
 the parent integration gate passed 3/3. Targeted rustfmt, focused leaf/
 integration tests, workspace build, and serialized workspace tests passed:
-1,125 tests passed, 5 ignored, 12 warnings. The source and documentation are
-pending the next logical commit. No conversion-ledger status changed.
+1,125 tests passed, 5 ignored, 12 warnings. Local source commit
+`a092a8f21d4ea6deacac92503e67f7e4bdd809df` was mirrored as GitHub
+`a092a8f21d4ea6deacac92503e67f7e4bdd809df`; both refs resolve to tree
+`68766578f9e2d002b4a4f8caee8c4a07e94cf1e7` with 273 matching tracked blobs.
+No conversion-ledger status changed.
 Full merged CLI config discovery/loading, concrete Z.AI HTTP probing/cache,
 provider-specific OAuth transport/auth-store write-through, leases, and
 logging throttles remain pending.
@@ -712,12 +715,13 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-Local `main` and `origin/main` remain aligned at the preceding OAuth refresh
-snapshot while this parallel config/Z.AI unit is pending commit. The working
-tree contains the two disjoint implementations, their parity tests, and the
-integration documentation checkpoint. No conversion-ledger status changed:
-the current summary is 73 done / 11 partial / 3,798 missing tracked modules
-and 73 done / 11 partial / 1,019 missing production modules.
+Local `main` and `origin/main` are aligned after publishing the parallel
+config-discovery and Z.AI pure endpoint unit. Local and remote refs are both
+`a092a8f21d4ea6deacac92503e67f7e4bdd809df`, resolving to tree
+`68766578f9e2d002b4a4f8caee8c4a07e94cf1e7`, with 273 verified matching
+tracked blobs. No conversion-ledger status changed: the current summary is
+73 done / 11 partial / 3,798 missing tracked modules and 73 done / 11 partial /
+1,019 missing production modules.
 
 ## Next actions, in order
 

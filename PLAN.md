@@ -531,10 +531,12 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   Parallel leaf gates passed 3/3 each; the integration gate passed 3/3.
   Targeted rustfmt, focused leaf/integration suites, workspace build, and
   serialized workspace tests passed (1,125 passed, 5 ignored, 12 warnings).
-  The source and documentation are pending the next logical commit; no ledger
-  status changed. Full merged CLI config discovery/loading, concrete Z.AI HTTP
-  probing/cache, OAuth transport/auth-store write-through, leases, and
-  logging throttles remain pending.
+  Local source commit `a092a8f21d4ea6deacac92503e67f7e4bdd809df` was mirrored
+  as GitHub `a092a8f21d4ea6deacac92503e67f7e4bdd809df`; both refs resolve to
+  tree `68766578f9e2d002b4a4f8caee8c4a07e94cf1e7` with 273 matching tracked
+  blobs. No ledger status changed. Full merged CLI config discovery/loading,
+  concrete Z.AI HTTP probing/cache, OAuth transport/auth-store write-through,
+  leases, and logging throttles remain pending.
 
 - 2026-08-24 (session 4cf): Continued the partial `agent.credential_pool`
   port (@ b9aa928) through the transport-neutral OAuth refresh boundary.
