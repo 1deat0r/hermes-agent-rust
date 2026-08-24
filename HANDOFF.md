@@ -9,10 +9,10 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
 Current branch/HEAD: `main` is aligned with `origin/main` after the local and
-GitHub API mirror sequence for the auth-store locking unit. The local source
-commit `197c14819ebc37739d7a501aa1d94a2133ec4d32` was mirrored as GitHub
-`b98265b02c4b65fdb7aae8ace265a5cd5d925efc`; both refs resolve to tree
-`a7498bc6a0ba7d9f8f2b6e816664b70dcfc9ac43` with 273 matching tracked blobs.
+GitHub API mirror sequence for the environment-seeding unit. The local source
+commit `608f5d409848a35b9e10c8971269cbea662d7a74` was mirrored as GitHub
+`628c0ee13a14ed5a77e59e88da6accfb083e4ff9`; both refs resolve to tree
+`84981e3d9e9f964dfcfc31e8f9bb8f3b755747b5` with 273 matching tracked blobs.
 The connected GitHub API publishes each logical commit immediately as a
 sequential remote mirror. Its commit SHAs differ from the local sequence
 because the API cannot preserve local author/committer timestamps, but every
@@ -21,7 +21,10 @@ update. The local HTTPS Git client still has no credentials; use the connected
 GitHub API for future pushes until `gh auth login` or SSH is configured.
 
 Latest synchronized unit: local source
-`197c14819ebc37739d7a501aa1d94a2133ec4d32` → GitHub
+`608f5d409848a35b9e10c8971269cbea662d7a74` → GitHub
+`628c0ee13a14ed5a77e59e88da6accfb083e4ff9`
+(`feat(agent): add environment credential seeding @ b9aa928`), with the
+previous local source `197c14819ebc37739d7a501aa1d94a2133ec4d32` → GitHub
 `b98265b02c4b65fdb7aae8ace265a5cd5d925efc`
 (`feat(agent): add auth store locking @ b9aa928`), with the previous local
 source `fd7e26d07e1efbab67885f56ca8d9eae2ce9b4a9` → GitHub
@@ -604,13 +607,13 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-Local `main` and `origin/main` were aligned at the auth-store lock checkpoint;
-this source unit is the current staged working-tree change and will be mirrored
-immediately after its local commit. The prior recursive GitHub tree and local
-`git ls-tree -r` verification contain 273 blobs with no path/mode/SHA
-mismatches. No conversion-ledger status changed: the current summary is 73
-done / 11 partial / 3,798 missing tracked modules and 73 done / 11 partial /
-1,019 missing production modules.
+Local `main` and `origin/main` are aligned after the environment source mirror.
+The source commit tree `84981e3d9e9f964dfcfc31e8f9bb8f3b755747b5` was verified
+recursively against the local tree with 273 blobs and no path/mode/SHA
+mismatches; this handoff is the immediate documentation checkpoint for that
+mirror. No conversion-ledger status changed: the current summary is 73 done /
+11 partial / 3,798 missing tracked modules and 73 done / 11 partial / 1,019
+missing production modules.
 
 ## Next actions, in order
 
