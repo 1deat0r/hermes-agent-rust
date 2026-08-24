@@ -1,8 +1,9 @@
 use hermes_agent::auxiliary_client::{
     auxiliary_max_tokens_param, is_anthropic_compatible_host, is_model_incompatible_error,
     is_model_not_found_error, is_payment_error, is_rate_limit_error, normalize_aux_provider,
-    pool_runtime_api_key, pool_runtime_base_url, resolve_aux_task_provider_model,
-    to_openai_base_url, AuxiliaryError, AuxiliaryPoolEntry, AuxiliaryTaskConfig,
+    openai_client_config, pool_runtime_api_key, pool_runtime_base_url,
+    resolve_aux_task_provider_model, to_openai_base_url, AuxiliaryError, AuxiliaryPoolEntry,
+    AuxiliaryTaskConfig,
 };
 use serde_json::json;
 
@@ -503,4 +504,18 @@ fn anthropic_compatible_host_guard_is_exact_and_fail_closed() {
     ] {
         assert!(!is_anthropic_compatible_host(url), "{url}");
     }
+}
+
+#[test]
+fn openai_client_config_disables_sdk_retries_by_default() {
+    let config = openai_client_config("api-key", "https://provider.example/v1", None);
+    assert_eq!(config.api_key, "api-key");
+    assert_eq!(config.base_url, "https://provider.example/v1");
+    assert_eq!(config.max_retries, 0);
+}
+
+#[test]
+fn openai_client_config_preserves_explicit_retry_override() {
+    let config = openai_client_config("api-key", "https://provider.example/v1", Some(5));
+    assert_eq!(config.max_retries, 5);
 }

@@ -427,6 +427,35 @@ pub fn is_anthropic_compatible_host(url: &str) -> bool {
     base_url_hostname(&normalized) == "api.anthropic.com"
 }
 
+/// Options passed to the eventual OpenAI-compatible auxiliary SDK client.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AuxiliaryOpenAiClientConfig {
+    pub api_key: String,
+    pub base_url: String,
+    pub max_retries: i64,
+}
+
+/// Build the transport-independent OpenAI client options.
+///
+/// Hermes owns auxiliary retry and fallback policy, so the SDK retry count
+/// defaults to zero while an explicit caller override wins.
+///
+/// The OpenAI SDK/http client construction is a future transport seam; this
+/// value object preserves the source's observable option precedence now.
+///
+/// PARITY: agent/auxiliary_client.py lines 210-231.
+pub fn openai_client_config(
+    api_key: &str,
+    base_url: &str,
+    explicit_max_retries: Option<i64>,
+) -> AuxiliaryOpenAiClientConfig {
+    AuxiliaryOpenAiClientConfig {
+        api_key: api_key.to_owned(),
+        base_url: base_url.to_owned(),
+        max_retries: explicit_max_retries.unwrap_or(0),
+    }
+}
+
 /// Normalize an auxiliary provider name and its source aliases.
 ///
 /// main_provider is the explicit adapter for the source's lazy
