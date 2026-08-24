@@ -502,7 +502,10 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   `/home/mustbearnold/.cargo/bin/cargo build --workspace` and
   `/home/mustbearnold/.cargo/bin/cargo test --workspace` both passed; the
   workspace test run reports only the three intentional delegation/schema doc
-  tests as ignored.
+  tests as ignored. Local source commit `895fbcf` was mirrored as GitHub
+  `ead6b5f`; both refs now resolve to the verified tree
+  `d9720eddbe0198216912d7c3de6c8fb3693a45b1` with all 268 tracked blobs
+  matching by path, mode, and SHA.
 
 - 2026-08-24 (session 4bc): Added the tracked documentation/GitHub metadata
   hook workflow. `.githooks/pre-commit` refreshes `tools/inventory.json`,

@@ -9,7 +9,8 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
 Current branch/HEAD: `main` is aligned with `origin/main` after the local and
-GitHub API mirror sequence for the hook/docs unit and its handoff checkpoint.
+GitHub API mirror sequence for the auxiliary keepalive/pool unit and its
+handoff checkpoint.
 The connected GitHub API publishes each logical commit immediately as a
 sequential remote mirror. Its commit SHAs differ from the local sequence
 because the API cannot preserve local author/committer timestamps, but every
@@ -17,10 +18,13 @@ tree snapshot and commit message matches and is verified before each ref
 update. The local HTTPS Git client still has no credentials; use the connected
 GitHub API for future pushes until `gh auth login` or SSH is configured.
 
-Latest synchronized unit: the documentation/GitHub metadata hook workflow and
-its handoff checkpoints were mirrored immediately after each local commit. The
-last auxiliary-client source unit before this workflow was local `9a0bc98` →
-GitHub `1550e03`; exact current refs and tree parity are rechecked below.
+Latest synchronized unit: local `895fbcf` → GitHub `ead6b5f`
+(`feat(agent): add auxiliary keepalive and pool parity @ b9aa928`), with the
+exact tree and all tracked blobs verified before aligning local `main` to the
+API-authored remote ref. The preceding documentation/GitHub metadata hook
+workflow and its handoff checkpoints were mirrored immediately after each
+local commit. The last auxiliary-client source unit before that workflow was
+local `9a0bc98` → GitHub `1550e03`; the older synchronized history follows.
 (`agent.auxiliary_client` Codex token selection, including current
 PLAN/inventory/ledger metadata), after local handoff source `116bb97` →
 GitHub `9388f11` (`HANDOFF.md` for the Codex-header unit), after local source
@@ -140,9 +144,10 @@ Nous/xAI-style auxiliary paths. Five source-derived `unit` tests were added;
 the focused suite now has 37 passing tests. These remain transport-neutral and
 injected-input adapters: concrete SDK/network client construction, pool
 persistence/rotation/refresh, cancellation, and provider fallback chains are
-still pending. The required workspace build and test commands passed; the
-local source commit and its GitHub mirror will be recorded in the next
-handoff checkpoint immediately after publication.
+still pending. The required workspace build and test commands passed. Local
+`895fbcf` was mirrored as GitHub `ead6b5f`; the remote and local trees both
+resolve to `d9720eddbe0198216912d7c3de6c8fb3693a45b1`, with 268 tracked blobs
+matching by path, mode, and SHA.
 
 The tracked documentation/GitHub metadata hook workflow is included in local
 commit `0d2bcd4` and its `1af2de6` GitHub mirror. It is the current non-ledger
@@ -467,23 +472,23 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-The documentation/GitHub metadata hook workflow and its handoff checkpoints
-are synchronized. The final verification fetches `origin/main`, aligns local
-`main` to the API-authored SHA, compares every tracked blob by path/mode/SHA,
-and checks a clean worktree. The committed workflow includes `AGENTS.md`,
-`PLAN.md`, `README.md`, `HANDOFF.md`, the generated inventory/ledger, both
-tracked hooks, the GitHub description source, and the three helper scripts. No
-conversion-ledger status changed; the `agent.auxiliary_client` module remains
-partial.
+Local `main` and `origin/main` both resolve to GitHub's API-authored
+`ead6b5fe39ed033f7847a7330b7d3ca172cdf014`; their trees both resolve to
+`d9720eddbe0198216912d7c3de6c8fb3693a45b1`. The recursive GitHub tree and
+local `git ls-tree -r` contain 268 blobs with no path/mode/SHA mismatches, and
+the worktree is clean. No conversion-ledger status changed: the module
+remains partial at 73 done / 10 partial / 3,799 missing tracked modules
+and 73 done / 10 partial / 1,020 missing production modules.
 
 ## Next actions, in order
 
-1. Continue `agent.auxiliary_client` by reading the pinned OpenAI SDK/httpx
-   client-construction and broader credential-pool selection source/tests and
-   writing the next parity tests first; proxy/TLS policy, Codex headers, and
-   Codex token selection are now recorded.
+1. Continue `agent.auxiliary_client` with concrete SDK/network client
+   construction and the remaining credential-pool lifecycle/rotation/refresh
+   source/tests; proxy/TLS policy, keepalive options, Codex headers, token
+   selection, and pool-first runtime projection are now recorded.
 2. Keep the adapter boundaries explicit; do not promote the module until
-   client, transport, cancellation, and fallback seams are covered.
+   concrete client, async transport, cancellation, and fallback seams are
+   covered.
 3. For every future module, commit and publish each logical unit immediately;
    use the connected GitHub API until local GitHub CLI authentication exists.
 
