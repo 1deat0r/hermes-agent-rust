@@ -9,10 +9,11 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
 Current branch/HEAD: `main` is aligned with `origin/main` after the local and
-GitHub API mirror sequence for the custom-pool seeding boundary. The local
-source commit `2c7798500593d6ac290c235181da28a7ef81e8d2` was mirrored as
-GitHub `dadb41d8b1e8cf4da277d6b133a81e3314122ad1`; both refs resolve to tree
-`13b3e6306207c0e0b0f8b4d878208aea459b8d4f` with 273 matching tracked blobs.
+GitHub API mirror sequence for the full credential-pool loader composition.
+The local source commit `f6a266e6e5ef9417c9b49cf9f2d53563e0ac9ae4` was
+mirrored as GitHub `940ead9f102e6aba3ea0d2c308d7cb9c732cbd5e`; both refs
+resolve to tree `450e2757900fb773f3295e593782ec1a153b077f` with 273 matching
+tracked blobs.
 The connected GitHub API publishes each logical commit immediately as a
 sequential remote mirror. Its commit SHAs differ from the local sequence
 because the API cannot preserve local author/committer timestamps, but every
@@ -21,7 +22,10 @@ update. The local HTTPS Git client still has no credentials; use the connected
 GitHub API for future pushes until `gh auth login` or SSH is configured.
 
 Latest synchronized unit: local source
-`2c7798500593d6ac290c235181da28a7ef81e8d2` → GitHub
+`f6a266e6e5ef9417c9b49cf9f2d53563e0ac9ae4` → GitHub
+`940ead9f102e6aba3ea0d2c308d7cb9c732cbd5e`
+(`feat(agent): compose full credential pool loader @ b9aa928`), with the
+previous local source `2c7798500593d6ac290c235181da28a7ef81e8d2` → GitHub
 `dadb41d8b1e8cf4da277d6b133a81e3314122ad1`
 (`feat(agent): seed custom pool config @ b9aa928`), with the previous local
 source `19d0adb6efd8dbaf52d92c053d625a56993c2ea9` → GitHub
@@ -248,8 +252,10 @@ persistence tests (72 total). One persistence assertion now allows the
 sub-microsecond precision loss introduced by JSON floating-point round trips;
 source behavior is unchanged. Configuration discovery, custom-provider
 configuration loading, Z.AI endpoint probing, OAuth refresh, leases, and
-logging throttles remain pending. The local/GitHub source and documentation
-mirror refs will be appended at the next handoff checkpoint.
+logging throttles remain pending. Local source commit
+`f6a266e6e5ef9417c9b49cf9f2d53563e0ac9ae4` was mirrored as GitHub
+`940ead9f102e6aba3ea0d2c308d7cb9c732cbd5e`; both refs resolve to tree
+`450e2757900fb773f3295e593782ec1a153b077f` with 273 matching tracked blobs.
 
 The preceding synchronized source unit extended `hermes-agent::credential_pool`
 through the lower environment-aware `load_pool` transaction. It added the
@@ -685,11 +691,11 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-Local `main` and `origin/main` are aligned after the custom-pool source and
-documentation mirror sequence. The latest source snapshot, local
-`2c7798500593d6ac290c235181da28a7ef81e8d2` → GitHub
-`dadb41d8b1e8cf4da277d6b133a81e3314122ad1`, has tree
-`13b3e6306207c0e0b0f8b4d878208aea459b8d4f`, verified recursively with 273
+Local `main` and `origin/main` are aligned after the full credential-pool
+loader source and documentation mirror sequence. The latest source snapshot,
+local `f6a266e6e5ef9417c9b49cf9f2d53563e0ac9ae4` → GitHub
+`940ead9f102e6aba3ea0d2c308d7cb9c732cbd5e`, has tree
+`450e2757900fb773f3295e593782ec1a153b077f`, verified recursively with 273
 blobs and no path/mode/SHA mismatches. No conversion-ledger status changed:
 the current summary is 73 done / 11 partial / 3,798 missing tracked modules
 and 73 done / 11 partial / 1,019 missing production modules.
