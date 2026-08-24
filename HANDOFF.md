@@ -1,6 +1,6 @@
 # Hermes Agent Rust — Next-session handoff
 
-Date: 2026-08-24 (Pacific/Auckland), session 4ab.
+Date: 2026-08-24 (Pacific/Auckland), session 4ac.
 
 ## Resume point
 
@@ -17,7 +17,10 @@ update. The local HTTPS Git client still has no credentials; use the
 connected GitHub API for future pushes until `gh auth login` or SSH is
 configured.
 
-Latest synchronized units: local source `956fa19` → GitHub `6a3259f`
+Latest synchronized unit: local source `163edce` → GitHub `5b7efa2`
+(`plugins.model-providers.actual.__init__`, including current plan/inventory
+metadata), after local handoff source `15db2cd` → GitHub `2de863e1`
+(`HANDOFF.md` for the Nous unit), after local source `956fa19` → GitHub `6a3259f`
 (`plugins.model-providers.nous.__init__`, including current plan/inventory
 metadata), after local docs source `2523860` → GitHub `a6c7179` (`AGENTS.md`
 documentation checkpoint), after local handoff source `e69136b` → GitHub
@@ -68,7 +71,8 @@ because it cannot preserve the local author/committer timestamps.
 ## What landed this session
 
 Module-sized commits are complete through
-`plugins.model-providers.nous.__init__`: `956fa19` locally, mirrored as
+`plugins.model-providers.actual.__init__`: `163edce` locally, mirrored as
+`5b7efa2` remotely; the Nous profile is `956fa19` locally, mirrored as
 `6a3259f` remotely; the DeepSeek profile is `fd80752` locally, mirrored as
 `372dc02` remotely; the DeepInfra profile is `a7f45d2` locally, mirrored as
 `984bf1e` remotely; the Vertex profile is `1dca197` locally, mirrored as
@@ -163,6 +167,15 @@ disabled. The `nous_portal` capability uses the pinned b9aa928 client version
 and a `conversation_context` adapter; runtime CLI-version injection and
 ContextVar propagation remain future higher-layer seams.
 
+The Actual Computer bundled profile is included in the new `163edce` source
+commit and its `5b7efa2` GitHub mirror. It mirrors Actual's metadata, aliases,
+`ACTUAL_API_KEY`/`ACTUAL_BASE_URL` environment contract, hosted/local root URL
+normalization, optional Bearer catalog auth, JSON/Accept/User-Agent headers,
+list and `{data: [...]}` model payloads, ID filtering, and fail-open behavior.
+The `actual_catalog` capability isolates the custom `fetch_models` hook;
+runtime credential resolution, model-picker integration, and application
+transport/opener wiring remain future hermes-cli seams.
+
 The repository documentation checkpoint is included in the separate
 `2523860` local commit and `a6c7179` GitHub mirror (`AGENTS.md`).
 
@@ -176,17 +189,18 @@ Plan profile, 3 Anthropic profile, 3 Gemini profile, 2 Arcee profile, 2 Azure
 Foundry profile, 2 Bedrock profile, 3 Copilot profile, 2 Copilot ACP profile,
 2 Fireworks profile, 2 GMI profile, 2 Kilo Code profile, 2 NovitaAI profile,
 2 NVIDIA profile, 2 StepFun profile, 3 Vertex profile, 2 DeepInfra profile,
-2 DeepSeek profile, 3 Nous profile, 2 OpenAI Codex profile, 2 Xiaomi profile,
+2 DeepSeek profile, 3 Nous profile, 3 Actual profile, 2 OpenAI Codex profile, 2 Xiaomi profile,
 2 XAI profile, and 2 Hugging Face profile tests are green.
 The provider
 surface remains partial
 for the future CLI version/opener integration and remaining Rust plugin profile
-loaders. The next unit is `plugins.model-providers.actual.__init__` (89 LOC).
+loaders. The next unit is `plugins.model-providers.ollama-cloud.__init__` (89 LOC).
 
-The required Nous workspace verification was green before the synchronized
+The required Actual workspace verification was green before the synchronized
 commit:
 
 ```text
+PATH=/home/mustbearnold/.cargo/bin:$PATH cargo test -p hermes-providers --test parity_actual --test parity_base --test parity_registry
 PATH=/home/mustbearnold/.cargo/bin:$PATH cargo build --workspace
 PATH=/home/mustbearnold/.cargo/bin:$PATH cargo test --workspace --quiet
 ```
@@ -200,15 +214,15 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-After the current Nous commit is mirrored and this handoff commit is aligned to
+After the current Actual commit is mirrored and this handoff commit is aligned to
 its remote mirror, the working tree is clean. The committed metadata
 includes `AGENTS.md`, `PLAN.md`, `tools/port_status.json`, generated
 `tools/inventory.json`, `CONVERSION-LEDGER.md`, and this handoff. No code or
-parity test is pending for the Nous unit.
+parity test is pending for the Actual unit.
 
 ## Next actions, in order
 
-1. Start `plugins.model-providers.actual.__init__` (89 LOC) by reading its
+1. Start `plugins.model-providers.ollama-cloud.__init__` (89 LOC) by reading its
    pinned source/tests and writing profile-registration parity tests first.
 2. Keep the static bundled-profile registration order and user-loader seam
    explicit while adding the next provider profile.
@@ -219,8 +233,8 @@ parity test is pending for the Nous unit.
 
 `CONVERSION-LEDGER.md` is generated and contains one row for every 3,882 upstream inventory modules: 1,103 production tasks plus 2,779 oracle/test tasks. Only `done` counts toward completion.
 
-- All tracked modules: 65 done / 9 partial / 3,808 missing = **1.67%**.
-- Production modules: 65 done / 9 partial / 1,029 missing = **5.89%**.
+- All tracked modules: 66 done / 9 partial / 3,807 missing = **1.70%**.
+- Production modules: 66 done / 9 partial / 1,028 missing = **5.98%**.
 
 The nine partial production rows are `hermes_constants`, `providers.base`,
 `providers.__init__`, `tools.credential_files`,
@@ -301,6 +315,12 @@ The strict production formula is `done production modules / 1,103`; partial rows
   forwarding, reasoning defaults, and disabled omission are preserved. The
   pinned CLI version and `conversation_context` map key are explicit seams
   until the higher-layer runtime supplies the live version and ContextVar.
+- Actual's source `fetch_models()` override is represented by the explicit
+  `actual_catalog` capability. `ACTUAL_BASE_URL` precedence, hosted/local root
+  `/v1` normalization, optional Bearer auth, JSON/Accept/User-Agent headers,
+  list/`data` payload parsing, ID filtering, and fail-open errors are
+  preserved; runtime credential/model-picker/transport integration remains a
+  future hermes-cli seam.
 - Platform cache-resetting tests are serialized because the production WSL and
   container detectors intentionally cache for process lifetime; the mutex is
   test-only and does not change detector behavior.
@@ -309,7 +329,7 @@ The strict production formula is `done production modules / 1,103`; partial rows
 
 ## Verification evidence
 
-The focused provider parity suites passed 9 base, 8 registry, 2 AI Gateway, 2
+The focused provider parity suites passed 9 base, 8 registry, 3 Actual, 2 AI Gateway, 2
 Alibaba, 2 Alibaba Coding Plan, 3 Anthropic, 3 Gemini, 2 Arcee, 2 Azure
 Foundry, 2 Bedrock, 3 Copilot, 2 Copilot ACP, 2 Fireworks, 2 GMI, 2 Kilo
 Code, 2 NovitaAI, 2 NVIDIA, 2 StepFun, 3 Vertex, 2 DeepInfra, 2 DeepSeek,
@@ -317,7 +337,7 @@ Code, 2 NovitaAI, 2 NVIDIA, 2 StepFun, 3 Vertex, 2 DeepInfra, 2 DeepSeek,
 required workspace build and test also passed with the explicit cargo
 toolchain; three
 delegation/schema doc tests are intentionally ignored. Inventory and
-conversion ledger were regenerated and now record 65 done / 9 partial / 1,029
+conversion ledger were regenerated and now record 66 done / 9 partial / 1,028
 missing production modules.
 
 ## First command tomorrow
