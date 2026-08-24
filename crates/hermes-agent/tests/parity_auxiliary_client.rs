@@ -1,8 +1,8 @@
 use hermes_agent::auxiliary_client::{
-    auxiliary_max_tokens_param, is_model_incompatible_error, is_model_not_found_error,
-    is_payment_error, is_rate_limit_error, normalize_aux_provider, pool_runtime_api_key,
-    pool_runtime_base_url, resolve_aux_task_provider_model, AuxiliaryError, AuxiliaryPoolEntry,
-    AuxiliaryTaskConfig,
+    auxiliary_max_tokens_param, is_anthropic_compatible_host, is_model_incompatible_error,
+    is_model_not_found_error, is_payment_error, is_rate_limit_error, normalize_aux_provider,
+    pool_runtime_api_key, pool_runtime_base_url, resolve_aux_task_provider_model,
+    to_openai_base_url, AuxiliaryError, AuxiliaryPoolEntry, AuxiliaryTaskConfig,
 };
 use serde_json::json;
 
@@ -453,4 +453,54 @@ fn pool_runtime_base_url_applies_only_nous_inference_override() {
         ),
         "https://runtime.example/v1"
     );
+}
+
+#[test]
+fn openai_base_url_normalization_matches_provider_wire_surfaces() {
+    for (input, expected) in [
+        (
+            Some(" https://api.minimax.io/anthropic/// "),
+            "https://api.minimax.io/v1",
+        ),
+        (
+            Some("https://open.bigmodel.cn/api/anthropic"),
+            "https://open.bigmodel.cn/api/paas/v4",
+        ),
+        (
+            Some("https://api.kimi.com/coding/"),
+            "https://api.kimi.com/coding/v1",
+        ),
+        (
+            Some("https://proxy.example/anthropic"),
+            "https://proxy.example/v1",
+        ),
+        (
+            Some("https://provider.example/v1///"),
+            "https://provider.example/v1",
+        ),
+        (None, ""),
+    ] {
+        assert_eq!(to_openai_base_url(input), expected, "{input:?}");
+    }
+}
+
+#[test]
+fn anthropic_compatible_host_guard_is_exact_and_fail_closed() {
+    for url in [
+        "https://api.anthropic.com",
+        "https://API.ANTHROPIC.COM/v1",
+        "https://api.anthropic.com./v1",
+        "//api.anthropic.com/v1",
+    ] {
+        assert!(is_anthropic_compatible_host(url), "{url}");
+    }
+    for url in [
+        "",
+        "not a url",
+        "https://openrouter.ai/api/v1",
+        "https://api.anthropic.com.evil.example/v1",
+        "https://proxy.api.anthropic.com/v1",
+    ] {
+        assert!(!is_anthropic_compatible_host(url), "{url}");
+    }
 }

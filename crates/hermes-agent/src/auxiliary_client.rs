@@ -381,6 +381,52 @@ pub fn pool_runtime_base_url(
     normalize_pool_url(selected)
 }
 
+/// Normalize provider inference endpoints for the OpenAI-compatible client.
+///
+/// MiniMax exposes an Anthropic Messages path alongside `/v1`, Z.AI uses a
+/// vendor-specific `/paas/v4` OpenAI path, and Kimi Coding needs `/coding/v1`
+/// for chat completions. The source trims the URL before applying these exact
+/// suffix predicates.
+///
+/// PARITY: agent/auxiliary_client.py lines 1010-1037.
+pub fn to_openai_base_url(base_url: Option<&str>) -> String {
+    let url = base_url
+        .unwrap_or_default()
+        .trim()
+        .trim_end_matches('/')
+        .to_owned();
+
+    if let Some(prefix) = url.strip_suffix("/anthropic") {
+        if url.contains("open.bigmodel.cn") || url.contains("bigmodel") {
+            return format!("{prefix}/paas/v4");
+        }
+        return format!("{prefix}/v1");
+    }
+    if url.contains("api.kimi.com") && url.ends_with("/coding") {
+        return format!("{url}/v1");
+    }
+    url
+}
+
+/// Return whether a configured URL is the exact Anthropic API host accepted
+/// by the auxiliary Anthropic client.
+///
+/// The source uses `urlparse`, so a bare hostname without a scheme is not
+/// treated as a hostname. `base_url_hostname` supplies the URL parsing and
+/// trailing-dot normalization used by the Rust utility layer.
+///
+/// PARITY: agent/auxiliary_client.py lines 1120-1130.
+pub fn is_anthropic_compatible_host(url: &str) -> bool {
+    let raw = url.trim();
+    if raw.is_empty() || (!raw.contains("://") && !raw.starts_with("//")) {
+        return false;
+    }
+    let normalized = raw
+        .strip_prefix("//")
+        .map_or_else(|| raw.to_owned(), |rest| format!("https://{rest}"));
+    base_url_hostname(&normalized) == "api.anthropic.com"
+}
+
 /// Normalize an auxiliary provider name and its source aliases.
 ///
 /// main_provider is the explicit adapter for the source's lazy

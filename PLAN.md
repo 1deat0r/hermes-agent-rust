@@ -140,7 +140,9 @@ transport, cancellation, and fallback chains remain pending. The next
 credential-safe pool-runtime projection is also ported: runtime key/access
 token fallback, runtime/inference/base/fallback URL precedence, normalization,
 and the Nous-only inference override are explicit adapter inputs; JWT
-validation and secret lookup remain in the auth-layer seam.
+validation and secret lookup remain in the auth-layer seam. OpenAI-compatible
+endpoint normalization and the exact Anthropic host guard are also ported;
+SDK construction, proxy/TLS bootstrap, and request transport remain pending.
 `hermes-providers` now contains the declarative `providers.base` profile,
 secure model-catalog probe, process-global registry/discovery cache, and the
 first statically linked bundled profiles (`actual`, `ai-gateway`, `alibaba`, `alibaba-coding-plan`, `anthropic`, `arcee`, `azure-foundry`, `bedrock`, `copilot`, `copilot-acp`, `custom`, `deepinfra`, `deepseek`, `fireworks`, `gemini`, `gmi`, `huggingface`, `kilocode`, `kimi-coding`, `minimax`, `novita`, `nvidia`, `nous`, `ollama-cloud`, `openai-codex`, `qwen-oauth`, `stepfun`, `upstage`, `vertex`, `xai`, `xiaomi`, `zai`). The provider surface
@@ -349,7 +351,7 @@ rich/routing/cooldown/meta/reactions/conversation/delete modules.
 
 | Module / upstream surface | Status | Rust home, oracle, and evidence tier |
 |---|---|---|
-| `agent/auxiliary_client.py` (10,044 LOC) — routing, wire-parameter, task-provider precedence, and pool-runtime projection sections | 🟡 | `hermes-agent::auxiliary_client`; 15 source-derived parity tests (`unit`) cover provider aliases/special forms, OpenAI-compatible max-token keyword selection, payment/quota and rate-limit classification, disjoint stale-model/capability errors, explicit/configured endpoint and key precedence, MoA unwrapping, direct OpenAI aliasing, `auto` model normalization, pool key fallback, URL precedence/normalization, and the Nous-only base-URL override; client construction, credential pools, async transport, cancellation, and fallback chains remain pending |
+| `agent/auxiliary_client.py` (10,044 LOC) — routing, wire-parameter, task-provider precedence, pool-runtime projection, and endpoint normalization sections | 🟡 | `hermes-agent::auxiliary_client`; 17 source-derived parity tests (`unit`) cover provider aliases/special forms, OpenAI-compatible max-token keyword selection, payment/quota and rate-limit classification, disjoint stale-model/capability errors, explicit/configured endpoint and key precedence, MoA unwrapping, direct OpenAI aliasing, `auto` model normalization, pool key fallback, URL precedence/normalization, the Nous-only base-URL override, MiniMax/Z.AI/Kimi OpenAI wire paths, and exact Anthropic host validation; SDK client construction, credential pools, async transport, cancellation, and fallback chains remain pending |
 
 ### hermes-providers base (Phase 2, upstream @ b9aa928)
 
@@ -437,7 +439,7 @@ oracle tests). Upstream oracle files currently mirrored:
 - `tests/tools/test_tool_output_limits.py` → `crates/hermes-tools/tests/parity_tool_output_limits.rs`
 - `tests/tools/test_working_diff.py` → `crates/hermes-tools/tests/parity_working_diff.rs`
 - `providers/base.py` + `tests/providers/test_fetch_models_base_url.py` → `crates/hermes-providers/tests/parity_base.rs` (9 profile/catalog/redirect parity tests; `unit`/`mock`)
-- `agent/auxiliary_client.py` + `tests/agent/test_auxiliary_client.py` → `crates/hermes-agent/tests/parity_auxiliary_client.rs` (15 source-derived routing/wire/error/task-provider-resolution/pool-runtime parity tests; `unit`; client construction, credential pools, async transport, cancellation, and provider fallback oracles remain future sections)
+- `agent/auxiliary_client.py` + `tests/agent/test_auxiliary_client.py` → `crates/hermes-agent/tests/parity_auxiliary_client.rs` (17 source-derived routing/wire/error/task-provider-resolution/pool-runtime/endpoint parity tests; `unit`; SDK client construction, credential pools, async transport, cancellation, and provider fallback oracles remain future sections)
 - `providers/__init__.py` + `tests/providers/test_provider_registry.py` + `tests/providers/test_plugin_discovery.py` → `crates/hermes-providers/tests/parity_registry.rs` (8 registry/discovery parity tests; `unit`/`mock`)
 - `plugins/model-providers/ai-gateway/__init__.py` → `crates/hermes-providers/tests/parity_ai_gateway.rs` (2 source-derived profile/registration/reasoning-hook parity tests; `unit`; no dedicated upstream plugin-profile test; related CLI/model catalog tests remain future-crate oracles)
 - `plugins/model-providers/alibaba/__init__.py` → `crates/hermes-providers/tests/parity_alibaba.rs` (2 source-derived profile/registration parity tests; `unit`; no dedicated upstream test module)
@@ -477,6 +479,24 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 + the exact command, e.g. `cargo test -p hermes-time (unit)`.
 
 ## 7. Session log
+
+- 2026-08-24 (session 4b7): Continued the partial
+  `agent/auxiliary_client.py` port (@ b9aa928, 10,044 LOC) with OpenAI-
+  compatible endpoint normalization and the Anthropic host-validation guard.
+  The Rust adapter mirrors the source's trimmed `/anthropic` rewrite to `/v1`,
+  Z.AI `bigmodel` rewrite to `/paas/v4`, Kimi Coding `/coding` rewrite to
+  `/coding/v1`, unchanged endpoint normalization, and exact
+  `api.anthropic.com` acceptance including case/trailing-dot/protocol-relative
+  URL forms while failing closed for foreign hosts and malformed/bare values.
+  Added 2 source-derived `unit` parity tests (17 total in
+  `parity_auxiliary_client.rs`) first; the focused suite passed. Required
+  `/home/mustbearnold/.cargo/bin/cargo build --workspace` passed. The first
+  full workspace test exposed an existing daemon-pool scheduling assertion;
+  its isolated rerun and the second full workspace test both passed. Only the
+  three intentional delegation/schema doc tests are ignored. Inventory and
+  conversion ledger remain at 73 done / 10 partial / 3,799 missing tracked
+  modules and 73 done / 10 partial / 1,020 missing production modules. The
+  next seam is SDK client construction and explicit credential selection.
 
 - 2026-08-24 (session 4b6): Continued the partial
   `agent/auxiliary_client.py` port (@ b9aa928, 10,044 LOC) with the
