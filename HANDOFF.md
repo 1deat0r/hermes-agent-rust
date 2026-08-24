@@ -9,23 +9,23 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
 Current branch/HEAD: `main` is aligned with `origin/main` after publishing the
-parallel config-discovery and Z.AI pure endpoint unit. Local source commit
-`a092a8f21d4ea6deacac92503e67f7e4bdd809df` is mirrored as GitHub
-`a092a8f21d4ea6deacac92503e67f7e4bdd809df`; both refs resolve to tree
-`68766578f9e2d002b4a4f8caee8c4a07e94cf1e7` with 273 matching tracked blobs.
+parallel config-discovery and Z.AI unit plus its documentation checkpoint.
+Source commit `a092a8f21d4ea6deacac92503e67f7e4bdd809df` and documentation
+checkpoint `6ab58db089332d6c03571664d8875667f25c3a1d` are both mirrored on
+GitHub; final local/remote refs resolve to tree
+`944d8fb53de333a9fbc96e790c643f5d62b46748` with 273 matching tracked blobs.
 The local HTTPS Git client authenticates through the logged-in `gh` keyring
 account; future logical units can use `git push origin main`.
 
-Latest synchronized unit: local source
+Latest synchronized source unit: local
 `a092a8f21d4ea6deacac92503e67f7e4bdd809df` → GitHub
-`a092a8f21d4ea6deacac92503e67f7e4bdd809df`
+`a092a8f21d4ea6deac92503e67f7e4bdd809df`
 (`feat(agent,providers): add config and Z.AI discovery seams @ b9aa928`),
-with the previous local source
-`e568a282a692d65ee574ce2ca25db10741b95515` → GitHub
+with the documentation checkpoint
+`6ab58db089332d6c03571664d8875667f25c3a1d`
+(`handoff: record parallel config ZAI mirror refs @ b9aa928`), and the
+previous source `e568a282a692d65ee574ce2ca25db10741b95515` → GitHub
 `e568a282a692d65ee574ce2ca25db10741b95515`
-(`feat(agent): add OAuth refresh boundary @ b9aa928`), with the previous
-local source `9216c3849362a39145b9147394630cfa112171e1` → GitHub
-`1167a7381d7623247a37267edd4f16e2df7371e5`
 (`feat(agent): compose full credential pool loader @ b9aa928`), with the
 previous local source `2c7798500593d6ac290c235181da28a7ef81e8d2` → GitHub
 `dadb41d8b1e8cf4da277d6b133a81e3314122ad1`
@@ -716,9 +716,9 @@ hardening remains in the preceding synchronized history.
 ## Exact working-tree state
 
 Local `main` and `origin/main` are aligned after publishing the parallel
-config-discovery and Z.AI pure endpoint unit. Local and remote refs are both
-`a092a8f21d4ea6deacac92503e67f7e4bdd809df`, resolving to tree
-`68766578f9e2d002b4a4f8caee8c4a07e94cf1e7`, with 273 verified matching
+config-discovery and Z.AI unit plus its documentation checkpoint. Local and
+remote refs are both `6ab58db089332d6c03571664d8875667f25c3a1d`, resolving to
+tree `944d8fb53de333a9fbc96e790c643f5d62b46748`, with 273 verified matching
 tracked blobs. No conversion-ledger status changed: the current summary is
 73 done / 11 partial / 3,798 missing tracked modules and 73 done / 11 partial /
 1,019 missing production modules.
