@@ -9,7 +9,7 @@
 //! dependency.
 
 use base64::{engine::general_purpose::URL_SAFE, Engine as _};
-use chrono::{DateTime, NaiveDateTime};
+use chrono::{DateTime, Local, NaiveDateTime, TimeZone};
 use rand::seq::IndexedRandom;
 use serde_json::{Map, Value};
 use sha2::{Digest, Sha256};
@@ -158,8 +158,8 @@ pub struct SeedResult {
 /// Seed provider-owned singleton state without importing the higher auth
 /// store into this crate.
 ///
-/// PARITY: `agent/credential_pool.py._seed_from_singletons` (2453–2710),
-/// currently the `nous` and `qwen-oauth` branches. The caller supplies the
+/// PARITY: `agent/credential_pool.py._seed_from_singletons` (2453–2835),
+/// currently the `nous`, `qwen-oauth`, and `minimax-oauth` branches. The caller supplies the
 /// already-resolved provider object and source suppression set; `None` means
 /// the provider state/resolver result was absent, while
 /// `Some(empty/object-without-runtime)` preserves each source branch's
@@ -212,6 +212,55 @@ pub fn seed_from_singletons(
                 payload.insert(key.into(), value.clone());
             }
         }
+        result.changed = upsert_entry(entries, provider, source, &payload);
+        return result;
+    }
+
+    if provider == "minimax-oauth" {
+        let Some(state) = state else {
+            return result;
+        };
+        let Some(access_token) = state
+            .get("access_token")
+            .and_then(Value::as_str)
+            .filter(|token| !token.is_empty())
+        else {
+            return result;
+        };
+        let source = "oauth";
+        if suppressed_sources.contains(source) {
+            return result;
+        }
+
+        result.active_sources.insert(source.into());
+        let fallback_label = label_from_token(access_token, source);
+        let label = state
+            .get("label")
+            .and_then(Value::as_str)
+            .filter(|label| !label.is_empty())
+            .unwrap_or(&fallback_label);
+        let base_url = state
+            .get("inference_base_url")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .trim_end_matches('/');
+        let mut payload = Map::new();
+        payload.insert("source".into(), Value::String(source.into()));
+        payload.insert("auth_type".into(), Value::String(AUTH_TYPE_OAUTH.into()));
+        payload.insert(
+            "access_token".into(),
+            Value::String(access_token.to_owned()),
+        );
+        if let Some(value) = state.get("refresh_token").filter(|value| !value.is_null()) {
+            payload.insert("refresh_token".into(), value.clone());
+        }
+        if let Some(expires_at) = state.get("expires_at").and_then(Value::as_str) {
+            if let Some(expires_at_ms) = parse_iso_timestamp_millis(expires_at) {
+                payload.insert("expires_at_ms".into(), Value::from(expires_at_ms));
+            }
+        }
+        payload.insert("base_url".into(), Value::String(base_url.into()));
+        payload.insert("label".into(), Value::String(label.into()));
         result.changed = upsert_entry(entries, provider, source, &payload);
         return result;
     }
@@ -903,6 +952,36 @@ fn parse_absolute_timestamp(value: &str) -> Option<f64> {
             NaiveDateTime::parse_from_str(raw, "%Y-%m-%dT%H:%M:%S%.f")
                 .ok()
                 .map(|timestamp| timestamp.and_utc().timestamp_millis() as f64 / 1000.0)
+        })
+}
+
+fn parse_iso_timestamp_millis(value: &str) -> Option<i64> {
+    let raw = value.trim();
+    if raw.is_empty() {
+        return None;
+    }
+    DateTime::parse_from_rfc3339(raw)
+        .map(|timestamp| timestamp.timestamp_millis())
+        .ok()
+        .or_else(|| {
+            NaiveDateTime::parse_from_str(raw, "%Y-%m-%dT%H:%M:%S%.f")
+                .ok()
+                .and_then(|timestamp| {
+                    Local
+                        .from_local_datetime(&timestamp)
+                        .single()
+                        .map(|timestamp| timestamp.timestamp_millis())
+                })
+        })
+        .or_else(|| {
+            NaiveDateTime::parse_from_str(raw, "%Y-%m-%d %H:%M:%S%.f")
+                .ok()
+                .and_then(|timestamp| {
+                    Local
+                        .from_local_datetime(&timestamp)
+                        .single()
+                        .map(|timestamp| timestamp.timestamp_millis())
+                })
         })
 }
 

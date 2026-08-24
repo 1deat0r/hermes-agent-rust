@@ -480,6 +480,94 @@ fn qwen_singleton_seed_fails_open_when_cli_token_is_absent() {
     assert!(entries.is_empty());
 }
 
+// Tier: mock — mirrors the upstream agent/credential_pool.py MiniMax OAuth
+// singleton branch; no dedicated upstream singleton-seeding test exists.
+#[test]
+fn minimax_oauth_singleton_seed_materializes_token_and_metadata() {
+    let state = json!({
+        "provider": "minimax-oauth",
+        "access_token": "minimax_access_token",
+        "refresh_token": "minimax_refresh_token",
+        "expires_at": "2026-08-24T12:34:56.789+00:00",
+        "inference_base_url": "https://api.minimax.io/v1///",
+        "label": "work-account"
+    });
+    let state = state.as_object().unwrap().clone();
+    let mut entries = Vec::new();
+
+    let result = seed_from_singletons(
+        "minimax-oauth",
+        &mut entries,
+        Some(&state),
+        &BTreeSet::new(),
+    );
+
+    assert!(result.changed);
+    assert_eq!(
+        result.active_sources,
+        BTreeSet::from([String::from("oauth")])
+    );
+    assert_eq!(entries.len(), 1);
+    assert_eq!(entries[0].source, "oauth");
+    assert_eq!(entries[0].auth_type, "oauth");
+    assert_eq!(entries[0].access_token, "minimax_access_token");
+    assert_eq!(
+        entries[0].refresh_token.as_deref(),
+        Some("minimax_refresh_token")
+    );
+    assert_eq!(entries[0].expires_at_ms, Some(1_787_574_896_789));
+    assert_eq!(
+        entries[0].base_url.as_deref(),
+        Some("https://api.minimax.io/v1")
+    );
+    assert_eq!(entries[0].label, "work-account");
+}
+
+// Tier: mock — mirrors the upstream label_from_token fallback and fail-open
+// expiry conversion in the MiniMax OAuth singleton branch.
+#[test]
+fn minimax_oauth_singleton_seed_uses_token_label_and_ignores_bad_expiry() {
+    let token = jwt_with_claims(json!({"email": "minimax@example.test"}));
+    let state = json!({
+        "access_token": token,
+        "expires_at": "not-an-iso-timestamp",
+        "inference_base_url": ""
+    });
+    let state = state.as_object().unwrap().clone();
+    let mut entries = Vec::new();
+
+    let result = seed_from_singletons(
+        "minimax-oauth",
+        &mut entries,
+        Some(&state),
+        &BTreeSet::new(),
+    );
+
+    assert!(result.changed);
+    assert_eq!(entries.len(), 1);
+    assert_eq!(entries[0].label, "minimax@example.test");
+    assert_eq!(entries[0].expires_at_ms, None);
+    assert_eq!(entries[0].base_url.as_deref(), Some(""));
+}
+
+// Tier: mock — mirrors the upstream per-source suppression gate.
+#[test]
+fn minimax_oauth_singleton_seed_respects_oauth_suppression() {
+    let state = json!({
+        "access_token": "minimax_access_token",
+        "inference_base_url": "https://api.minimax.io/v1"
+    });
+    let state = state.as_object().unwrap().clone();
+    let mut entries = Vec::new();
+    let suppressed = BTreeSet::from([String::from("oauth")]);
+
+    let result = seed_from_singletons("minimax-oauth", &mut entries, Some(&state), &suppressed);
+
+    assert!(!result.changed);
+    assert!(result.active_sources.is_empty());
+    assert!(entries.is_empty());
+}
+
 // Tier: unit — mirrors agent/credential_pool.py _select_unlocked fill-first path.
 #[test]
 fn fill_first_selection_follows_priority_and_tracks_current_entry() {

@@ -9,10 +9,13 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
 Current branch/HEAD: `main` is aligned with `origin/main` after the local and
-GitHub API mirror sequence for the Qwen OAuth singleton seeder. The local
-source commit `c471092747601784ee50b4d9503b6877c379bb25` was mirrored as
-GitHub `e4bd1f2199e3290a5adf381888c06f1bd0f3337d`; both refs resolve to tree
-`115b270c7e7bfeae69ca6c628fbc1ee844c2e22f` with 273 matching tracked blobs.
+GitHub API mirror sequence for the Qwen OAuth documentation checkpoint. The
+local handoff commit `c1b680befa8f01d0e527ab8237bcf4607de85002` was mirrored
+as GitHub `7fd193cc547d1287b3d884fb943f76ce2fc1cd96`; both refs resolve to
+tree `fbf58ece3ec7df375ef73971936d32dea6b402ba` with 273 matching tracked
+blobs. The current MiniMax OAuth source unit is being recorded in this next
+logical checkpoint; its exact source and mirror refs will be added immediately
+after publication.
 The connected GitHub API publishes each logical commit immediately as a
 sequential remote mirror. Its commit SHAs differ from the local sequence
 because the API cannot preserve local author/committer timestamps, but every
@@ -183,20 +186,22 @@ unmet while the conversion remains partial.
 
 The current source unit extends `hermes-agent::credential_pool` through the
 provider-singleton seeding boundary. It adds the explicit `seed_from_singletons`
-seam for the upstream Nous and Qwen branches: Nous device-code source
+seam for the upstream Nous, Qwen, and MiniMax branches: Nous device-code source
 suppression, stale device-code removal when singleton state has no runtime
 material, invoke-JWT agent-key/runtime selection, custom labels, and
 direct/extra metadata preservation for access/refresh expiry, obtained-at,
 agent-key, endpoint, scope, and TLS fields; Qwen CLI source/auth type, access
 token, expiry milliseconds, base URL, auth-file label, suppression, and
-absent-token fail-open behavior. Two source-derived `mock` tests were added
-first; the focused credential-pool wave now has 35 pool plus 15 persistence
-tests. The remaining singleton branches, full loader/config/custom-provider
-composition, Z.AI endpoint probing, OAuth refresh, leases, and logging
-throttles remain pending. Local source commit
-`c471092747601784ee50b4d9503b6877c379bb25` was mirrored as GitHub
-`e4bd1f2199e3290a5adf381888c06f1bd0f3337d`; both refs resolve to tree
-`115b270c7e7bfeae69ca6c628fbc1ee844c2e22f` with 273 matching tracked blobs.
+absent-token fail-open behavior; MiniMax OAuth source/auth type, access and
+refresh tokens, ISO expiry milliseconds, trailing-slash-stripped base URL,
+suppression, and custom-or-token-derived labels. Three source-derived `mock`
+tests were added first; the focused credential-pool wave now has 38 pool plus
+15 persistence tests. The upstream MiniMax branch has no dedicated
+singleton-seeding test, so its implementation is the code oracle and that
+gap is recorded in PLAN.md. The remaining singleton branches, full
+loader/config/custom-provider composition, Z.AI endpoint probing, OAuth
+refresh, leases, and logging throttles remain pending. The source commit and
+immediate GitHub mirror refs will be recorded in the next handoff checkpoint.
 
 The preceding synchronized source unit extended `hermes-agent::credential_pool`
 through the lower environment-aware `load_pool` transaction. It added the
@@ -632,9 +637,9 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-Local `main` and `origin/main` are aligned at GitHub mirror commit
-`e4bd1f2199e3290a5adf381888c06f1bd0f3337d`, whose tree
-`115b270c7e7bfeae69ca6c628fbc1ee844c2e22f` was verified recursively with 273
+Before the MiniMax source unit, local `main` and `origin/main` were aligned at
+GitHub mirror commit `7fd193cc547d1287b3d884fb943f76ce2fc1cd96`, whose tree
+`fbf58ece3ec7df375ef73971936d32dea6b402ba` was verified recursively with 273
 blobs and no path/mode/SHA mismatches. No conversion-ledger status changed:
 the current summary is 73 done / 11 partial / 3,798 missing tracked modules
 and 73 done / 11 partial / 1,019 missing production modules.
@@ -647,7 +652,7 @@ and 73 done / 11 partial / 1,019 missing production modules.
    serialization, source upsert, strategy, provider-boundary, selection,
    persistence, cooldown-recency merge, auth-store lock, and environment
    seeding input boundary, lower environment-aware load transaction, and Nous/
-   Qwen singleton state boundaries are now recorded.
+   Qwen/MiniMax singleton state boundaries are now recorded.
 2. Then connect the auxiliary-client concrete transport to credential-pool
    lifecycle, cancellation, and provider fallback seams without promoting
    either partial module prematurely.
@@ -681,13 +686,14 @@ The strict production formula is `done production modules / 1,103`; partial rows
 ## Fidelity notes
 
 - The credential environment seeder, lower `load_pool` transaction, and
-  Nous/Qwen singleton seeders keep the agent crate bottom-up by taking provider
-  registry metadata, pool config, resolved singleton state, secret-scope
-  values, suppression state, and auth-store paths as explicit inputs. Kimi's
-  pure key-prefix endpoint routing, Nous state-to-pool field copy, and Qwen
-  resolved-credential field copy are mirrored; the remaining singleton/config
-  branches, custom-provider composition, and the source's Z.AI network
-  endpoint probe remain deferred to the auth/provider layer.
+  Nous/Qwen/MiniMax singleton seeders keep the agent crate bottom-up by taking
+  provider registry metadata, pool config, resolved singleton state,
+  secret-scope values, suppression state, and auth-store paths as explicit
+  inputs. Kimi's pure key-prefix endpoint routing, Nous state-to-pool field
+  copy, Qwen resolved-credential field copy, and MiniMax OAuth state mapping
+  are mirrored; the remaining singleton/config branches, custom-provider
+  composition, and the source's Z.AI network endpoint probe remain deferred
+  to the auth/provider layer.
 - Desktop emitter is process-global like upstream; session-ID lookup remains a thread-local gateway seam.
 - Credential registration uses an ordered vector for Python dict insertion order; it remains thread-local rather than async-task-local.
 - Daemon pool rejects zero workers like Python; Rust Drop intentionally avoids joining wedged daemon workers.
