@@ -95,6 +95,9 @@
   "plugins.model-providers.nvidia.__init__": {
     "status": "done"
   },
+  "plugins.model-providers.ollama-cloud.__init__": {
+    "status": "done"
+  },
   "plugins.model-providers.nous.__init__": {
     "status": "done"
   },

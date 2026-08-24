@@ -1,20 +1,20 @@
 {
  "generated_from": "/run/media/mustbearnold/Projects/Research/hermes-agent-repo",
- "generated_at": "2026-08-24T12:24:54",
+ "generated_at": "2026-08-24T12:44:09",
  "summary": {
   "modules": 3882,
   "total_lines": 1510733,
   "production_modules": 1103,
   "production_lines": 843792,
   "status_counts": {
-   "done": 66,
+   "done": 67,
    "partial": 9,
-   "missing": 3807
+   "missing": 3806
   },
   "prod_status_counts": {
-   "done": 66,
+   "done": 67,
    "partial": 9,
-   "missing": 1028
+   "missing": 1027
   },
   "packages": {
    "gateway": {
@@ -56,8 +56,8 @@
     "lines": 124366,
     "modules": 182,
     "status": {
-     "missing": 157,
-     "done": 25
+     "missing": 156,
+     "done": 26
     }
    },
    "agent": {
@@ -20999,7 +20999,7 @@
   "plugins.model-providers.ollama-cloud.__init__": {
    "lines": 89,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "agent.transports.base": {

@@ -44,6 +44,8 @@ mod nous;
 mod novita;
 #[path = "nvidia.rs"]
 mod nvidia;
+#[path = "ollama_cloud.rs"]
+mod ollama_cloud;
 #[path = "openai_codex.rs"]
 mod openai_codex;
 #[path = "stepfun.rs"]
@@ -81,6 +83,7 @@ pub(crate) fn register_builtin_profiles() {
     register_provider(novita::profile());
     register_provider(nvidia::profile());
     register_provider(nous::profile());
+    register_provider(ollama_cloud::profile());
     register_provider(openai_codex::profile());
     register_provider(stepfun::profile());
     register_provider(vertex::profile());
@@ -114,6 +117,7 @@ pub(crate) fn load_profile(
             Some("novita") => return Ok(Some(novita::profile())),
             Some("nvidia") => return Ok(Some(nvidia::profile())),
             Some("nous") => return Ok(Some(nous::profile())),
+            Some("ollama-cloud") => return Ok(Some(ollama_cloud::profile())),
             Some("openai-codex") => return Ok(Some(openai_codex::profile())),
             Some("stepfun") => return Ok(Some(stepfun::profile())),
             Some("vertex") => return Ok(Some(vertex::profile())),

@@ -73,6 +73,8 @@ pub struct ProviderProfile {
     pub deepseek_reasoning: bool,
     /// Add Nous Portal tags/sticky routing and apply its reasoning omission rule.
     pub nous_portal: bool,
+    /// Translate Ollama Cloud reasoning into top-level reasoning_effort.
+    pub ollama_cloud_reasoning: bool,
     /// Route Copilot reasoning through the live model-catalog effort list.
     pub copilot_reasoning: bool,
     /// Route the reasoning configuration through `extra_body.reasoning`.
@@ -110,6 +112,7 @@ impl ProviderProfile {
             deepinfra_vision: false,
             deepseek_reasoning: false,
             nous_portal: false,
+            ollama_cloud_reasoning: false,
             copilot_reasoning: false,
             reasoning_passthrough: false,
         }
@@ -160,6 +163,9 @@ impl ProviderProfile {
         }
         if self.deepseek_reasoning {
             return build_deepseek_reasoning(reasoning_config, context);
+        }
+        if self.ollama_cloud_reasoning {
+            return build_ollama_cloud_reasoning(reasoning_config, context);
         }
         if self.copilot_reasoning {
             return build_copilot_reasoning(reasoning_config, context);
@@ -896,6 +902,55 @@ fn build_deepseek_reasoning(
     let mut top_level = Map::new();
     top_level.insert("reasoning_effort".into(), Value::String(effort.into()));
     (extra_body, top_level)
+}
+
+fn build_ollama_cloud_reasoning(
+    reasoning_config: Option<&Map<String, Value>>,
+    context: &Map<String, Value>,
+) -> (Map<String, Value>, Map<String, Value>) {
+    // PARITY: OllamaCloudProfile gates the top-level reasoning_effort field
+    // on the transport's native /api/show thinking capability.
+    let supports_reasoning = context
+        .get("supports_reasoning")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
+    if !supports_reasoning {
+        return (Map::new(), Map::new());
+    }
+
+    let Some(reasoning_config) = reasoning_config else {
+        return (Map::new(), Map::new());
+    };
+    let enabled = !reasoning_config
+        .get("enabled")
+        .and_then(Value::as_bool)
+        .is_some_and(|enabled| !enabled);
+    if !enabled {
+        return (
+            Map::new(),
+            Map::from_iter([("reasoning_effort".into(), Value::String("none".into()))]),
+        );
+    }
+
+    let Some(effort) = reasoning_config
+        .get("effort")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|effort| !effort.is_empty())
+        .map(str::to_ascii_lowercase)
+    else {
+        return (Map::new(), Map::new());
+    };
+    let effort = match effort.as_str() {
+        "none" => "none",
+        "xhigh" | "max" | "ultra" => "max",
+        "low" | "medium" | "high" => effort.as_str(),
+        _ => return (Map::new(), Map::new()),
+    };
+    (
+        Map::new(),
+        Map::from_iter([("reasoning_effort".into(), Value::String(effort.into()))]),
+    )
 }
 
 fn build_nous_extra_body(

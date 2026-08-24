@@ -85,7 +85,7 @@ fn discovery_is_lazy_and_loader_order_matches_upstream() {
 
     // A normal registry access marks discovery complete and registers the
     // statically linked bundled profiles before the user loader seam runs.
-    assert_eq!(list_providers().len(), 25);
+    assert_eq!(list_providers().len(), 26);
     assert!(get_provider_profile("actual").is_some());
     assert!(get_provider_profile("ai-gateway").is_some());
     assert!(get_provider_profile("alibaba").is_some());
@@ -108,6 +108,7 @@ fn discovery_is_lazy_and_loader_order_matches_upstream() {
     assert!(get_provider_profile("deepinfra").is_some());
     assert!(get_provider_profile("deepseek").is_some());
     assert!(get_provider_profile("nous").is_some());
+    assert!(get_provider_profile("ollama-cloud").is_some());
     assert!(get_provider_profile("vertex").is_some());
     assert!(get_provider_profile("xiaomi").is_some());
     assert!(get_provider_profile("xai").is_some());
@@ -138,6 +139,7 @@ fn discovery_is_lazy_and_loader_order_matches_upstream() {
             "novita",
             "nvidia",
             "nous",
+            "ollama-cloud",
             "openai-codex",
             "stepfun",
             "vertex",
