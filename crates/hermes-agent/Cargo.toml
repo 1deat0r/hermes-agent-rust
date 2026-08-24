@@ -9,6 +9,7 @@ rust-version.workspace = true
 [dependencies]
 base64 = "0.22"
 chrono.workspace = true
+fs2 = "0.4"
 hermes-constants = { path = "../hermes-constants" }
 hermes-utils = { path = "../hermes-utils" }
 rand = "0.10"

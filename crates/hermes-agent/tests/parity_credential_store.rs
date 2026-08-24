@@ -1,10 +1,12 @@
 use hermes_agent::credential_store::{
-    load_auth_store, read_credential_pool_at, save_auth_store, write_credential_pool_at,
-    AUTH_STORE_VERSION,
+    auth_store_lock, auth_store_lock_with_timeout, load_auth_store, read_credential_pool_at,
+    save_auth_store, write_credential_pool_at, AUTH_STORE_VERSION,
 };
 use serde_json::{json, Map, Value};
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::mpsc;
+use std::time::Duration;
 
 fn store_path(root: &Path) -> PathBuf {
     root.join("hermes").join("auth.json")
@@ -260,6 +262,62 @@ fn write_pool_does_not_resurrect_intentionally_removed_disk_rows() {
     assert_eq!(ids, ["keep"]);
 }
 
+// Tier: unit — mirrors test_auth_profile_fallback.py's path-scoped reentrancy.
+#[test]
+fn auth_store_lock_is_reentrant_but_scoped_per_path() {
+    let temp = tempfile::tempdir().unwrap();
+    let profile = temp.path().join("profiles/coder/auth.json");
+    let other_profile = temp.path().join("profiles/reviewer/auth.json");
+
+    let outer = auth_store_lock(Some(&profile)).unwrap();
+    assert!(profile.with_extension("lock").exists());
+
+    // The same thread/path re-enters without trying to acquire a second OS lock.
+    let nested = auth_store_lock(Some(&profile)).unwrap();
+    assert!(profile.with_extension("lock").exists());
+    drop(nested);
+
+    // A profile-context switch must use a distinct holder and lock file.
+    let other = auth_store_lock(Some(&other_profile)).unwrap();
+    assert!(other_profile.with_extension("lock").exists());
+    drop(other);
+
+    // The persistence transaction can re-enter the active target lock.
+    write_credential_pool_at(
+        &profile,
+        "openrouter",
+        &[json!({"id": "nested-write", "source": "manual"})],
+        &[],
+    )
+    .unwrap();
+    drop(outer);
+}
+
+// Tier: unit — mirrors the source's cross-process advisory lock contract.
+#[test]
+fn auth_store_lock_serializes_threads_until_the_holder_releases() {
+    let temp = tempfile::tempdir().unwrap();
+    let path = temp.path().join("hermes/auth.json");
+    let (started_tx, started_rx) = mpsc::channel();
+    let (acquired_tx, acquired_rx) = mpsc::channel();
+
+    let outer = auth_store_lock_with_timeout(Some(&path), 1.5).unwrap();
+    let worker_path = path.clone();
+    std::thread::spawn(move || {
+        started_tx.send(()).unwrap();
+        let acquired = auth_store_lock_with_timeout(Some(&worker_path), 1.5).is_ok();
+        acquired_tx.send(acquired).unwrap();
+    });
+
+    started_rx.recv_timeout(Duration::from_secs(1)).unwrap();
+    assert!(acquired_rx
+        .recv_timeout(Duration::from_millis(100))
+        .is_err());
+
+    drop(outer);
+    assert!(acquired_rx.recv_timeout(Duration::from_secs(2)).unwrap());
+}
+
 fn now_seconds() -> f64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -349,7 +407,8 @@ fn write_pool_adopts_newer_live_cooldown_for_the_same_token() {
     assert_eq!(persisted["last_error_code"], 429);
     assert_eq!(persisted["last_error_reason"], "rate_limit");
     assert_eq!(persisted["last_error_message"], "slow down");
-    assert_eq!(persisted["last_error_reset_at"], json!(now + 300.0));
+    let reset_at = persisted["last_error_reset_at"].as_f64().unwrap();
+    assert!((reset_at - (now + 300.0)).abs() < 1e-9);
 }
 
 // Tier: unit — mirrors the source's expired-cooldown non-resurrection guard.

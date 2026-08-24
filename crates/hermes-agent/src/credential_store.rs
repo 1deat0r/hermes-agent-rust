@@ -1,32 +1,166 @@
 //! Auth-store persistence and credential-pool disk boundaries from
 //! `hermes_cli/auth.py`.
 //!
-//! This module owns the JSON schema/migration and atomic file boundary. The
-//! higher-level OAuth refresh, environment/config seeding, and cross-process
-//! lock orchestration remain separate leaves, as they do in the upstream
-//! module's call graph.
+//! This module owns the JSON schema/migration, per-store advisory lock, and
+//! atomic file boundary. The higher-level OAuth refresh and
+//! environment/config seeding remain separate leaves, as they do in the
+//! upstream module's call graph.
 
 use crate::credential_pool::{
     exhausted_until, sanitize_borrowed_credential_payload, PooledCredential,
 };
 use chrono::Utc;
+use fs2::FileExt;
 use hermes_constants::{get_default_hermes_root, get_hermes_home, secure_parent_dir};
 use hermes_utils::atomic_replace;
 use serde_json::{Map, Value};
+use std::cell::RefCell;
+use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::time::{Duration, Instant};
 use url::Url;
 
 /// Version written to every native auth store.
 pub const AUTH_STORE_VERSION: i64 = 1;
 
+/// Default cross-process auth-store lock timeout.
+pub const AUTH_LOCK_TIMEOUT_SECONDS: f64 = 15.0;
+
 /// Current default Nous Portal URL used by the load-time migration.
 pub const DEFAULT_NOUS_PORTAL_URL: &str = "https://portal.nousresearch.com";
 
 static TEMP_FILE_COUNTER: AtomicU64 = AtomicU64::new(0);
+
+thread_local! {
+    static AUTH_LOCK_HOLDERS: RefCell<HashMap<PathBuf, usize>> = RefCell::new(HashMap::new());
+}
+
+/// An acquired per-auth-store advisory lock.
+///
+/// The guard is reentrant for the current thread and keyed by the canonical
+/// auth-store path, while the underlying `.lock` file serializes other
+/// threads/processes through `fs2`'s platform-native exclusive lock.
+pub struct AuthStoreLockGuard {
+    key: PathBuf,
+    file: Option<File>,
+}
+
+impl Drop for AuthStoreLockGuard {
+    fn drop(&mut self) {
+        let outermost = AUTH_LOCK_HOLDERS.with(|holders| {
+            let mut holders = holders.borrow_mut();
+            let Some(depth) = holders.get_mut(&self.key) else {
+                return false;
+            };
+            if *depth > 1 {
+                *depth -= 1;
+                false
+            } else {
+                holders.remove(&self.key);
+                true
+            }
+        });
+        if outermost {
+            if let Some(file) = self.file.as_ref() {
+                // PARITY: `_file_lock` ignores unlock failures during cleanup.
+                let _ = file.unlock();
+            }
+        }
+    }
+}
+
+/// Acquire the active auth-store lock with the source's default timeout.
+///
+/// PARITY: `hermes_cli.auth._auth_store_lock` (1187–1213).
+pub fn auth_store_lock(target_path: Option<&Path>) -> io::Result<AuthStoreLockGuard> {
+    auth_store_lock_with_timeout(target_path, AUTH_LOCK_TIMEOUT_SECONDS)
+}
+
+/// Acquire one auth-store lock with an explicit timeout, primarily for parity
+/// tests and callers that need a bounded transaction.
+pub fn auth_store_lock_with_timeout(
+    target_path: Option<&Path>,
+    timeout_seconds: f64,
+) -> io::Result<AuthStoreLockGuard> {
+    let auth_path = target_path.map_or_else(auth_file_path, Path::to_path_buf);
+    let key = lock_holder_key(&auth_path);
+    if let Some(guard) = AUTH_LOCK_HOLDERS.with(|holders| {
+        let mut holders = holders.borrow_mut();
+        let depth = holders.get_mut(&key)?;
+        *depth += 1;
+        Some(AuthStoreLockGuard {
+            key: key.clone(),
+            file: None,
+        })
+    }) {
+        return Ok(guard);
+    }
+
+    let lock_path = auth_path.with_extension("lock");
+    if let Some(parent) = lock_path
+        .parent()
+        .filter(|path| !path.as_os_str().is_empty())
+    {
+        fs::create_dir_all(parent)?;
+    }
+    let file = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create(true)
+        .truncate(false)
+        .open(&lock_path)?;
+    let deadline = lock_deadline(timeout_seconds);
+    loop {
+        match file.try_lock_exclusive() {
+            Ok(()) => break,
+            Err(_) if deadline.is_none_or(|deadline| Instant::now() < deadline) => {
+                std::thread::sleep(Duration::from_millis(50));
+            }
+            Err(_) => {
+                return Err(io::Error::new(
+                    io::ErrorKind::TimedOut,
+                    "Timed out waiting for auth store lock",
+                ));
+            }
+        }
+    }
+
+    AUTH_LOCK_HOLDERS.with(|holders| {
+        holders.borrow_mut().insert(key.clone(), 1);
+    });
+    Ok(AuthStoreLockGuard {
+        key,
+        file: Some(file),
+    })
+}
+
+fn lock_holder_key(path: &Path) -> PathBuf {
+    if let Ok(canonical) = fs::canonicalize(path) {
+        return canonical;
+    }
+    if let (Some(parent), Some(file_name)) = (path.parent(), path.file_name()) {
+        if let Ok(canonical_parent) = fs::canonicalize(parent) {
+            return canonical_parent.join(file_name);
+        }
+    }
+    path.to_path_buf()
+}
+
+fn lock_deadline(timeout_seconds: f64) -> Option<Instant> {
+    if timeout_seconds.is_infinite() && timeout_seconds.is_sign_positive() {
+        return None;
+    }
+    let seconds = if timeout_seconds.is_finite() {
+        timeout_seconds.max(1.0)
+    } else {
+        1.0
+    };
+    Some(Instant::now() + Duration::from_secs_f64(seconds))
+}
 
 /// Return the active `~/.hermes/auth.json` path.
 ///
@@ -238,10 +372,8 @@ pub fn read_credential_pool(provider_id: Option<&str>) -> io::Result<Value> {
 
 /// Write one provider pool to an explicit auth-store path.
 ///
-/// This is the final borrowed-secret disk boundary. The source's newer/live
-/// cooldown recency merge is applied here; cross-process locking remains a
-/// separate orchestration seam and callers must serialize this transaction
-/// until that leaf is ported.
+/// This is the final borrowed-secret disk boundary. The source's per-path
+/// cross-process lock and newer/live cooldown recency merge are applied here.
 ///
 /// PARITY: `hermes_cli.auth.write_credential_pool` (1650–1714).
 pub fn write_credential_pool_at(
@@ -250,6 +382,7 @@ pub fn write_credential_pool_at(
     entries: &[Value],
     removed_ids: &[String],
 ) -> io::Result<PathBuf> {
+    let _lock = auth_store_lock(Some(auth_file))?;
     let mut auth_store = load_auth_store(Some(auth_file))?;
     let pool = auth_store
         .entry("credential_pool")
