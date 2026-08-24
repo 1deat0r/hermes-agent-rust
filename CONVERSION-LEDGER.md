@@ -1,7 +1,7 @@
 # Hermes Agent → Hermes Agent Rust Conversion Ledger
 
-**Current strict completion: 1.83% of all tracked upstream modules (71/3882).**
-Production-only strict completion: **6.44%** (71/1103 production modules).
+**Current strict completion: 1.85% of all tracked upstream modules (72/3882).**
+Production-only strict completion: **6.53%** (72/1103 production modules).
 
 > This file is generated from `tools/inventory.json`; update the source ledger in `tools/port_status.json`, regenerate the inventory, then run `python3 tools/conversion_ledger.py`. Only `done` counts toward the percentage. `partial` is intentionally zero credit until its stated parity seams are closed.
 
@@ -9,10 +9,10 @@ Production-only strict completion: **6.44%** (71/1103 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 71 | 9 | 3802 | 1.83% | 29,596/1,510,733 done LOC |
-| Production modules | 71 | 9 | 1023 | 6.44% | 29,596/843,792 done LOC |
+| All tracked modules | 72 | 9 | 3801 | 1.85% | 29,717/1,510,733 done LOC |
+| Production modules | 72 | 9 | 1022 | 6.53% | 29,717/843,792 done LOC |
 
-Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-24T13:38:55`.
+Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-24T13:52:13`.
 
 ## Definition of 100.00%
 
@@ -823,7 +823,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `plugins.model-providers.gmi.__init__` | production | P4 | 32 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.model-providers.huggingface.__init__` | production | P4 | 20 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.model-providers.kilocode.__init__` | production | P4 | 14 | ✅ done | Maintain parity evidence; no remaining task in this row. |
-| `plugins.model-providers.kimi-coding.__init__` | production | P4 | 121 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `plugins.model-providers.kimi-coding.__init__` | production | P4 | 121 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.model-providers.minimax.__init__` | production | P4 | 97 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.model-providers.nous.__init__` | production | P4 | 88 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.model-providers.novita.__init__` | production | P4 | 27 | ✅ done | Maintain parity evidence; no remaining task in this row. |

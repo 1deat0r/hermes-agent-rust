@@ -83,6 +83,9 @@ pub struct ProviderProfile {
     pub qwen_portal: bool,
     /// Translate Upstage Solar reasoning into top-level reasoning_effort.
     pub upstage_reasoning: bool,
+    /// Apply Kimi Coding's endpoint confirmation, k3 filtering, and reasoning
+    /// wire-shape rules.
+    pub kimi_coding: bool,
     /// Route Copilot reasoning through the live model-catalog effort list.
     pub copilot_reasoning: bool,
     /// Route the reasoning configuration through `extra_body.reasoning`.
@@ -125,6 +128,7 @@ impl ProviderProfile {
             custom_provider: false,
             qwen_portal: false,
             upstage_reasoning: false,
+            kimi_coding: false,
             copilot_reasoning: false,
             reasoning_passthrough: false,
         }
@@ -178,6 +182,9 @@ impl ProviderProfile {
     ) -> (Map<String, Value>, Map<String, Value>) {
         if self.qwen_portal {
             return build_qwen_api_kwargs_extras(context);
+        }
+        if self.kimi_coding {
+            return build_kimi_reasoning(reasoning_config, context);
         }
         if self.upstage_reasoning {
             return build_upstage_reasoning(reasoning_config, context);
@@ -257,6 +264,60 @@ impl ProviderProfile {
         // returns None because model discovery uses the AWS SDK, not REST.
         if self.models_fetch_disabled {
             return None;
+        }
+
+        if self.kimi_coding {
+            // PARITY: KimiProfile trims the effective base URL before
+            // confirming the Coding endpoint, adds /v1 only to the confirmed
+            // /coding route, then delegates catalog I/O to the standard
+            // ProviderProfile implementation.
+            let effective_base = base_url
+                .filter(|value| !value.is_empty())
+                .unwrap_or(&self.base_url)
+                .trim_end_matches('/')
+                .to_owned();
+            let confirmed_coding_endpoint = is_confirmed_kimi_coding_url(&effective_base);
+            let fetch_base = if confirmed_coding_endpoint
+                && Url::parse(&effective_base)
+                    .ok()
+                    .is_some_and(|url| url.path().trim_end_matches('/') == "/coding")
+            {
+                format!("{effective_base}/v1")
+            } else {
+                effective_base
+            };
+            let explicit_models_url = self.models_url.trim();
+            let endpoint = if explicit_models_url.is_empty() {
+                if fetch_base.is_empty() {
+                    return None;
+                }
+                format!("{}/models", fetch_base.trim_end_matches('/'))
+            } else {
+                explicit_models_url.to_owned()
+            };
+
+            let models = match self.fetch_models_inner(
+                api_key,
+                &endpoint,
+                timeout,
+                ModelsFetchMode::Standard,
+            ) {
+                Ok(models) => Some(models),
+                Err(error) => {
+                    // PARITY: the provider's catalog probe is fail-open.
+                    log::debug!("fetch_models({}): {}", self.name, error);
+                    None
+                }
+            };
+            if models.is_none() || confirmed_coding_endpoint {
+                return models;
+            }
+            return models.map(|models| {
+                models
+                    .into_iter()
+                    .filter(|model| model.trim().to_ascii_lowercase() != "k3")
+                    .collect()
+            });
         }
 
         if self.models_fetch_mode == ModelsFetchMode::Anthropic {
@@ -714,6 +775,45 @@ fn url_origin(url: &Url) -> Origin {
     }
 }
 
+fn is_confirmed_kimi_coding_url(base_url: &str) -> bool {
+    // PARITY: Kimi only treats the two HTTPS api.kimi.com Coding paths as
+    // confirmed; malformed, credentialed, queried, or fragmented URLs remain
+    // ordinary Moonshot-compatible endpoints and have k3 filtered.
+    let Ok(parsed) = Url::parse(base_url) else {
+        return false;
+    };
+    let authority = parsed
+        .as_str()
+        .split_once("://")
+        .map(|(_, remainder)| {
+            remainder
+                .split('/')
+                .next()
+                .unwrap_or_default()
+                .split('?')
+                .next()
+                .unwrap_or_default()
+                .split('#')
+                .next()
+                .unwrap_or_default()
+        })
+        .unwrap_or_default();
+    if parsed.username() != "" || parsed.password().is_some() || authority.contains('@') {
+        return false;
+    }
+    parsed.scheme().eq_ignore_ascii_case("https")
+        && parsed
+            .host_str()
+            .is_some_and(|host| host.eq_ignore_ascii_case("api.kimi.com"))
+        && matches!(parsed.port(), None | Some(443))
+        && matches!(
+            parsed.path().trim_end_matches('/'),
+            "/coding" | "/coding/v1"
+        )
+        && parsed.query().is_none()
+        && parsed.fragment().is_none()
+}
+
 fn cross_origin_safe_headers(headers: &HeaderMap) -> HeaderMap {
     // PARITY: urllib_security.py's allowlist is intentionally narrow because
     // provider credentials can use arbitrary custom header names.
@@ -839,6 +939,67 @@ fn build_qwen_api_kwargs_extras(
         top_level.insert("metadata".into(), Value::Object(metadata.clone()));
     }
     (Map::new(), top_level)
+}
+
+fn build_kimi_reasoning(
+    reasoning_config: Option<&Map<String, Value>>,
+    _context: &Map<String, Value>,
+) -> (Map<String, Value>, Map<String, Value>) {
+    // PARITY: Kimi's thinking toggle and reasoning_effort are mutually
+    // exclusive; an unset or unrecognized effort delegates depth to Kimi.
+    let Some(reasoning_config) = reasoning_config else {
+        return (
+            Map::from_iter([(
+                "thinking".into(),
+                Value::Object(Map::from_iter([(
+                    "type".into(),
+                    Value::String("enabled".into()),
+                )])),
+            )]),
+            Map::new(),
+        );
+    };
+
+    if reasoning_config
+        .get("enabled")
+        .and_then(Value::as_bool)
+        .is_some_and(|enabled| !enabled)
+    {
+        return (
+            Map::from_iter([(
+                "thinking".into(),
+                Value::Object(Map::from_iter([(
+                    "type".into(),
+                    Value::String("disabled".into()),
+                )])),
+            )]),
+            Map::new(),
+        );
+    }
+
+    let effort = reasoning_config
+        .get("effort")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .trim()
+        .to_ascii_lowercase();
+    if matches!(effort.as_str(), "low" | "medium" | "high") {
+        return (
+            Map::new(),
+            Map::from_iter([("reasoning_effort".into(), Value::String(effort))]),
+        );
+    }
+
+    (
+        Map::from_iter([(
+            "thinking".into(),
+            Value::Object(Map::from_iter([(
+                "type".into(),
+                Value::String("enabled".into()),
+            )])),
+        )]),
+        Map::new(),
+    )
 }
 
 fn build_upstage_reasoning(

@@ -119,6 +119,7 @@ fn dataclass_defaults_match_upstream() {
     assert!(!profile.custom_provider);
     assert!(!profile.qwen_portal);
     assert!(!profile.upstage_reasoning);
+    assert!(!profile.kimi_coding);
     assert!(!profile.models_fetch_disabled);
     assert_eq!(profile.models_fetch_mode, ModelsFetchMode::Standard);
     assert!(!profile.gemini_thinking);
