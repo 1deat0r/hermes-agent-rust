@@ -1,6 +1,6 @@
 # Hermes Agent Rust — Next-session handoff
 
-Date: 2026-08-24 (Pacific/Auckland), session 4b7.
+Date: 2026-08-24 (Pacific/Auckland), session 4b8.
 
 ## Resume point
 
@@ -17,7 +17,11 @@ update. The local HTTPS Git client still has no credentials; use the
 connected GitHub API for future pushes until `gh auth login` or SSH is
 configured.
 
-Latest synchronized unit: local source `1a375bb` → GitHub `51e0d2b`
+Latest synchronized unit: local source `557b301` → GitHub `590625a`
+(`agent.auxiliary_client` OpenAI client-option retry boundary, including
+current PLAN/inventory/ledger metadata), after local handoff source `fa943bd`
+→ GitHub `4dc65b9` (`HANDOFF.md` for the endpoint-normalization unit), after
+local source `1a375bb` → GitHub `51e0d2b`
 (`agent.auxiliary_client` endpoint normalization and Anthropic host guard,
 including current PLAN/inventory/ledger metadata), after local handoff source
 `378fe35` → GitHub `63cb9f0` (`HANDOFF.md` for the pool-runtime unit), after
@@ -305,6 +309,13 @@ protocol-relative forms while failing closed for foreign, malformed, and bare
 host values. SDK construction, proxy/TLS bootstrap, and request transport
 remain pending.
 
+The transport-independent OpenAI client-option retry boundary is included in
+the new `557b301` source commit and its `590625a` GitHub mirror. It preserves
+the source's API-key/base-URL inputs, defaults `max_retries` to zero so Hermes
+owns retry and fallback policy, and honors an explicit retry override. Actual
+OpenAI SDK/httpx construction, proxy/TLS bootstrap, and async transport remain
+pending.
+
 The Qwen Portal bundled profile is included in the new `4e3894e` source
 commit and its `41482fc` GitHub mirror. The `qwen_portal` capability mirrors
 the source's string/list message normalization, unsupported-part filtering,
@@ -341,7 +352,7 @@ The new `hermes-providers` crate ports `providers/base.py` and
 model endpoint precedence, strict fail-open catalog parsing,
 credential-safe redirects, canonical/alias registry behavior, copy-safe
 caching, and sorted bundled/user/legacy discovery. The focused suites contain
-17 auxiliary-client routing/predicate/wire/error/pool-runtime/endpoint tests,
+19 auxiliary-client routing/predicate/wire/error/pool-runtime/endpoint/client-option tests,
 9 base, 8 registry, 2 AI Gateway profile, 2 Alibaba profile, 2 Alibaba Coding
 Plan profile, 3 Anthropic profile, 3 Gemini profile, 2 Arcee profile, 2 Azure
 Foundry profile, 2 Bedrock profile, 3 Copilot profile, 2 Copilot ACP profile,
@@ -362,7 +373,7 @@ credential-resolution, transport, and fallback sections before promoting it.
 The ledger's next missing production unit is `run_agent` (8,206 LOC), but the
 active continuation seam is the partial auxiliary client.
 
-The required auxiliary-client endpoint workspace verification was green
+The required auxiliary-client client-option workspace verification was green
 before
 the synchronized
 commit:
@@ -383,19 +394,19 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-After the current auxiliary-client endpoint source commit `1a375bb` is
-mirrored as `51e0d2b` and this handoff commit is aligned
+After the current auxiliary-client client-option source commit `557b301` is
+mirrored as `590625a` and this handoff commit is aligned
 to its remote mirror, the working tree is clean. The committed metadata
 includes `AGENTS.md`, `PLAN.md`, `tools/port_status.json`, generated
 `tools/inventory.json`, `CONVERSION-LEDGER.md`, and this handoff. No code or
-parity test is pending for the current endpoint slice; the
+parity test is pending for the current client-option slice; the
 `agent.auxiliary_client` module remains partial.
 
 ## Next actions, in order
 
-1. Continue `agent.auxiliary_client` by reading the pinned OpenAI-compatible
-   client-construction/credential-selection source/tests and writing the next
-   parity tests first.
+1. Continue `agent.auxiliary_client` by reading the pinned OpenAI SDK/httpx
+   client-construction, proxy/TLS, and credential-selection source/tests and
+   writing the next parity tests first.
 2. Keep the adapter boundaries explicit; do not promote the module until
    client, transport, cancellation, and fallback seams are covered.
 3. For every future module, commit and publish each logical unit immediately;
@@ -559,7 +570,7 @@ Cloud, 2 AI Gateway, 2 Alibaba, 2 Alibaba Coding Plan, 3 Anthropic, 3 Gemini,
 2 Arcee, 2 Azure
 Foundry, 2 Bedrock, 3 Copilot, 2 Copilot ACP, 2 Fireworks, 2 GMI, 2 Kilo
 Code, 3 Kimi Coding, 2 NovitaAI, 2 NVIDIA, 2 StepFun, 3 Vertex, 2 DeepInfra,
-17 auxiliary-client routing/predicate/wire/error/pool-runtime/endpoint, 5 ZAI profile,
+19 auxiliary-client routing/predicate/wire/error/pool-runtime/endpoint/client-option, 5 ZAI profile,
 2 DeepSeek, 3 Nous, 3 Minimax, 2 OpenAI Codex, 4 Qwen OAuth, 4 Upstage,
 2 Xiaomi, 2 XAI, and 2 Hugging Face profile
 tests. The
