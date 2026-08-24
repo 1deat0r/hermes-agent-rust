@@ -69,6 +69,8 @@ pub struct ProviderProfile {
     pub deepinfra_vision: bool,
     /// Translate DeepSeek V4+ reasoning into its thinking/reasoning wire shape.
     pub deepseek_reasoning: bool,
+    /// Add Nous Portal tags/sticky routing and apply its reasoning omission rule.
+    pub nous_portal: bool,
     /// Route Copilot reasoning through the live model-catalog effort list.
     pub copilot_reasoning: bool,
     /// Route the reasoning configuration through `extra_body.reasoning`.
@@ -104,6 +106,7 @@ impl ProviderProfile {
             vertex_thinking: false,
             deepinfra_vision: false,
             deepseek_reasoning: false,
+            nous_portal: false,
             copilot_reasoning: false,
             reasoning_passthrough: false,
         }
@@ -129,9 +132,12 @@ impl ProviderProfile {
 
     pub fn build_extra_body(
         &self,
-        _session_id: Option<&str>,
+        session_id: Option<&str>,
         context: &Map<String, Value>,
     ) -> Map<String, Value> {
+        if self.nous_portal {
+            return build_nous_extra_body(session_id, context);
+        }
         if self.vertex_thinking {
             return build_vertex_extra_body(context);
         }
@@ -146,6 +152,9 @@ impl ProviderProfile {
         reasoning_config: Option<&Map<String, Value>>,
         context: &Map<String, Value>,
     ) -> (Map<String, Value>, Map<String, Value>) {
+        if self.nous_portal {
+            return build_nous_api_kwargs_extras(reasoning_config, context);
+        }
         if self.deepseek_reasoning {
             return build_deepseek_reasoning(reasoning_config, context);
         }
@@ -774,6 +783,113 @@ fn build_deepseek_reasoning(
     let mut top_level = Map::new();
     top_level.insert("reasoning_effort".into(), Value::String(effort.into()));
     (extra_body, top_level)
+}
+
+fn build_nous_extra_body(
+    session_id: Option<&str>,
+    context: &Map<String, Value>,
+) -> Map<String, Value> {
+    // PARITY: NousProfile delegates product/client/conversation tags to
+    // `agent.portal_tags.nous_portal_tags()`. The CLI version provider is a
+    // future higher-layer seam; b9aa928's pinned hermes_cli version is used
+    // until that seam is available.
+    let mut tags = vec![
+        Value::String("product=hermes-agent".into()),
+        Value::String("client=hermes-client-v0.20.0".into()),
+    ];
+    let effective_session = context
+        .get("conversation_context")
+        .and_then(Value::as_str)
+        .filter(|value| !value.is_empty())
+        .or_else(|| session_id.filter(|value| !value.is_empty()));
+    if let Some(session_id) = effective_session {
+        tags.push(Value::String(format!("conversation={session_id}")));
+    }
+
+    let mut body = Map::new();
+    body.insert("tags".into(), Value::Array(tags));
+
+    let sticky_key = nous_cache_scope_from_session_id(effective_session);
+    if !sticky_key.is_empty() {
+        body.insert("session_id".into(), Value::String(sticky_key));
+    }
+
+    if let Some(provider_preferences) = context.get("provider_preferences") {
+        if json_truthy(provider_preferences) {
+            body.insert("provider".into(), provider_preferences.clone());
+        }
+    }
+    body
+}
+
+fn build_nous_api_kwargs_extras(
+    reasoning_config: Option<&Map<String, Value>>,
+    context: &Map<String, Value>,
+) -> (Map<String, Value>, Map<String, Value>) {
+    // PARITY: NousProfile emits the standard reasoning body only when the
+    // transport says the model supports reasoning, and intentionally omits
+    // it for an explicit `enabled=False` configuration.
+    let supports_reasoning = context
+        .get("supports_reasoning")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
+    if !supports_reasoning {
+        return (Map::new(), Map::new());
+    }
+
+    let mut extra_body = Map::new();
+    if let Some(reasoning_config) = reasoning_config {
+        if reasoning_config
+            .get("enabled")
+            .and_then(Value::as_bool)
+            .is_some_and(|enabled| !enabled)
+        {
+            return (extra_body, Map::new());
+        }
+        extra_body.insert("reasoning".into(), Value::Object(reasoning_config.clone()));
+    } else {
+        extra_body.insert(
+            "reasoning".into(),
+            serde_json::json!({"enabled": true, "effort": "medium"}),
+        );
+    }
+    (extra_body, Map::new())
+}
+
+fn nous_cache_scope_from_session_id(session_id: Option<&str>) -> String {
+    // PARITY: `_cache_scope_from_session_id` strips only the timestamp from
+    // cron_<job>_<YYYYMMDD>_<HHMMSS>; all other session IDs are unchanged.
+    let session_id = session_id.unwrap_or_default();
+    let Some((before_time, time)) = session_id.rsplit_once('_') else {
+        return session_id.into();
+    };
+    let Some((prefix, date)) = before_time.rsplit_once('_') else {
+        return session_id.into();
+    };
+    if prefix.starts_with("cron_")
+        && prefix.len() > "cron_".len()
+        && date.len() == 8
+        && time.len() == 6
+        && date.bytes().all(|byte| byte.is_ascii_digit())
+        && time.bytes().all(|byte| byte.is_ascii_digit())
+    {
+        prefix.into()
+    } else {
+        session_id.into()
+    }
+}
+
+fn json_truthy(value: &Value) -> bool {
+    // Python's `if provider_preferences` treats empty containers and zero as
+    // false; preserve that behavior for the JSON context adapter.
+    match value {
+        Value::Null => false,
+        Value::Bool(value) => *value,
+        Value::Number(value) => value.as_f64().is_some_and(|value| value != 0.0),
+        Value::String(value) => !value.is_empty(),
+        Value::Array(value) => !value.is_empty(),
+        Value::Object(value) => !value.is_empty(),
+    }
 }
 
 fn build_copilot_reasoning(

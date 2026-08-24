@@ -92,6 +92,9 @@
   "plugins.model-providers.nvidia.__init__": {
     "status": "done"
   },
+  "plugins.model-providers.nous.__init__": {
+    "status": "done"
+  },
   "plugins.model-providers.stepfun.__init__": {
     "status": "done"
   },

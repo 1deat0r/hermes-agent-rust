@@ -36,6 +36,8 @@ mod gmi;
 mod huggingface;
 #[path = "kilocode.rs"]
 mod kilocode;
+#[path = "nous.rs"]
+mod nous;
 #[path = "novita.rs"]
 mod novita;
 #[path = "nvidia.rs"]
@@ -75,6 +77,7 @@ pub(crate) fn register_builtin_profiles() {
     register_provider(kilocode::profile());
     register_provider(novita::profile());
     register_provider(nvidia::profile());
+    register_provider(nous::profile());
     register_provider(openai_codex::profile());
     register_provider(stepfun::profile());
     register_provider(vertex::profile());
@@ -106,6 +109,7 @@ pub(crate) fn load_profile(
             Some("kilocode") => return Ok(Some(kilocode::profile())),
             Some("novita") => return Ok(Some(novita::profile())),
             Some("nvidia") => return Ok(Some(nvidia::profile())),
+            Some("nous") => return Ok(Some(nous::profile())),
             Some("openai-codex") => return Ok(Some(openai_codex::profile())),
             Some("stepfun") => return Ok(Some(stepfun::profile())),
             Some("vertex") => return Ok(Some(vertex::profile())),
