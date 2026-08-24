@@ -659,6 +659,91 @@ fn openai_codex_singleton_seed_respects_device_code_suppression() {
     assert!(entries.is_empty());
 }
 
+// Tier: mock — mirrors tests/hermes_cli/test_auth_xai_oauth_provider.py::
+// test_credential_pool_seeds_xai_oauth_from_singleton.
+#[test]
+fn xai_oauth_singleton_seed_materializes_nested_tokens_and_fixed_base_url() {
+    let state = json!({
+        "provider": "xai-oauth",
+        "tokens": {
+            "access_token": "xai_access_token",
+            "refresh_token": "xai_refresh_token"
+        },
+        "last_refresh": "2026-08-24T12:00:00+00:00"
+    });
+    let state = state.as_object().unwrap().clone();
+    let mut entries = Vec::new();
+
+    let result = seed_from_singletons("xai-oauth", &mut entries, Some(&state), &BTreeSet::new());
+
+    assert!(result.changed);
+    assert_eq!(
+        result.active_sources,
+        BTreeSet::from([String::from("device_code")])
+    );
+    assert_eq!(entries.len(), 1);
+    assert_eq!(entries[0].source, "device_code");
+    assert_eq!(entries[0].auth_type, "oauth");
+    assert_eq!(entries[0].access_token, "xai_access_token");
+    assert_eq!(
+        entries[0].refresh_token.as_deref(),
+        Some("xai_refresh_token")
+    );
+    assert_eq!(entries[0].base_url.as_deref(), Some("https://api.x.ai/v1"));
+    assert_eq!(
+        entries[0].last_refresh.as_deref(),
+        Some("2026-08-24T12:00:00+00:00")
+    );
+    assert_eq!(entries[0].label, "device_code");
+}
+
+// Tier: mock — mirrors the upstream label_from_token fallback for the xAI
+// OAuth singleton branch.
+#[test]
+fn xai_oauth_singleton_seed_uses_token_label() {
+    let token = jwt_with_claims(json!({"email": "xai@example.test"}));
+    let state = json!({"tokens": {"access_token": token}});
+    let state = state.as_object().unwrap().clone();
+    let mut entries = Vec::new();
+
+    let result = seed_from_singletons("xai-oauth", &mut entries, Some(&state), &BTreeSet::new());
+
+    assert!(result.changed);
+    assert_eq!(entries.len(), 1);
+    assert_eq!(entries[0].label, "xai@example.test");
+}
+
+// Tier: mock — mirrors tests/hermes_cli/test_auth_xai_oauth_provider.py::
+// test_credential_pool_device_code_seed_respects_suppression and the
+// missing-token fail-open path.
+#[test]
+fn xai_oauth_singleton_seed_respects_suppression_and_missing_tokens() {
+    let state = json!({
+        "tokens": {"access_token": "xai_access_token"}
+    });
+    let state = state.as_object().unwrap().clone();
+    let mut entries = Vec::new();
+    let suppressed = BTreeSet::from([String::from("device_code")]);
+
+    let result = seed_from_singletons("xai-oauth", &mut entries, Some(&state), &suppressed);
+
+    assert!(!result.changed);
+    assert!(result.active_sources.is_empty());
+    assert!(entries.is_empty());
+
+    let empty_state = json!({"tokens": {"refresh_token": "refresh-only"}});
+    let empty_state = empty_state.as_object().unwrap().clone();
+    let empty_result = seed_from_singletons(
+        "xai-oauth",
+        &mut entries,
+        Some(&empty_state),
+        &BTreeSet::new(),
+    );
+    assert!(!empty_result.changed);
+    assert!(empty_result.active_sources.is_empty());
+    assert!(entries.is_empty());
+}
+
 // Tier: unit — mirrors agent/credential_pool.py _select_unlocked fill-first path.
 #[test]
 fn fill_first_selection_follows_priority_and_tracks_current_entry() {
