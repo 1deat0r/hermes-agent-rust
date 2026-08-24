@@ -9,9 +9,10 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
 Current branch/HEAD: `main` is aligned with `origin/main` after the local and
-GitHub API mirror sequence for the governance checkpoint. The next source
-commit in this working turn is the credential-store persistence unit; its
-post-commit mirror refs will be recorded below before this handoff closes.
+GitHub API mirror sequence for the credential-store persistence unit. The
+local source commit `43b4baf` was mirrored as GitHub
+`72976e0748ed6c1b708cc35465e463594806c6f1`; both refs resolve to tree
+`8b37b3b341423388e68c275c0f1e8d4467c43f61` with 273 matching tracked blobs.
 The connected GitHub API publishes each logical commit immediately as a
 sequential remote mirror. Its commit SHAs differ from the local sequence
 because the API cannot preserve local author/committer timestamps, but every
@@ -19,7 +20,10 @@ tree snapshot and commit message matches and is verified before each ref
 update. The local HTTPS Git client still has no credentials; use the connected
 GitHub API for future pushes until `gh auth login` or SSH is configured.
 
-Latest synchronized unit: local source `4ccaa7e` → GitHub `c2ecc258`
+Latest synchronized unit: local source `43b4baf` → GitHub
+`72976e0748ed6c1b708cc35465e463594806c6f1`
+(`feat(agent): port credential store persistence @ b9aa928`), with the
+previous local source `4ccaa7e` → GitHub `c2ecc258`
 (`feat(agent): port credential pool orchestration helpers @ b9aa928`), with the
 previous local source `1011551` → GitHub `6858357`
 (`feat(agent): port credential pool row model @ b9aa928`), with the previous
@@ -157,7 +161,7 @@ ignored `.unlazy/hermes-conversion/` depth tree records the dependency-ordered
 branches and the active credential-lifecycle leaf. These gates are intentionally
 unmet while the conversion remains partial.
 
-The current in-flight unit adds `hermes-agent::credential_store` around the
+The latest synchronized unit adds `hermes-agent::credential_store` around the
 upstream auth-store boundary. It mirrors versioned empty-store defaults,
 legacy `systems` migration, stale Nous Portal URL migration, corruption
 quarantine versus active read-error propagation, atomic `0600` auth writes
@@ -576,19 +580,21 @@ hardening remains in the preceding synchronized history.
 ## Exact working-tree state
 
 Local `main` and `origin/main` both resolve to GitHub's API-authored
-`c2ecc2588a1e604d2a20ce04c1318887bb8971be`; their trees both resolve to
-`3877949d1ac4d13aa75246459134f86bb8775724`. The recursive GitHub tree and
-local `git ls-tree -r` contain 270 blobs with no path/mode/SHA mismatches, and
-the worktree is clean. No conversion-ledger status changed: the current
+`72976e0748ed6c1b708cc35465e463594806c6f1`; their trees both resolve to
+`8b37b3b341423388e68c275c0f1e8d4467c43f61`. The recursive GitHub tree and
+local `git ls-tree -r` contain 273 blobs with no path/mode/SHA mismatches. The
+post-commit handoff checkpoint is the only pending local change. No
+conversion-ledger status changed: the current
 summary is 73 done / 11 partial / 3,798 missing tracked modules and 73 done /
 11 partial / 1,019 missing production modules.
 
 ## Next actions, in order
 
-1. Continue `agent.credential_pool` through auth-store persistence, provider
-   seeding, environment/config discovery, and OAuth refresh; the row model,
-   serialization, source upsert, strategy, provider-boundary, and selection
-   helpers are now recorded.
+1. Continue `agent.credential_pool` through cooldown-recency merging,
+   cross-process auth-store locking, provider/environment/config seeding, and
+   OAuth refresh; the row model, serialization, source upsert, strategy,
+   provider-boundary, selection, and basic persistence helpers are now
+   recorded.
 2. Then connect the auxiliary-client concrete transport to credential-pool
    lifecycle, cancellation, and provider fallback seams without promoting
    either partial module prematurely.
@@ -758,6 +764,17 @@ test --workspace` and serialized `/home/mustbearnold/.cargo/bin/cargo test
 remain intentionally ignored. Workspace Clippy was killed by the environment
 with exit 137; targeted `hermes-agent` Clippy reached only pre-existing
 `auxiliary_client` `too_many_arguments` and `needless_lifetimes` diagnostics.
+
+For the synchronized credential-store unit, `/home/mustbearnold/.cargo/bin/cargo
+test -p hermes-agent --test parity_credential_pool --test
+parity_credential_store` passed 21 pool plus 9 persistence tests. The approved
+credential-lifecycle leaf gates passed both the focused parity check and
+`/home/mustbearnold/.cargo/bin/cargo build --workspace`. The required
+serialized `/home/mustbearnold/.cargo/bin/cargo test --workspace
+-- --test-threads=1` also passed. `cargo fmt --all -- --check` still reports
+pre-existing formatting drift outside this wave, and targeted `hermes-agent`
+Clippy still reports only the pre-existing `auxiliary_client`
+`too_many_arguments` and `needless_lifetimes` diagnostics.
 
 The focused provider parity suites passed 9 base, 8 registry, 4 Custom, 3 Actual, 3 Ollama
 Cloud, 2 AI Gateway, 2 Alibaba, 2 Alibaba Coding Plan, 3 Anthropic, 3 Gemini,

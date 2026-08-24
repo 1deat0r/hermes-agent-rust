@@ -509,6 +509,10 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   blocked by pre-existing unformatted foundation files outside this wave;
   targeted `hermes-agent` Clippy still reports only the pre-existing
   `auxiliary_client` `too_many_arguments` and `needless_lifetimes` lints.
+  Local source commit `43b4baf` was mirrored as GitHub
+  `72976e0748ed6c1b708cc35465e463594806c6f1`; both refs resolve to tree
+  `8b37b3b341423388e68c275c0f1e8d4467c43f61` with 273 matching tracked
+  blobs.
   Cooldown recency merging, auth-store locks, environment/config discovery,
   provider seeding, OAuth refresh, leases, logging throttles, and
   cross-process orchestration remain pending.
