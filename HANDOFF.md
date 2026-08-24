@@ -1,6 +1,6 @@
 # Hermes Agent Rust — Next-session handoff
 
-Date: 2026-08-24 (Pacific/Auckland), session 4c3.
+Date: 2026-08-24 (Pacific/Auckland), session 4c4.
 
 ## Resume point
 
@@ -166,14 +166,16 @@ upstream auth-store boundary. It mirrors versioned empty-store defaults,
 legacy `systems` migration, stale Nous Portal URL migration, corruption
 quarantine versus active read-error propagation, atomic `0600` auth writes
 with `0700` parents, per-provider profile/global fallback reads, and the
-final borrowed-secret sanitizer at the pool write boundary. Nine new
-source-derived `unit`/`mock` tests pass, bringing the credential-pool wave to
-30 focused tests. The approved credential-lifecycle leaf gates, workspace
-build, and serialized workspace test pass. Full-workspace formatting and
-targeted Clippy remain affected only by pre-existing issues outside this
-unit; cooldown-recency merging, locks, environment/config discovery,
-provider seeding, OAuth refresh, leases, logging throttles, and
-cross-process orchestration remain pending.
+final borrowed-secret sanitizer at the pool write boundary. The follow-on
+cooldown-recency merge now adopts newer live `EXHAUSTED` cooldowns and `DEAD`
+quarantines for the same token while rejecting re-auth token changes and
+expired cooldowns. Thirteen new source-derived `unit`/`mock` tests pass in the
+persistence suite, bringing the credential-pool wave to 34 focused tests. The
+approved credential-lifecycle leaf gates, workspace build, and serialized
+workspace test pass. Full-workspace formatting and targeted Clippy remain
+affected only by pre-existing issues outside this unit; cross-process locks,
+environment/config discovery, provider seeding, OAuth refresh, leases,
+logging throttles, and cross-process orchestration remain pending.
 
 The current unit adds `hermes-agent::credential_pool`'s source-upsert and
 provider-boundary orchestration helpers. It mirrors source-scoped upserts,
@@ -588,11 +590,10 @@ summary is 73 done / 11 partial / 3,798 missing tracked modules and 73 done /
 
 ## Next actions, in order
 
-1. Continue `agent.credential_pool` through cooldown-recency merging,
-   cross-process auth-store locking, provider/environment/config seeding, and
-   OAuth refresh; the row model, serialization, source upsert, strategy,
-   provider-boundary, selection, and basic persistence helpers are now
-   recorded.
+1. Continue `agent.credential_pool` through cross-process auth-store locking,
+   provider/environment/config seeding, and OAuth refresh; the row model,
+   serialization, source upsert, strategy, provider-boundary, selection,
+   persistence, and cooldown-recency merge are now recorded.
 2. Then connect the auxiliary-client concrete transport to credential-pool
    lifecycle, cancellation, and provider fallback seams without promoting
    either partial module prematurely.
@@ -765,7 +766,7 @@ with exit 137; targeted `hermes-agent` Clippy reached only pre-existing
 
 For the synchronized credential-store unit, `/home/mustbearnold/.cargo/bin/cargo
 test -p hermes-agent --test parity_credential_pool --test
-parity_credential_store` passed 21 pool plus 9 persistence tests. The approved
+parity_credential_store` passed 21 pool plus 13 persistence tests. The approved
 credential-lifecycle leaf gates passed both the focused parity check and
 `/home/mustbearnold/.cargo/bin/cargo build --workspace`. The required
 serialized `/home/mustbearnold/.cargo/bin/cargo test --workspace

@@ -259,3 +259,175 @@ fn write_pool_does_not_resurrect_intentionally_removed_disk_rows() {
         .collect();
     assert_eq!(ids, ["keep"]);
 }
+
+fn now_seconds() -> f64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs_f64()
+}
+
+// Tier: unit — mirrors test_auth_profile_fallback.py's re-auth regression.
+#[test]
+fn write_pool_never_merges_cooldown_onto_reauthed_entry() {
+    let temp = tempfile::tempdir().unwrap();
+    let path = temp.path().join("hermes/auth.json");
+    let now = now_seconds();
+    write_json(
+        &path,
+        &store_with_pool(json!({
+            "openrouter": [{
+                "id": "cred-x",
+                "source": "manual",
+                "access_token": "old-key",
+                "last_status": "exhausted",
+                "last_status_at": now - 60.0,
+                "last_error_code": 429,
+                "last_error_reset_at": now + 300.0
+            }]
+        })),
+    );
+
+    write_credential_pool_at(
+        &path,
+        "openrouter",
+        &[json!({
+            "id": "cred-x",
+            "source": "manual",
+            "access_token": "new-key"
+        })],
+        &[],
+    )
+    .unwrap();
+
+    let loaded = load_auth_store(Some(&path)).unwrap();
+    let persisted = &loaded["credential_pool"]["openrouter"][0];
+    assert_eq!(persisted["access_token"], "new-key");
+    assert_ne!(persisted.get("last_status"), Some(&json!("exhausted")));
+    assert_eq!(persisted.get("last_error_code"), None);
+}
+
+// Tier: unit — mirrors _merge_disk_cooldown_state's newer/live cooldown path.
+#[test]
+fn write_pool_adopts_newer_live_cooldown_for_the_same_token() {
+    let temp = tempfile::tempdir().unwrap();
+    let path = temp.path().join("hermes/auth.json");
+    let now = now_seconds();
+    write_json(
+        &path,
+        &store_with_pool(json!({
+            "openrouter": [{
+                "id": "cred-x",
+                "source": "manual",
+                "access_token": "same-key",
+                "last_status": "exhausted",
+                "last_status_at": now - 10.0,
+                "last_error_code": 429,
+                "last_error_reason": "rate_limit",
+                "last_error_message": "slow down",
+                "last_error_reset_at": now + 300.0
+            }]
+        })),
+    );
+
+    write_credential_pool_at(
+        &path,
+        "openrouter",
+        &[json!({
+            "id": "cred-x",
+            "source": "manual",
+            "access_token": "same-key",
+            "last_status_at": now - 60.0
+        })],
+        &[],
+    )
+    .unwrap();
+
+    let loaded = load_auth_store(Some(&path)).unwrap();
+    let persisted = &loaded["credential_pool"]["openrouter"][0];
+    assert_eq!(persisted["last_status"], "exhausted");
+    assert_eq!(persisted["last_error_code"], 429);
+    assert_eq!(persisted["last_error_reason"], "rate_limit");
+    assert_eq!(persisted["last_error_message"], "slow down");
+    assert_eq!(persisted["last_error_reset_at"], json!(now + 300.0));
+}
+
+// Tier: unit — mirrors the source's expired-cooldown non-resurrection guard.
+#[test]
+fn write_pool_does_not_resurrect_expired_cooldown() {
+    let temp = tempfile::tempdir().unwrap();
+    let path = temp.path().join("hermes/auth.json");
+    let now = now_seconds();
+    write_json(
+        &path,
+        &store_with_pool(json!({
+            "openrouter": [{
+                "id": "cred-x",
+                "source": "manual",
+                "access_token": "same-key",
+                "last_status": "exhausted",
+                "last_status_at": now - 3600.0,
+                "last_error_code": 429,
+                "last_error_reset_at": now - 60.0
+            }]
+        })),
+    );
+
+    write_credential_pool_at(
+        &path,
+        "openrouter",
+        &[json!({
+            "id": "cred-x",
+            "source": "manual",
+            "access_token": "same-key",
+            "last_status_at": now - 120.0
+        })],
+        &[],
+    )
+    .unwrap();
+
+    let loaded = load_auth_store(Some(&path)).unwrap();
+    let persisted = &loaded["credential_pool"]["openrouter"][0];
+    assert_ne!(persisted.get("last_status"), Some(&json!("exhausted")));
+    assert_eq!(persisted.get("last_error_reset_at"), None);
+}
+
+// Tier: unit — mirrors DEAD status being binding without an expiry check.
+#[test]
+fn write_pool_adopts_newer_dead_quarantine_for_the_same_token() {
+    let temp = tempfile::tempdir().unwrap();
+    let path = temp.path().join("hermes/auth.json");
+    let now = now_seconds();
+    write_json(
+        &path,
+        &store_with_pool(json!({
+            "openrouter": [{
+                "id": "cred-x",
+                "source": "manual",
+                "access_token": "same-key",
+                "last_status": "dead",
+                "last_status_at": now - 10.0,
+                "last_error_code": 401,
+                "last_error_reason": "token_invalidated"
+            }]
+        })),
+    );
+
+    write_credential_pool_at(
+        &path,
+        "openrouter",
+        &[json!({
+            "id": "cred-x",
+            "source": "manual",
+            "access_token": "same-key",
+            "last_status_at": now - 60.0
+        })],
+        &[],
+    )
+    .unwrap();
+
+    let loaded = load_auth_store(Some(&path)).unwrap();
+    let persisted = &loaded["credential_pool"]["openrouter"][0];
+    assert_eq!(persisted["last_status"], "dead");
+    assert_eq!(persisted["last_error_reason"], "token_invalidated");
+}

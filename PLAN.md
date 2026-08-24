@@ -358,7 +358,7 @@ rich/routing/cooldown/meta/reactions/conversation/delete modules.
 
 | Module / upstream surface | Status | Rust home, oracle, and evidence tier |
 |---|---|---|
-| `agent/credential_pool.py` (3,147 LOC) — selection/rotation, pooled-row model/serialization, source upsert, priority normalization, strategy parsing, and custom-provider identity sections | 🟡 | `hermes-agent::credential_pool` plus `hermes-agent::credential_store`; 30 source-derived parity tests (`unit`/`mock`, 21 pool + 9 persistence) cover fill-first priority/current/peek, least-used counting, round-robin order, random selection support, explicit reset timestamps, terminal `token_invalidated` → `DEAD` rotation, unmatched-key fail-open rotation, duplicate-key quarantine, sole-credential transient-versus-billing cooldowns, `PooledCredential` JSON defaults/metadata round-trip, Anthropic OAT auth normalization and seeded-priority ordering, borrowed-secret redaction/fingerprints, owned OAuth persistence exceptions, Nous invoke-JWT runtime selection, token labels/runtime base URLs, source-key upsert and key rotation, configured strategies, custom endpoint/name scoping, versioned auth-store defaults, legacy `systems` migration, stale Nous URL migration, corruption quarantine versus read-error propagation, atomic `0600`/`0700` writes, profile/global fallback reads, and profile-scoped borrowed-secret-safe writes; cooldown recency merging, auth-store locking, environment/config discovery, provider seeding, OAuth refresh, lease locking, and logging throttles remain pending |
+| `agent/credential_pool.py` (3,147 LOC) — selection/rotation, pooled-row model/serialization, source upsert, priority normalization, strategy parsing, and custom-provider identity sections | 🟡 | `hermes-agent::credential_pool` plus `hermes-agent::credential_store`; 34 source-derived parity tests (`unit`/`mock`, 21 pool + 13 persistence) cover fill-first priority/current/peek, least-used counting, round-robin order, random selection support, explicit reset timestamps, terminal `token_invalidated` → `DEAD` rotation, unmatched-key fail-open rotation, duplicate-key quarantine, sole-credential transient-versus-billing cooldowns, `PooledCredential` JSON defaults/metadata round-trip, Anthropic OAT auth normalization and seeded-priority ordering, borrowed-secret redaction/fingerprints, owned OAuth persistence exceptions, Nous invoke-JWT runtime selection, token labels/runtime base URLs, source-key upsert and key rotation, configured strategies, custom endpoint/name scoping, versioned auth-store defaults, legacy `systems` migration, stale Nous URL migration, corruption quarantine versus read-error propagation, atomic `0600`/`0700` writes, profile/global fallback reads, profile-scoped borrowed-secret-safe writes, and newer/live cooldown recency merging with token-change and expiry guards; auth-store locking, environment/config discovery, provider seeding, OAuth refresh, lease locking, and logging throttles remain pending |
 
 ### hermes-agent auxiliary client (Phase 2, upstream @ b9aa928)
 
@@ -513,9 +513,12 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   `72976e0748ed6c1b708cc35465e463594806c6f1`; both refs resolve to tree
   `8b37b3b341423388e68c275c0f1e8d4467c43f61` with 273 matching tracked
   blobs.
-  Cooldown recency merging, auth-store locks, environment/config discovery,
-  provider seeding, OAuth refresh, leases, logging throttles, and
-  cross-process orchestration remain pending.
+  The follow-on cooldown-recency merge is now covered by four additional
+  source-derived `unit` parity tests: re-auth token changes never resurrect
+  stale status, newer live cooldowns and dead quarantines are adopted for the
+  same token, and expired cooldowns are not restored. Auth-store locks,
+  environment/config discovery, provider seeding, OAuth refresh, leases,
+  logging throttles, and cross-process orchestration remain pending.
 
 - 2026-08-24 (session 4bf): Continued the partial
   `agent.auxiliary_client` port (@ b9aa928, 10,044 LOC) with concrete

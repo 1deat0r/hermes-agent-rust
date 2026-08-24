@@ -6,7 +6,9 @@
 //! lock orchestration remain separate leaves, as they do in the upstream
 //! module's call graph.
 
-use crate::credential_pool::sanitize_borrowed_credential_payload;
+use crate::credential_pool::{
+    exhausted_until, sanitize_borrowed_credential_payload, PooledCredential,
+};
 use chrono::Utc;
 use hermes_constants::{get_default_hermes_root, get_hermes_home, secure_parent_dir};
 use hermes_utils::atomic_replace;
@@ -236,10 +238,10 @@ pub fn read_credential_pool(provider_id: Option<&str>) -> io::Result<Value> {
 
 /// Write one provider pool to an explicit auth-store path.
 ///
-/// This is the final borrowed-secret disk boundary. Cross-process locking and
-/// cooldown recency merging are intentionally separate orchestration seams;
-/// callers must serialize this read-modify-write transaction until that leaf
-/// is ported.
+/// This is the final borrowed-secret disk boundary. The source's newer/live
+/// cooldown recency merge is applied here; cross-process locking remains a
+/// separate orchestration seam and callers must serialize this transaction
+/// until that leaf is ported.
 ///
 /// PARITY: `hermes_cli.auth.write_credential_pool` (1650–1714).
 pub fn write_credential_pool_at(
@@ -273,7 +275,25 @@ pub fn write_credential_pool_at(
         .and_then(Value::as_array)
         .cloned()
         .unwrap_or_default();
-    let mut merged = sanitized_entries;
+    let existing_by_id: Map<String, Value> = existing
+        .iter()
+        .filter_map(|entry| {
+            entry
+                .get("id")
+                .and_then(Value::as_str)
+                .map(|id| (id.to_owned(), entry.clone()))
+        })
+        .collect();
+    let mut merged: Vec<Value> = sanitized_entries
+        .into_iter()
+        .map(|entry| {
+            let disk_entry = entry
+                .get("id")
+                .and_then(Value::as_str)
+                .and_then(|id| existing_by_id.get(id));
+            merge_disk_cooldown_state(&entry, disk_entry, provider_id)
+        })
+        .collect();
     for entry in existing {
         let Some(id) = entry.get("id").and_then(Value::as_str) else {
             continue;
@@ -344,6 +364,105 @@ fn sanitize_entry(entry: &Value, provider_id: &str) -> Value {
             ))
         },
     )
+}
+
+const POOL_STATUS_FIELDS: &[&str] = &[
+    "last_status",
+    "last_status_at",
+    "last_error_code",
+    "last_error_reason",
+    "last_error_message",
+    "last_error_reset_at",
+];
+
+/// Keep a newer, still-binding disk cooldown over a stale in-memory row.
+///
+/// PARITY: `hermes_cli.auth._merge_disk_cooldown_state` (1593–1647).
+fn merge_disk_cooldown_state(
+    entry: &Value,
+    disk_entry: Option<&Value>,
+    provider_id: &str,
+) -> Value {
+    let (Some(entry_map), Some(disk_map)) =
+        (entry.as_object(), disk_entry.and_then(Value::as_object))
+    else {
+        return entry.clone();
+    };
+    let disk_status = disk_map.get("last_status").and_then(Value::as_str);
+    if !matches!(disk_status, Some("dead" | "exhausted")) {
+        return entry.clone();
+    }
+
+    let memory_access = entry_map
+        .get("access_token")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    let disk_access = disk_map
+        .get("access_token")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    if !memory_access.is_empty() && !disk_access.is_empty() && memory_access != disk_access {
+        return entry.clone();
+    }
+
+    let disk_timestamp = timestamp_value(disk_map.get("last_status_at")).unwrap_or(0.0);
+    let memory_timestamp = timestamp_value(entry_map.get("last_status_at")).unwrap_or(0.0);
+    if disk_timestamp <= memory_timestamp {
+        return entry.clone();
+    }
+
+    if disk_status == Some("exhausted") {
+        let disk_credential =
+            PooledCredential::from_json(provider_id, &Value::Object(disk_map.clone()));
+        let now = Utc::now().timestamp_millis() as f64 / 1000.0;
+        if exhausted_until(&disk_credential, false).is_none_or(|until| until <= now) {
+            return entry.clone();
+        }
+    }
+
+    let mut merged = entry_map.clone();
+    for field in POOL_STATUS_FIELDS {
+        merged.insert(
+            (*field).to_owned(),
+            disk_map.get(*field).cloned().unwrap_or(Value::Null),
+        );
+    }
+    Value::Object(merged)
+}
+
+fn timestamp_value(value: Option<&Value>) -> Option<f64> {
+    match value {
+        Some(Value::Number(number)) => number.as_f64().and_then(normalize_timestamp),
+        Some(Value::String(value)) => parse_timestamp(value),
+        _ => None,
+    }
+}
+
+fn normalize_timestamp(value: f64) -> Option<f64> {
+    if value <= 0.0 {
+        return None;
+    }
+    Some(if value > 1_000_000_000_000.0 {
+        value / 1000.0
+    } else {
+        value
+    })
+}
+
+fn parse_timestamp(value: &str) -> Option<f64> {
+    let raw = value.trim();
+    if raw.is_empty() {
+        return None;
+    }
+    if let Ok(numeric) = raw.parse::<f64>() {
+        if numeric <= 0.0 {
+            return None;
+        }
+        return normalize_timestamp(numeric);
+    }
+    chrono::DateTime::parse_from_rfc3339(raw)
+        .map(|timestamp| timestamp.timestamp_millis() as f64 / 1000.0)
+        .ok()
 }
 
 fn migrate_stale_nous_portal_url(providers: &mut Map<String, Value>) {

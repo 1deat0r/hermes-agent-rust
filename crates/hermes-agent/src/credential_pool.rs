@@ -1501,12 +1501,12 @@ fn clear_failure_state(entry: &mut PooledCredential) {
     entry.failure_reason = None;
 }
 
-fn exhausted_until(entry: &PooledCredential, sole_credential: bool) -> Option<f64> {
+pub(crate) fn exhausted_until(entry: &PooledCredential, sole_credential: bool) -> Option<f64> {
     if entry.status != Some(CredentialStatus::Exhausted) {
         return None;
     }
     if let Some(reset_at) = entry.last_error_reset_at {
-        return Some(reset_at);
+        return Some(normalize_epoch_seconds(reset_at));
     }
     let status_at = entry.last_status_at?;
     let base = match entry.last_error_code {
@@ -1522,4 +1522,12 @@ fn exhausted_until(entry: &PooledCredential, sole_credential: bool) -> Option<f6
         base
     };
     Some(status_at + ttl)
+}
+
+fn normalize_epoch_seconds(value: f64) -> f64 {
+    if value > 1_000_000_000_000.0 {
+        value / 1000.0
+    } else {
+        value
+    }
 }
