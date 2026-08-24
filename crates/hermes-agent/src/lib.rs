@@ -2,3 +2,4 @@
 
 pub mod auxiliary_client;
 pub mod credential_pool;
+pub mod credential_store;

@@ -358,7 +358,7 @@ rich/routing/cooldown/meta/reactions/conversation/delete modules.
 
 | Module / upstream surface | Status | Rust home, oracle, and evidence tier |
 |---|---|---|
-| `agent/credential_pool.py` (3,147 LOC) — selection/rotation, pooled-row model/serialization, source upsert, priority normalization, strategy parsing, and custom-provider identity sections | 🟡 | `hermes-agent::credential_pool`; 21 source-derived parity tests (`unit`) cover fill-first priority/current/peek, least-used counting, round-robin order, random selection support, explicit reset timestamps, terminal `token_invalidated` → `DEAD` rotation, unmatched-key fail-open rotation, duplicate-key quarantine, sole-credential transient-versus-billing cooldowns, `PooledCredential` JSON defaults/metadata round-trip, Anthropic OAT auth normalization and seeded-priority ordering, borrowed-secret redaction/fingerprints, owned OAuth persistence exceptions, Nous invoke-JWT runtime selection, token labels/runtime base URLs, source-key upsert and key rotation, configured strategies, and custom endpoint/name scoping; auth-store persistence, environment/config discovery, provider seeding, OAuth refresh, lease locking, logging throttles, and cross-process locking remain pending |
+| `agent/credential_pool.py` (3,147 LOC) — selection/rotation, pooled-row model/serialization, source upsert, priority normalization, strategy parsing, and custom-provider identity sections | 🟡 | `hermes-agent::credential_pool` plus `hermes-agent::credential_store`; 30 source-derived parity tests (`unit`/`mock`, 21 pool + 9 persistence) cover fill-first priority/current/peek, least-used counting, round-robin order, random selection support, explicit reset timestamps, terminal `token_invalidated` → `DEAD` rotation, unmatched-key fail-open rotation, duplicate-key quarantine, sole-credential transient-versus-billing cooldowns, `PooledCredential` JSON defaults/metadata round-trip, Anthropic OAT auth normalization and seeded-priority ordering, borrowed-secret redaction/fingerprints, owned OAuth persistence exceptions, Nous invoke-JWT runtime selection, token labels/runtime base URLs, source-key upsert and key rotation, configured strategies, custom endpoint/name scoping, versioned auth-store defaults, legacy `systems` migration, stale Nous URL migration, corruption quarantine versus read-error propagation, atomic `0600`/`0700` writes, profile/global fallback reads, and profile-scoped borrowed-secret-safe writes; cooldown recency merging, auth-store locking, environment/config discovery, provider seeding, OAuth refresh, lease locking, and logging throttles remain pending |
 
 ### hermes-agent auxiliary client (Phase 2, upstream @ b9aa928)
 
@@ -492,6 +492,26 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 + the exact command, e.g. `cargo test -p hermes-time (unit)`.
 
 ## 7. Session log
+
+- 2026-08-24 (session 4c3): Continued the partial `agent.credential_pool`
+  port (@ b9aa928) through the auth-store persistence boundary. Added
+  `hermes-agent::credential_store`, which mirrors versioned empty-store
+  defaults, accepted pool/provider schema, legacy `systems` migration, stale
+  Nous Portal URL migration, malformed-file quarantine versus existing-file
+  read-error propagation, atomic owner-only auth writes, per-provider
+  profile/global fallback reads, and the final borrowed-secret disk
+  sanitizer with intentional removal handling. Added 9 source-derived
+  `unit`/`mock` parity tests first (`parity_credential_store.rs`), bringing
+  the credential-pool wave to 30 focused tests. The approved credential
+  lifecycle leaf gates passed; `/home/mustbearnold/.cargo/bin/cargo build
+  --workspace` and serialized `/home/mustbearnold/.cargo/bin/cargo test
+  --workspace -- --test-threads=1` passed. Full-workspace formatting remains
+  blocked by pre-existing unformatted foundation files outside this wave;
+  targeted `hermes-agent` Clippy still reports only the pre-existing
+  `auxiliary_client` `too_many_arguments` and `needless_lifetimes` lints.
+  Cooldown recency merging, auth-store locks, environment/config discovery,
+  provider seeding, OAuth refresh, leases, logging throttles, and
+  cross-process orchestration remain pending.
 
 - 2026-08-24 (session 4bf): Continued the partial
   `agent.auxiliary_client` port (@ b9aa928, 10,044 LOC) with concrete

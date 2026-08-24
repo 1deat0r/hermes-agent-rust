@@ -1,6 +1,6 @@
 # Hermes Agent Rust — Next-session handoff
 
-Date: 2026-08-24 (Pacific/Auckland), session 4c1.
+Date: 2026-08-24 (Pacific/Auckland), session 4c3.
 
 ## Resume point
 
@@ -9,7 +9,9 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
 Current branch/HEAD: `main` is aligned with `origin/main` after the local and
-GitHub API mirror sequence for the credential-pool orchestration unit.
+GitHub API mirror sequence for the governance checkpoint. The next source
+commit in this working turn is the credential-store persistence unit; its
+post-commit mirror refs will be recorded below before this handoff closes.
 The connected GitHub API publishes each logical commit immediately as a
 sequential remote mirror. Its commit SHAs differ from the local sequence
 because the API cannot preserve local author/committer timestamps, but every
@@ -154,6 +156,20 @@ evidence, exact local/GitHub tree parity, and end-to-end surface review. The
 ignored `.unlazy/hermes-conversion/` depth tree records the dependency-ordered
 branches and the active credential-lifecycle leaf. These gates are intentionally
 unmet while the conversion remains partial.
+
+The current in-flight unit adds `hermes-agent::credential_store` around the
+upstream auth-store boundary. It mirrors versioned empty-store defaults,
+legacy `systems` migration, stale Nous Portal URL migration, corruption
+quarantine versus active read-error propagation, atomic `0600` auth writes
+with `0700` parents, per-provider profile/global fallback reads, and the
+final borrowed-secret sanitizer at the pool write boundary. Nine new
+source-derived `unit`/`mock` tests pass, bringing the credential-pool wave to
+30 focused tests. The approved credential-lifecycle leaf gates, workspace
+build, and serialized workspace test pass. Full-workspace formatting and
+targeted Clippy remain affected only by pre-existing issues outside this
+unit; cooldown-recency merging, locks, environment/config discovery,
+provider seeding, OAuth refresh, leases, logging throttles, and
+cross-process orchestration remain pending.
 
 The current unit adds `hermes-agent::credential_pool`'s source-upsert and
 provider-boundary orchestration helpers. It mirrors source-scoped upserts,

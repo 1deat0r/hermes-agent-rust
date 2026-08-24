@@ -654,7 +654,7 @@ fn credential_secret_fingerprint(payload: &Map<String, Value>) -> Option<String>
         .map(ToOwned::to_owned)
 }
 
-fn sanitize_borrowed_credential_payload(
+pub(crate) fn sanitize_borrowed_credential_payload(
     payload: Map<String, Value>,
     provider: &str,
 ) -> Map<String, Value> {

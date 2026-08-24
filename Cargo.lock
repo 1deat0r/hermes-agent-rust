@@ -480,12 +480,15 @@ version = "0.1.0"
 dependencies = [
  "base64",
  "chrono",
+ "hermes-constants",
  "hermes-utils",
  "rand",
  "reqwest",
  "serde_json",
  "sha2 0.10.9",
+ "tempfile",
  "thiserror",
+ "url",
 ]
 
 [[package]]
