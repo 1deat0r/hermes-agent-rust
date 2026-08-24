@@ -5,8 +5,10 @@
 //! provider fallback chains remain higher-layer sections of the 10,044-line
 //! upstream module.
 
+use base64::{engine::general_purpose::URL_SAFE, Engine as _};
 use hermes_utils::{base_url_hostname, model_forces_max_completion_tokens, normalize_proxy_url};
 use serde_json::{json, Value};
+use std::collections::BTreeMap;
 use std::path::Path;
 use thiserror::Error;
 
@@ -611,6 +613,47 @@ pub fn resolve_auxiliary_tls_verify(
     auxiliary_effective_ca_bundle(ca_bundle)
         .map(AuxiliaryTlsVerify::CaBundle)
         .unwrap_or(AuxiliaryTlsVerify::Default)
+}
+
+/// Build the first-party headers required by the Codex OAuth endpoint.
+///
+/// Invalid or non-JWT tokens retain the fixed headers and simply omit the
+/// optional account identifier, preserving the source's auth-error path.
+///
+/// PARITY: agent/auxiliary_client.py lines 971-1002.
+pub fn codex_cloudflare_headers(access_token: &str) -> BTreeMap<String, String> {
+    let mut headers = BTreeMap::from([
+        (
+            "User-Agent".to_owned(),
+            "codex_cli_rs/0.0.0 (Hermes Agent)".to_owned(),
+        ),
+        ("originator".to_owned(), "codex_cli_rs".to_owned()),
+    ]);
+    if access_token.trim().is_empty() {
+        return headers;
+    }
+
+    let Some(payload_part) = access_token.split('.').nth(1) else {
+        return headers;
+    };
+    let mut encoded = payload_part.to_owned();
+    encoded.push_str(&"=".repeat((4 - encoded.len() % 4) % 4));
+    let Ok(decoded) = URL_SAFE.decode(encoded.as_bytes()) else {
+        return headers;
+    };
+    let Ok(claims) = serde_json::from_slice::<Value>(&decoded) else {
+        return headers;
+    };
+    let account_id = claims
+        .get("https://api.openai.com/auth")
+        .and_then(Value::as_object)
+        .and_then(|auth| auth.get("chatgpt_account_id"))
+        .and_then(Value::as_str)
+        .filter(|value| !value.is_empty());
+    if let Some(account_id) = account_id {
+        headers.insert("ChatGPT-Account-ID".to_owned(), account_id.to_owned());
+    }
+    headers
 }
 
 /// Normalize an auxiliary provider name and its source aliases.

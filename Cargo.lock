@@ -478,6 +478,7 @@ dependencies = [
 name = "hermes-agent"
 version = "0.1.0"
 dependencies = [
+ "base64",
  "hermes-utils",
  "serde_json",
  "thiserror",

@@ -1,10 +1,11 @@
 use hermes_agent::auxiliary_client::{
     auxiliary_max_tokens_param, auxiliary_proxy_for_base_url, auxiliary_proxy_from_env,
-    is_anthropic_compatible_host, is_model_incompatible_error, is_model_not_found_error,
-    is_payment_error, is_rate_limit_error, normalize_aux_provider, openai_client_config,
-    pool_runtime_api_key, pool_runtime_base_url, resolve_aux_task_provider_model,
-    resolve_auxiliary_tls_verify, to_openai_base_url, AuxiliaryError, AuxiliaryPoolEntry,
-    AuxiliarySslVerifySetting, AuxiliaryTaskConfig, AuxiliaryTlsVerify,
+    codex_cloudflare_headers, is_anthropic_compatible_host, is_model_incompatible_error,
+    is_model_not_found_error, is_payment_error, is_rate_limit_error, normalize_aux_provider,
+    openai_client_config, pool_runtime_api_key, pool_runtime_base_url,
+    resolve_aux_task_provider_model, resolve_auxiliary_tls_verify, to_openai_base_url,
+    AuxiliaryError, AuxiliaryPoolEntry, AuxiliarySslVerifySetting, AuxiliaryTaskConfig,
+    AuxiliaryTlsVerify,
 };
 use serde_json::json;
 use std::ffi::OsString;
@@ -684,4 +685,51 @@ fn auxiliary_tls_verify_accepts_false_settings_and_fails_open_for_missing_ca() {
         resolve_auxiliary_tls_verify(Some("missing-ca-bundle.pem"), None),
         AuxiliaryTlsVerify::Default
     );
+}
+
+// Tier: unit — mirrors tests/agent/test_codex_cloudflare_headers.py.
+#[test]
+fn codex_cloudflare_headers_extract_account_id_with_canonical_casing() {
+    let token = concat!(
+        "e30.",
+        "eyJodHRwczovL2FwaS5vcGVuYWkuY29tL2F1dGgiOnsiY2hhdGdwdF9hY2NvdW50X2lkIjoiYWNjdC10ZXN0LTEyMyJ9fQ",
+        ".sig"
+    );
+    let headers = codex_cloudflare_headers(token);
+
+    assert_eq!(headers.get("originator"), Some(&"codex_cli_rs".into()));
+    assert_eq!(
+        headers.get("User-Agent"),
+        Some(&"codex_cli_rs/0.0.0 (Hermes Agent)".into())
+    );
+    assert_eq!(
+        headers.get("ChatGPT-Account-ID"),
+        Some(&"acct-test-123".into())
+    );
+    assert!(!headers.contains_key("chatgpt-account-id"));
+    assert!(!headers.contains_key("ChatGPT-Account-Id"));
+}
+
+// Tier: unit — mirrors tests/agent/test_codex_cloudflare_headers.py.
+#[test]
+fn codex_cloudflare_headers_keep_base_headers_without_account_claim() {
+    let token = concat!(
+        "e30.",
+        "eyJzdWIiOiJ1c2VyLXh5eiIsImV4cCI6OTk5OTk5OTk5OX0",
+        ".sig"
+    );
+    let headers = codex_cloudflare_headers(token);
+
+    assert_eq!(headers.get("originator"), Some(&"codex_cli_rs".into()));
+    assert!(!headers.contains_key("ChatGPT-Account-ID"));
+}
+
+// Tier: unit — mirrors the source's broad malformed-token fail-open path.
+#[test]
+fn codex_cloudflare_headers_fail_open_for_malformed_or_empty_tokens() {
+    for token in ["", "not-a-jwt", "a.%%%%.c"] {
+        let headers = codex_cloudflare_headers(token);
+        assert_eq!(headers.get("originator"), Some(&"codex_cli_rs".into()));
+        assert!(!headers.contains_key("ChatGPT-Account-ID"));
+    }
 }
