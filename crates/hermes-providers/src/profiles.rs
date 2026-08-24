@@ -38,6 +38,8 @@ mod gmi;
 mod huggingface;
 #[path = "kilocode.rs"]
 mod kilocode;
+#[path = "minimax.rs"]
+mod minimax;
 #[path = "nous.rs"]
 mod nous;
 #[path = "novita.rs"]
@@ -80,6 +82,9 @@ pub(crate) fn register_builtin_profiles() {
     register_provider(gmi::profile());
     register_provider(huggingface::profile());
     register_provider(kilocode::profile());
+    register_provider(minimax::profile());
+    register_provider(minimax::china_profile());
+    register_provider(minimax::oauth_profile());
     register_provider(novita::profile());
     register_provider(nvidia::profile());
     register_provider(nous::profile());
@@ -114,6 +119,7 @@ pub(crate) fn load_profile(
             Some("gmi") => return Ok(Some(gmi::profile())),
             Some("huggingface") => return Ok(Some(huggingface::profile())),
             Some("kilocode") => return Ok(Some(kilocode::profile())),
+            Some("minimax") => return Ok(Some(minimax::profile())),
             Some("novita") => return Ok(Some(novita::profile())),
             Some("nvidia") => return Ok(Some(nvidia::profile())),
             Some("nous") => return Ok(Some(nous::profile())),

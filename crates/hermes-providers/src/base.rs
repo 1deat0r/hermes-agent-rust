@@ -75,6 +75,8 @@ pub struct ProviderProfile {
     pub nous_portal: bool,
     /// Translate Ollama Cloud reasoning into top-level reasoning_effort.
     pub ollama_cloud_reasoning: bool,
+    /// Translate MiniMax-M3 reasoning for the global OpenAI-compatible route.
+    pub minimax_reasoning: bool,
     /// Route Copilot reasoning through the live model-catalog effort list.
     pub copilot_reasoning: bool,
     /// Route the reasoning configuration through `extra_body.reasoning`.
@@ -113,6 +115,7 @@ impl ProviderProfile {
             deepseek_reasoning: false,
             nous_portal: false,
             ollama_cloud_reasoning: false,
+            minimax_reasoning: false,
             copilot_reasoning: false,
             reasoning_passthrough: false,
         }
@@ -166,6 +169,9 @@ impl ProviderProfile {
         }
         if self.ollama_cloud_reasoning {
             return build_ollama_cloud_reasoning(reasoning_config, context);
+        }
+        if self.minimax_reasoning {
+            return build_minimax_reasoning(reasoning_config, context);
         }
         if self.copilot_reasoning {
             return build_copilot_reasoning(reasoning_config, context);
@@ -951,6 +957,62 @@ fn build_ollama_cloud_reasoning(
         Map::new(),
         Map::from_iter([("reasoning_effort".into(), Value::String(effort.into()))]),
     )
+}
+
+fn build_minimax_reasoning(
+    reasoning_config: Option<&Map<String, Value>>,
+    context: &Map<String, Value>,
+) -> (Map<String, Value>, Map<String, Value>) {
+    // PARITY: MiniMaxProfile accepts only MiniMax-M3 (or its provider slug)
+    // on the exact global `api.minimax.io/v1` OpenAI-compatible route.
+    let model = context
+        .get("model")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .trim()
+        .to_ascii_lowercase();
+    let base_url = context
+        .get("base_url")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    if !is_minimax_global_openai_base_url(base_url)
+        || !matches!(model.as_str(), "minimax-m3" | "minimax/minimax-m3")
+    {
+        return (Map::new(), Map::new());
+    }
+
+    let mut extra_body = Map::from_iter([("reasoning_split".into(), Value::Bool(true))]);
+    if let Some(reasoning_config) = reasoning_config {
+        let disabled = reasoning_config
+            .get("enabled")
+            .and_then(Value::as_bool)
+            .is_some_and(|enabled| !enabled);
+        let thinking_type = if disabled { "disabled" } else { "adaptive" };
+        extra_body.insert(
+            "thinking".into(),
+            Value::Object(Map::from_iter([(
+                "type".into(),
+                Value::String(thinking_type.into()),
+            )])),
+        );
+    }
+    (extra_body, Map::new())
+}
+
+fn is_minimax_global_openai_base_url(base_url: &str) -> bool {
+    let Ok(parsed) = Url::parse(base_url.trim()) else {
+        return false;
+    };
+    let Some(hostname) = parsed.host_str() else {
+        return false;
+    };
+    if !hostname.eq_ignore_ascii_case("api.minimax.io") {
+        return false;
+    }
+    parsed
+        .path()
+        .trim_end_matches('/')
+        .eq_ignore_ascii_case("/v1")
 }
 
 fn build_nous_extra_body(
