@@ -1,11 +1,13 @@
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
 use hermes_agent::credential_pool::{
     credential_pool_matches_provider, custom_provider_config, custom_provider_pool_key,
-    get_env_prefer_dotenv, label_from_token, list_custom_pool_providers, load_env_file,
-    normalize_custom_pool_name, normalize_pool_priorities, pool_strategy_from_config,
-    prune_stale_seeded_entries, seed_custom_pool, seed_from_env, seed_from_singletons,
-    upsert_entry, CredentialPool, CredentialStatus, EnvironmentSnapshot, PoolErrorContext,
-    PoolLoadInputs, PoolStrategy, PooledCredential, ProviderCredentialConfig,
+    get_compatible_custom_providers, get_env_prefer_dotenv, label_from_token,
+    list_custom_pool_providers, load_env_file, normalize_custom_pool_name,
+    normalize_custom_provider_entry, normalize_pool_priorities, pool_strategy_from_config,
+    providers_dict_to_custom_providers, prune_stale_seeded_entries, seed_custom_pool,
+    seed_from_env, seed_from_singletons, upsert_entry, CredentialPool, CredentialStatus,
+    EnvironmentSnapshot, PoolErrorContext, PoolLoadInputs, PoolStrategy, PooledCredential,
+    ProviderCredentialConfig,
 };
 use hermes_agent::credential_store::{read_credential_pool_at, save_auth_store};
 use serde_json::{json, Value};
@@ -1848,6 +1850,174 @@ fn custom_provider_lookup_prefers_name_and_lists_only_nonempty_pools() {
         list_custom_pool_providers(pool_data.as_object().unwrap()),
         vec!["custom:second-provider"]
     );
+}
+
+// Tier: unit — mirrors hermes_cli.config.get_compatible_custom_providers and
+// tests/hermes_cli/test_config.py::TestCustomProviderCompatibility::test_providers_dict_resolves_at_runtime.
+#[test]
+fn compatible_custom_providers_reads_keyed_provider_entries() {
+    let config = json!({
+        "providers": {
+            "openai-direct": {
+                "api": "https://api.openai.com/v1",
+                "api_key": "test-key",
+                "default_model": "gpt-5-mini",
+                "name": "OpenAI Direct",
+                "transport": "codex_responses"
+            }
+        }
+    });
+
+    let providers = get_compatible_custom_providers(config.as_object().unwrap());
+
+    assert_eq!(providers.len(), 1);
+    assert_eq!(
+        providers[0],
+        json!({
+            "name": "OpenAI Direct",
+            "base_url": "https://api.openai.com/v1",
+            "provider_key": "openai-direct",
+            "api_key": "test-key",
+            "api_mode": "codex_responses",
+            "model": "gpt-5-mini"
+        })
+    );
+}
+
+// Tier: unit — mirrors tests/hermes_cli/test_config.py::
+// test_compatible_custom_providers_prefers_base_url_then_url_then_api.
+#[test]
+fn compatible_custom_providers_prefers_base_url_then_url_then_api() {
+    let config = json!({
+        "providers": {
+            "my-provider": {
+                "name": "My Provider",
+                "api": "https://api.example.com/v1",
+                "url": "https://url.example.com/v1",
+                "base_url": "https://base.example.com/v1"
+            }
+        }
+    });
+
+    assert_eq!(
+        get_compatible_custom_providers(config.as_object().unwrap()),
+        vec![json!({
+            "name": "My Provider",
+            "base_url": "https://base.example.com/v1",
+            "provider_key": "my-provider"
+        })]
+    );
+}
+
+// Tier: unit — mirrors tests/hermes_cli/test_custom_provider_normalize_no_mutate.py.
+#[test]
+fn custom_provider_compatibility_normalizes_without_mutating_input() {
+    let config = json!({
+        "custom_providers": [{
+            "name": "Kimi Coding Plan",
+            "base_url": "https://kimi.example/v1",
+            "api_key_env": "KIMI_CODING_API_KEY",
+            "api_mode": "anthropic_messages",
+            "model": "kimi-k2.6",
+            "models": {
+                "kimi-k2.6": {"context_length": 262144}
+            },
+            "context_length": 262144,
+            "rate_limit_delay": 0.25,
+            "discover_models": false,
+            "extra_body": {"chat_template_kwargs": {"enable_thinking": false}},
+            "extra_headers": {"X-Int": 7, "X-None": null}
+        }],
+        "providers": {
+            "disabled": {
+                "base_url": "https://disabled.example/v1",
+                "enabled": false
+            }
+        }
+    });
+    let snapshot = config.clone();
+
+    let providers = get_compatible_custom_providers(config.as_object().unwrap());
+
+    assert_eq!(config, snapshot);
+    assert_eq!(providers.len(), 1);
+    assert_eq!(
+        providers[0],
+        json!({
+            "name": "Kimi Coding Plan",
+            "base_url": "https://kimi.example/v1",
+            "key_env": "KIMI_CODING_API_KEY",
+            "api_mode": "anthropic_messages",
+            "model": "kimi-k2.6",
+            "models": {"kimi-k2.6": {"context_length": 262144}},
+            "context_length": 262144,
+            "rate_limit_delay": 0.25,
+            "discover_models": false,
+            "extra_body": {"chat_template_kwargs": {"enable_thinking": false}},
+            "extra_headers": {"X-Int": "7"}
+        })
+    );
+
+    let mut normalized = providers[0].as_object().unwrap().clone();
+    normalized
+        .get_mut("models")
+        .and_then(Value::as_object_mut)
+        .unwrap()
+        .insert("injected".into(), json!({}));
+    assert!(!config["custom_providers"][0]["models"]
+        .as_object()
+        .unwrap()
+        .contains_key("injected"));
+}
+
+// Tier: unit — mirrors tests/hermes_cli/test_custom_provider_normalize_no_mutate.py
+// and the config compatibility fail-open branch.
+#[test]
+fn custom_provider_compatibility_handles_aliases_invalid_entries_and_non_list_legacy_config() {
+    let entry = json!({
+        "baseUrl": "https://alias.example/v1",
+        "apiKey": "sk-alias",
+        "apiKeyEnv": "ALIAS_KEY",
+        "defaultModel": "alias-model",
+        "models": ["alpha", {"id": "beta", "context_length": 8192}, {"id": "", "name": "gamma"}],
+        "enabled": true
+    });
+    let snapshot = entry.clone();
+    let normalized =
+        normalize_custom_provider_entry(entry.as_object().unwrap(), Some("alias")).unwrap();
+    assert_eq!(entry, snapshot);
+    assert_eq!(
+        normalized,
+        json!({
+            "name": "alias",
+            "base_url": "https://alias.example/v1",
+            "provider_key": "alias",
+            "api_key": "sk-alias",
+            "key_env": "ALIAS_KEY",
+            "model": "alias-model",
+            "models": {
+                "alpha": {},
+                "beta": {"context_length": 8192},
+                "gamma": {}
+            }
+        })
+        .as_object()
+        .unwrap()
+        .clone()
+    );
+
+    let keyed = json!({
+        "bad": "not-an-entry",
+        "invalid-url": {"name": "Invalid", "api": "not-a-url"},
+        "disabled": {"base_url": "https://disabled.example/v1", "enabled": false},
+        "valid": {"base_url": "https://valid.example/v1"}
+    });
+    let converted = providers_dict_to_custom_providers(Some(keyed.as_object().unwrap()));
+    assert_eq!(converted.len(), 1);
+    assert_eq!(converted[0]["provider_key"], "valid");
+
+    let malformed = json!({"custom_providers": {"name": "wrong-shape"}});
+    assert!(get_compatible_custom_providers(malformed.as_object().unwrap()).is_empty());
 }
 
 // Tier: mock — mirrors tests/agent/test_credential_pool.py::

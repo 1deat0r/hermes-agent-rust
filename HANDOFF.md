@@ -204,6 +204,19 @@ branches and the active credential-lifecycle leaf. These gates are intentionally
 unmet while the conversion remains partial.
 
 The current source unit extends `hermes-agent::credential_pool` through the
+pure custom-provider configuration compatibility boundary. It adds explicit
+normalization, legacy `custom_providers` plus keyed `providers` merging, URL
+precedence (`base_url` → `url` → `api`) with template acceptance, camelCase
+aliases, model-map/list normalization, keyed enablement filtering,
+case-insensitive deduplication, extra-header stringification, input
+immutability, and malformed-legacy fail-open behavior. Four source-derived
+`unit` parity tests were added first; the focused credential-pool wave now has
+61 pool plus 15 persistence tests (76 total). Outer config discovery/loading,
+Z.AI endpoint probing, OAuth refresh, leases, and logging throttles remain
+pending. The source commit and its immediate GitHub mirror will be recorded
+below after the local commit is created and recursively verified.
+
+The preceding source unit extends `hermes-agent::credential_pool` through the
 provider-singleton seeding boundary. It adds the explicit `seed_from_singletons`
 seam for the upstream Anthropic, Nous, Copilot, Qwen, MiniMax, OpenAI Codex, and
 xAI branches: Anthropic provider opt-in/API-key-path gates, resolved
@@ -250,9 +263,9 @@ normalization, strategy selection, and borrowed-safe persistence. Two more
 source-derived `mock` tests bring the focused wave to 57 pool plus 15
 persistence tests (72 total). One persistence assertion now allows the
 sub-microsecond precision loss introduced by JSON floating-point round trips;
-source behavior is unchanged. Configuration discovery, custom-provider
-configuration loading, Z.AI endpoint probing, OAuth refresh, leases, and
-logging throttles remain pending. Local source commit
+source behavior is unchanged. Outer configuration discovery/loading, Z.AI
+endpoint probing, OAuth refresh, leases, and logging throttles remain pending.
+Local source commit
 `f6a266e6e5ef9417c9b49cf9f2d53563e0ac9ae4` was mirrored as GitHub
 `940ead9f102e6aba3ea0d2c308d7cb9c732cbd5e`; both refs resolve to tree
 `450e2757900fb773f3295e593782ec1a153b077f` with 273 matching tracked blobs.
@@ -702,8 +715,8 @@ and 73 done / 11 partial / 1,019 missing production modules.
 
 ## Next actions, in order
 
-1. Continue `agent.credential_pool` through configuration discovery, custom-
-   provider configuration loading, Z.AI probing, and OAuth refresh; the row
+1. Continue `agent.credential_pool` through outer configuration discovery/
+   loading, Z.AI probing, and OAuth refresh; the row
    model,
    serialization, source upsert, strategy, provider-boundary, selection,
    persistence, cooldown-recency merge, auth-store lock, and environment
@@ -754,9 +767,10 @@ The strict production formula is `done production modules / 1,103`; partial rows
   seam. Kimi's pure key-prefix endpoint routing, Nous state-to-pool field copy,
   Copilot resolved exchanged-token/source/endpoint mapping, Qwen
   resolved-credential field copy, MiniMax OAuth state mapping, OpenAI Codex
-  nested-token field copy, and xAI nested-token field copy are mirrored; the
-  config discovery, custom-provider configuration loading, and the source's
-  Z.AI network endpoint probe remain deferred to the auth/provider layer.
+  nested-token field copy, xAI nested-token field copy, and the pure
+  custom-provider compatibility adapter are mirrored; outer config
+  discovery/loading and the source's Z.AI network endpoint probe remain
+  deferred to the auth/provider layer.
 - Desktop emitter is process-global like upstream; session-ID lookup remains a thread-local gateway seam.
 - Credential registration uses an ordered vector for Python dict insertion order; it remains thread-local rather than async-task-local.
 - Daemon pool rejects zero workers like Python; Rust Drop intentionally avoids joining wedged daemon workers.

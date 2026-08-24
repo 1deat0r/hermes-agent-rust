@@ -19,6 +19,7 @@ use std::io;
 use std::path::Path;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
+use url::Url;
 
 use hermes_constants::OPENROUTER_BASE_URL;
 
@@ -1594,6 +1595,399 @@ pub(crate) fn sanitize_borrowed_credential_payload(
 /// PARITY: agent/credential_pool.py `_normalize_custom_pool_name`.
 pub fn normalize_custom_pool_name(name: &str) -> String {
     name.trim().to_ascii_lowercase().replace(' ', "-")
+}
+
+fn json_value_is_truthy(value: &Value) -> bool {
+    match value {
+        Value::Null => false,
+        Value::Bool(value) => *value,
+        Value::Number(value) => value.as_f64().is_some_and(|value| value != 0.0),
+        Value::String(value) => !value.is_empty(),
+        Value::Array(value) => !value.is_empty(),
+        Value::Object(value) => !value.is_empty(),
+    }
+}
+
+fn first_truthy_value<'a>(entry: &'a Map<String, Value>, keys: &[&str]) -> Option<&'a Value> {
+    keys.iter()
+        .find_map(|key| entry.get(*key).filter(|value| json_value_is_truthy(value)))
+}
+
+fn has_url_template(value: &str) -> bool {
+    let mut remaining = value;
+    while let Some(open) = remaining.find('{') {
+        let after_open = &remaining[open + 1..];
+        if after_open.find('}').is_some_and(|close| close > 0) {
+            return true;
+        }
+        if after_open.is_empty() {
+            break;
+        }
+        remaining = after_open;
+    }
+    false
+}
+
+fn valid_custom_provider_url(value: &str) -> bool {
+    has_url_template(value)
+        || Url::parse(value)
+            .ok()
+            .is_some_and(|url| !url.scheme().is_empty() && url.host_str().is_some())
+}
+
+fn python_stringify_header_value(value: &Value) -> String {
+    match value {
+        Value::String(value) => value.clone(),
+        Value::Bool(value) => {
+            if *value {
+                "True".into()
+            } else {
+                "False".into()
+            }
+        }
+        Value::Number(value) => value.to_string(),
+        Value::Array(values) => format!(
+            "[{}]",
+            values
+                .iter()
+                .map(|value| match value {
+                    Value::String(value) => format!("'{value}'"),
+                    _ => python_stringify_header_value(value),
+                })
+                .collect::<Vec<_>>()
+                .join(", ")
+        ),
+        Value::Object(values) => format!(
+            "{{{}}}",
+            values
+                .iter()
+                .map(|(key, value)| {
+                    let rendered = match value {
+                        Value::String(value) => format!("'{value}'"),
+                        _ => python_stringify_header_value(value),
+                    };
+                    format!("'{key}': {rendered}")
+                })
+                .collect::<Vec<_>>()
+                .join(", ")
+        ),
+        Value::Null => String::new(),
+    }
+}
+
+fn provider_is_enabled(entry: &Map<String, Value>) -> bool {
+    let Some(value) = entry.get("enabled") else {
+        return true;
+    };
+    match value {
+        Value::Bool(value) => *value,
+        Value::String(value) => !matches!(
+            value.trim().to_ascii_lowercase().as_str(),
+            "false" | "0" | "no" | "off"
+        ),
+        _ => json_value_is_truthy(value),
+    }
+}
+
+/// Normalize one custom-provider entry into the runtime list-shaped schema.
+///
+/// The caller supplies the keyed `providers.<name>` key when converting the
+/// modern mapping; legacy `custom_providers` entries pass `None`.
+///
+/// PARITY: `hermes_cli.config._normalize_custom_provider_entry` (1280–1480).
+pub fn normalize_custom_provider_entry(
+    entry: &Map<String, Value>,
+    provider_key: Option<&str>,
+) -> Option<Map<String, Value>> {
+    let mut entry = entry.clone();
+
+    // The Python normalizer copies before applying aliases because config
+    // loaders may hand it a shared cached sub-map. Clone the nested values as
+    // well so normalized runtime state cannot mutate the caller's mapping.
+    if entry.get("api_key_env").is_some() && !entry.contains_key("key_env") {
+        if let Some(value) = entry.get("api_key_env").cloned() {
+            entry.insert("key_env".into(), value);
+        }
+    }
+    for (alias, canonical) in [
+        ("apiKey", "api_key"),
+        ("baseUrl", "base_url"),
+        ("apiMode", "api_mode"),
+        ("keyEnv", "key_env"),
+        ("apiKeyEnv", "key_env"),
+        ("defaultModel", "default_model"),
+        ("contextLength", "context_length"),
+        ("rateLimitDelay", "rate_limit_delay"),
+    ] {
+        if !entry.contains_key(canonical) {
+            if let Some(value) = entry.get(alias).cloned() {
+                entry.insert(canonical.into(), value);
+            }
+        }
+    }
+
+    let mut base_url = None;
+    for key in ["base_url", "url", "api"] {
+        let Some(candidate) = entry
+            .get(key)
+            .and_then(Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+        else {
+            continue;
+        };
+        if valid_custom_provider_url(candidate) {
+            base_url = Some(candidate.to_owned());
+            break;
+        }
+    }
+    let base_url = base_url?;
+
+    let name = entry
+        .get("name")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .or_else(|| {
+            provider_key
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+        })?;
+
+    let provider_key = provider_key
+        .map(str::trim)
+        .filter(|value| !value.is_empty());
+    let mut normalized = Map::new();
+    normalized.insert("name".into(), Value::String(name.into()));
+    normalized.insert("base_url".into(), Value::String(base_url));
+    if let Some(provider_key) = provider_key {
+        normalized.insert(
+            "provider_key".into(),
+            Value::String(provider_key.to_owned()),
+        );
+    }
+
+    for (output_key, input_key) in [("api_key", "api_key"), ("key_env", "key_env")] {
+        if let Some(value) = entry
+            .get(input_key)
+            .and_then(Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+        {
+            normalized.insert(output_key.into(), Value::String(value.into()));
+        }
+    }
+
+    if let Some(value) = first_truthy_value(&entry, &["api_mode", "transport"])
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
+        normalized.insert("api_mode".into(), Value::String(value.into()));
+    }
+    if let Some(value) = first_truthy_value(&entry, &["model", "default_model"])
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
+        normalized.insert("model".into(), Value::String(value.into()));
+    }
+
+    if let Some(models) = entry.get("models") {
+        if let Some(models) = models.as_object().filter(|models| !models.is_empty()) {
+            normalized.insert("models".into(), Value::Object(models.clone()));
+        } else if let Some(models) = models.as_array().filter(|models| !models.is_empty()) {
+            let mut normalized_models = Map::new();
+            for model in models {
+                if let Some(model_id) = model
+                    .as_str()
+                    .map(str::trim)
+                    .filter(|value| !value.is_empty())
+                {
+                    normalized_models.insert(model_id.into(), Value::Object(Map::new()));
+                    continue;
+                }
+                let Some(model) = model.as_object() else {
+                    continue;
+                };
+                let model_id = model
+                    .get("id")
+                    .and_then(Value::as_str)
+                    .map(str::trim)
+                    .filter(|value| !value.is_empty())
+                    .or_else(|| {
+                        model
+                            .get("name")
+                            .and_then(Value::as_str)
+                            .map(str::trim)
+                            .filter(|value| !value.is_empty())
+                    });
+                let Some(model_id) = model_id else {
+                    continue;
+                };
+                let mut model_meta = model.clone();
+                model_meta.remove("id");
+                model_meta.remove("name");
+                normalized_models.insert(model_id.into(), Value::Object(model_meta));
+            }
+            if !normalized_models.is_empty() {
+                normalized.insert("models".into(), Value::Object(normalized_models));
+            }
+        }
+    }
+
+    if let Some(value) = entry.get("context_length").filter(|value| {
+        value.as_i64().is_some_and(|value| value > 0)
+            || value.as_u64().is_some_and(|value| value > 0)
+    }) {
+        normalized.insert("context_length".into(), value.clone());
+    }
+    if let Some(value) = entry
+        .get("rate_limit_delay")
+        .filter(|value| value.as_f64().is_some_and(|value| value >= 0.0))
+    {
+        normalized.insert("rate_limit_delay".into(), value.clone());
+    }
+    if let Some(value) = entry
+        .get("discover_models")
+        .filter(|value| value.is_boolean())
+    {
+        normalized.insert("discover_models".into(), value.clone());
+    }
+    if let Some(value) = entry.get("extra_body").and_then(Value::as_object) {
+        normalized.insert("extra_body".into(), Value::Object(value.clone()));
+    }
+    if let Some(headers) = entry.get("extra_headers").and_then(Value::as_object) {
+        let mut normalized_headers = Map::new();
+        for (key, value) in headers {
+            if !value.is_null() {
+                normalized_headers.insert(
+                    key.clone(),
+                    Value::String(python_stringify_header_value(value)),
+                );
+            }
+        }
+        if !normalized_headers.is_empty() {
+            normalized.insert("extra_headers".into(), Value::Object(normalized_headers));
+        }
+    }
+    if let Some(value) = entry
+        .get("ssl_ca_cert")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
+        normalized.insert("ssl_ca_cert".into(), Value::String(value.into()));
+    }
+    if let Some(value) = entry.get("ssl_verify").filter(|value| {
+        value.is_boolean() || value.as_str().is_some_and(|value| !value.trim().is_empty())
+    }) {
+        normalized.insert(
+            "ssl_verify".into(),
+            value
+                .as_str()
+                .map(|value| Value::String(value.trim().into()))
+                .unwrap_or_else(|| value.clone()),
+        );
+    }
+
+    Some(normalized)
+}
+
+/// Convert keyed `providers.<name>` entries to the list-shaped custom-provider
+/// view consumed by the credential pool.
+///
+/// PARITY: `hermes_cli.config.providers_dict_to_custom_providers` (1516–1529).
+pub fn providers_dict_to_custom_providers(
+    providers: Option<&Map<String, Value>>,
+) -> Vec<Map<String, Value>> {
+    providers
+        .into_iter()
+        .flat_map(|providers| providers.iter())
+        .filter_map(|(provider_key, value)| {
+            let entry = value.as_object()?;
+            if !provider_is_enabled(entry) {
+                return None;
+            }
+            normalize_custom_provider_entry(entry, Some(provider_key))
+        })
+        .collect()
+}
+
+/// Return the deduplicated custom-provider view across legacy and keyed config.
+///
+/// `custom_providers` is intentionally not materialized back into the config;
+/// this function only creates the runtime compatibility view.
+///
+/// PARITY: `hermes_cli.config.get_compatible_custom_providers` (1532–1578).
+pub fn get_compatible_custom_providers(config: &Map<String, Value>) -> Vec<Value> {
+    let mut compatible = Vec::new();
+    let mut seen_provider_keys = BTreeSet::new();
+    let mut seen_name_url_pairs = BTreeSet::new();
+
+    let mut append_if_new = |entry: Map<String, Value>| {
+        let provider_key = entry
+            .get("provider_key")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .trim()
+            .to_ascii_lowercase();
+        let name = entry
+            .get("name")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .trim()
+            .to_ascii_lowercase();
+        let base_url = entry
+            .get("base_url")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .trim()
+            .trim_end_matches('/')
+            .to_ascii_lowercase();
+        let model = entry
+            .get("model")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .trim()
+            .to_ascii_lowercase();
+        let pair = (name.clone(), base_url.clone(), model);
+
+        if (!provider_key.is_empty() && seen_provider_keys.contains(&provider_key))
+            || (!name.is_empty() && !base_url.is_empty() && seen_name_url_pairs.contains(&pair))
+        {
+            return;
+        }
+        compatible.push(Value::Object(entry));
+        if !provider_key.is_empty() {
+            seen_provider_keys.insert(provider_key);
+        }
+        if !name.is_empty() && !base_url.is_empty() {
+            seen_name_url_pairs.insert(pair);
+        }
+    };
+
+    if let Some(custom_providers) = config
+        .get("custom_providers")
+        .filter(|value| !value.is_null())
+    {
+        let Some(custom_providers) = custom_providers.as_array() else {
+            return Vec::new();
+        };
+        for entry in custom_providers.iter().filter_map(Value::as_object) {
+            if let Some(entry) = normalize_custom_provider_entry(entry, None) {
+                append_if_new(entry);
+            }
+        }
+    }
+
+    for entry in
+        providers_dict_to_custom_providers(config.get("providers").and_then(Value::as_object))
+    {
+        append_if_new(entry);
+    }
+
+    compatible
 }
 
 /// Look up a `custom:<name>` pool key from explicit custom-provider config.
