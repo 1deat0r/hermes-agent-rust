@@ -581,10 +581,9 @@ hardening remains in the preceding synchronized history.
 
 Local `main` and `origin/main` both resolve to GitHub's API-authored
 `72976e0748ed6c1b708cc35465e463594806c6f1`; their trees both resolve to
-`8b37b3b341423388e68c275c0f1e8d4467c43f61`. The recursive GitHub tree and
-local `git ls-tree -r` contain 273 blobs with no path/mode/SHA mismatches. The
-post-commit handoff checkpoint is the only pending local change. No
-conversion-ledger status changed: the current
+`1433ddfe1c9820e721ff770ebd5942b51b653154`. The recursive GitHub tree and
+local `git ls-tree -r` contain 273 blobs with no path/mode/SHA mismatches, and
+the worktree is clean. No conversion-ledger status changed: the current
 summary is 73 done / 11 partial / 3,798 missing tracked modules and 73 done /
 11 partial / 1,019 missing production modules.
 
