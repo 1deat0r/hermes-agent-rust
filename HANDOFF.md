@@ -9,7 +9,7 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
 Current branch/HEAD: `main` is aligned with `origin/main` after the local and
-GitHub API mirror sequence for the credential-pool row-model unit.
+GitHub API mirror sequence for the credential-pool orchestration unit.
 The connected GitHub API publishes each logical commit immediately as a
 sequential remote mirror. Its commit SHAs differ from the local sequence
 because the API cannot preserve local author/committer timestamps, but every
@@ -17,7 +17,9 @@ tree snapshot and commit message matches and is verified before each ref
 update. The local HTTPS Git client still has no credentials; use the connected
 GitHub API for future pushes until `gh auth login` or SSH is configured.
 
-Latest synchronized unit: local source `1011551` → GitHub `6858357`
+Latest synchronized unit: local source `4ccaa7e` → GitHub `c2ecc258`
+(`feat(agent): port credential pool orchestration helpers @ b9aa928`), with the
+previous local source `1011551` → GitHub `6858357`
 (`feat(agent): port credential pool row model @ b9aa928`), with the previous
 local handoff `ffcdf32` → GitHub `2dec2f0`
 (`handoff: record final auxiliary docs refs @ b9aa928`), with the previous
@@ -158,6 +160,9 @@ locking remain pending. The required workspace build, default test, and
 serialized workspace test passed. Workspace Clippy was killed by the
 environment with exit 137; targeted `hermes-agent` Clippy reports only
 pre-existing auxiliary-client lint failures.
+Local source commit `4ccaa7e` was mirrored as GitHub `c2ecc258`; both refs
+resolve to tree `3877949d1ac4d13aa75246459134f86bb8775724` with 270 matching
+tracked blobs.
 
 The preceding unit added `hermes-agent::credential_pool`'s deterministic
 in-memory core. `CredentialPool` mirrors source priority fill-first,
@@ -547,8 +552,8 @@ hardening remains in the preceding synchronized history.
 ## Exact working-tree state
 
 Local `main` and `origin/main` both resolve to GitHub's API-authored
-`6858357294d878fd8929bae054c7ce388f507431`; their trees both resolve to
-`39b2fe2271e125baa2d27dc9be769ccb00d7085e`. The recursive GitHub tree and
+`c2ecc2588a1e604d2a20ce04c1318887bb8971be`; their trees both resolve to
+`3877949d1ac4d13aa75246459134f86bb8775724`. The recursive GitHub tree and
 local `git ls-tree -r` contain 270 blobs with no path/mode/SHA mismatches, and
 the worktree is clean. No conversion-ledger status changed: the current
 summary is 73 done / 11 partial / 3,798 missing tracked modules and 73 done /
