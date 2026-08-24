@@ -506,7 +506,12 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   and provider fallback chains remain pending. Required
   `/home/mustbearnold/.cargo/bin/cargo build --workspace` and
   `/home/mustbearnold/.cargo/bin/cargo test --workspace` both passed; the
-  source commit and GitHub mirror are the next checkpoint.
+  local source commit `56871db` was mirrored as GitHub `7984aaa` with verified
+  tree `cabc30ddb12626e265c4a2ec186c97e06b686815` and 270 matching tracked
+  blobs. Handoff checkpoints local `5762c3c` → GitHub `2cd0262` and local
+  `743fbcf` → GitHub `539b7c0` were mirrored immediately afterward; final
+  `main`/`origin/main` resolve to the latter tree
+  `74f37c6dca740a36866a6ca975ebb215ac2a85a8` with 270 matching blobs.
 
 - 2026-08-24 (session 4be): Continued the missing
   `agent.credential_pool` port (@ b9aa928, 3,147 LOC) with the deterministic

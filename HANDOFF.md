@@ -18,11 +18,13 @@ tree snapshot and commit message matches and is verified before each ref
 update. The local HTTPS Git client still has no credentials; use the connected
 GitHub API for future pushes until `gh auth login` or SSH is configured.
 
-Latest synchronized unit: local handoff `5762c3c` → GitHub `2cd0262`
-(`handoff: record auxiliary reqwest mirror refs @ b9aa928`), with source local
+Latest synchronized unit: local handoff `743fbcf` → GitHub `539b7c0`
+(`handoff: finalize auxiliary reqwest checkpoint @ b9aa928`), with the
+previous local handoff `5762c3c` → GitHub `2cd0262`
+(`handoff: record auxiliary reqwest mirror refs @ b9aa928`), source local
 `56871db` → GitHub `7984aaa`
 (`feat(agent): construct auxiliary reqwest clients @ b9aa928`) and the
-previous local handoff `7fa7cdd` → GitHub `bdfd901`
+earlier local handoff `7fa7cdd` → GitHub `bdfd901`
 (`handoff: record credential pool mirror refs @ b9aa928`) and source local
 `6fcc72f` → GitHub `1d46bab` (`feat(agent): port credential pool selection
 core @ b9aa928`) immediately before it. The exact tree and all tracked blobs
