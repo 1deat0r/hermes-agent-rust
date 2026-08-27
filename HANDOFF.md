@@ -8,20 +8,26 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
-Current branch/HEAD: `main` carries this Portal-attribution checkpoint as one
-source commit plus this documentation commit; `origin/main` alignment is
-verified with `git ls-remote origin refs/heads/main` after the push attempt.
-Logical units continue to publish with `git push origin main`.
+Current branch/HEAD: `main` is aligned with `origin/main` at
+`448a4f6` (`feat(agent): port portal tags and managed scope @ b9aa928`),
+verified with `git ls-remote origin refs/heads/main`; this documentation
+checkpoint is the follow-up `handoff:` commit on top of it. Logical units
+continue to publish with `git push origin main`.
 
-Latest synchronized source unit: pure auxiliary model-policy predicates plus
-OpenCode Zen/Go profiles, registry wiring, and reasoning/max-token seams at
-upstream `b9aa928` (`8a30854`).
-Current working source unit: Portal attribution and managed configuration —
-`agent.portal_tags` (partial), the whole `hermes_cli/managed_scope.py` module
-(done), the merged-loader managed-directory fold, and the auxiliary-client
-client-header/`extra_body` chain; three upstream-fidelity divergences found in
-the previous session's uncommitted work were repaired here (invented
-`*.yaml` drop-in merge, blank-key-trimming/`null`-rendering user-header
+Latest synchronized source unit: Portal attribution and managed
+configuration — `agent.portal_tags`, `hermes_cli.managed_scope`, the merged
+managed-directory fold, and the auxiliary-client header/`extra_body` chain at
+upstream `b9aa928` (`448a4f6`, published to `origin/main`).
+Previous working source unit: pure auxiliary model-policy predicates plus
+OpenCode Zen/Go profiles, registry wiring, and reasoning/max-token seams
+(`8a30854`).
+The work this session inherited — the previous session's uncommitted and
+partly red tree — is now landed and published: `agent.portal_tags` (partial),
+the whole `hermes_cli/managed_scope.py` module (done), the merged-loader
+managed-directory fold, and the auxiliary-client
+client-header/`extra_body` chain. Three upstream-fidelity divergences found
+in that uncommitted work were repaired before commit (the invented
+`*.yaml` drop-in merge, the blank-key-trimming/`null`-rendering user-header
 overlay, and the substring OpenRouter host gate).
 Earlier config/Z.AI discovery work is recorded below; the current unit
 preserves that source tree's dependency direction and extends it without a
