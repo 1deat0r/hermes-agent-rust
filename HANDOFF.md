@@ -1,6 +1,6 @@
 # Hermes Agent Rust — Next-session handoff
 
-Date: 2026-08-28 (Pacific/Auckland), session 4d2.
+Date: 2026-08-28 (Pacific/Auckland), session 4d3.
 
 ## Resume point
 
@@ -8,10 +8,17 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
-Current branch/HEAD: `main` is aligned with `origin/main` at
-`8a9e8f3` (`feat(agent): propagate portal conversation context @ b9aa928`),
-verified with `git ls-remote origin refs/heads/main`; this documentation
-checkpoint is the follow-up `handoff:` commit on top of it. The previous unit
+Current branch/HEAD: `main` carries the agent-utility batch committed with
+this documentation checkpoint; the previous units are published as `8a9e8f3`
+(+ `0aea517` handoff), `448a4f6` (+ `a284322` handoff). Push and verify with
+`git ls-remote origin refs/heads/main` after this checkpoint lands.
+
+Latest synchronized source unit: six small `agent/` utility modules —
+`errors`, `message_content`, `tool_result_classification`,
+`lmstudio_reasoning`, `reasoning_summaries` (all `done`) and
+`interrupt_compat` (`partial`) — ported TDD-first against their dedicated
+upstream test modules into `hermes-agent`, moving production strict
+completion from 6.71% to 7.16%. The previous unit
 — Portal attribution and managed configuration — is published as `448a4f6`
 plus the `a284322` handoff commit. Logical units continue to publish with
 `git push origin main`.
@@ -213,6 +220,20 @@ GitHub `11245d8` (`plugins.model-providers.arcee.__init__`), local `ec9db5aa`
 recorded above with the config/Z.AI source commit and its verified tree.
 
 ## What landed this session
+
+Session 4d3 opened the small-module batch: six self-contained `agent/`
+utilities with real upstream oracles, each written test-first (all six suites
+were red before their implementations). Five reached `done`; `agent.
+interrupt_compat` is recorded `partial` because two of its six upstream cases
+need the unported `run_agent.AIAgent` and `tools.delegate_tool`.
+
+Two review corrections worth carrying forward: the tool-result oracle contract
+is a JSON **string** payload (`isinstance(result, str)` then `json.loads`), not
+a parsed mapping — the first test draft asserted the wrong shape and was fixed
+rather than the implementation; and LM Studio's non-string `effort` /
+`allowed_options` shapes raise in Python but fail open here, which is now
+written into the module and PLAN.
+
 
 Session 4d2 took the one portal seam session 4d1 had recorded as pending: the
 ambient conversation id now propagates to worker threads. Upstream gets this
@@ -788,18 +809,25 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-The ambient-propagation unit is committed with this documentation checkpoint.
-**No ledger change**: the module-status rows are identical to the
-Portal-attribution unit's — 74 done / 12 partial / 3,796 missing tracked
-modules and 74 done / 12 partial / 1,017 missing production modules (1.91%
-tracked, 6.71% production) — regenerated with `tools/inventory.sh` and
-`python3 tools/conversion_ledger.py`, with `cargo build --workspace` and the
-serialized workspace run green at 1,200 tests / 5 ignored.
+The agent-utility batch is committed with this documentation checkpoint and
+**did change the ledger**: 79 done / 13 partial / 3,790 missing tracked
+modules and 79 done / 13 partial / 1,011 missing production modules —
+**2.04%** tracked and **7.16%** production strict completion — regenerated with
+`HERMES_UPSTREAM=/run/media/mustbearnold/Projects/Research/hermes-agent-repo
+tools/inventory.sh` and `python3 tools/conversion_ledger.py`, with
+`cargo build --workspace` and the serialized workspace run green at 1,234 tests
+/ 5 ignored.
 
+0. Keep taking the small-module batch: `agent.turn_retry_state`,
+   `agent.verify_hooks`, `agent.kanban_stop`, `agent.relay_tools`,
+   `agent.manual_compression_feedback`, and
+   `agent.async_utils` each have a dedicated upstream test module and no
+   unported lower layer, so they port in the same TDD shape as session 4d3.
 1. Continue the remaining `agent.auxiliary_client` request/response lifecycle:
    concrete client construction against these header/`extra_body` seams, xAI
    default headers, and the URL-inferred provider fallback used by the async
-   conversion chain.
+   conversion chain. Promote `agent.errors` usage into
+   `resolve_auxiliary_tls_verify`'s failure path when `agent.ssl_guard` lands.
 2a. Publish the ambient conversation id at the real fan-out sites
    (`agent/tool_executor`, MoA fan-out, background review) with
    `propagate_conversation_context_to_thread`, or register the capture with a
@@ -831,17 +859,19 @@ serialized workspace run green at 1,200 tests / 5 ignored.
 
 `CONVERSION-LEDGER.md` is generated and contains one row for every 3,882 upstream inventory modules: 1,103 production tasks plus 2,779 oracle/test tasks. Only `done` counts toward completion.
 
-- All tracked modules: 74 done / 12 partial / 3,796 missing = **1.91%**.
-- Production modules: 74 done / 12 partial / 1,017 missing = **6.71%**.
+- All tracked modules: 79 done / 13 partial / 3,790 missing = **2.04%**.
+- Production modules: 79 done / 13 partial / 1,011 missing = **7.16%**.
 
-The twelve partial production rows are `agent.auxiliary_client`,
-`agent.credential_pool`, `agent.portal_tags`,
+The thirteen partial production rows are `agent.auxiliary_client`,
+`agent.credential_pool`, `agent.interrupt_compat`, `agent.portal_tags`,
 `hermes_constants`, `providers.base`, `providers.__init__`,
 `tools.credential_files`, `tools.delegation_output_schema`,
 `tools.threat_patterns`, `tools.todo_tool`, `tools.tool_backend_helpers`,
 and `tools.tool_output_limits`. Their closure
-seams are listed in the ledger and PLAN.md. `hermes_cli.managed_scope` joined
-the `done` rows this session.
+seams are listed in the ledger and PLAN.md. This session's batch added five
+`done` rows (`agent.errors`, `agent.message_content`,
+`agent.tool_result_classification`, `agent.lmstudio_reasoning`,
+`agent.reasoning_summaries`) plus the `agent.interrupt_compat` partial.
 
 Regenerate with:
 
@@ -1044,6 +1074,21 @@ passed 3/3. Targeted rustfmt passed; concrete Z.AI HTTP/cache and full merged
 CLI config behavior remain deferred.
 
 ## Verification evidence
+
+For the current agent-utility batch, the red-first focused
+`/home/mustbearnold/.cargo/bin/cargo test -p hermes-agent --test parity_errors
+--test parity_message_content --test parity_tool_result_classification --test
+parity_lmstudio_reasoning --test parity_reasoning_summaries --test
+parity_interrupt_compat` run passed 2 + 6 + 5 + 8 + 7 + 6 = 34 tests,
+`/home/mustbearnold/.cargo/bin/cargo build --workspace` passed, and the
+required serialized `/home/mustbearnold/.cargo/bin/cargo test --workspace --
+--test-threads=1` passed with 1,234 tests and the same 5 intentionally ignored
+doc tests. Targeted `/home/mustbearnold/.cargo/bin/rustfmt --edition 2021
+--check` over the workspace sources/tests is clean for the touched files,
+`/home/mustbearnold/.cargo/bin/cargo clippy -p hermes-agent --all-targets`
+reports only the two pre-existing `auxiliary_client` diagnostics, and
+`git diff --check` passed.
+
 
 For the current ambient-propagation unit, the red-first focused
 `/home/mustbearnold/.cargo/bin/cargo test -p hermes-agent --test

@@ -1,7 +1,7 @@
 # Hermes Agent → Hermes Agent Rust Conversion Ledger
 
-**Current strict completion: 1.91% of all tracked upstream modules (74/3882).**
-Production-only strict completion: **6.71%** (74/1103 production modules).
+**Current strict completion: 2.04% of all tracked upstream modules (79/3882).**
+Production-only strict completion: **7.16%** (79/1103 production modules).
 
 > This file is generated from `tools/inventory.json`; update the source ledger in `tools/port_status.json`, regenerate the inventory, then run `python3 tools/conversion_ledger.py`. Only `done` counts toward the percentage. `partial` is intentionally zero credit until its stated parity seams are closed.
 
@@ -9,10 +9,10 @@ Production-only strict completion: **6.71%** (74/1103 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 74 | 12 | 3796 | 1.91% | 30,058/1,510,733 done LOC |
-| Production modules | 74 | 12 | 1017 | 6.71% | 30,058/843,792 done LOC |
+| All tracked modules | 79 | 13 | 3790 | 2.04% | 30,288/1,510,733 done LOC |
+| Production modules | 79 | 13 | 1011 | 7.16% | 30,288/843,792 done LOC |
 
-Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-28T09:18:39`.
+Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-28T09:37:57`.
 
 ## Definition of 100.00%
 
@@ -31,6 +31,7 @@ The conversion is complete only when all of these are true:
 |---|---|---:|---|
 | `agent.auxiliary_client` | P2 | 10,044 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `agent.credential_pool` | P2 | 3,147 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
+| `agent.interrupt_compat` | P2 | 35 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `agent.portal_tags` | P2 | 144 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `hermes_constants` | P1 | 1,481 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `providers.__init__` | P2 | 198 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
@@ -134,7 +135,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `agent.delegation_context` | production | P2 | 161 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.display` | production | P2 | 1,547 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.error_classifier` | production | P2 | 1,842 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `agent.errors` | production | P2 | 13 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `agent.errors` | production | P2 | 13 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.estop` | production | P2 | 167 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.file_safety` | production | P2 | 693 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.gemini_native_adapter` | production | P2 | 1,127 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
@@ -144,7 +145,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `agent.image_gen_registry` | production | P2 | 145 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.image_routing` | production | P2 | 821 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.insights` | production | P2 | 1,162 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `agent.interrupt_compat` | production | P2 | 35 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `agent.interrupt_compat` | production | P2 | 35 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
 | `agent.iteration_budget` | production | P2 | 62 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.jiter_preload` | production | P2 | 39 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.kanban_stop` | production | P2 | 108 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
@@ -152,7 +153,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `agent.learning_graph` | production | P2 | 328 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.learning_graph_render` | production | P2 | 658 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.learning_mutations` | production | P2 | 206 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `agent.lmstudio_reasoning` | production | P2 | 60 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `agent.lmstudio_reasoning` | production | P2 | 60 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.lsp.__init__` | production | P2 | 106 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.lsp.cli` | production | P2 | 299 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.lsp.client` | production | P2 | 1,029 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
@@ -168,7 +169,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `agent.markdown_tables` | production | P2 | 309 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.memory_manager` | production | P2 | 1,241 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.memory_provider` | production | P2 | 357 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `agent.message_content` | production | P2 | 50 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `agent.message_content` | production | P2 | 50 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.message_sanitization` | production | P2 | 865 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.moa_loop` | production | P2 | 2,384 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.moa_trace` | production | P2 | 167 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
@@ -208,7 +209,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `agent.proxy_sources.iron_proxy` | production | P2 | 2,494 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.rate_limit_tracker` | production | P2 | 246 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.reactions` | production | P2 | 56 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `agent.reasoning_summaries` | production | P2 | 67 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `agent.reasoning_summaries` | production | P2 | 67 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.reasoning_timeouts` | production | P2 | 231 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.redact` | production | P1 | 1,197 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.relay_llm` | production | P2 | 1,239 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
@@ -246,7 +247,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `agent.tool_dispatch_helpers` | production | P2 | 732 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.tool_executor` | production | P2 | 2,403 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.tool_guardrails` | production | P2 | 632 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `agent.tool_result_classification` | production | P2 | 40 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `agent.tool_result_classification` | production | P2 | 40 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.trace_upload` | production | P2 | 398 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.trajectory` | production | P2 | 56 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.transcription_provider` | production | P2 | 193 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |

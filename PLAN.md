@@ -151,7 +151,12 @@ are the remaining `agent.auxiliary_client` request/response lifecycle (xAI
 header routing and URL-inferred provider fallback included), the
 `hermes-providers` `_profile_user_agent` version injection once a hermes-cli
 crate exists, and the `AIAgent._compress_context` turn wrapper that publishes
-the ambient conversation id.
+the ambient conversation id. Session 4d3 then started the small-module batch underneath all of this:
+`agent.errors`, `agent.message_content`, `agent.tool_result_classification`,
+`agent.lmstudio_reasoning`, and `agent.reasoning_summaries` are now done in
+`hermes-agent` with their upstream oracles mirrored, and
+`agent.interrupt_compat` is partial pending `run_agent.AIAgent` and
+`tools.delegate_tool`.
 credential-safe pool-runtime projection is also ported: runtime key/access
 token fallback, runtime/inference/base/fallback URL precedence, normalization,
 and the Nous-only inference override are explicit adapter inputs; JWT
@@ -441,6 +446,17 @@ quarantine remain deferred rather than silently guessed.
 | `hermes_cli/managed_scope.py` (214 LOC) | ✅ | `hermes-agent::managed_scope`; 12 parity tests (`unit`/`mock`) in `crates/hermes-agent/tests/parity_managed_scope.rs` cover the `HERMES_MANAGED_DIR`-then-`/etc/hermes` resolver tiers (including the non-existent and whitespace-only cases), the `(mtime_ns, size)` managed-file cache and its invalidation hook, single-file fail-open config loading for absent/malformed/non-mapping/empty documents, the documented `.env` subset (comment, blank, no-`=`, first-`=` partition, quote stripping), dotted leaf-key flattening with empty mappings as leaves, `is_key_managed`/`is_env_managed`, and `apply_managed_overlay` precedence including the bare-string `model` promotion. Upstream logs the same warnings through its own logger configuration; the Rust port uses the `log` facade without `exc_info` |
 | `agent/auxiliary_client.py` client-header and Portal `extra_body` sections (lines 807-911, 2369-2386, 2479-2515, 5654-5687, 6044-6066, 6926-6932, 8068-8086) | 🟡 | `hermes-agent::auxiliary_client` plus `hermes-agent::config` (`cfg_get`, `openrouter_defaults`); 14 added parity tests (`unit`) in `crates/hermes-agent/tests/parity_auxiliary_client.rs` cover `build_or_headers` attribution/base-shape/fresh-copy behavior, Python-truthiness cache gating, `[1, 86400]` TTL bounds with the bool-is-int quirk, `HERMES_OPENROUTER_CACHE`/`_TTL` env precedence and `str.isdigit()` rejection, the two-site OpenRouter route/host gate union, the kimi → Copilot → NVIDIA → profile fallback chain with `is_vision` gating, `copilot_request_headers` defaults, NVIDIA host gating (cloud host only), the `model.default_headers`/`model.extra_headers` alias merge with null-only skipping and verbatim keys, the composite provider → OpenRouter → user ordering, `get_auxiliary_extra_body`, and the Nous-spelling `tags`/`session_id` transport fallback. Concrete client construction, transport lifecycle, xAI header routing, and URL-inferred provider fallback remain pending |
 
+### hermes-agent utility modules (Phase 2, upstream @ b9aa928)
+
+| Module / upstream surface | Status | Rust home, oracle, and evidence tier |
+|---|---|---|
+| `agent/errors.py` (13 LOC) | ✅ | `hermes-agent::errors`; `SSLConfigurationError`/`EmptyStreamError`/`MoAPresetNotFoundError` message-carrying `thiserror` types plus the 2-test `parity_errors.rs` (`unit`). Missing-test gap recorded: upstream has no dedicated `agent/errors` test module, so the oracle is the raise-site contract in `agent/ssl_guard.py`, `agent/chat_completion_helpers.py`, and the MoA config paths |
+| `agent/message_content.py` (50 LOC) | ✅ | `hermes-agent::message_content`; 6 parity tests (`unit`) mirror `tests/agent/test_message_content.py` and the untested source branches: chat/Responses text-key order, non-text part-type suppression with case/whitespace normalization, empty-part filtering in the `sep` join, falsy/None content, and the `str(content)` fallback (rendered as JSON for unmapped payloads) |
+| `agent/tool_result_classification.py` (40 LOC) | ✅ | `hermes-agent::tool_result_classification`; 5 parity tests (`unit`) mirror `tests/agent/test_tool_result_classification.py` plus the untested branches: JSON-string payload contract, truthy-`error` discard with `null` staying falsy, unparseable/non-object fail-open, `write_file` `bytes_written` proof, `patch` `success is True` identity, and both frozen name sets |
+| `agent/lmstudio_reasoning.py` (60 LOC) | ✅ | `hermes-agent::lmstudio_reasoning`; 8 parity tests (`unit`) mirror `tests/agent/test_lmstudio_reasoning.py` (monotonic ladder over `hermes_constants::VALID_REASONING_EFFORTS`, clamped-`max`/`ultra` still checked against published options, published `allowed_options` never rewritten by the clamp) plus the untested branches: empty-config truthiness, `enabled is False` identity versus `null`, `off`/`on` toggle aliases, trim/lowercase, unknown-effort default, and empty `allowed_options` skipping the check. Non-string effort shapes fail open where Python raises (documented in the module) |
+| `agent/reasoning_summaries.py` (67 LOC) | ✅ | `hermes-agent::reasoning_summaries`; 7 parity tests (`unit`) mirror `tests/agent/test_reasoning_summaries.py` end to end: heading-only part accumulation without a `****` run, prose-then-heading separation, untouched token streams, mid-sentence emphasis, unclosed emphasis fragments, bold-opener requirement, and empty operands |
+| `agent/interrupt_compat.py` (35 LOC) | 🟡 | `hermes-agent::interrupt_compat`; 6 parity tests (`unit`) mirror the four `tests/agent/test_interrupt_compat.py` contract cases that need no unported owner (modern-ABI preference, legacy fallback, unsupported agent, dynamic-proxy non-fabrication) plus no-argument invocation and the inherited-hard-interrupt precedence rule. Python resolves the ABI by attribute lookup; the port takes the two lookups as explicit `InterruptProducer` adapter inputs, and the `AIAgent` subclass and `tools.delegate_tool` subagent cases stay pending with those modules |
+
 ### hermes-providers base (Phase 2, upstream @ b9aa928)
 
 | Module / upstream surface | Status | Rust home, oracle, and evidence tier |
@@ -558,6 +574,12 @@ oracle tests). Upstream oracle files currently mirrored:
 - `plugins/model-providers/xiaomi/__init__.py` → `crates/hermes-providers/tests/parity_xiaomi.rs` (2 source-derived profile/registration parity tests; `unit`; no dedicated upstream plugin-profile test module)
 - `plugins/model-providers/zai/__init__.py` + `tests/plugins/model_providers/test_zai_profile.py` + provider wiring/transport cases → `crates/hermes-providers/tests/parity_zai.rs` (18 source-derived profile/GLM-gating/endpoint/cache parity tests; `unit`/`mock`; API-key fingerprinting, cached endpoint validation, endpoint-state serialization, and cache-aware URL precedence are covered; CLI credential/model-picker and provider transport integration remain future higher-layer oracles)
 
+- `agent/errors.py` → `crates/hermes-agent/tests/parity_errors.rs` (2 raise-site contract tests; `unit`; upstream has no dedicated `agent.errors` test module — recorded missing-test gap)
+- `agent/message_content.py` + `tests/agent/test_message_content.py` → `crates/hermes-agent/tests/parity_message_content.rs` (6 parity tests; `unit`; both upstream cases plus four source-derived branches)
+- `agent/tool_result_classification.py` + `tests/agent/test_tool_result_classification.py` → `crates/hermes-agent/tests/parity_tool_result_classification.rs` (5 parity tests; `unit`)
+- `agent/lmstudio_reasoning.py` + `tests/agent/test_lmstudio_reasoning.py` → `crates/hermes-agent/tests/parity_lmstudio_reasoning.rs` (8 parity tests; `unit`)
+- `agent/reasoning_summaries.py` + `tests/agent/test_reasoning_summaries.py` → `crates/hermes-agent/tests/parity_reasoning_summaries.rs` (7 parity tests; `unit`, full oracle coverage)
+- `agent/interrupt_compat.py` + `tests/agent/test_interrupt_compat.py` → `crates/hermes-agent/tests/parity_interrupt_compat.rs` (6 parity tests; `unit`; the `run_agent.AIAgent` inheritance and `tools.delegate_tool` subagent cases remain with those modules)
 - `agent/portal_tags.py` + `tests/agent/test_portal_tags.py` → `crates/hermes-agent/tests/parity_portal_tags.rs` (12 source-derived ambient-context/tag-shape/precedence/fresh-list/isolation/propagation parity tests; `unit`; only the `_compress_context` turn-wrapper case remains pending, with the ContextVar propagation half covered through the module's captured-context seam)
 - `hermes_cli/managed_scope.py` + `tests/hermes_cli/test_managed_scope.py` + `test_managed_scope_config.py` + `test_managed_scope_overlay.py` + `test_managed_scope_env.py` → `crates/hermes-agent/tests/parity_managed_scope.rs` (12 resolver/cache/loader/key/overlay parity tests; `unit`/`mock`) and `crates/hermes-agent/tests/parity_config.rs` (6 merged-loader managed-scope parity tests; `mock`)
 - `agent/auxiliary_client.py` header/extra-body sections + `tests/agent/test_openrouter_response_cache.py` + `tests/agent/test_user_default_headers.py` → `crates/hermes-agent/tests/parity_auxiliary_client.rs` (14 added client-header, OpenRouter cache, Portal `extra_body`, and Nous fallback parity tests; `unit`)
@@ -571,6 +593,50 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 ## 7. Session log
 
+- 2026-08-28 (session 4d3): Opened the agent-utility batch — six small,
+  dependency-safe `agent/` modules ported TDD-first against their dedicated
+  upstream test modules, all into `hermes-agent`: `agent.errors` (three
+  message-carrying exception types), `agent.message_content`
+  (`flatten_message_text`), `agent.tool_result_classification`
+  (`tool_may_have_side_effect`, `file_mutation_result_landed`, and both frozen
+  name sets), `agent.lmstudio_reasoning` (`resolve_lmstudio_effort` with the
+  alias table, the separate `max`/`ultra` ceiling clamp, and the
+  `enabled is False` identity gate), `agent.reasoning_summaries`
+  (`separate_glued_reasoning_blocks`), and `agent.interrupt_compat`
+  (`request_hard_interrupt`).
+  Review notes: the first draft of the classification tests asserted a parsed
+  mapping payload; upstream's `isinstance(result, str)` + `json.loads` gate
+  makes the JSON-*string* payload the contract, so the tests were corrected to
+  match rather than the implementation loosened. Python's attribute-based ABI
+  probe in `interrupt_compat` is represented by two explicit
+  `InterruptProducer` adapter inputs (static modern lookup, dynamic legacy
+  lookup), which is what keeps the `MagicMock` non-fabrication case honest.
+  Non-string `effort`/`allowed_options` shapes fail open where Python raises
+  `AttributeError`/`TypeError`; recorded in the module.
+  Evidence (unit): 34 new parity tests across the six suites — 34 focused
+  tests pass from `/home/mustbearnold/.cargo/bin/cargo test -p hermes-agent
+  --test parity_errors --test parity_message_content --test
+  parity_tool_result_classification --test parity_lmstudio_reasoning --test
+  parity_reasoning_summaries --test parity_interrupt_compat`;
+  `/home/mustbearnold/.cargo/bin/cargo build --workspace` passed; the required
+  serialized `/home/mustbearnold/.cargo/bin/cargo test --workspace --
+  --test-threads=1` passed with 1,234 tests and 5 intentional ignores;
+  targeted `/home/mustbearnold/.cargo/bin/rustfmt --edition 2021 --check` and
+  `/home/mustbearnold/.cargo/bin/cargo clippy -p hermes-agent --all-targets`
+  are clean apart from the two pre-existing `auxiliary_client` diagnostics;
+  `git diff --check` passed.
+  Ledger: `agent.errors`, `agent.message_content`,
+  `agent.tool_result_classification`, `agent.lmstudio_reasoning`, and
+  `agent.reasoning_summaries` added as `done`; `agent.interrupt_compat` added
+  as `partial` (the `run_agent.AIAgent` and `tools.delegate_tool` oracle cases
+  are unportable until those modules land). Regeneration gives 79 done / 13
+  partial / 3,790 missing tracked modules and 79 done / 13 partial / 1,011
+  missing production modules: 2.04% all-tracked strict completion and 7.16%
+  production-only. Next dependency-safe units: the same batch shape for the
+  next small `agent/` modules with dedicated oracles
+  (`agent.agent_runtime_helpers` candidates, `agent.turn_retry_state`,
+  `agent.verify_hooks`, `agent.verify_patches`, `agent.kanban_stop`), plus
+  keeping the remaining `agent.auxiliary_client` lifecycle work in view.
 - 2026-08-28 (session 4d2): Closed the ambient-propagation seam recorded by
   session 4d1 on `agent.portal_tags`. `ConversationContext` (capture / run) and
   `propagate_conversation_context_to_thread` now reproduce the

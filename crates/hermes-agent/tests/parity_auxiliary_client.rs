@@ -1254,7 +1254,9 @@ fn openrouter_headers_default_to_enabled_ttl_300() {
     let mut first = build_or_headers(None);
     first.insert("X-OpenRouter-Cache".into(), "mutated".into());
     assert_eq!(
-        build_or_headers(None).get("X-OpenRouter-Cache").map(String::as_str),
+        build_or_headers(None)
+            .get("X-OpenRouter-Cache")
+            .map(String::as_str),
         Some("true")
     );
 }

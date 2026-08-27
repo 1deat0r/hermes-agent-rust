@@ -11,8 +11,26 @@
  "agent.credential_pool": {
     "status": "partial"
   },
+ "agent.errors": {
+    "status": "done"
+  },
+ "agent.interrupt_compat": {
+    "status": "partial"
+  },
+ "agent.lmstudio_reasoning": {
+    "status": "done"
+  },
+ "agent.message_content": {
+    "status": "done"
+  },
  "agent.portal_tags": {
     "status": "partial"
+  },
+ "agent.reasoning_summaries": {
+    "status": "done"
+  },
+ "agent.tool_result_classification": {
+    "status": "done"
   },
  "agent.session_activity": {
     "status": "done"
