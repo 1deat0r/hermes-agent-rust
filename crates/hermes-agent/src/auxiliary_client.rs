@@ -6,8 +6,14 @@
 //! cancellation, and provider fallback chains remain higher-layer sections of
 //! the 10,044-line upstream module.
 
+use crate::config::{cfg_get, json_truthy, load_merged_config_snapshot, openrouter_defaults};
+use crate::portal_tags::get_conversation_context;
 use base64::{engine::general_purpose::URL_SAFE, Engine as _};
-use hermes_utils::{base_url_hostname, model_forces_max_completion_tokens, normalize_proxy_url};
+use hermes_providers::registry::get_provider_profile;
+use hermes_utils::{
+    base_url_host_matches, base_url_hostname, model_forces_max_completion_tokens,
+    normalize_proxy_url,
+};
 use serde_json::{json, Value};
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -755,6 +761,7 @@ pub struct AuxiliaryOpenAiClientConfig {
     pub base_url: String,
     pub max_retries: i64,
     pub http_client: Option<AuxiliaryHttpClientConfig>,
+    pub default_headers: BTreeMap<String, String>,
 }
 
 /// Build the transport-independent OpenAI client options.
@@ -776,6 +783,7 @@ pub fn openai_client_config(
         base_url: base_url.to_owned(),
         max_retries: explicit_max_retries.unwrap_or(0),
         http_client: None,
+        default_headers: BTreeMap::new(),
     }
 }
 
@@ -1297,4 +1305,397 @@ pub fn is_model_incompatible_error(error: &AuxiliaryError) -> bool {
             "unsupported model",
         ],
     )
+}
+
+// ── Client-level headers and Portal extra_body ─────────────────────────────
+//
+// Upstream keeps these builders next to the credential-pool and client
+// construction code they feed. The request/transport lifecycle above them is
+// still unported, so each function here is a pure seam over explicit inputs.
+
+/// Python truthiness for the `openrouter.response_cache` leaf.
+///
+/// PARITY: `or_config.get("response_cache", False)` (upstream line 878).
+fn response_cache_enabled(section: &serde_json::Map<String, Value>) -> bool {
+    json_truthy(section.get("response_cache"))
+}
+
+/// Build OpenRouter attribution and response-cache headers.
+///
+/// PARITY: `build_or_headers` (upstream `agent/auxiliary_client.py` lines
+/// 848-898): the base attribution headers are always present; the cache
+/// header is gated by env-over-config precedence; and the TTL header is
+/// emitted only for integers in `[1, 86400]`.
+///
+/// `or_config` is the `openrouter` *section*, not the whole config. When it is
+/// `None` the source falls back to `load_config_readonly().get("openrouter")`,
+/// which merges `DEFAULT_CONFIG` — so a missing config file still enables
+/// caching with the default TTL, mirrored here through
+/// [`crate::config::openrouter_defaults`].
+///
+/// Divergence kept deliberately: Python's `isinstance(ttl, (int, float))` also
+/// accepts `True`/`False` (bool is an `int` subclass), so a YAML `true` TTL
+/// emits `"1"` upstream; that quirk is reproduced rather than "fixed".
+pub fn build_or_headers(
+    or_config: Option<&serde_json::Map<String, Value>>,
+) -> BTreeMap<String, String> {
+    // PARITY: `_OR_HEADERS_BASE` (upstream lines 797-801).
+    let mut headers = BTreeMap::new();
+    headers.insert(
+        "HTTP-Referer".into(),
+        "https://hermes-agent.nousresearch.com".into(),
+    );
+    headers.insert("X-Title".into(), "Hermes Agent".into());
+    headers.insert(
+        "X-OpenRouter-Categories".into(),
+        "productivity,cli-agent".into(),
+    );
+
+    let section = match or_config {
+        Some(section) => section.clone(),
+        None => {
+            let snapshot = load_merged_config_snapshot(&openrouter_defaults());
+            match snapshot.pool_config.get("openrouter") {
+                Some(Value::Object(section)) => section.clone(),
+                // `.get("openrouter", {})`: any non-mapping shape behaves as {}.
+                _ => serde_json::Map::new(),
+            }
+        }
+    };
+
+    // PARITY: env var overrides config (upstream lines 872-878); only the
+    // exact truthy spellings enable caching.
+    let env_cache = std::env::var("HERMES_OPENROUTER_CACHE")
+        .map(|value| value.trim().to_ascii_lowercase())
+        .unwrap_or_default();
+    let cache_enabled = if env_cache.is_empty() {
+        response_cache_enabled(&section)
+    } else {
+        matches!(env_cache.as_str(), "1" | "true" | "yes" | "on")
+    };
+    if !cache_enabled {
+        return headers;
+    }
+    headers.insert("X-OpenRouter-Cache".into(), "true".into());
+
+    // PARITY: TTL precedence and bounds (upstream lines 885-896).
+    let env_ttl = std::env::var("HERMES_OPENROUTER_CACHE_TTL")
+        .map(|value| value.trim().to_string())
+        .unwrap_or_default();
+    if !env_ttl.is_empty() {
+        // `str.isdigit()`: ASCII digits only, so `-1`, `12.5`, and `abc` drop
+        // the header while the cache header survives.
+        if let Some(digits) = env_ttl
+            .chars()
+            .all(|ch| ch.is_ascii_digit())
+            .then_some(env_ttl.as_str())
+        {
+            if let Ok(ttl) = digits.parse::<i64>() {
+                if (1..=86400).contains(&ttl) {
+                    headers.insert("X-OpenRouter-Cache-TTL".into(), ttl.to_string());
+                }
+            }
+        }
+    } else {
+        let ttl = match section.get("response_cache_ttl") {
+            Some(Value::Bool(value)) => Some(i64::from(*value)),
+            Some(Value::Number(value)) => value.as_i64().or_else(|| {
+                value
+                    .as_f64()
+                    .filter(|float| float.is_finite())
+                    .map(|float| float as i64)
+            }),
+            _ => None,
+        };
+        if let Some(ttl) = ttl {
+            if (1..=86400).contains(&ttl) {
+                headers.insert("X-OpenRouter-Cache-TTL".into(), ttl.to_string());
+            }
+        }
+    }
+    headers
+}
+
+/// PARITY: `str(value)` applied to a header leaf (upstream line 845). Booleans
+/// render with Python casing; the degenerate container shapes render as JSON
+/// rather than Python's `repr` (single quotes), which no upstream test pins.
+fn python_header_value(value: &Value) -> String {
+    match value {
+        Value::String(value) => value.clone(),
+        Value::Bool(value) => {
+            if *value {
+                "True".into()
+            } else {
+                "False".into()
+            }
+        }
+        Value::Number(value) => value.to_string(),
+        Value::Array(_) | Value::Object(_) => value.to_string(),
+        Value::Null => "None".into(),
+    }
+}
+
+/// Overlay user-configured request headers onto resolved client headers.
+///
+/// PARITY: `_apply_user_default_headers` (upstream `agent/auxiliary_client.py`
+/// lines 807-846): user values win over provider/SDK defaults so a `custom`
+/// endpoint behind a gateway that rejects the SDK's identifying headers works
+/// for auxiliary calls too (#40033). `model.extra_headers` is the accepted
+/// alias; when both are set they merge with `extra_headers` winning. Only an
+/// explicit `null` value is skipped — keys are used verbatim (Python does not
+/// trim them) — and non-string scalars are stringified.
+///
+/// `config` is the FULL merged config. `None` mirrors the source's internal
+/// `load_config()` read; a config-load failure is fail-open upstream and is
+/// represented by an absent `model` section here.
+pub fn apply_user_default_headers(
+    headers: &mut BTreeMap<String, String>,
+    config: Option<&serde_json::Map<String, Value>>,
+) {
+    let resolved;
+    let config = match config {
+        Some(config) => config,
+        None => {
+            resolved = load_merged_config_snapshot(&openrouter_defaults()).pool_config;
+            &resolved
+        }
+    };
+    let user_headers = match cfg_get(config, &["model", "default_headers"], Value::Null) {
+        Value::Object(map) => Some(map),
+        _ => None,
+    };
+    // PARITY: alias merge (upstream lines 829-835): a non-empty
+    // `model.extra_headers` overrides same-named `default_headers` entries.
+    let alias = cfg_get(config, &["model", "extra_headers"], Value::Null);
+    let mut user_headers = match alias {
+        Value::Object(alias) if !alias.is_empty() => {
+            let mut merged = user_headers.unwrap_or_default();
+            for (key, value) in alias {
+                merged.insert(key, value);
+            }
+            Some(merged)
+        }
+        _ => user_headers,
+    };
+    // PARITY: `if not isinstance(user_headers, dict) or not user_headers`
+    // (upstream lines 838-839): nothing configured means no allocation.
+    let Some(raw) = user_headers.take().filter(|map| !map.is_empty()) else {
+        return;
+    };
+    for (key, value) in raw {
+        if value.is_null() {
+            continue;
+        }
+        headers.insert(key, python_header_value(&value));
+    }
+}
+
+/// Return NVIDIA NIM cloud attribution headers for build.nvidia.com traffic.
+///
+/// PARITY: `build_nvidia_nim_headers` (upstream lines 902-911): host-gated
+/// because the nvidia provider also serves local/on-prem NIM endpoints via
+/// `NVIDIA_BASE_URL`.
+pub fn build_nvidia_nim_headers(base_url: Option<&str>) -> BTreeMap<String, String> {
+    if base_url_host_matches(base_url.unwrap_or_default(), "integrate.api.nvidia.com") {
+        let mut headers = BTreeMap::new();
+        headers.insert("X-BILLING-INVOKE-ORIGIN".into(), "HermesAgent".into());
+        return headers;
+    }
+    BTreeMap::new()
+}
+
+/// Build the standard headers for Copilot API requests.
+///
+/// PARITY: `copilot_request_headers` (upstream `hermes_cli/copilot_auth.py`
+/// lines 674-693): replicates the opencode/Copilot CLI header set. OAuth token
+/// attachment and the `hermes_cli.models.copilot_default_headers` import
+/// fallback (lines 3430-3445) live above this pure builder.
+pub fn copilot_request_headers(is_agent_turn: bool, is_vision: bool) -> BTreeMap<String, String> {
+    let mut headers = BTreeMap::new();
+    headers.insert("Editor-Version".into(), "vscode/1.104.1".into());
+    headers.insert("User-Agent".into(), "HermesAgent/1.0".into());
+    headers.insert("Copilot-Integration-Id".into(), "vscode-chat".into());
+    headers.insert("Openai-Intent".into(), "conversation-edits".into());
+    headers.insert(
+        "x-initiator".into(),
+        if is_agent_turn { "agent" } else { "user" }.into(),
+    );
+    if is_vision {
+        headers.insert("Copilot-Vision-Request".into(), "true".into());
+    }
+    headers
+}
+
+/// Resolve host-gated provider headers for an auxiliary OpenAI-compatible
+/// client.
+///
+/// PARITY: the credential-pool chain (upstream lines 2369-2386) and the
+/// custom-endpoint chain (lines 6044-6062) apply the same
+/// kimi/copilot/nvidia gates in the same order and the same
+/// `get_provider_profile(...).default_headers` fallback, so one pure function
+/// covers both call sites. Differences that stay with the callers:
+///   * the pool site reaches Copilot through
+///     `hermes_cli.models.copilot_default_headers()`, which never forwards a
+///     vision flag — pass `is_vision: false` to reproduce it;
+///   * an empty base URL carries no headers, matching the source's
+///     `if custom_base and custom_key` guard;
+///   * the async-conversion chain (lines 5654-5684) additionally gates on
+///     `openrouter.ai` and `x.ai` and infers the provider from the URL; that
+///     route is covered by [`openrouter_cache_headers`] plus the future
+///     xAI header seam.
+pub fn resolve_provider_default_headers(
+    provider: Option<&str>,
+    base_url: Option<&str>,
+    is_vision: bool,
+) -> BTreeMap<String, String> {
+    let base = base_url.unwrap_or_default().trim();
+    if base.is_empty() {
+        return BTreeMap::new();
+    }
+    if base_url_host_matches(base, "api.kimi.com") {
+        let mut headers = BTreeMap::new();
+        headers.insert("User-Agent".into(), "claude-code/0.1.0".into());
+        headers
+    } else if base_url_host_matches(base, "githubcopilot.com") {
+        copilot_request_headers(true, is_vision)
+    } else if base_url_host_matches(base, "integrate.api.nvidia.com") {
+        build_nvidia_nim_headers(Some(base))
+    } else {
+        provider
+            .and_then(get_provider_profile)
+            .map(|profile| profile.default_headers)
+            .unwrap_or_default()
+    }
+}
+
+/// Return OpenRouter attribution and response-cache headers for an auxiliary
+/// client.
+///
+/// PARITY: the two OpenRouter header sites in the source: the
+/// `provider == "openrouter"` route builds its client with
+/// `build_or_headers()` regardless of the pool base URL (upstream
+/// `_try_openrouter`, lines 2479-2515, reached from line 5910), and the
+/// sync-to-async conversion applies them whenever the client host is
+/// `openrouter.ai` (lines 5654-5655). This helper is the union of those two
+/// gates: an openrouter route, or an openrouter host.
+///
+/// `or_config` is the `openrouter` section (upstream's `build_or_headers`
+/// argument); `None` keeps the source's own `load_config_readonly()` read.
+pub fn openrouter_cache_headers(
+    provider: Option<&str>,
+    base_url: Option<&str>,
+    or_config: Option<&serde_json::Map<String, Value>>,
+) -> BTreeMap<String, String> {
+    let provider = provider.unwrap_or_default().trim().to_ascii_lowercase();
+    let base = base_url.unwrap_or_default();
+    if provider != "openrouter" && !base_url_host_matches(base, "openrouter.ai") {
+        return BTreeMap::new();
+    }
+    build_or_headers(or_config)
+}
+
+/// Compose the full client-level default headers for an auxiliary
+/// OpenAI-compatible client.
+///
+/// PARITY: source header assembly order — host-gated provider headers first
+/// (upstream lines 2369-2386 and 6044-6062), OpenRouter cache headers merged
+/// over them (lines 2502-2514 and 5654-5655), and the user's
+/// `model.default_headers` overlay winning last (lines 2386-2389, 6063-6066,
+/// and 5684-5687).
+pub fn auxiliary_default_headers(
+    provider: Option<&str>,
+    base_url: Option<&str>,
+    is_vision: bool,
+    config: Option<&serde_json::Map<String, Value>>,
+) -> BTreeMap<String, String> {
+    // `.get("openrouter", {})`: a supplied config that says nothing about
+    // OpenRouter contributes an empty section, not the disk fallback.
+    let or_section = config.map(
+        |config| match cfg_get(config, &["openrouter"], Value::Null) {
+            Value::Object(section) => section,
+            _ => serde_json::Map::new(),
+        },
+    );
+    let mut headers = resolve_provider_default_headers(provider, base_url, is_vision);
+    headers.extend(openrouter_cache_headers(
+        provider,
+        base_url,
+        or_section.as_ref(),
+    ));
+    apply_user_default_headers(&mut headers, config);
+    headers
+}
+
+/// Return a fresh Nous Portal `extra_body` document.
+///
+/// PARITY: `_nous_extra_body` (upstream lines 935-941): computed at call time
+/// so a changed `hermes_cli.__version__` is reflected without restarting
+/// long-running processes. Upstream also keeps a deprecated module-level
+/// `NOUS_EXTRA_BODY` snapshot of this value (lines 944-948); consumers are
+/// expected to call the helper, so the snapshot is not reproduced.
+pub fn nous_extra_body() -> serde_json::Map<String, Value> {
+    let mut body = serde_json::Map::new();
+    body.insert(
+        "tags".to_string(),
+        Value::Array(
+            crate::portal_tags::nous_portal_tags(None)
+                .into_iter()
+                .map(Value::String)
+                .collect(),
+        ),
+    );
+    body
+}
+
+/// Return extra_body kwargs for auxiliary API calls.
+///
+/// PARITY: `get_auxiliary_extra_body` (upstream lines 6926-6932): Nous Portal
+/// product tags when the auxiliary client is backed by Nous Portal, empty
+/// otherwise. `auxiliary_is_nous` is the module global the source sets at
+/// resolve time; it is an explicit argument here.
+pub fn get_auxiliary_extra_body(auxiliary_is_nous: bool) -> serde_json::Map<String, Value> {
+    if auxiliary_is_nous {
+        nous_extra_body()
+    } else {
+        serde_json::Map::new()
+    }
+}
+
+/// Return the Nous Portal fallback `tags`/`session_id` entries for transport
+/// client kwargs.
+///
+/// PARITY: the portal fallback in `_create_transport_client` (upstream lines
+/// 8068-8086): only for nous spellings, and only for a key the profile merge
+/// did not already supply. The sticky `session_id` comes from the ambient
+/// conversation context — tags alone are not enough on `/v1/messages`, where
+/// the sticky key keeps auxiliary compression/title/vision calls on the same
+/// upstream instance as the main turn (cache warmth).
+pub fn nous_portal_fallback_extra(
+    provider: Option<&str>,
+    has_tags: bool,
+    has_session_id: bool,
+) -> serde_json::Map<String, Value> {
+    let provider = provider.unwrap_or_default().trim().to_ascii_lowercase();
+    if !matches!(provider.as_str(), "nous" | "nous-portal" | "nousresearch") {
+        return serde_json::Map::new();
+    }
+    let mut extra = serde_json::Map::new();
+    if !has_tags {
+        extra.insert(
+            "tags".into(),
+            Value::Array(
+                crate::portal_tags::nous_portal_tags(None)
+                    .into_iter()
+                    .map(Value::String)
+                    .collect(),
+            ),
+        );
+    }
+    if !has_session_id {
+        // PARITY: `if sticky_key:` — an empty ambient id contributes nothing.
+        if let Some(sticky) = get_conversation_context().filter(|value| !value.is_empty()) {
+            extra.insert("session_id".into(), Value::String(sticky));
+        }
+    }
+    extra
 }

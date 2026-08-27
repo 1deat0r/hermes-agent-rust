@@ -1,6 +1,6 @@
 # Hermes Agent Rust — Next-session handoff
 
-Date: 2026-08-24 (Pacific/Auckland), session 4d0.
+Date: 2026-08-28 (Pacific/Auckland), session 4d1.
 
 ## Resume point
 
@@ -8,18 +8,21 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
-Current branch/HEAD: `main` is aligned with `origin/main`; the worktree
-contains the auxiliary model-policy/OpenCode Zen-Go source and documentation
-checkpoint for the current unit and is not yet committed. This unit will be
-committed and pushed after the post-documentation validation gate. Future
-logical units can use `git push origin main`.
+Current branch/HEAD: `main` carries this Portal-attribution checkpoint as one
+source commit plus this documentation commit; `origin/main` alignment is
+verified with `git ls-remote origin refs/heads/main` after the push attempt.
+Logical units continue to publish with `git push origin main`.
 
-Latest synchronized source unit: managed configuration overlay, provider-state
-auth-store helpers, and Z.AI cache semantics at upstream `b9aa928`
-(`5641010`, published to `origin/main`).
-Current working source unit: pure auxiliary model-policy predicates plus
-OpenCode Zen/Go profiles, registry wiring, and reasoning/max-token seams;
-source and documentation are pending this checkpoint's commit.
+Latest synchronized source unit: pure auxiliary model-policy predicates plus
+OpenCode Zen/Go profiles, registry wiring, and reasoning/max-token seams at
+upstream `b9aa928` (`8a30854`).
+Current working source unit: Portal attribution and managed configuration —
+`agent.portal_tags` (partial), the whole `hermes_cli/managed_scope.py` module
+(done), the merged-loader managed-directory fold, and the auxiliary-client
+client-header/`extra_body` chain; three upstream-fidelity divergences found in
+the previous session's uncommitted work were repaired here (invented
+`*.yaml` drop-in merge, blank-key-trimming/`null`-rendering user-header
+overlay, and the substring OpenRouter host gate).
 Earlier config/Z.AI discovery work is recorded below; the current unit
 preserves that source tree's dependency direction and extends it without a
 CLI crate.
@@ -195,6 +198,38 @@ GitHub `11245d8` (`plugins.model-providers.arcee.__init__`), local `ec9db5aa`
 recorded above with the config/Z.AI source commit and its verified tree.
 
 ## What landed this session
+
+Session 4d1 finished the wave a previous turn left uncommitted and red, then
+closed it with the review, tests, and ledger. Three upstream-fidelity defects
+were found by reading the pinned sources line by line:
+
+1. `hermes-agent::config::load_merged_config_snapshot_with_managed_scope_at`
+   merged every sorted `*.yaml` inside the managed directory. Upstream
+   `managed_scope.load_managed_config` reads exactly one file,
+   `<managed_dir>/config.yaml`, and fails open when it is absent, malformed, or
+   not a mapping. The whole `hermes_cli/managed_scope.py` module is now ported
+   as `hermes-agent::managed_scope` (resolver tiers, `(mtime_ns, size)` cache
+   and invalidation hook, config/`.env` loaders with explicit-directory forms,
+   dotted leaf-key helpers, and `apply_managed_overlay`), and the merged
+   snapshot records the real `managed_dir` instead of the config path's parent.
+2. `_apply_user_default_headers` had invented blank-key trimming and rendered
+   `null` as the string `"None"`. Upstream skips only explicit `None` values,
+   keeps keys verbatim, and merges the non-empty `model.extra_headers` alias so
+   it wins over `model.default_headers`.
+3. The OpenRouter response-cache gate used `base_url.contains("openrouter.ai")`
+   with a provider-only predicate. Upstream applies the headers at two real
+   sites — `_try_openrouter` (route gate, host-independent) and
+   `_to_async_client` (`base_url_host_matches(..., "openrouter.ai")`) — so the
+   port now unions those two gates through the shared host matcher, and the
+   `openrouter` section (not the whole config) is the explicit input.
+
+The Portal surface itself (`agent.portal_tags`) is a new module: base
+`product=`/`client=` tags, `conversation=` helper, the ambient
+`ContextVar`-equivalent publish/reset/get trio, and the ambient-over-explicit
+precedence rule, with the auxiliary-client `_nous_extra_body`,
+`get_auxiliary_extra_body`, and `_create_transport_client` tag/sticky-key
+fallback living in `hermes-agent::auxiliary_client` as upstream does.
+
 
 This source unit was developed through two parallel dependency-safe leaves.
 The auxiliary leaf adds pure model-policy predicates for Kimi, Arcee Trinity,
@@ -723,22 +758,26 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-Local `main` and `origin/main` are aligned after publishing the managed
-configuration overlay, provider-state, and Z.AI-cache unit plus this
-documentation checkpoint. The current worktree is clean; exact commit/tree
-parity is verified before delivery and the new unit does not change ledger
-status. Generated summary: 73 done / 11 partial / 3,798 missing tracked
-modules and 73 done / 11 partial / 1,019 missing production modules.
+The Portal-attribution unit is committed as one source commit with this
+documentation checkpoint, and the ledger changed in the same commit. Worktree
+cleanliness and commit/tree parity are verified after the push attempt.
+Generated summary: 74 done / 12 partial / 3,796 missing tracked modules and 74
+done / 12 partial / 1,017 missing production modules (1.91% tracked, 6.71%
+production).
 
-1. Add the full CLI managed-overlay/default-catalog integration when the
-   missing `hermes-cli` crate exists; this is the current higher-layer
-   blocker, not a reason to move discovery into `hermes-agent::config`.
-2. Continue provider-specific auth transport/cache orchestration, leases, and
-   logging throttles through dependency-safe lower-layer seams.
-3. Connect auxiliary-client concrete transport to credential-pool lifecycle,
-   cancellation, and provider fallback without promoting either partial
-   module prematurely. Keep ownership disjoint; commit and publish each
-   logical unit immediately.
+1. Continue the remaining `agent.auxiliary_client` request/response lifecycle:
+   concrete client construction against these header/`extra_body` seams, xAI
+   default headers, and the URL-inferred provider fallback used by the async
+   conversion chain.
+2. Publish the ambient conversation id from the agent turn wrapper
+   (`AIAgent._compress_context` / turn entry) once that surface is ported, and
+   wire `agent.portal_tags` into `hermes_tools::thread_context`'s snapshot
+   factory so propagated worker threads inherit it.
+3. Add the full CLI default-catalog/managed write-back integration when the
+   missing `hermes-cli` crate exists; managed-scope discovery itself is now
+   ported in `hermes-agent::managed_scope`, so only the CLI-owned callers are
+   still blocked. Keep ownership disjoint; commit and publish each logical
+   unit immediately.
 
 ## Next actions, in order
 
@@ -756,16 +795,17 @@ modules and 73 done / 11 partial / 1,019 missing production modules.
 
 `CONVERSION-LEDGER.md` is generated and contains one row for every 3,882 upstream inventory modules: 1,103 production tasks plus 2,779 oracle/test tasks. Only `done` counts toward completion.
 
-- All tracked modules: 73 done / 11 partial / 3,798 missing = **1.88%**.
-- Production modules: 73 done / 11 partial / 1,019 missing = **6.62%**.
+- All tracked modules: 74 done / 12 partial / 3,796 missing = **1.91%**.
+- Production modules: 74 done / 12 partial / 1,017 missing = **6.71%**.
 
-The eleven partial production rows are `agent.auxiliary_client`,
-`agent.credential_pool`,
+The twelve partial production rows are `agent.auxiliary_client`,
+`agent.credential_pool`, `agent.portal_tags`,
 `hermes_constants`, `providers.base`, `providers.__init__`,
 `tools.credential_files`, `tools.delegation_output_schema`,
 `tools.threat_patterns`, `tools.todo_tool`, `tools.tool_backend_helpers`,
 and `tools.tool_output_limits`. Their closure
-seams are listed in the ledger and PLAN.md.
+seams are listed in the ledger and PLAN.md. `hermes_cli.managed_scope` joined
+the `done` rows this session.
 
 Regenerate with:
 
@@ -777,6 +817,33 @@ python3 tools/conversion_ledger.py
 The strict production formula is `done production modules / 1,103`; partial rows receive zero credit. The all-module percentage is also shown because every upstream test/oracle task remains explicit.
 
 ## Fidelity notes
+
+- Session 4d1 repairs (recorded so a later review does not re-introduce them):
+  the managed-scope fold is one `config.yaml` per managed directory, not a
+  sorted `*.yaml` drop-in merge; `MergedConfigSnapshot` exposes the real
+  `managed_dir` (`Option<PathBuf>`) rather than the config path's parent; the
+  user default-header overlay skips only explicit `null` values, never trims
+  keys, and lets a non-empty `model.extra_headers` alias win; the OpenRouter
+  cache gate is the union of the `_try_openrouter` route gate and the
+  `_to_async_client` `base_url_host_matches(..., "openrouter.ai")` host gate.
+- Approved Portal-attribution divergences, all awaiting the missing
+  `hermes-cli` crate: `agent.portal_tags` pins `hermes_client_tag` to the
+  `b9aa928` `hermes_cli.__version__` value `0.20.0` instead of importing it
+  live, and the ambient conversation id is a Rust `thread_local!` (matching a
+  bare Python thread) rather than a propagated `contextvars.Context`; the
+  upstream `propagate_context_to_thread` and `_compress_context` ambient
+  tests therefore stay pending, and `hermes_tools::thread_context` has an
+  unused snapshot-factory seam for exactly this wiring.
+- Header-value stringification matches Python `str()` for scalars
+  (`True`/`False`, `None` skipped) and renders list/dict values as JSON rather
+  than Python `repr`; no upstream test pins the degenerate container shapes.
+- OpenRouter TTL handling keeps upstream's bool-is-int quirk
+  (`response_cache_ttl: true` emits `"1"`) and ASCII-digit-only
+  `str.isdigit()` env parsing.
+- The managed-scope port logs parse failures through the `log` facade without
+  upstream's `exc_info` traceback, and its `(mtime_ns, size)` cache matches the
+  merged-config snapshot cache identity upstream folds into the combined
+  load-cache signature.
 
 - The credential environment seeder, lower `load_pool` transaction, explicit
   full `load_pool` composition, and Anthropic/Nous/Copilot/Qwen/MiniMax/OpenAI
@@ -938,6 +1005,24 @@ passed 3/3. Targeted rustfmt passed; concrete Z.AI HTTP/cache and full merged
 CLI config behavior remain deferred.
 
 ## Verification evidence
+
+For the current Portal-attribution/managed-scope unit, the focused
+`/home/mustbearnold/.cargo/bin/cargo test -p hermes-agent --test
+parity_auxiliary_client --test parity_config --test parity_portal_tags --test
+parity_managed_scope --test parity_credential_pool --test
+parity_credential_store` run passed 61 + 21 + 9 + 12 + 66 + 19 tests,
+`/home/mustbearnold/.cargo/bin/cargo build --workspace` passed, and the
+required serialized `/home/mustbearnold/.cargo/bin/cargo test --workspace --
+--test-threads=1` passed with 1,197 tests and the same 5 intentionally
+ignored doc tests. Targeted
+`/home/mustbearnold/.cargo/bin/rustfmt --edition 2021 --check` on the eight
+changed Rust files is clean, targeted
+`/home/mustbearnold/.cargo/bin/cargo clippy -p hermes-agent --all-targets`
+reached only the two pre-existing `auxiliary_client` `too_many_arguments` and
+`needless_lifetimes` diagnostics, and `git diff --check` passed. The first
+focused run before this session's repairs was red on the invented
+managed-directory test, which is what surfaced the fidelity defect.
+
 
 For the current Qwen-singleton unit, targeted rustfmt, the focused
 `/home/mustbearnold/.cargo/bin/cargo test -p hermes-agent --test parity_credential_pool`

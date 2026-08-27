@@ -11,7 +11,9 @@ base64 = "0.22"
 chrono.workspace = true
 fs2 = "0.4"
 hermes-constants = { path = "../hermes-constants" }
+hermes-providers = { path = "../hermes-providers" }
 hermes-utils = { path = "../hermes-utils" }
+log.workspace = true
 rand = "0.10"
 reqwest.workspace = true
 serde_json.workspace = true
@@ -20,4 +22,5 @@ thiserror.workspace = true
 url = "2"
 
 [dev-dependencies]
+parking_lot = "0.12"
 tempfile = "3"

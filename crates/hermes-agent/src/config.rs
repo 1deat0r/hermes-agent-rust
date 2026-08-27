@@ -21,7 +21,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{LazyLock, Mutex};
 use std::time::UNIX_EPOCH;
 
-fn json_truthy(value: Option<&Value>) -> bool {
+pub(crate) fn json_truthy(value: Option<&Value>) -> bool {
     match value {
         None | Some(Value::Null) => false,
         Some(Value::Bool(value)) => *value,
@@ -37,7 +37,10 @@ fn json_truthy(value: Option<&Value>) -> bool {
     }
 }
 
-fn deep_merge(base: &Map<String, Value>, override_map: &Map<String, Value>) -> Map<String, Value> {
+pub(crate) fn deep_merge(
+    base: &Map<String, Value>,
+    override_map: &Map<String, Value>,
+) -> Map<String, Value> {
     let mut result = base.clone();
     for (key, value) in override_map {
         if let Some(base_value) = result.get(key) {
@@ -150,7 +153,7 @@ fn expand_string(value: &str) -> String {
     output
 }
 
-fn expand_env_vars(value: &Value) -> Value {
+pub(crate) fn expand_env_vars(value: &Value) -> Value {
     match value {
         Value::String(value) => Value::String(expand_string(value)),
         Value::Object(values) => Value::Object(
@@ -164,7 +167,7 @@ fn expand_env_vars(value: &Value) -> Value {
     }
 }
 
-fn normalize_root_model_keys(mut config: Map<String, Value>) -> Map<String, Value> {
+pub(crate) fn normalize_root_model_keys(mut config: Map<String, Value>) -> Map<String, Value> {
     let model_input = config.get("model").cloned();
     let model_has_alias = model_input
         .as_ref()
@@ -284,7 +287,7 @@ pub fn load_merged_config_snapshot_at(
     path: &Path,
     defaults: &Map<String, Value>,
 ) -> MergedConfigSnapshot {
-    load_merged_config_snapshot_with_overlay_at(path, defaults, &Map::new())
+    load_merged_config_snapshot_inner(path, defaults, &Map::new(), None)
 }
 
 /// Load defaults plus a user config and an explicit managed overlay.
@@ -301,15 +304,63 @@ pub fn load_merged_config_snapshot_at(
 /// snapshot before applying the same overlay.
 ///
 /// PARITY: `_load_config_impl` managed merge (upstream `hermes_cli/config.py`
-/// lines 3319–3423) layered over the existing merged config normalization.
+/// lines 3308–3423) layered over the existing merged config normalization.
+/// Upstream folds the managed file's `(mtime_ns, size)` into the combined
+/// cache signature (lines 3322–3342); this port additionally compares the
+/// parsed overlay itself, so a managed edit that changes no value keeps
+/// serving the cached snapshot instead of re-merging.
 pub fn load_merged_config_snapshot_with_overlay_at(
     path: &Path,
     defaults: &Map<String, Value>,
     managed_overlay: &Map<String, Value>,
 ) -> MergedConfigSnapshot {
+    load_merged_config_snapshot_inner(path, defaults, managed_overlay, None)
+}
+
+/// Load defaults, a user config, and the managed `config.yaml` inside an
+/// explicit managed-scope directory.
+///
+/// PARITY: `_load_config_impl` + `managed_scope.load_managed_config()`
+/// (upstream `hermes_cli/config.py` lines 3319–3326 and 3413–3423,
+/// `hermes_cli/managed_scope.py` lines 118–128). Only `<managed_scope>/config.yaml`
+/// participates — there is no drop-in directory — and an absent or malformed
+/// managed file contributes no overlay, so the user config survives intact.
+pub fn load_merged_config_snapshot_with_managed_scope_at(
+    path: &Path,
+    defaults: &Map<String, Value>,
+    managed_scope: &Path,
+) -> MergedConfigSnapshot {
+    let overlay = crate::managed_scope::load_managed_config_from(managed_scope);
+    load_merged_config_snapshot_inner(path, defaults, &overlay, Some(managed_scope))
+}
+
+/// Load defaults plus the process-default user config path and the managed
+/// scope resolved by [`crate::managed_scope::get_managed_dir`].
+///
+/// PARITY: `_load_config_impl`'s `managed_scope.get_managed_dir()` lookup
+/// (upstream `hermes_cli/config.py` lines 3322–3326).
+pub fn load_merged_config_snapshot_with_managed_scope(
+    defaults: &Map<String, Value>,
+) -> MergedConfigSnapshot {
+    let path = get_config_path();
+    match crate::managed_scope::get_managed_dir() {
+        Some(managed_dir) => {
+            load_merged_config_snapshot_with_managed_scope_at(&path, defaults, &managed_dir)
+        }
+        None => load_merged_config_snapshot_inner(&path, defaults, &Map::new(), None),
+    }
+}
+
+fn load_merged_config_snapshot_inner(
+    path: &Path,
+    defaults: &Map<String, Value>,
+    managed_overlay: &Map<String, Value>,
+    managed_dir: Option<&Path>,
+) -> MergedConfigSnapshot {
     let raw = load_config_snapshot_at(path);
     let signature = raw.signature;
     let path = raw.path.clone();
+    let managed_dir = managed_dir.map(Path::to_path_buf);
     let user_config = normalize_user_max_turns(raw.pool_config.clone());
     let mut config = deep_merge(defaults, &user_config);
     config = normalize_max_turns_config(config);
@@ -325,6 +376,7 @@ pub fn load_merged_config_snapshot_with_overlay_at(
         if entry.signature == signature
             && entry.defaults == *defaults
             && entry.managed_overlay == *managed_overlay
+            && entry.managed_dir == managed_dir
             && entry.env_snapshot == env_snapshot
         {
             return entry.snapshot.clone();
@@ -339,13 +391,15 @@ pub fn load_merged_config_snapshot_with_overlay_at(
         Value::Object(managed) => deep_merge(&expanded_user, &managed),
         _ => unreachable!("object expansion remains an object"),
     };
-    let snapshot = MergedConfigSnapshot::from_config(path.clone(), signature, expanded);
+    let snapshot =
+        MergedConfigSnapshot::from_config(path.clone(), managed_dir.clone(), signature, expanded);
     cache.insert(
         path,
         MergedCacheEntry {
             signature,
             defaults: defaults.clone(),
             managed_overlay: managed_overlay.clone(),
+            managed_dir: managed_dir.clone(),
             env_snapshot,
             snapshot: snapshot.clone(),
         },
@@ -427,6 +481,12 @@ impl ConfigSnapshot {
 #[derive(Debug, Clone, PartialEq)]
 pub struct MergedConfigSnapshot {
     pub path: PathBuf,
+    /// The managed-scope directory whose `config.yaml` was folded into this
+    /// snapshot, or `None` when no managed overlay was applied.
+    ///
+    /// PARITY: `managed_scope.get_managed_dir()` / `load_managed_config()`
+    /// (upstream `hermes_cli/config.py` lines 3322–3326 and 3420).
+    pub managed_dir: Option<PathBuf>,
     pub signature: Option<ConfigSignature>,
     pub pool_config: Map<String, Value>,
     pub model_config: Option<Map<String, Value>>,
@@ -436,6 +496,7 @@ pub struct MergedConfigSnapshot {
 impl MergedConfigSnapshot {
     fn from_config(
         path: PathBuf,
+        managed_dir: Option<PathBuf>,
         signature: Option<ConfigSignature>,
         config: Map<String, Value>,
     ) -> Self {
@@ -443,6 +504,7 @@ impl MergedConfigSnapshot {
         let custom_providers = get_compatible_custom_providers(&config);
         Self {
             path,
+            managed_dir,
             signature,
             pool_config: config,
             model_config,
@@ -452,6 +514,11 @@ impl MergedConfigSnapshot {
 
     pub fn path(&self) -> &Path {
         &self.path
+    }
+
+    /// Return the managed-scope directory this snapshot folded, when any.
+    pub fn managed_dir(&self) -> Option<&Path> {
+        self.managed_dir.as_deref()
     }
 
     pub fn signature(&self) -> Option<ConfigSignature> {
@@ -476,6 +543,7 @@ struct MergedCacheEntry {
     signature: Option<ConfigSignature>,
     defaults: Map<String, Value>,
     managed_overlay: Map<String, Value>,
+    managed_dir: Option<PathBuf>,
     env_snapshot: HashMap<String, Option<String>>,
     snapshot: MergedConfigSnapshot,
 }
@@ -497,7 +565,7 @@ fn snapshot_cache() -> &'static Mutex<HashMap<PathBuf, CacheEntry>> {
     &SNAPSHOT_CACHE
 }
 
-fn file_signature(path: &Path) -> Option<ConfigSignature> {
+pub(crate) fn file_signature(path: &Path) -> Option<ConfigSignature> {
     let metadata = std::fs::metadata(path).ok()?;
     let modified = metadata.modified().ok()?;
     let mtime_ns = modified.duration_since(UNIX_EPOCH).ok()?.as_nanos();
@@ -573,4 +641,48 @@ pub fn load_config_snapshot_at(path: &Path) -> ConfigSnapshot {
         },
     );
     snapshot
+}
+
+/// Walk nested config mappings by key path, returning the terminal value.
+///
+/// PARITY: `cfg_get` (upstream `hermes_cli/config.py` lines 2886–2928):
+/// a missing `cfg`, non-mapping intermediates, and missing keys fall open to
+/// the default; an explicit `null` value is returned as-is because
+/// `default` applies only when the key is *absent*.
+pub fn cfg_get(config: &Map<String, Value>, keys: &[&str], default: Value) -> Value {
+    let mut current: Value = Value::Object(config.clone());
+    for key in keys {
+        if !current.is_object() {
+            return default;
+        }
+        let Some(map) = current.as_object() else {
+            return default;
+        };
+        match map.get(*key) {
+            Some(value) => current = value.clone(),
+            None => return default,
+        }
+    }
+    current
+}
+
+/// The `openrouter` section of upstream `DEFAULT_CONFIG`
+/// (`hermes_cli/config_defaults.py` lines 813-817). Response caching is
+/// enabled by default with a 300-second TTL, so installs without a config
+/// file still send cache headers. `min_coding_score` is carried for shape
+/// fidelity; the header builders do not read it.
+pub fn openrouter_defaults() -> Map<String, Value> {
+    let mut section = Map::new();
+    section.insert("response_cache".into(), Value::Bool(true));
+    section.insert(
+        "response_cache_ttl".into(),
+        Value::Number(serde_json::Number::from(300)),
+    );
+    section.insert(
+        "min_coding_score".into(),
+        Value::Number(serde_json::Number::from_f64(0.65).expect("finite")),
+    );
+    let mut root = Map::new();
+    root.insert("openrouter".into(), Value::Object(section));
+    root
 }

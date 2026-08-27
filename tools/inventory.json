@@ -1,20 +1,20 @@
 {
  "generated_from": "/run/media/mustbearnold/Projects/Research/hermes-agent-repo",
- "generated_at": "2026-08-24T22:21:12",
+ "generated_at": "2026-08-28T09:10:25",
  "summary": {
   "modules": 3882,
   "total_lines": 1510733,
   "production_modules": 1103,
   "production_lines": 843792,
   "status_counts": {
-   "done": 73,
-   "partial": 11,
-   "missing": 3798
+   "done": 74,
+   "partial": 12,
+   "missing": 3796
   },
   "prod_status_counts": {
-   "done": 73,
-   "partial": 11,
-   "missing": 1019
+   "done": 74,
+   "partial": 12,
+   "missing": 1017
   },
   "packages": {
    "gateway": {
@@ -35,7 +35,8 @@
     "lines": 207724,
     "modules": 266,
     "status": {
-     "missing": 266
+     "missing": 265,
+     "done": 1
     }
    },
    "tests.test_tui_gateway_server": {
@@ -64,8 +65,8 @@
     "lines": 133942,
     "modules": 186,
     "status": {
-     "missing": 181,
-     "partial": 2,
+     "missing": 180,
+     "partial": 3,
      "done": 3
     }
    },
@@ -12300,7 +12301,7 @@
   "hermes_cli.managed_scope": {
    "lines": 214,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "hermes_cli.subcommands.dashboard": {
@@ -16150,7 +16151,7 @@
   "agent.portal_tags": {
    "lines": 144,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "partial",
    "is_test": false
   },
   "optional-skills.security.unbroker.scripts.config": {

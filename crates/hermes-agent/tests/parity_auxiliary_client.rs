@@ -1,20 +1,24 @@
 use hermes_agent::auxiliary_client::{
-    auxiliary_http_client_config, auxiliary_max_tokens_param, auxiliary_proxy_for_base_url,
-    auxiliary_proxy_from_env, build_auxiliary_http_client, codex_cloudflare_headers,
-    compression_threshold_for_model, fixed_temperature_for_model, is_anthropic_compatible_host,
+    apply_user_default_headers, auxiliary_default_headers, auxiliary_http_client_config,
+    auxiliary_max_tokens_param, auxiliary_proxy_for_base_url, auxiliary_proxy_from_env,
+    build_auxiliary_http_client, build_nvidia_nim_headers, build_or_headers,
+    codex_cloudflare_headers, compression_threshold_for_model, copilot_request_headers,
+    fixed_temperature_for_model, get_auxiliary_extra_body, is_anthropic_compatible_host,
     is_arcee_trinity_thinking, is_codex_gpt54_or_gpt55, is_codex_spark, is_kimi_model,
     is_model_incompatible_error, is_model_not_found_error, is_payment_error, is_rate_limit_error,
-    normalize_aux_provider, openai_client_config, openai_client_config_with_transport,
-    pool_runtime_api_key, pool_runtime_base_url, read_codex_access_token,
-    resolve_aux_task_provider_model, resolve_auxiliary_tls_verify,
-    resolve_pool_first_runtime_credentials, select_auxiliary_pool_entry, to_openai_base_url,
+    normalize_aux_provider, nous_extra_body, nous_portal_fallback_extra, openai_client_config,
+    openai_client_config_with_transport, openrouter_cache_headers, pool_runtime_api_key,
+    pool_runtime_base_url, read_codex_access_token, resolve_aux_task_provider_model,
+    resolve_auxiliary_tls_verify, resolve_pool_first_runtime_credentials,
+    resolve_provider_default_headers, select_auxiliary_pool_entry, to_openai_base_url,
     AuxiliaryError, AuxiliaryHttpClient, AuxiliaryHttpClientConfig, AuxiliaryPoolEntry,
     AuxiliaryRuntimeCredentials, AuxiliarySslVerifySetting, AuxiliaryTaskConfig,
     AuxiliaryTemperaturePolicy, AuxiliaryTlsVerify,
 };
+use parking_lot::Mutex;
 use serde_json::json;
+use std::collections::BTreeMap;
 use std::ffi::OsString;
-use std::sync::Mutex;
 
 const AUXILIARY_ENV_KEYS: &[&str] = &[
     "HTTPS_PROXY",
@@ -741,7 +745,7 @@ fn openai_client_config_preserves_explicit_retry_override() {
 // Tier: unit — mirrors agent/process_bootstrap.py build_keepalive_http_client.
 #[test]
 fn auxiliary_http_client_config_matches_keepalive_pool_and_timeout_contract() {
-    let _lock = AUXILIARY_ENV_MUTEX.lock().unwrap();
+    let _lock = AUXILIARY_ENV_MUTEX.lock();
     let _environment = EnvironmentSnapshot::new();
     clear_auxiliary_env();
 
@@ -772,7 +776,7 @@ fn auxiliary_http_client_config_matches_keepalive_pool_and_timeout_contract() {
 // Tier: unit — mirrors agent/process_bootstrap.py proxy/mount construction.
 #[test]
 fn auxiliary_http_client_config_uses_proxy_and_async_transport_precedence() {
-    let _lock = AUXILIARY_ENV_MUTEX.lock().unwrap();
+    let _lock = AUXILIARY_ENV_MUTEX.lock();
     let _environment = EnvironmentSnapshot::new();
     clear_auxiliary_env();
     unsafe { std::env::set_var("HTTPS_PROXY", "http://proxy.example:8080") };
@@ -792,7 +796,7 @@ fn auxiliary_http_client_config_uses_proxy_and_async_transport_precedence() {
 // Tier: unit — mirrors agent/auxiliary_client.py _create_openai_client kwargs merge.
 #[test]
 fn openai_client_config_with_transport_injects_default_and_preserves_explicit_client() {
-    let _lock = AUXILIARY_ENV_MUTEX.lock().unwrap();
+    let _lock = AUXILIARY_ENV_MUTEX.lock();
     let _environment = EnvironmentSnapshot::new();
     clear_auxiliary_env();
 
@@ -835,7 +839,7 @@ fn openai_client_config_with_transport_injects_default_and_preserves_explicit_cl
 // Tier: unit — mirrors agent/process_bootstrap.py build_keepalive_http_client.
 #[test]
 fn build_auxiliary_http_client_constructs_sync_and_async_variants() {
-    let _lock = AUXILIARY_ENV_MUTEX.lock().unwrap();
+    let _lock = AUXILIARY_ENV_MUTEX.lock();
     let _environment = EnvironmentSnapshot::new();
     clear_auxiliary_env();
 
@@ -882,7 +886,7 @@ fn build_auxiliary_http_client_accepts_explicit_proxy() {
 // Tier: unit — mirrors source builder's broad fail-open exception path.
 #[test]
 fn build_auxiliary_http_client_fails_open_for_unusable_ca_bundle() {
-    let _lock = AUXILIARY_ENV_MUTEX.lock().unwrap();
+    let _lock = AUXILIARY_ENV_MUTEX.lock();
     let _environment = EnvironmentSnapshot::new();
     clear_auxiliary_env();
 
@@ -897,7 +901,7 @@ fn build_auxiliary_http_client_fails_open_for_unusable_ca_bundle() {
 // Tier: unit — mirrors source's insecure verify forwarding to the client.
 #[test]
 fn build_auxiliary_http_client_accepts_explicit_insecure_tls_mode() {
-    let _lock = AUXILIARY_ENV_MUTEX.lock().unwrap();
+    let _lock = AUXILIARY_ENV_MUTEX.lock();
     let _environment = EnvironmentSnapshot::new();
     clear_auxiliary_env();
 
@@ -977,7 +981,7 @@ fn pool_first_runtime_credentials_prefer_valid_pool_then_legacy_fallback() {
 // Tier: unit — mirrors tests/run_agent/test_create_openai_client_proxy_env.py.
 #[test]
 fn auxiliary_proxy_from_env_prefers_https_then_http_then_all() {
-    let _lock = AUXILIARY_ENV_MUTEX.lock().unwrap();
+    let _lock = AUXILIARY_ENV_MUTEX.lock();
     let _environment = EnvironmentSnapshot::new();
     clear_auxiliary_env();
 
@@ -996,7 +1000,7 @@ fn auxiliary_proxy_from_env_prefers_https_then_http_then_all() {
 // Tier: unit — mirrors tests/run_agent/test_create_openai_client_proxy_env.py.
 #[test]
 fn auxiliary_proxy_from_env_normalizes_socks_alias() {
-    let _lock = AUXILIARY_ENV_MUTEX.lock().unwrap();
+    let _lock = AUXILIARY_ENV_MUTEX.lock();
     let _environment = EnvironmentSnapshot::new();
     clear_auxiliary_env();
 
@@ -1010,7 +1014,7 @@ fn auxiliary_proxy_from_env_normalizes_socks_alias() {
 // Tier: unit — mirrors tests/agent/test_auxiliary_client_proxy_env.py.
 #[test]
 fn auxiliary_proxy_for_base_url_respects_no_proxy() {
-    let _lock = AUXILIARY_ENV_MUTEX.lock().unwrap();
+    let _lock = AUXILIARY_ENV_MUTEX.lock();
     let _environment = EnvironmentSnapshot::new();
     clear_auxiliary_env();
 
@@ -1031,7 +1035,7 @@ fn auxiliary_proxy_for_base_url_respects_no_proxy() {
 // Tier: unit — mirrors tests/agent/test_ssl_verify.py.
 #[test]
 fn auxiliary_tls_verify_defaults_to_httpx_certificates() {
-    let _lock = AUXILIARY_ENV_MUTEX.lock().unwrap();
+    let _lock = AUXILIARY_ENV_MUTEX.lock();
     let _environment = EnvironmentSnapshot::new();
     clear_auxiliary_env();
 
@@ -1045,7 +1049,7 @@ fn auxiliary_tls_verify_defaults_to_httpx_certificates() {
 // tests/run_agent/test_create_openai_client_ssl_verify.py.
 #[test]
 fn auxiliary_tls_verify_uses_existing_ca_bundle_and_explicit_precedence() {
-    let _lock = AUXILIARY_ENV_MUTEX.lock().unwrap();
+    let _lock = AUXILIARY_ENV_MUTEX.lock();
     let _environment = EnvironmentSnapshot::new();
     clear_auxiliary_env();
     let ca_bundle = std::env::current_exe().unwrap();
@@ -1068,7 +1072,7 @@ fn auxiliary_tls_verify_uses_existing_ca_bundle_and_explicit_precedence() {
 // Tier: unit — mirrors tests/agent/test_auxiliary_client_ssl_verify.py.
 #[test]
 fn auxiliary_tls_verify_accepts_false_settings_and_fails_open_for_missing_ca() {
-    let _lock = AUXILIARY_ENV_MUTEX.lock().unwrap();
+    let _lock = AUXILIARY_ENV_MUTEX.lock();
     let _environment = EnvironmentSnapshot::new();
     clear_auxiliary_env();
 
@@ -1197,4 +1201,433 @@ fn codex_access_token_keeps_non_jwt_tokens_and_fails_open_on_missing_shape() {
         read_codex_access_token(false, None, Some(&json!({})), 1_700_000_000),
         None
     );
+}
+// ── Client-level headers and Portal extra_body ──────────────────────────────
+// Tier: unit — mirrors tests/agent/test_openrouter_response_cache.py,
+// tests/agent/test_user_default_headers.py, and the host-gated header chains
+// in agent/auxiliary_client.py. Every test here reads or writes the override
+// environment, so all of them take the same mutex.
+
+fn clear_openrouter_env() {
+    unsafe {
+        std::env::remove_var("HERMES_OPENROUTER_CACHE");
+        std::env::remove_var("HERMES_OPENROUTER_CACHE_TTL");
+    }
+}
+
+fn or_section(value: serde_json::Value) -> serde_json::Map<String, serde_json::Value> {
+    value.as_object().expect("openrouter section").clone()
+}
+
+#[test]
+fn openrouter_headers_default_to_enabled_ttl_300() {
+    let _lock = AUXILIARY_ENV_MUTEX.lock();
+    clear_openrouter_env();
+    let headers = build_or_headers(None);
+    assert_eq!(
+        headers.get("X-OpenRouter-Cache").map(String::as_str),
+        Some("true")
+    );
+    assert_eq!(
+        headers.get("X-OpenRouter-Cache-TTL").map(String::as_str),
+        Some("300")
+    );
+    assert_eq!(
+        headers.get("HTTP-Referer").map(String::as_str),
+        Some("https://hermes-agent.nousresearch.com")
+    );
+    assert_eq!(
+        headers.get("X-Title").map(String::as_str),
+        Some("Hermes Agent")
+    );
+    assert_eq!(
+        headers.get("X-OpenRouter-Categories").map(String::as_str),
+        Some("productivity,cli-agent")
+    );
+    // `TestDefaultConfig::test_openrouter_section_exists`: the defaults that
+    // back this fallback carry the openrouter section.
+    let defaults = hermes_agent::config::openrouter_defaults();
+    assert_eq!(defaults["openrouter"]["response_cache"], json!(true));
+    assert_eq!(defaults["openrouter"]["response_cache_ttl"], json!(300));
+    // `test_returns_fresh_dict`: each call returns an owned map, so mutating
+    // one result cannot leak into the next.
+    let mut first = build_or_headers(None);
+    first.insert("X-OpenRouter-Cache".into(), "mutated".into());
+    assert_eq!(
+        build_or_headers(None).get("X-OpenRouter-Cache").map(String::as_str),
+        Some("true")
+    );
+}
+
+#[test]
+fn openrouter_headers_ttl_default_and_bounds() {
+    let _lock = AUXILIARY_ENV_MUTEX.lock();
+    clear_openrouter_env();
+    // test_ttl_default
+    let headers = build_or_headers(Some(&or_section(json!(
+        {"response_cache": true, "response_cache_ttl": 300}
+    ))));
+    assert_eq!(
+        headers.get("X-OpenRouter-Cache-TTL").map(String::as_str),
+        Some("300")
+    );
+    // test_ttl_negative: the cache header survives, the TTL header is dropped.
+    let headers = build_or_headers(Some(&or_section(json!(
+        {"response_cache": true, "response_cache_ttl": -5}
+    ))));
+    assert_eq!(
+        headers.get("X-OpenRouter-Cache").map(String::as_str),
+        Some("true")
+    );
+    assert!(!headers.contains_key("X-OpenRouter-Cache-TTL"));
+    // Out-of-range and non-numeric TTLs are dropped the same way.
+    let headers = build_or_headers(Some(&or_section(json!(
+        {"response_cache": true, "response_cache_ttl": 86401}
+    ))));
+    assert!(!headers.contains_key("X-OpenRouter-Cache-TTL"));
+    let headers = build_or_headers(Some(&or_section(json!(
+        {"response_cache": true, "response_cache_ttl": "300"}
+    ))));
+    assert!(!headers.contains_key("X-OpenRouter-Cache-TTL"));
+    // Python truthiness: an empty string disables the cache header entirely.
+    let headers = build_or_headers(Some(&or_section(json!({"response_cache": ""}))));
+    assert!(!headers.contains_key("X-OpenRouter-Cache"));
+    assert_eq!(headers.len(), 3);
+}
+
+#[test]
+fn openrouter_headers_empty_section_disables_cache() {
+    let _lock = AUXILIARY_ENV_MUTEX.lock();
+    clear_openrouter_env();
+    // `or_config={}`: no `response_cache` key means the default is False.
+    let headers = build_or_headers(Some(&serde_json::Map::new()));
+    assert!(!headers.contains_key("X-OpenRouter-Cache"));
+    assert_eq!(headers.len(), 3);
+}
+
+#[test]
+fn openrouter_headers_invalid_env_ttl_dropped() {
+    let _lock = AUXILIARY_ENV_MUTEX.lock();
+    for ttl in ["0", "86401", "abc", "-1", "12.5"] {
+        unsafe {
+            std::env::set_var("HERMES_OPENROUTER_CACHE", "1");
+            std::env::set_var("HERMES_OPENROUTER_CACHE_TTL", ttl);
+        }
+        let headers = build_or_headers(Some(&serde_json::Map::new()));
+        assert_eq!(
+            headers.get("X-OpenRouter-Cache").map(String::as_str),
+            Some("true")
+        );
+        assert!(
+            !headers.contains_key("X-OpenRouter-Cache-TTL"),
+            "ttl {ttl} must be dropped"
+        );
+    }
+    clear_openrouter_env();
+}
+
+#[test]
+fn openrouter_headers_valid_env_ttl_boundaries() {
+    let _lock = AUXILIARY_ENV_MUTEX.lock();
+    for ttl in ["1", "300", "86400"] {
+        unsafe {
+            std::env::set_var("HERMES_OPENROUTER_CACHE", "yes");
+            std::env::set_var("HERMES_OPENROUTER_CACHE_TTL", ttl);
+        }
+        let headers = build_or_headers(Some(&serde_json::Map::new()));
+        assert_eq!(
+            headers.get("X-OpenRouter-Cache-TTL").map(String::as_str),
+            Some(ttl)
+        );
+    }
+    clear_openrouter_env();
+}
+
+#[test]
+fn openrouter_headers_falsy_env_beats_enabled_config() {
+    let _lock = AUXILIARY_ENV_MUTEX.lock();
+    unsafe { std::env::set_var("HERMES_OPENROUTER_CACHE", "0") };
+    let headers = build_or_headers(Some(&or_section(json!({"response_cache": true}))));
+    clear_openrouter_env();
+    assert!(!headers.contains_key("X-OpenRouter-Cache"));
+}
+
+#[test]
+fn openrouter_route_gate_covers_both_upstream_sites() {
+    let _lock = AUXILIARY_ENV_MUTEX.lock();
+    clear_openrouter_env();
+    // A non-openrouter route with a non-openrouter host carries nothing.
+    assert!(
+        openrouter_cache_headers(Some("other"), Some("https://example.com/v1"), None).is_empty()
+    );
+    assert!(openrouter_cache_headers(None, None, None).is_empty());
+    // `_try_openrouter`: the openrouter route attaches the headers whatever the
+    // resolved base URL is (a pool proxy included).
+    let headers =
+        openrouter_cache_headers(Some(" OpenRouter "), Some("https://proxy.example/v1"), None);
+    assert_eq!(
+        headers.get("X-OpenRouter-Cache").map(String::as_str),
+        Some("true")
+    );
+    // `_to_async_client`: any client whose host is openrouter.ai gets them too.
+    let headers =
+        openrouter_cache_headers(Some("custom"), Some("https://openrouter.ai/api/v1"), None);
+    assert_eq!(
+        headers.get("X-OpenRouter-Cache").map(String::as_str),
+        Some("true")
+    );
+    // A supplied `openrouter` section is used as-is; an empty one disables.
+    let headers = openrouter_cache_headers(
+        Some("openrouter"),
+        None,
+        Some(&or_section(
+            json!({"response_cache": true, "response_cache_ttl": 60}),
+        )),
+    );
+    assert!(
+        !openrouter_cache_headers(Some("openrouter"), None, Some(&serde_json::Map::new()))
+            .contains_key("X-OpenRouter-Cache")
+    );
+    assert_eq!(
+        headers.get("X-OpenRouter-Cache-TTL").map(String::as_str),
+        Some("60")
+    );
+}
+
+#[test]
+fn provider_default_headers_chain_kimi_copilot_nvidia_and_profile() {
+    let headers =
+        resolve_provider_default_headers(None, Some("https://api.kimi.com/coding/v1"), false);
+    assert_eq!(
+        headers.get("User-Agent").map(String::as_str),
+        Some("claude-code/0.1.0")
+    );
+
+    let headers = resolve_provider_default_headers(None, Some("https://githubcopilot.com"), true);
+    assert_eq!(
+        headers.get("Editor-Version").map(String::as_str),
+        Some("vscode/1.104.1")
+    );
+    assert_eq!(
+        headers.get("User-Agent").map(String::as_str),
+        Some("HermesAgent/1.0")
+    );
+    assert_eq!(
+        headers.get("Copilot-Integration-Id").map(String::as_str),
+        Some("vscode-chat")
+    );
+    assert_eq!(
+        headers.get("Openai-Intent").map(String::as_str),
+        Some("conversation-edits")
+    );
+    assert_eq!(
+        headers.get("x-initiator").map(String::as_str),
+        Some("agent")
+    );
+    assert_eq!(
+        headers.get("Copilot-Vision-Request").map(String::as_str),
+        Some("true")
+    );
+
+    let headers =
+        resolve_provider_default_headers(None, Some("https://integrate.api.nvidia.com/v1"), false);
+    assert_eq!(
+        headers.get("X-BILLING-INVOKE-ORIGIN").map(String::as_str),
+        Some("HermesAgent")
+    );
+
+    // Profile default headers apply for non-special hosts; an empty base
+    // carries none (the `if custom_base and custom_key` guard).
+    let headers = resolve_provider_default_headers(
+        Some("ai-gateway"),
+        Some("https://ai-gateway.vercel.sh/v1"),
+        false,
+    );
+    assert_eq!(
+        headers.get("X-Title").map(String::as_str),
+        Some("Hermes Agent")
+    );
+    assert_eq!(
+        headers.get("HTTP-Referer").map(String::as_str),
+        Some("https://hermes-agent.nousresearch.com")
+    );
+    assert!(resolve_provider_default_headers(Some("ai-gateway"), None, false).is_empty());
+    assert!(resolve_provider_default_headers(
+        Some("no-such-provider"),
+        Some("https://example.com"),
+        false
+    )
+    .is_empty());
+}
+
+#[test]
+fn copilot_headers_defaults_and_vision_toggle() {
+    let headers = copilot_request_headers(true, false);
+    assert_eq!(
+        headers.get("User-Agent").map(String::as_str),
+        Some("HermesAgent/1.0")
+    );
+    assert_eq!(
+        headers.get("x-initiator").map(String::as_str),
+        Some("agent")
+    );
+    assert!(!headers.contains_key("Copilot-Vision-Request"));
+    assert_eq!(
+        copilot_request_headers(false, false)
+            .get("x-initiator")
+            .map(String::as_str),
+        Some("user")
+    );
+    assert_eq!(copilot_request_headers(false, false).len(), 5);
+}
+
+#[test]
+fn nvidia_nim_headers_are_host_gated() {
+    assert_eq!(
+        build_nvidia_nim_headers(Some("https://integrate.api.nvidia.com/v1")).len(),
+        1
+    );
+    assert!(build_nvidia_nim_headers(Some("https://build.nvidia.com")).is_empty());
+    assert!(build_nvidia_nim_headers(Some("https://example.com")).is_empty());
+    assert!(build_nvidia_nim_headers(None).is_empty());
+}
+
+#[test]
+fn user_default_headers_win_over_provider_defaults() {
+    let config = or_section(json!({
+        "model": {"default_headers": {
+            "X-Custom": "1",
+            "X-Bool": true,
+            "X-Null": null,
+            "X-Number": 2.5,
+            "  ": "blank key survives",
+            "User-Agent": "curl/8.7.1",
+        }}
+    }));
+    let mut headers = BTreeMap::from([
+        ("User-Agent".to_string(), "OpenAI/Python 1.0".to_string()),
+        ("X-Keep".to_string(), "provider".to_string()),
+    ]);
+    apply_user_default_headers(&mut headers, Some(&config));
+
+    // User values win; untouched provider values survive.
+    assert_eq!(
+        headers.get("User-Agent").map(String::as_str),
+        Some("curl/8.7.1")
+    );
+    assert_eq!(headers.get("X-Keep").map(String::as_str), Some("provider"));
+    assert_eq!(headers.get("X-Custom").map(String::as_str), Some("1"));
+    // Non-string scalars stringify with Python casing.
+    assert_eq!(headers.get("X-Bool").map(String::as_str), Some("True"));
+    assert_eq!(headers.get("X-Number").map(String::as_str), Some("2.5"));
+    // Only an explicit null is skipped, and keys are never trimmed.
+    assert!(!headers.contains_key("X-Null"));
+    assert_eq!(
+        headers.get("  ").map(String::as_str),
+        Some("blank key survives")
+    );
+}
+
+#[test]
+fn user_extra_headers_alias_wins_over_default_headers() {
+    let config = or_section(json!({
+        "model": {
+            "default_headers": {"X-A": "from-default", "X-B": "only-default"},
+            "extra_headers": {"X-A": "from-alias"},
+        }
+    }));
+    let mut headers = BTreeMap::new();
+    apply_user_default_headers(&mut headers, Some(&config));
+
+    assert_eq!(headers.get("X-A").map(String::as_str), Some("from-alias"));
+    assert_eq!(headers.get("X-B").map(String::as_str), Some("only-default"));
+}
+
+#[test]
+fn user_headers_absent_or_non_mapping_is_a_noop() {
+    let mut headers = BTreeMap::from([("X-Keep".to_string(), "provider".to_string())]);
+    apply_user_default_headers(
+        &mut headers,
+        Some(&or_section(json!({"model": "oops_a_string"}))),
+    );
+    apply_user_default_headers(
+        &mut headers,
+        Some(&or_section(json!({"model": {"default_headers": []}}))),
+    );
+    apply_user_default_headers(&mut headers, Some(&serde_json::Map::new()));
+    assert_eq!(
+        headers,
+        BTreeMap::from([("X-Keep".to_string(), "provider".to_string())])
+    );
+}
+
+#[test]
+fn auxiliary_default_headers_compose_in_source_order() {
+    let _lock = AUXILIARY_ENV_MUTEX.lock();
+    clear_openrouter_env();
+    let config = or_section(json!({
+        "openrouter": {"response_cache": true, "response_cache_ttl": 45},
+        "model": {"default_headers": {"X-Title": "user wins"}},
+    }));
+    let headers = auxiliary_default_headers(
+        Some("openrouter"),
+        Some("https://openrouter.ai/api/v1"),
+        false,
+        Some(&config),
+    );
+    // Provider/base attribution, then the OpenRouter cache headers, then the
+    // user overlay on top.
+    assert_eq!(
+        headers.get("X-OpenRouter-Cache-TTL").map(String::as_str),
+        Some("45")
+    );
+    assert_eq!(
+        headers.get("X-OpenRouter-Categories").map(String::as_str),
+        Some("productivity,cli-agent")
+    );
+    assert_eq!(
+        headers.get("X-Title").map(String::as_str),
+        Some("user wins")
+    );
+}
+
+#[test]
+fn auxiliary_extra_body_and_portal_fallback_track_the_ambient_context() {
+    use hermes_agent::portal_tags::{conversation_tag, set_conversation_context};
+
+    let token = set_conversation_context(Some("conv-9"));
+    assert!(get_auxiliary_extra_body(false).is_empty());
+    let extra = get_auxiliary_extra_body(true);
+    let tags = extra["tags"].as_array().expect("tags array");
+    assert_eq!(tags.len(), 3);
+    assert_eq!(tags[2], json!("conversation=conv-9"));
+    // `nous_extra_body` is the same document the Portal fallback reuses.
+    assert_eq!(nous_extra_body(), extra);
+
+    // Fallback entries only for nous spellings and only for absent keys.
+    let fallback = nous_portal_fallback_extra(Some(" Nous "), false, false);
+    assert_eq!(fallback["tags"].as_array().expect("tags").len(), 3);
+    assert_eq!(fallback["session_id"], json!("conv-9"));
+    assert!(nous_portal_fallback_extra(Some("nousresearch"), true, true).is_empty());
+    assert!(nous_portal_fallback_extra(Some("openrouter"), false, false).is_empty());
+    let only_tags = nous_portal_fallback_extra(Some("nous-portal"), true, false);
+    assert!(!only_tags.contains_key("tags"));
+    assert_eq!(only_tags["session_id"], json!("conv-9"));
+
+    set_conversation_context(None);
+    let fallback = nous_portal_fallback_extra(Some("nous"), false, true);
+    assert!(fallback.contains_key("tags"));
+    assert!(!fallback.contains_key("session_id"));
+    assert!(fallback["tags"]
+        .as_array()
+        .expect("tags")
+        .iter()
+        .all(|tag| tag
+            .as_str()
+            .is_some_and(|tag| !tag.starts_with("conversation="))));
+    // The base tags are freshly computed, not a leaked snapshot.
+    let tags = nous_portal_fallback_extra(Some("nous"), false, false)["tags"].clone();
+    assert_eq!(tags.as_array().expect("tags").len(), 2);
+    set_conversation_context(token.as_deref());
+    let _ = conversation_tag("unused");
 }

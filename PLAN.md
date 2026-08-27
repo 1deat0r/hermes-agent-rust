@@ -141,7 +141,17 @@ alias normalization, max-token wire-key selection, payment/rate-limit/
 model-error predicates, and the explicit task provider/model/endpoint
 precedence resolver are ported; client construction, credential pools, async
 transport, cancellation, and fallback chains remain pending. The next
-The pure model-policy section now also covers Kimi, Arcee Trinity, Codex gpt-5.4/5.5/5.6, and Codex Spark route predicates, explicit temperature directives, and compression-threshold precedence; higher-layer client/transport integration remains pending.
+The pure model-policy section now also covers Kimi, Arcee Trinity, Codex gpt-5.4/5.5/5.6, and Codex Spark route predicates, explicit temperature directives, and compression-threshold precedence; higher-layer client/transport integration remains pending. The attribution wave now also lands `agent.portal_tags` (partial: pinned
+`hermes_cli.__version__`, ambient propagation, and the `_compress_context` turn
+wrapper remain), the whole `hermes_cli.managed_scope` module, and the
+auxiliary-client client-header/`extra_body` chain (OpenRouter response cache,
+kimi/Copilot/NVIDIA/profile gates, the user `model.default_headers` overlay,
+and the Nous Portal tag/sticky-key fallback). The next dependency-safe units
+are the remaining `agent.auxiliary_client` request/response lifecycle (xAI
+header routing and URL-inferred provider fallback included), the
+`hermes-providers` `_profile_user_agent` version injection once a hermes-cli
+crate exists, and the `AIAgent._compress_context` turn wrapper that publishes
+the ambient conversation id.
 credential-safe pool-runtime projection is also ported: runtime key/access
 token fallback, runtime/inference/base/fallback URL precedence, normalization,
 and the Nous-only inference override are explicit adapter inputs; JWT
@@ -381,14 +391,18 @@ planned dependency graph. Anthropic's explicit provider/API-key-path gates and
 The generic merged configuration seam is now implemented in
 `hermes-agent::config::load_merged_config_snapshot_at`, with
 `load_merged_config_snapshot_with_overlay_at` accepting an explicit managed
-overlay. Caller-supplied defaults, recursive merge, independent user/managed
-environment expansion, root/model/max-turns normalization, raw last-known-good
-retention, and cache invalidation on file signature, defaults, overlay, or
-referenced environment values are covered by 15 source-derived `mock` tests
-from `cargo test -p hermes-agent --test parity_config`. The overlay remains a
-read-only higher-layer input: managed-directory discovery, default-catalog
-integration, migrations, and write-back remain deferred to a future
-hermes-cli crate.
+overlay and `load_merged_config_snapshot_with_managed_scope_at` /
+`load_merged_config_snapshot_with_managed_scope` folding in the managed
+directory resolved upstream. Caller-supplied defaults, recursive merge,
+independent user/managed environment expansion, root/model/max-turns
+normalization, raw last-known-good retention, and cache invalidation on file
+signature, defaults, overlay, managed directory, or referenced environment
+values are covered by 21 source-derived `mock` tests from
+`cargo test -p hermes-agent --test parity_config`. Only
+`<managed_dir>/config.yaml` participates, matching
+`hermes_cli.managed_scope.load_managed_config`; there is no drop-in YAML glob.
+Default-catalog integration, migrations, and write-back remain deferred to a
+future hermes-cli crate.
 
 `hermes-agent::credential_store` now exposes source-shaped provider-state
 load/fallback, object-only clone, active-provider update, and locked
@@ -417,7 +431,15 @@ quarantine remain deferred rather than silently guessed.
 
 | Module / upstream surface | Status | Rust home, oracle, and evidence tier |
 |---|---|---|
-| `agent/auxiliary_client.py` (10,044 LOC) — routing, wire-parameter, task-provider precedence, pool-runtime projection, endpoint normalization, client-option, proxy/TLS policy, Codex credential-header, Codex token-selection, keepalive transport options, concrete reqwest client construction, and pool-first runtime credential sections | 🟡 | `hermes-agent::auxiliary_client`; 46 source-derived parity tests (`unit`) cover provider aliases/special forms, OpenAI-compatible max-token keyword selection, payment/quota and rate-limit classification, disjoint stale-model/capability errors, explicit/configured endpoint and key precedence, MoA unwrapping, direct OpenAI aliasing, `auto` model normalization, pool key fallback and fail-open selection states, URL precedence/normalization, the Nous-only base-URL override, MiniMax/Z.AI/Kimi OpenAI wire paths, exact Anthropic host validation, default/explicit SDK retry options, env proxy precedence/SOCKS normalization/`NO_PROXY` bypass, keepalive pool/timeout/mount options for sync and async modes, concrete sync/async reqwest client selection, explicit proxy forwarding, full PEM-bundle TLS roots, insecure TLS, fail-open construction, Codex originator/User-Agent/account-ID header shaping, pool-first/auth-store Codex token selection, pool-first runtime credential fallback, JWT expiry filtering, non-JWT fail-open behavior, pure Kimi/Arcee/Codex/Spark model-policy predicates, explicit temperature directives, and compression-threshold precedence; full SDK request/response adapters, exact max-connection/write/pool-timeout wiring, full credential-pool lifecycle/rotation, cancellation, and provider fallback chains remain pending |
+| `agent/auxiliary_client.py` (10,044 LOC) — routing, wire-parameter, task-provider precedence, pool-runtime projection, endpoint normalization, client-option, proxy/TLS policy, Codex credential-header, Codex token-selection, keepalive transport options, concrete reqwest client construction, pool-first runtime credentials, and the client-header/Portal `extra_body` sections | 🟡 | `hermes-agent::auxiliary_client`; 61 source-derived parity tests (`unit`) cover provider aliases/special forms, OpenAI-compatible max-token keyword selection, payment/quota and rate-limit classification, disjoint stale-model/capability errors, explicit/configured endpoint and key precedence, MoA unwrapping, direct OpenAI aliasing, `auto` model normalization, pool key fallback and fail-open selection states, URL precedence/normalization, the Nous-only base-URL override, MiniMax/Z.AI/Kimi OpenAI wire paths, exact Anthropic host validation, default/explicit SDK retry options, env proxy precedence/SOCKS normalization/`NO_PROXY` bypass, keepalive pool/timeout/mount options for sync and async modes, concrete sync/async reqwest client selection, explicit proxy forwarding, full PEM-bundle TLS roots, insecure TLS, fail-open construction, Codex originator/User-Agent/account-ID header shaping, pool-first/auth-store Codex token selection, pool-first runtime credential fallback, JWT expiry filtering, non-JWT fail-open behavior, pure Kimi/Arcee/Codex/Spark model-policy predicates, explicit temperature directives, compression-threshold precedence, and the host-gated provider/OpenRouter/user-header chain with the Nous Portal `extra_body` fallback; full SDK request/response adapters, exact max-connection/write/pool-timeout wiring, full credential-pool lifecycle/rotation, cancellation, xAI header routing, and provider fallback chains remain pending |
+
+### hermes-agent portal tags, managed scope, and client headers (Phase 2, upstream @ b9aa928)
+
+| Module / upstream surface | Status | Rust home, oracle, and evidence tier |
+|---|---|---|
+| `agent/portal_tags.py` (144 LOC) | 🟡 | `hermes-agent::portal_tags`; 9 parity tests (`unit`) in `crates/hermes-agent/tests/parity_portal_tags.rs` mirror `tests/agent/test_portal_tags.py` for the base tag pair, fresh-list contract, ambient-context publish/clear/reset, ambient-over-explicit precedence, empty-id falsiness, and cross-thread isolation. Pending seams: the live `hermes_cli.__version__` read is pinned to the `b9aa928` value `0.20.0`, the ContextVar→worker-thread propagation half of `test_ambient_context_propagates_via_thread_context_helper` is not yet wired to `hermes_tools::thread_context`'s snapshot factory, and `test_compress_context_preserves_ambient_context` needs the unported `AIAgent._compress_context` turn wrapper |
+| `hermes_cli/managed_scope.py` (214 LOC) | ✅ | `hermes-agent::managed_scope`; 12 parity tests (`unit`/`mock`) in `crates/hermes-agent/tests/parity_managed_scope.rs` cover the `HERMES_MANAGED_DIR`-then-`/etc/hermes` resolver tiers (including the non-existent and whitespace-only cases), the `(mtime_ns, size)` managed-file cache and its invalidation hook, single-file fail-open config loading for absent/malformed/non-mapping/empty documents, the documented `.env` subset (comment, blank, no-`=`, first-`=` partition, quote stripping), dotted leaf-key flattening with empty mappings as leaves, `is_key_managed`/`is_env_managed`, and `apply_managed_overlay` precedence including the bare-string `model` promotion. Upstream logs the same warnings through its own logger configuration; the Rust port uses the `log` facade without `exc_info` |
+| `agent/auxiliary_client.py` client-header and Portal `extra_body` sections (lines 807-911, 2369-2386, 2479-2515, 5654-5687, 6044-6066, 6926-6932, 8068-8086) | 🟡 | `hermes-agent::auxiliary_client` plus `hermes-agent::config` (`cfg_get`, `openrouter_defaults`); 14 added parity tests (`unit`) in `crates/hermes-agent/tests/parity_auxiliary_client.rs` cover `build_or_headers` attribution/base-shape/fresh-copy behavior, Python-truthiness cache gating, `[1, 86400]` TTL bounds with the bool-is-int quirk, `HERMES_OPENROUTER_CACHE`/`_TTL` env precedence and `str.isdigit()` rejection, the two-site OpenRouter route/host gate union, the kimi → Copilot → NVIDIA → profile fallback chain with `is_vision` gating, `copilot_request_headers` defaults, NVIDIA host gating (cloud host only), the `model.default_headers`/`model.extra_headers` alias merge with null-only skipping and verbatim keys, the composite provider → OpenRouter → user ordering, `get_auxiliary_extra_body`, and the Nous-spelling `tags`/`session_id` transport fallback. Concrete client construction, transport lifecycle, xAI header routing, and URL-inferred provider fallback remain pending |
 
 ### hermes-providers base (Phase 2, upstream @ b9aa928)
 
@@ -536,6 +558,9 @@ oracle tests). Upstream oracle files currently mirrored:
 - `plugins/model-providers/xiaomi/__init__.py` → `crates/hermes-providers/tests/parity_xiaomi.rs` (2 source-derived profile/registration parity tests; `unit`; no dedicated upstream plugin-profile test module)
 - `plugins/model-providers/zai/__init__.py` + `tests/plugins/model_providers/test_zai_profile.py` + provider wiring/transport cases → `crates/hermes-providers/tests/parity_zai.rs` (18 source-derived profile/GLM-gating/endpoint/cache parity tests; `unit`/`mock`; API-key fingerprinting, cached endpoint validation, endpoint-state serialization, and cache-aware URL precedence are covered; CLI credential/model-picker and provider transport integration remain future higher-layer oracles)
 
+- `agent/portal_tags.py` + `tests/agent/test_portal_tags.py` → `crates/hermes-agent/tests/parity_portal_tags.rs` (9 source-derived ambient-context/tag-shape/precedence/fresh-list/thread-isolation parity tests; `unit`; the ContextVar propagation and `_compress_context` turn-wrapper cases remain pending seams)
+- `hermes_cli/managed_scope.py` + `tests/hermes_cli/test_managed_scope.py` + `test_managed_scope_config.py` + `test_managed_scope_overlay.py` + `test_managed_scope_env.py` → `crates/hermes-agent/tests/parity_managed_scope.rs` (12 resolver/cache/loader/key/overlay parity tests; `unit`/`mock`) and `crates/hermes-agent/tests/parity_config.rs` (6 merged-loader managed-scope parity tests; `mock`)
+- `agent/auxiliary_client.py` header/extra-body sections + `tests/agent/test_openrouter_response_cache.py` + `tests/agent/test_user_default_headers.py` → `crates/hermes-agent/tests/parity_auxiliary_client.rs` (14 added client-header, OpenRouter cache, Portal `extra_body`, and Nous fallback parity tests; `unit`)
 - `plugins/model-providers/nous/__init__.py` + `tests/providers/test_provider_profiles.py` + `tests/agent/transports/test_chat_completions.py` → `crates/hermes-providers/tests/parity_nous.rs` (3 source-derived profile/registration/Portal-hook parity tests; `unit`; pinned CLI version and ambient conversation propagation remain future higher-layer seams)
 - `plugins/model-providers/ollama-cloud/__init__.py` + `tests/plugins/model_providers/test_ollama_cloud_profile.py` → `crates/hermes-providers/tests/parity_ollama_cloud.rs` (3 source-derived profile/reasoning-wire parity tests; `unit`; `/api/show` capability probing, dynamic catalog merging, and CLI credential/model-picker cases remain future higher-layer oracles)
 - `plugins/model-providers/qwen-oauth/__init__.py` + `tests/providers/test_provider_profiles.py` + `tests/providers/test_profile_wiring.py` + `tests/providers/test_transport_parity.py` → `crates/hermes-providers/tests/parity_qwen_oauth.rs` (4 source-derived profile/message-normalization/request-hook parity tests; `unit`; Qwen CLI OAuth credential resolution and full transport integration remain future higher-layer oracles)
@@ -546,6 +571,65 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 ## 7. Session log
 
+- 2026-08-28 (session 4d1): Finished the Portal-attribution wave that was
+  left uncommitted and one test-red in the working tree, correcting three
+  upstream-fidelity divergences found by the line-by-line review.
+  (1) `hermes-agent::config`'s managed-scope loader had invented a sorted
+  `*.yaml` drop-in merge; upstream `managed_scope.load_managed_config` folds in
+  exactly one file, `<managed_dir>/config.yaml`, fail-open on absent,
+  malformed, and non-mapping documents. The whole upstream module is now
+  ported as `hermes-agent::managed_scope` (`get_managed_dir` with the
+  `HERMES_MANAGED_DIR`-then-`/etc/hermes` tiers and the pytest guard, the
+  `(mtime_ns, size)` managed cache plus `invalidate_managed_cache`,
+  `load_managed_config`/`load_managed_env` with their explicit-directory
+  forms, `_parse_env`, dotted `managed_config_keys`/`is_key_managed`/
+  `is_env_managed`, and `apply_managed_overlay` with the bare-string `model`
+  promotion), and `MergedConfigSnapshot` now records the resolved
+  `managed_dir` instead of the load path's parent.
+  (2) `_apply_user_default_headers` had gained blank-key trimming and
+  null-to-`"None"` rendering; the port now matches upstream exactly (only an
+  explicit `null` is skipped, keys are verbatim, and the non-empty
+  `model.extra_headers` alias wins over `model.default_headers`).
+  (3) The OpenRouter cache gate used a substring host test and a
+  provider-only predicate; it now reproduces upstream's two real sites —
+  the `_try_openrouter` route gate and the `_to_async_client`
+  `openrouter.ai` host gate — through `base_url_host_matches`, with the
+  provider/base/`openrouter`-section inputs kept explicit.
+  `agent.portal_tags` is ported as its own module (ContextVar → thread-local,
+  pinned `0.20.0` version, fresh-list contract) with `_nous_extra_body`,
+  `get_auxiliary_extra_body`, and the `_create_transport_client`
+  tags/`session_id` fallback living in `hermes-agent::auxiliary_client`; the
+  earlier `unwrap_or_or_default` typo and the dead `json_truthy` probe in that
+  fallback were fixed during review.
+  Tests: new `parity_portal_tags.rs` (9) and `parity_managed_scope.rs` (12),
+  6 managed-scope cases replacing the two invented ones in `parity_config.rs`
+  (21 total), and 14 header/`extra_body` cases in
+  `parity_auxiliary_client.rs` (61 total). Exact checks:
+  `/home/mustbearnold/.cargo/bin/cargo test -p hermes-agent --test
+  parity_auxiliary_client --test parity_config --test parity_portal_tags
+  --test parity_managed_scope --test parity_credential_pool --test
+  parity_credential_store` (61 + 21 + 9 + 12 + 66 + 19 passed),
+  `/home/mustbearnold/.cargo/bin/cargo build --workspace`,
+  `/home/mustbearnold/.cargo/bin/cargo test --workspace -- --test-threads=1`
+  (1,197 passed, 5 ignored), targeted
+  `/home/mustbearnold/.cargo/bin/rustfmt --edition 2021` on the eight changed
+  files with `--check` clean, targeted
+  `/home/mustbearnold/.cargo/bin/cargo clippy -p hermes-agent --all-targets`
+  reduced to the two pre-existing `auxiliary_client` `too_many_arguments` and
+  `needless_lifetimes` diagnostics, and `git diff --check`.
+  Ledger: `tools/port_status.json` adds `agent.portal_tags` (partial) and
+  `hermes_cli.managed_scope` (done); regeneration gives 74 done / 12 partial /
+  3,796 missing tracked modules and 74 done / 12 partial / 1,017 missing
+  production modules: 1.91% all-tracked strict completion and 6.71%
+  production-only. Approved divergences recorded here for sign-off: the
+  compile-time-pinned Portal client version, the thread-local (not
+  context-propagating) ambient conversation id, and Python-`repr` divergence
+  for the degenerate list/dict header-value shapes. The next dependency-safe
+  units are the remaining `agent.auxiliary_client` request/response lifecycle
+  (xAI header routing, URL-inferred provider fallback), the
+  `hermes-providers` `_profile_user_agent` CLI-version injection, and the
+  `AIAgent._compress_context` turn wrapper that publishes the ambient
+  conversation id.
 - 2026-08-24 (session 4d0): Continued Phase 2 through two parallel
   dependency-safe leaves. Added pure auxiliary model-policy predicates and
   explicit temperature/threshold semantics for Kimi, Arcee Trinity, Codex

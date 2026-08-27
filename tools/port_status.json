@@ -11,7 +11,14 @@
  "agent.credential_pool": {
     "status": "partial"
   },
+ "agent.portal_tags": {
+    "status": "partial"
+  },
  "agent.session_activity": {
+    "status": "done"
+  },
+
+  "hermes_cli.managed_scope": {
     "status": "done"
   },
   "hermes_constants": {
