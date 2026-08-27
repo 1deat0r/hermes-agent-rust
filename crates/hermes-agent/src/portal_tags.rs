@@ -11,16 +11,21 @@
 //! Tag shape (sent in OpenAI-compatible `extra_body["tags"]`):
 //! `["product=hermes-agent", "client=hermes-client-v<version>"]`.
 //!
-//! DOCUMENTED DIVERGENCE (approved pending hermes-cli crate): upstream reads
-//! the version live from `hermes_cli.__version__` on every call
-//! (`_hermes_version`, upstream lines 85-95) so a hot-reloaded or bumped
-//! release is picked up without a restart. There is no `hermes-cli` crate in
-//! this workspace yet, so [`HERMES_VERSION`] is pinned to the value at the
-//! `b9aa928` oracle (`"0.20.0"`, `hermes_cli/__init__.py` line 17) and
-//! `hermes_client_tag` keeps upstream's compute-at-call-time shape so the
-//! seam only has to replace the constant's owner. Upstream's `"unknown"`
-//! import-failure fallback (line 95) has no Rust analogue: the version is a
-//! compile-time constant here, so the branch is unreachable.
+//! Version ownership: upstream reads the version live from
+//! `hermes_cli.__version__` on every call (`_hermes_version`, upstream lines
+//! 85-95) so a hot-reloaded or bumped release is picked up without a restart.
+//! [`hermes_version`] reproduces that call-time lookup against a runtime slot
+//! that the CLI owner publishes with [`set_hermes_version`]; the slot's
+//! fallback is [`HERMES_VERSION`], the `b9aa928` value of
+//! `hermes_cli/__init__.py` line 17 (`hermes_cli::VERSION` in this workspace).
+//!
+//! DOCUMENTED DIVERGENCE: upstream's `except Exception: return "unknown"`
+//! branch cannot occur here — the owner either publishes a version or the
+//! pinned constant answers, so no import can fail. The pinned constant is also
+//! the only cross-layer link: `hermes-agent` sits below `hermes-cli` in the
+//! planned crate graph, so it cannot import the CLI's copy and both sides carry
+//! the same literal, asserted by `parity_cli_package` and
+//! `parity_portal_tags` together.
 //!
 //! Ambient propagation: upstream stores the id in a `ContextVar`, so
 //! `tools.thread_context.propagate_context_to_thread` carries it onto worker
@@ -42,8 +47,46 @@ use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
 
 /// PARITY: `hermes_cli.__version__` at upstream `b9aa928`
-/// (`hermes_cli/__init__.py` line 17).
+/// (`hermes_cli/__init__.py` line 17). The fallback [`hermes_version`] returns
+/// until the CLI owner publishes a different one.
 pub const HERMES_VERSION: &str = "0.20.0";
+
+thread_local! {
+    /// The published release version, mirroring the live module attribute the
+    /// source reads on every call. Process-wide ownership belongs to the CLI
+    /// entry point; a thread-local slot keeps the read lock-free and matches
+    /// the per-process visibility a reloaded module attribute has.
+    static PUBLISHED_VERSION: RefCell<Option<String>> = const { RefCell::new(None) };
+}
+
+/// Return the version to attribute this request to.
+///
+/// PARITY: `_hermes_version` (upstream lines 85-95): computed at call time so a
+/// bumped or hot-reloaded release is reflected without restarting long-running
+/// gateway processes.
+pub fn hermes_version() -> String {
+    PUBLISHED_VERSION
+        .with(|slot| slot.borrow().clone())
+        .unwrap_or_else(|| HERMES_VERSION.to_string())
+}
+
+/// Publish the release version the Portal tags should carry and return the
+/// previous value.
+///
+/// PARITY: the owner side of `hermes_cli.__version__` — `scripts/release.py`
+/// rewrites that single string, and every Portal request picks up the new tag
+/// on the next call. Passing `None` (or an empty string) restores the pinned
+/// fallback.
+pub fn set_hermes_version(version: Option<&str>) -> Option<String> {
+    let next = version
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(str::to_string);
+    PUBLISHED_VERSION.with(|slot| {
+        let mut current = slot.borrow_mut();
+        std::mem::replace(&mut *current, next)
+    })
+}
 
 thread_local! {
     /// PARITY: `_conversation_id: ContextVar[Optional[str]]` (upstream
@@ -95,9 +138,11 @@ pub fn get_conversation_context() -> Option<String> {
 /// Return the `client=...` tag for Nous Portal requests.
 ///
 /// PARITY: `hermes_client_tag` (upstream lines 98-103). Format:
-/// `client=hermes-client-v<MAJOR>.<MINOR>.<PATCH>`.
+/// `client=hermes-client-v<MAJOR>.<MINOR>.<PATCH>`. The version is read through
+/// [`hermes_version`] on every call, as the source's "do NOT pre-compute these
+/// as module-level constants in the consumers" rule requires.
 pub fn hermes_client_tag() -> String {
-    format!("client=hermes-client-v{HERMES_VERSION}")
+    format!("client=hermes-client-v{}", hermes_version())
 }
 
 /// Return the `conversation=...` tag for a Hermes session/conversation.

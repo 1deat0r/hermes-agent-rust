@@ -1,20 +1,20 @@
 {
  "generated_from": "/run/media/mustbearnold/Projects/Research/hermes-agent-repo",
- "generated_at": "2026-08-28T10:09:30",
+ "generated_at": "2026-08-28T10:19:28",
  "summary": {
   "modules": 3882,
   "total_lines": 1510733,
   "production_modules": 1103,
   "production_lines": 843792,
   "status_counts": {
-   "done": 84,
-   "partial": 13,
-   "missing": 3785
+   "done": 86,
+   "partial": 14,
+   "missing": 3782
   },
   "prod_status_counts": {
-   "done": 84,
-   "partial": 13,
-   "missing": 1006
+   "done": 86,
+   "partial": 14,
+   "missing": 1003
   },
   "packages": {
    "gateway": {
@@ -35,8 +35,9 @@
     "lines": 207724,
     "modules": 266,
     "status": {
-     "missing": 265,
-     "done": 1
+     "missing": 262,
+     "done": 3,
+     "partial": 1
     }
    },
    "tests.test_tui_gateway_server": {
@@ -20712,7 +20713,7 @@
   "hermes_cli.__init__": {
    "lines": 92,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "partial",
    "is_test": false
   },
   "hermes_cli.subcommands.claw": {
@@ -22852,7 +22853,7 @@
   "hermes_cli.input_sanitize": {
    "lines": 70,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "hermes_cli.vercel_auth": {
@@ -24814,7 +24815,7 @@
   "hermes_cli.build_info": {
    "lines": 51,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "tests.agent.test_ssl_ca_guard": {

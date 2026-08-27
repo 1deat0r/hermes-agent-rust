@@ -507,6 +507,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "hermes-cli"
+version = "0.1.0"
+dependencies = [
+ "fancy-regex",
+ "tempfile",
+]
+
+[[package]]
 name = "hermes-constants"
 version = "0.1.0"
 dependencies = [

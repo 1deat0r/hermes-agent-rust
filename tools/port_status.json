@@ -51,6 +51,15 @@
     "status": "done"
   },
 
+  "hermes_cli.__init__": {
+    "status": "partial"
+  },
+  "hermes_cli.build_info": {
+    "status": "done"
+  },
+  "hermes_cli.input_sanitize": {
+    "status": "done"
+  },
   "hermes_cli.managed_scope": {
     "status": "done"
   },

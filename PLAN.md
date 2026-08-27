@@ -99,7 +99,7 @@ Hermes-Agent-Rust/
     hermes-agent/          # run_agent.py + agent/            (Phase 2; auxiliary_client routing/model-policy slice partial, client/transport surface pending)
     hermes-tools/          # tools/ (✅ registry, schema_sanitizer, ansi_strip, clarify_tool, session_search_tool, file_safety, read_extract, file_state, path_security, binary_extensions, budget_config, tool_result_storage, tts_text_normalize)   (Phase 2)
     hermes-batch/          # batch_runner.py, trajectory_compressor.py, mini_swe_runner.py (Phase 2)
-    hermes-cli/            # cli.py + hermes_cli/             (Phase 3, bin `hermes`)
+    hermes-cli/            # hermes_cli/ leaf modules (opened 2026-08-28 session 4d6: `__init__` version/release-date, `build_info`, `input_sanitize`; bin `hermes` and the CLI entry points remain Phase 3)
     hermes-gateway/        # gateway/                         (Phase 4)
     hermes-platforms/      # plugins/                         (Phase 4)
     hermes-cron/           # cron/                            (Phase 4)
@@ -462,6 +462,16 @@ quarantine remain deferred rather than silently guessed.
 | `agent/manual_compression_feedback.py` (120 LOC) | ✅ | `hermes-agent::manual_compression_feedback`; 7 parity tests (`unit`) mirror `tests/agent/test_manual_compression_feedback.py` (forced redaction of the provider failure reason at the UI boundary even with global redaction disabled, fallback dropped-count wording with the arrow headline) plus every untested branch: aborted/noop/compressed headline selection, the `(unchanged)` token line versus the grouped `{:,}` arrow form, the denser-summary note gate, the `int`-but-not-`bool` dropped-count guard falling back to the message delta, blank/non-string failure reasons, the `compression_state=None` shape, and the confirmed-holder versus unconfirmed-acquire lock-skip wording |
 | `agent/ssl_verify.py` (63 LOC) | ✅ | hosted in `hermes-agent::auxiliary_client` (same arrangement as `agent/redact` in `hermes-logging`); `resolve_auxiliary_tls_verify` plus the pure `auxiliary_tls_verify_resolution` and `AuxiliaryTlsVerifyWarning` carry the whole contract — insecure coercion, the explicit/`HERMES_CA_BUNDLE`/`SSL_CERT_FILE`/`REQUESTS_CA_BUNDLE`/`CURL_CA_BUNDLE` precedence with the stale-explicit-path rule, `~` expansion, the fail-open to default certificates, and both operator warnings byte-for-byte including the `"a custom provider endpoint"` placeholder. 4 parity tests (`unit`/`mock`) in `parity_auxiliary_client.rs` mirror `tests/agent/test_ssl_verify.py` and the client-side ssl_verify suites |
 
+### hermes-cli leaf modules (Phase 3 crate opened early, upstream @ b9aa928)
+
+The crate opened as a dependency-free leaf so upstream's own layering is honoured where it can be: `hermes_cli/__init__.py` is imported by `agent/` upstream, and `agent/portal_tags.py` reads the live `hermes_cli.__version__` on every call. Because the planned crate graph puts `hermes-cli` above `hermes-agent`, the version reaches the agent layer through a published-at-call-time slot (`portal_tags::set_hermes_version` / `hermes_version`) rather than an upward import, and both sides carry the same `b9aa928` literal, asserted from each crate's own suite.
+
+| Module / upstream surface | Status | Rust home, oracle, and evidence tier |
+|---|---|---|
+| `hermes_cli/__init__.py` (92 LOC) | 🟡 | `hermes_cli::{VERSION, RELEASE_DATE}`; 1 parity test (`unit`) pins the `b9aa928` values `0.20.0` / `2026.8.3`. PENDING SEAM: `_ensure_utf8()` has no Rust analogue — a Rust binary writes bytes to its streams and cannot raise `UnicodeEncodeError`, so the reconfigure/reopen ladder and the `PYTHONUTF8`/`PYTHONIOENCODING` child nudges are only meaningful once the CLI entry point exists (and the latter two belong to whatever Python subprocesses the port still spawns) |
+| `hermes_cli/build_info.py` (51 LOC) | ✅ | `hermes_cli::build_info`; 4 parity tests (`unit`) mirror `tests/hermes_cli/test_build_info.py` (absent file, `short=12/0/-1` truncation) and the module's documented error tolerance (blank file, directory-instead-of-file) plus code-point-based truncation. The `__file__`-relative default path becomes the compile-time workspace root with a `HERMES_BUILD_SHA_FILE` override, and every reader has an explicit-path form standing in for the upstream `_BUILD_SHA_FILE` patch target |
+| `hermes_cli/input_sanitize.py` (70 LOC) | ✅ | `hermes_cli::input_sanitize`; 7 parity tests (`unit`) mirror `tests/hermes_cli/test_input_sanitize.py` in full (plain text, embedded `literal[200~tag`, the #62557 CJK corruption tail, preserved trailing punctuation, the combined sanitizer) plus the source-derived canonical/ESC/caret wrapper forms, the boundary-only degraded strip, the `min_repeats` threshold, and the dangling-`[` trim. The four patterns keep their `(?=$\|[…])` lookaheads, so this crate depends on `fancy-regex` exactly as `hermes-tools` does, and the run collapses markers on code points rather than bytes |
+
 ### hermes-providers base (Phase 2, upstream @ b9aa928)
 
 | Module / upstream surface | Status | Rust home, oracle, and evidence tier |
@@ -590,6 +600,9 @@ oracle tests). Upstream oracle files currently mirrored:
 - `agent/lmstudio_reasoning.py` + `tests/agent/test_lmstudio_reasoning.py` → `crates/hermes-agent/tests/parity_lmstudio_reasoning.rs` (8 parity tests; `unit`)
 - `agent/reasoning_summaries.py` + `tests/agent/test_reasoning_summaries.py` → `crates/hermes-agent/tests/parity_reasoning_summaries.rs` (7 parity tests; `unit`, full oracle coverage)
 - `agent/interrupt_compat.py` + `tests/agent/test_interrupt_compat.py` → `crates/hermes-agent/tests/parity_interrupt_compat.rs` (6 parity tests; `unit`; the `run_agent.AIAgent` inheritance and `tools.delegate_tool` subagent cases remain with those modules)
+- `hermes_cli/build_info.py` + `tests/hermes_cli/test_build_info.py` → `crates/hermes-cli/tests/parity_build_info.rs` (4 parity tests; `unit`)
+- `hermes_cli/input_sanitize.py` + `tests/hermes_cli/test_input_sanitize.py` → `crates/hermes-cli/tests/parity_input_sanitize.rs` (7 parity tests; `unit`, full oracle coverage)
+- `hermes_cli/__init__.py` → `crates/hermes-cli/tests/parity_cli_package.rs` (1 version/release-date test; `unit`; upstream has no oracle for the package marker, and `_ensure_utf8` is recorded as the pending seam)
 - `agent/portal_tags.py` + `tests/agent/test_portal_tags.py` → `crates/hermes-agent/tests/parity_portal_tags.rs` (12 source-derived ambient-context/tag-shape/precedence/fresh-list/isolation/propagation parity tests; `unit`; only the `_compress_context` turn-wrapper case remains pending, with the ContextVar propagation half covered through the module's captured-context seam)
 - `hermes_cli/managed_scope.py` + `tests/hermes_cli/test_managed_scope.py` + `test_managed_scope_config.py` + `test_managed_scope_overlay.py` + `test_managed_scope_env.py` → `crates/hermes-agent/tests/parity_managed_scope.rs` (12 resolver/cache/loader/key/overlay parity tests; `unit`/`mock`) and `crates/hermes-agent/tests/parity_config.rs` (6 merged-loader managed-scope parity tests; `mock`)
 - `agent/auxiliary_client.py` header/extra-body sections + `tests/agent/test_openrouter_response_cache.py` + `tests/agent/test_user_default_headers.py` → `crates/hermes-agent/tests/parity_auxiliary_client.rs` (14 added client-header, OpenRouter cache, Portal `extra_body`, and Nous fallback parity tests; `unit`)
@@ -603,6 +616,36 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 ## 7. Session log
 
+- 2026-08-28 (session 4d6): Opened the `hermes-cli` crate early as a
+  dependency-free leaf and landed its three smallest oracle-backed modules —
+  `hermes_cli/__init__.py` (version + release date),
+  `hermes_cli/build_info.py` (`get_build_sha`), and
+  `hermes_cli/input_sanitize.py` (bracketed-paste wrapper strip, desktop
+  corruption-tail collapse, combined prompt sanitizer) — 12 new parity tests in
+  `crates/hermes-cli/tests/`. `cargo clippy -p hermes-cli --all-targets` is
+  clean on first run; the crate needs `fancy-regex` because two of the four
+  upstream patterns use `(?=$|[\s…])` lookaheads that the plain `regex` crate
+  cannot express.
+  The unit also removed a real fidelity gap on the Portal side: `hermes_client_tag`
+  now reads the version through `hermes_version()` on every call, matching
+  upstream's explicit "do NOT pre-compute these as module-level constants in the
+  consumers" rule (`agent/portal_tags.py` lines 28-31, 85-103), with
+  `set_hermes_version` as the owner slot the CLI entry point will publish into.
+  A new `parity_portal_tags` case proves a published version changes the tag
+  without a restart. The `"unknown"` import-failure branch is recorded as
+  structurally unreachable rather than faked.
+  Ledger: `hermes_cli.build_info` and `hermes_cli.input_sanitize` added as
+  `done`, `hermes_cli.__init__` as `partial` (`_ensure_utf8` pending the CLI
+  entry point), `agent.portal_tags` unchanged (`_compress_context` wrapper and
+  fan-out adoption remain). Regeneration: 86 done / 14 partial / 3,782 tracked
+  (**2.22%**) and 86 done / 14 partial / 1,003 production (**7.80%**). Serialized
+  workspace tests pass 1,276 with 5 intentional ignores; `cargo build
+  --workspace`, targeted `rustfmt --check`, `cargo clippy -p hermes-agent
+  --all-targets` (two pre-existing diagnostics), and `git diff --check` are
+  green. Next same-shape candidates: `hermes_cli.timeouts`,
+  `hermes_cli.model_search`, `hermes_cli.lifecycle`,
+  `hermes_cli.toolset_validation`, and `tools.browser_camofox_state` /
+  `tools.focus_pane_tool`.
 - 2026-08-28 (session 4d5): Promoted `agent.ssl_verify` to done and recorded
   the first explicit non-port decision.
   `agent/ssl_verify.py` was already ported inside

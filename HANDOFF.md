@@ -1,6 +1,6 @@
 # Hermes Agent Rust — Next-session handoff
 
-Date: 2026-08-28 (Pacific/Auckland), session 4d4.
+Date: 2026-08-28 (Pacific/Auckland), session 4d6.
 
 ## Resume point
 
@@ -8,16 +8,21 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
-Current branch/HEAD: `main` is aligned with `origin/main` at
-`2747f77` (`feat(agent): complete ssl_verify contract and record jiter non-port
-@ b9aa928`), verified with `git ls-remote origin refs/heads/main`; the
-follow-up `handoff:` commit records that line. Published history before it:
-`fee2b4f`
+Current branch/HEAD: `main` carries the `hermes-cli` crate-opening unit
+committed with this documentation checkpoint; published history before it is
+`2747f77` (+ `2b28e63` handoff), `fee2b4f`
 (+ `27c1329` handoff), `91b472e` (+ `c63f3a3`), `8a9e8f3` (+ `0aea517`),
 `448a4f6` (+ `a284322`). Confirm with
 `git ls-remote origin refs/heads/main` after the push.
 
-Latest synchronized source unit: `agent.ssl_verify` promoted to `done` — the
+Latest synchronized source unit: the `hermes-cli` crate opened as a
+dependency-free leaf with `hermes_cli/__init__.py` (version + release date,
+`_ensure_utf8` pending), `hermes_cli/build_info.py` (done), and
+`hermes_cli/input_sanitize.py` (done) — plus `agent.portal_tags` switching to a
+call-time version read, which removes the last "pre-computed constant" drift
+against upstream's explicit rule. Production strict completion moves 7.62% →
+7.80% (86 done).
+Previous synchronized source unit: `agent.ssl_verify` promoted to `done` — the
 TLS resolver in `hermes-agent::auxiliary_client` regained the source's
 `base_url` input and both operator warnings, exposed through the pure
 `auxiliary_tls_verify_resolution` so the byte-exact text is asserted.
@@ -238,6 +243,22 @@ GitHub `11245d8` (`plugins.model-providers.arcee.__init__`), local `ec9db5aa`
 recorded above with the config/Z.AI source commit and its verified tree.
 
 ## What landed this session
+
+Session 4d6 stopped waiting on the absent CLI crate and opened it. `hermes-cli`
+is a dependency-free leaf holding the three smallest oracle-backed
+`hermes_cli/` modules; two reached `done` and the package marker is `partial`
+because `_ensure_utf8()` genuinely has no Rust analogue until there is a CLI
+entry point to protect.
+
+Two fidelity points that changed the code, not just the tests:
+`hermes_client_tag` now reads the version through `hermes_version()` on every
+call — upstream's module docstring explicitly forbids pre-computing the tag in
+consumers because the release string can change at runtime, so the previous
+compile-time constant was a contract violation waiting for the first hot
+reload; and the bracketed-paste patterns need `fancy-regex`, because two of the
+four use `(?=$|[\s…])` lookaheads the plain `regex` crate cannot express (a
+silent downgrade there would leave `[201~` markers in user prompts).
+
 
 Session 4d4 kept the batch shape: four more self-contained `agent/` modules,
 each written red-first against its own upstream test module, plus
@@ -893,21 +914,22 @@ tools/inventory.sh` and `python3 tools/conversion_ledger.py`, with
 
 `CONVERSION-LEDGER.md` is generated and contains one row for every 3,882 upstream inventory modules: 1,103 production tasks plus 2,779 oracle/test tasks. Only `done` counts toward completion.
 
-- All tracked modules: 84 done / 13 partial / 3,785 missing = **2.16%**.
-- Production modules: 84 done / 13 partial / 1,006 missing = **7.62%**.
+- All tracked modules: 86 done / 14 partial / 3,782 missing = **2.22%**.
+- Production modules: 86 done / 14 partial / 1,003 missing = **7.80%**.
 
-The thirteen partial production rows are `agent.auxiliary_client`,
+The fourteen partial production rows are `agent.auxiliary_client`,
 `agent.credential_pool`, `agent.interrupt_compat`, `agent.portal_tags`,
-`hermes_constants`, `providers.base`, `providers.__init__`,
+`hermes_cli.__init__`, `hermes_constants`, `providers.base`, `providers.__init__`,
 `tools.credential_files`, `tools.delegation_output_schema`,
 `tools.threat_patterns`, `tools.todo_tool`, `tools.tool_backend_helpers`,
 and `tools.tool_output_limits`. Their closure
-seams are listed in the ledger and PLAN.md. Sessions 4d3/4d4 added nine `done` rows
+seams are listed in the ledger and PLAN.md. Sessions 4d3/4d4/4d6 added twelve `done` rows
 (`agent.errors`, `agent.message_content`, `agent.tool_result_classification`,
 `agent.lmstudio_reasoning`, `agent.reasoning_summaries`,
 `agent.turn_retry_state`, `agent.verify_hooks`, `agent.kanban_stop`,
-`agent.manual_compression_feedback`) plus the `agent.interrupt_compat`
-partial.
+`agent.manual_compression_feedback`, `hermes_cli.build_info`,
+`hermes_cli.input_sanitize`) plus the `agent.interrupt_compat`,
+`agent.portal_tags`, and `hermes_cli.__init__` partials.
 
 Regenerate with:
 
@@ -920,6 +942,17 @@ The strict production formula is `done production modules / 1,103`; partial rows
 
 ## Fidelity notes
 
+- Session 4d6: `hermes-cli` is a leaf crate that must not import `hermes-agent`,
+  so the Portal version is published into a per-process slot
+  (`set_hermes_version`) instead of the source's `from hermes_cli import
+  __version__`; the literal therefore exists in two crates and is asserted from
+  both suites. `hermes_cli/build_info` resolves its file from the compile-time
+  workspace root with a `HERMES_BUILD_SHA_FILE` override plus explicit-path
+  readers, because a Rust library has no `__file__`. `input_sanitize`
+  collapses/compares on code points, matching Python slicing for the CJK
+  corruption sample, and its `$`-anchored lookaheads rely on `fancy-regex`
+  semantics (end-or-before-trailing-newline), the same engine choice
+  `hermes-tools` already made.
 - Session 4d5: `agent.ssl_verify`'s two `logger.warning` calls are part of its
   contract (the fail-open is only honest if the operator hears about it), so the
   port keeps them as `AuxiliaryTlsVerifyWarning::text()` and logs through
@@ -1133,6 +1166,20 @@ passed 3/3. Targeted rustfmt passed; concrete Z.AI HTTP/cache and full merged
 CLI config behavior remain deferred.
 
 ## Verification evidence
+
+For the current CLI-crate unit, `/home/mustbearnold/.cargo/bin/cargo test -p
+hermes-cli --test parity_build_info --test parity_input_sanitize --test
+parity_cli_package` passed 4 + 7 + 1 tests and
+`/home/mustbearnold/.cargo/bin/cargo test -p hermes-agent --test
+parity_portal_tags` passed 13 tests including the new published-version case.
+`/home/mustbearnold/.cargo/bin/cargo build --workspace` passed, the required
+serialized `/home/mustbearnold/.cargo/bin/cargo test --workspace --
+--test-threads=1` passed with 1,276 tests and the same 5 intentionally ignored
+doc tests, `cargo clippy -p hermes-cli --all-targets` was clean on first run,
+`cargo clippy -p hermes-agent --all-targets` stayed at the two pre-existing
+`auxiliary_client` diagnostics, targeted rustfmt `--check` passed, and
+`git diff --check` was clean.
+
 
 For the current `agent.ssl_verify` promotion,
 `/home/mustbearnold/.cargo/bin/cargo test -p hermes-agent --test

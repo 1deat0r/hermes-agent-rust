@@ -6,9 +6,9 @@
 // the same clean context an isolated Python `Context` provides.
 
 use hermes_agent::portal_tags::{
-    conversation_tag, get_conversation_context, hermes_client_tag, nous_portal_tags,
-    propagate_conversation_context_to_thread, reset_conversation_context, set_conversation_context,
-    ConversationContext, HERMES_VERSION,
+    conversation_tag, get_conversation_context, hermes_client_tag, hermes_version,
+    nous_portal_tags, propagate_conversation_context_to_thread, reset_conversation_context,
+    set_conversation_context, set_hermes_version, ConversationContext, HERMES_VERSION,
 };
 use serde_json::{Map, Value};
 
@@ -26,6 +26,7 @@ fn nous_portal_tags_contains_product_and_client() {
 #[test]
 fn tag_shapes_are_pinned_to_the_b9aa928_version() {
     assert_eq!(HERMES_VERSION, "0.20.0");
+    assert_eq!(hermes_version(), HERMES_VERSION);
     assert_eq!(hermes_client_tag(), "client=hermes-client-v0.20.0");
     assert_eq!(conversation_tag("abc"), "conversation=abc");
 }
@@ -253,4 +254,23 @@ fn turn_publish_and_restore_round_trip() {
     assert_eq!(get_conversation_context().as_deref(), Some("turn-2"));
     reset_conversation_context(previous);
     assert_eq!(get_conversation_context(), None);
+}
+
+// The source computes the client tag on every call so a bumped
+// `hermes_cli.__version__` is picked up without restarting a long-running
+// gateway (`agent/portal_tags.py` lines 28-31 and 85-103).
+#[test]
+fn a_published_version_changes_the_tag_without_a_restart() {
+    let previous = set_hermes_version(Some("0.21.0"));
+    assert_eq!(hermes_version(), "0.21.0");
+    assert_eq!(nous_portal_tags(None)[1], "client=hermes-client-v0.21.0");
+
+    // Whitespace-only input is falsy-equivalent and restores the fallback.
+    set_hermes_version(Some("   "));
+    assert_eq!(hermes_version(), HERMES_VERSION);
+
+    set_hermes_version(Some("9.9.9"));
+    assert_eq!(hermes_client_tag(), "client=hermes-client-v9.9.9");
+    set_hermes_version(previous.as_deref());
+    assert_eq!(hermes_client_tag(), "client=hermes-client-v0.20.0");
 }
