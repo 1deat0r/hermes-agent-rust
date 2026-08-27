@@ -8,10 +8,11 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
-Current branch/HEAD: `main` carries the agent-utility batch committed with
-this documentation checkpoint; the previous units are published as `8a9e8f3`
-(+ `0aea517` handoff), `448a4f6` (+ `a284322` handoff). Push and verify with
-`git ls-remote origin refs/heads/main` after this checkpoint lands.
+Current branch/HEAD: `main` is aligned with `origin/main` at
+`91b472e` (`feat(agent): port six agent utility modules @ b9aa928`), verified
+with `git ls-remote origin refs/heads/main`; this documentation checkpoint is
+the follow-up `handoff:` commit on top of it. Earlier published units:
+`8a9e8f3` (+ `0aea517`), `448a4f6` (+ `a284322`).
 
 Latest synchronized source unit: six small `agent/` utility modules —
 `errors`, `message_content`, `tool_result_classification`,
