@@ -8,10 +8,12 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
-Current branch/HEAD: `main` carries this session's four-module batch with its
-documentation checkpoint; the published history before it is `91b472e` (+
-`c63f3a3` handoff), `8a9e8f3` (+ `0aea517`), `448a4f6` (+ `a284322`). Push and
-confirm with `git ls-remote origin refs/heads/main`.
+Current branch/HEAD: `main` is aligned with `origin/main` at
+`fee2b4f` (`feat(agent): port turn retry, verify hooks, kanban stop,
+compression feedback @ b9aa928`), verified with
+`git ls-remote origin refs/heads/main`; the follow-up `handoff:` commit records
+this line. Earlier published units: `91b472e` (+ `c63f3a3`), `8a9e8f3` (+
+`0aea517`), `448a4f6` (+ `a284322`).
 
 Latest synchronized source unit: the second small-module batch —
 `agent.turn_retry_state`, `agent.verify_hooks`, `agent.kanban_stop`, and
