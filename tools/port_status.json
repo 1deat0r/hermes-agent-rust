@@ -17,7 +17,13 @@
  "agent.interrupt_compat": {
     "status": "partial"
   },
+ "agent.kanban_stop": {
+    "status": "done"
+  },
  "agent.lmstudio_reasoning": {
+    "status": "done"
+  },
+ "agent.manual_compression_feedback": {
     "status": "done"
   },
  "agent.message_content": {
@@ -30,6 +36,12 @@
     "status": "done"
   },
  "agent.tool_result_classification": {
+    "status": "done"
+  },
+ "agent.turn_retry_state": {
+    "status": "done"
+  },
+ "agent.verify_hooks": {
     "status": "done"
   },
  "agent.session_activity": {

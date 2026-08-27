@@ -492,6 +492,7 @@ dependencies = [
  "chrono",
  "fs2",
  "hermes-constants",
+ "hermes-logging",
  "hermes-providers",
  "hermes-utils",
  "log",

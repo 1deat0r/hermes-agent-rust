@@ -11,6 +11,7 @@ base64 = "0.22"
 chrono.workspace = true
 fs2 = "0.4"
 hermes-constants = { path = "../hermes-constants" }
+hermes-logging = { path = "../hermes-logging" }
 hermes-providers = { path = "../hermes-providers" }
 hermes-utils = { path = "../hermes-utils" }
 log.workspace = true

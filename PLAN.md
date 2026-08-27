@@ -456,6 +456,10 @@ quarantine remain deferred rather than silently guessed.
 | `agent/lmstudio_reasoning.py` (60 LOC) | ✅ | `hermes-agent::lmstudio_reasoning`; 8 parity tests (`unit`) mirror `tests/agent/test_lmstudio_reasoning.py` (monotonic ladder over `hermes_constants::VALID_REASONING_EFFORTS`, clamped-`max`/`ultra` still checked against published options, published `allowed_options` never rewritten by the clamp) plus the untested branches: empty-config truthiness, `enabled is False` identity versus `null`, `off`/`on` toggle aliases, trim/lowercase, unknown-effort default, and empty `allowed_options` skipping the check. Non-string effort shapes fail open where Python raises (documented in the module) |
 | `agent/reasoning_summaries.py` (67 LOC) | ✅ | `hermes-agent::reasoning_summaries`; 7 parity tests (`unit`) mirror `tests/agent/test_reasoning_summaries.py` end to end: heading-only part accumulation without a `****` run, prose-then-heading separation, untouched token streams, mid-sentence emphasis, unclosed emphasis fragments, bold-opener requirement, and empty operands |
 | `agent/interrupt_compat.py` (35 LOC) | 🟡 | `hermes-agent::interrupt_compat`; 6 parity tests (`unit`) mirror the four `tests/agent/test_interrupt_compat.py` contract cases that need no unported owner (modern-ABI preference, legacy fallback, unsupported agent, dynamic-proxy non-fabrication) plus no-argument invocation and the inherited-hard-interrupt precedence rule. Python resolves the ABI by attribute lookup; the port takes the two lookups as explicit `InterruptProducer` adapter inputs, and the `AIAgent` subclass and `tools.delegate_tool` subagent cases stay pending with those modules |
+| `agent/turn_retry_state.py` (92 LOC) | ✅ | `hermes-agent::turn_retry_state`; 4 parity tests (`unit`) mirror `tests/agent/test_turn_retry_state.py` for the 20-field contract, declaration-order iteration (the dataclass `__iter__` convenience), independent guard mutability, and the all-false default. The third upstream case in that file exercises `agent.conversation_loop._is_copilot_provider` on `run_agent.AIAgent` and stays with those unported modules. Loop-control locals (`retry_count`, `max_retries`, `max_compression_attempts`) stay out of the object exactly as upstream documents |
+| `agent/verify_hooks.py` (69 LOC) | ✅ | `hermes-agent::verify_hooks`; 10 parity tests (`unit`/`mock`) mirror `tests/agent/test_verify_hooks.py` and add the untested coercions: `max(0, int(raw))` with bool-as-int, float truncation, whitespace-tolerant and rejected `"2.5"` string forms, non-mapping `agent` fail-open, `verify_guidance` truthy spellings with the `True` default preserved for an explicit null, byte-exact shipped guidance, and the `None`-config disk fallback through the process config path. PENDING SEAM: the `pre_verify` user/plugin hook aggregation lives in `hermes_cli.plugins` and is not ported |
+| `agent/kanban_stop.py` (108 LOC) | ✅ | `hermes-agent::kanban_stop`; 7 parity tests (`unit`/`mock`) mirror `tests/agent/test_kanban_stop.py` (env disable, nudge content with the task id, no nudge after `kanban_complete`) and add the untested branches: unset vs blank vs explicit-off spellings, the bounded attempt budget with its `2` default, the `(task_id or env or "").strip() or "this task"` fallthrough chain including the whitespace-only case that reaches the literal, nested/bare tool-call name shapes with Python `str()` coercion, non-object message entries, and non-terminal roles |
+| `agent/manual_compression_feedback.py` (120 LOC) | ✅ | `hermes-agent::manual_compression_feedback`; 7 parity tests (`unit`) mirror `tests/agent/test_manual_compression_feedback.py` (forced redaction of the provider failure reason at the UI boundary even with global redaction disabled, fallback dropped-count wording with the arrow headline) plus every untested branch: aborted/noop/compressed headline selection, the `(unchanged)` token line versus the grouped `{:,}` arrow form, the denser-summary note gate, the `int`-but-not-`bool` dropped-count guard falling back to the message delta, blank/non-string failure reasons, the `compression_state=None` shape, and the confirmed-holder versus unconfirmed-acquire lock-skip wording |
 
 ### hermes-providers base (Phase 2, upstream @ b9aa928)
 
@@ -574,6 +578,10 @@ oracle tests). Upstream oracle files currently mirrored:
 - `plugins/model-providers/xiaomi/__init__.py` → `crates/hermes-providers/tests/parity_xiaomi.rs` (2 source-derived profile/registration parity tests; `unit`; no dedicated upstream plugin-profile test module)
 - `plugins/model-providers/zai/__init__.py` + `tests/plugins/model_providers/test_zai_profile.py` + provider wiring/transport cases → `crates/hermes-providers/tests/parity_zai.rs` (18 source-derived profile/GLM-gating/endpoint/cache parity tests; `unit`/`mock`; API-key fingerprinting, cached endpoint validation, endpoint-state serialization, and cache-aware URL precedence are covered; CLI credential/model-picker and provider transport integration remain future higher-layer oracles)
 
+- `agent/turn_retry_state.py` + `tests/agent/test_turn_retry_state.py` → `crates/hermes-agent/tests/parity_turn_retry_state.rs` (4 parity tests; `unit`; the `_is_copilot_provider` case belongs to the unported `agent.conversation_loop`)
+- `agent/verify_hooks.py` + `tests/agent/test_verify_hooks.py` → `crates/hermes-agent/tests/parity_verify_hooks.rs` (10 parity tests; `unit`/`mock`)
+- `agent/kanban_stop.py` + `tests/agent/test_kanban_stop.py` → `crates/hermes-agent/tests/parity_kanban_stop.rs` (7 parity tests; `unit`/`mock`; the dispatcher-side bounded-retry integration half lives with the unported kanban core)
+- `agent/manual_compression_feedback.py` + `tests/agent/test_manual_compression_feedback.py` → `crates/hermes-agent/tests/parity_manual_compression_feedback.rs` (7 parity tests; `unit`)
 - `agent/errors.py` → `crates/hermes-agent/tests/parity_errors.rs` (2 raise-site contract tests; `unit`; upstream has no dedicated `agent.errors` test module — recorded missing-test gap)
 - `agent/message_content.py` + `tests/agent/test_message_content.py` → `crates/hermes-agent/tests/parity_message_content.rs` (6 parity tests; `unit`; both upstream cases plus four source-derived branches)
 - `agent/tool_result_classification.py` + `tests/agent/test_tool_result_classification.py` → `crates/hermes-agent/tests/parity_tool_result_classification.rs` (5 parity tests; `unit`)
@@ -593,6 +601,48 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 ## 7. Session log
 
+- 2026-08-28 (session 4d4): Continued the small-module batch with four more
+  dependency-safe `agent/` modules, all red-first against their dedicated
+  upstream oracles and landed in `hermes-agent`: `agent.turn_retry_state`
+  (the 20 one-shot recovery guards/restart signals with declaration-order
+  iteration), `agent.verify_hooks` (`max_verify_nudges` with Python
+  `int()`-and-`max(0, ·)` coercion, `coding_verify_guidance` behind the shared
+  truthy set, and the byte-exact shipped guidance), `agent.kanban_stop`
+  (env-gated turn-end guard, terminal-tool session scan, bounded synthetic
+  nudge), and `agent.manual_compression_feedback` (lock-skip wording plus the
+  full compression summary document with forced UI-boundary redaction through
+  `hermes-logging::redact_sensitive_text`, the first use of that crate from
+  `hermes-agent`).
+  Review notes that changed the code rather than the tests: the kanban task-id
+  fallthrough is `(task_id or env or "").strip() or "this task"`, so an
+  empty-string argument yields the environment value while a whitespace-only
+  argument reaches the literal — the first draft asserted the opposite and was
+  corrected against the source; the dropped-count probe must exclude Python
+  `bool` (an `int` subclass) while accepting real integers, which is why the
+  state signals carry `serde_json::Value` rather than native `Option<i64>`;
+  `verify_hooks` reads its config section with the source's `isinstance`
+  fail-opens, and its `None` argument reproduces `_agent_cfg`'s own
+  `load_config()` fallback.
+  Evidence (unit/mock): 28 new parity tests (4 + 10 + 7 + 7);
+  `/home/mustbearnold/.cargo/bin/cargo test -p hermes-agent --test
+  parity_turn_retry_state --test parity_verify_hooks --test
+  parity_kanban_stop --test parity_manual_compression_feedback` green;
+  `/home/mustbearnold/.cargo/bin/cargo build --workspace` green; the required
+  serialized `/home/mustbearnold/.cargo/bin/cargo test --workspace --
+  --test-threads=1` passed with 1,262 tests and 5 intentional ignores;
+  targeted `/home/mustbearnold/.cargo/bin/rustfmt --edition 2021 --check`
+  clean, `/home/mustbearnold/.cargo/bin/cargo clippy -p hermes-agent
+  --all-targets` reduced to the two pre-existing `auxiliary_client`
+  diagnostics, and `git diff --check` clean.
+  Ledger: `agent.turn_retry_state`, `agent.verify_hooks`,
+  `agent.kanban_stop`, and `agent.manual_compression_feedback` added as `done`
+  — 83 done / 13 partial / 3,786 missing tracked and 83 done / 13 partial /
+  1,007 missing production modules: **2.14%** tracked and **7.52%** production
+  strict completion. Next dependency-safe units in the same shape:
+  `agent.relay_tools` (123 LOC + 140-test oracle), `agent.async_utils`
+  (84 LOC + 99-test oracle, needs an explicit runtime adapter),
+  `agent.ssl_verify`, `agent.build_info`, and the next tier of small
+  oracle-backed `agent/` modules.
 - 2026-08-28 (session 4d3): Opened the agent-utility batch — six small,
   dependency-safe `agent/` modules ported TDD-first against their dedicated
   upstream test modules, all into `hermes-agent`: `agent.errors` (three

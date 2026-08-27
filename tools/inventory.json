@@ -1,20 +1,20 @@
 {
  "generated_from": "/run/media/mustbearnold/Projects/Research/hermes-agent-repo",
- "generated_at": "2026-08-28T09:37:57",
+ "generated_at": "2026-08-28T09:58:53",
  "summary": {
   "modules": 3882,
   "total_lines": 1510733,
   "production_modules": 1103,
   "production_lines": 843792,
   "status_counts": {
-   "done": 79,
+   "done": 83,
    "partial": 13,
-   "missing": 3790
+   "missing": 3786
   },
   "prod_status_counts": {
-   "done": 79,
+   "done": 83,
    "partial": 13,
-   "missing": 1011
+   "missing": 1007
   },
   "packages": {
    "gateway": {
@@ -65,9 +65,9 @@
     "lines": 133942,
     "modules": 186,
     "status": {
-     "missing": 174,
+     "missing": 170,
      "partial": 4,
-     "done": 8
+     "done": 12
     }
    },
    "hermes_state": {
@@ -18270,7 +18270,7 @@
   "agent.manual_compression_feedback": {
    "lines": 120,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "hermes_cli.pairing": {
@@ -19230,7 +19230,7 @@
   "agent.kanban_stop": {
    "lines": 108,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "hermes_cli.psutil_android": {
@@ -20706,7 +20706,7 @@
   "agent.turn_retry_state": {
    "lines": 92,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "hermes_cli.__init__": {
@@ -23000,7 +23000,7 @@
    "imports": [
     "utils"
    ],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "tests.plugins.memory.test_openviking_endpoint_always_blocked": {

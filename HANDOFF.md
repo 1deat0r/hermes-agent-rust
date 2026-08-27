@@ -1,6 +1,6 @@
 # Hermes Agent Rust — Next-session handoff
 
-Date: 2026-08-28 (Pacific/Auckland), session 4d3.
+Date: 2026-08-28 (Pacific/Auckland), session 4d4.
 
 ## Resume point
 
@@ -8,11 +8,15 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
-Current branch/HEAD: `main` is aligned with `origin/main` at
-`91b472e` (`feat(agent): port six agent utility modules @ b9aa928`), verified
-with `git ls-remote origin refs/heads/main`; this documentation checkpoint is
-the follow-up `handoff:` commit on top of it. Earlier published units:
-`8a9e8f3` (+ `0aea517`), `448a4f6` (+ `a284322`).
+Current branch/HEAD: `main` carries this session's four-module batch with its
+documentation checkpoint; the published history before it is `91b472e` (+
+`c63f3a3` handoff), `8a9e8f3` (+ `0aea517`), `448a4f6` (+ `a284322`). Push and
+confirm with `git ls-remote origin refs/heads/main`.
+
+Latest synchronized source unit: the second small-module batch —
+`agent.turn_retry_state`, `agent.verify_hooks`, `agent.kanban_stop`, and
+`agent.manual_compression_feedback` — all `done` in `hermes-agent`, taking
+production strict completion from 7.16% to 7.52%.
 
 Latest synchronized source unit: six small `agent/` utility modules —
 `errors`, `message_content`, `tool_result_classification`,
@@ -221,6 +225,22 @@ GitHub `11245d8` (`plugins.model-providers.arcee.__init__`), local `ec9db5aa`
 recorded above with the config/Z.AI source commit and its verified tree.
 
 ## What landed this session
+
+Session 4d4 kept the batch shape: four more self-contained `agent/` modules,
+each written red-first against its own upstream test module, plus
+`hermes-agent`'s first use of `hermes-logging` (forced UI-boundary redaction in
+the compression summary). All four reached `done`.
+
+Three review corrections went to the code rather than the tests, and are worth
+noticing on a re-read: the kanban task-id fallthrough is
+`(task_id or env or "").strip() or "this task"`, so an empty-string argument
+yields the environment value while a whitespace-only one reaches the literal;
+the compression dropped-count probe must exclude Python `bool` while accepting
+real integers, which is why `CompressionStateSignals` carries `serde_json::Value`
+fields instead of `Option<i64>`; and `verify_hooks` must reproduce `_agent_cfg`'s
+`load_config()` fallback for a `None` argument, which the two extra disk-backed
+cases now cover.
+
 
 Session 4d3 opened the small-module batch: six self-contained `agent/`
 utilities with real upstream oracles, each written test-first (all six suites
@@ -810,20 +830,20 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-The agent-utility batch is committed with this documentation checkpoint and
-**did change the ledger**: 79 done / 13 partial / 3,790 missing tracked
-modules and 79 done / 13 partial / 1,011 missing production modules —
-**2.04%** tracked and **7.16%** production strict completion — regenerated with
+This batch **changed the ledger**: 83 done / 13 partial / 3,786 missing tracked
+modules and 83 done / 13 partial / 1,007 missing production modules —
+**2.14%** tracked and **7.52%** production strict completion — regenerated with
 `HERMES_UPSTREAM=/run/media/mustbearnold/Projects/Research/hermes-agent-repo
 tools/inventory.sh` and `python3 tools/conversion_ledger.py`, with
-`cargo build --workspace` and the serialized workspace run green at 1,234 tests
+`cargo build --workspace` and the serialized workspace run green at 1,262 tests
 / 5 ignored.
 
-0. Keep taking the small-module batch: `agent.turn_retry_state`,
-   `agent.verify_hooks`, `agent.kanban_stop`, `agent.relay_tools`,
-   `agent.manual_compression_feedback`, and
-   `agent.async_utils` each have a dedicated upstream test module and no
-   unported lower layer, so they port in the same TDD shape as session 4d3.
+0. Keep taking the small-module batch. Session 4d4 landed
+   `agent.turn_retry_state`, `agent.verify_hooks`, `agent.kanban_stop`, and
+   `agent.manual_compression_feedback`; the next same-shape candidates are
+   `agent.relay_tools` (123 LOC + 140-test oracle), `agent.async_utils` (84 LOC
+   + 99-test oracle, needs an explicit runtime adapter rather than asyncio),
+   `agent.ssl_verify`, and the remaining small oracle-backed `agent/` modules.
 1. Continue the remaining `agent.auxiliary_client` request/response lifecycle:
    concrete client construction against these header/`extra_body` seams, xAI
    default headers, and the URL-inferred provider fallback used by the async
@@ -860,8 +880,8 @@ tools/inventory.sh` and `python3 tools/conversion_ledger.py`, with
 
 `CONVERSION-LEDGER.md` is generated and contains one row for every 3,882 upstream inventory modules: 1,103 production tasks plus 2,779 oracle/test tasks. Only `done` counts toward completion.
 
-- All tracked modules: 79 done / 13 partial / 3,790 missing = **2.04%**.
-- Production modules: 79 done / 13 partial / 1,011 missing = **7.16%**.
+- All tracked modules: 83 done / 13 partial / 3,786 missing = **2.14%**.
+- Production modules: 83 done / 13 partial / 1,007 missing = **7.52%**.
 
 The thirteen partial production rows are `agent.auxiliary_client`,
 `agent.credential_pool`, `agent.interrupt_compat`, `agent.portal_tags`,
@@ -869,10 +889,12 @@ The thirteen partial production rows are `agent.auxiliary_client`,
 `tools.credential_files`, `tools.delegation_output_schema`,
 `tools.threat_patterns`, `tools.todo_tool`, `tools.tool_backend_helpers`,
 and `tools.tool_output_limits`. Their closure
-seams are listed in the ledger and PLAN.md. This session's batch added five
-`done` rows (`agent.errors`, `agent.message_content`,
-`agent.tool_result_classification`, `agent.lmstudio_reasoning`,
-`agent.reasoning_summaries`) plus the `agent.interrupt_compat` partial.
+seams are listed in the ledger and PLAN.md. Sessions 4d3/4d4 added nine `done` rows
+(`agent.errors`, `agent.message_content`, `agent.tool_result_classification`,
+`agent.lmstudio_reasoning`, `agent.reasoning_summaries`,
+`agent.turn_retry_state`, `agent.verify_hooks`, `agent.kanban_stop`,
+`agent.manual_compression_feedback`) plus the `agent.interrupt_compat`
+partial.
 
 Regenerate with:
 
@@ -884,6 +906,22 @@ python3 tools/conversion_ledger.py
 The strict production formula is `done production modules / 1,103`; partial rows receive zero credit. The all-module percentage is also shown because every upstream test/oracle task remains explicit.
 
 ## Fidelity notes
+
+- Session 4d4 batch details: `agent.verify_hooks` is ported without the
+  `hermes_cli.plugins` `pre_verify` hook aggregation (that module is unported),
+  so only the policy helpers exist here; `_agent_cfg(None)` reads the process
+  config path through the merged loader rather than the CLI's
+  `load_config()`/`load_config_readonly()` pair, which is outcome-equivalent
+  because the two helpers' own fallbacks equal the shipped `agent` defaults
+  (`verify_guidance: True`, `max_verify_nudges: 3`). `agent.turn_retry_state`'s
+  name-keyed `get`/`set` are explicit lookups because Rust has no `getattr`;
+  an unknown name reads `false` and `set` reports the miss instead of raising
+  `AttributeError`. `agent.kanban_stop` treats a non-object tool call as the
+  empty name (Python's final `getattr` arm) and a non-array `tool_calls` as no
+  calls. `agent.manual_compression_feedback` keeps the Python type probes by
+  carrying `serde_json::Value` signals, reproduces `str(None)` in the
+  unreachable `"… Reason: "` concatenation, and formats token counts with the
+  `{:,}` grouping the source uses.
 
 - Session 4d1 repairs (recorded so a later review does not re-introduce them):
   the managed-scope fold is one `config.yaml` per managed directory, not a
@@ -1075,6 +1113,22 @@ passed 3/3. Targeted rustfmt passed; concrete Z.AI HTTP/cache and full merged
 CLI config behavior remain deferred.
 
 ## Verification evidence
+
+For the current four-module batch, the red-first focused
+`/home/mustbearnold/.cargo/bin/cargo test -p hermes-agent --test
+parity_turn_retry_state --test parity_verify_hooks --test parity_kanban_stop
+--test parity_manual_compression_feedback` run passed 4 + 10 + 7 + 7 = 28
+tests, `/home/mustbearnold/.cargo/bin/cargo build --workspace` passed, and the
+required serialized `/home/mustbearnold/.cargo/bin/cargo test --workspace --
+--test-threads=1` passed with 1,262 tests and the same 5 intentionally ignored
+doc tests. Targeted `/home/mustbearnold/.cargo/bin/rustfmt --edition 2021
+--check` over the touched files is clean,
+`/home/mustbearnold/.cargo/bin/cargo clippy -p hermes-agent --all-targets`
+reports only the two pre-existing `auxiliary_client` diagnostics, and
+`git diff --check` passed. The two `verify_hooks` disk-fallback cases and the
+seven `kanban_stop` env cases serialize on their own mutexes because both read
+process environment state.
+
 
 For the current agent-utility batch, the red-first focused
 `/home/mustbearnold/.cargo/bin/cargo test -p hermes-agent --test parity_errors
