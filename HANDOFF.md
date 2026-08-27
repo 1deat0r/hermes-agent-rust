@@ -8,11 +8,11 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
-Current branch/HEAD: `main` carries the ambient-propagation unit
-(`agent.portal_tags` captured-context seam) committed with this documentation
-checkpoint; `origin/main` is updated by the push that follows this commit and
-verified with `git ls-remote origin refs/heads/main`. The previous unit —
-Portal attribution and managed configuration — is published as `448a4f6`
+Current branch/HEAD: `main` is aligned with `origin/main` at
+`8a9e8f3` (`feat(agent): propagate portal conversation context @ b9aa928`),
+verified with `git ls-remote origin refs/heads/main`; this documentation
+checkpoint is the follow-up `handoff:` commit on top of it. The previous unit
+— Portal attribution and managed configuration — is published as `448a4f6`
 plus the `a284322` handoff commit. Logical units continue to publish with
 `git push origin main`.
 
