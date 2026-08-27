@@ -437,7 +437,7 @@ quarantine remain deferred rather than silently guessed.
 
 | Module / upstream surface | Status | Rust home, oracle, and evidence tier |
 |---|---|---|
-| `agent/portal_tags.py` (144 LOC) | 🟡 | `hermes-agent::portal_tags`; 9 parity tests (`unit`) in `crates/hermes-agent/tests/parity_portal_tags.rs` mirror `tests/agent/test_portal_tags.py` for the base tag pair, fresh-list contract, ambient-context publish/clear/reset, ambient-over-explicit precedence, empty-id falsiness, and cross-thread isolation. Pending seams: the live `hermes_cli.__version__` read is pinned to the `b9aa928` value `0.20.0`, the ContextVar→worker-thread propagation half of `test_ambient_context_propagates_via_thread_context_helper` is not yet wired to `hermes_tools::thread_context`'s snapshot factory, and `test_compress_context_preserves_ambient_context` needs the unported `AIAgent._compress_context` turn wrapper |
+| `agent/portal_tags.py` (144 LOC) | 🟡 | `hermes-agent::portal_tags`; 12 parity tests (`unit`) in `crates/hermes-agent/tests/parity_portal_tags.rs` mirror `tests/agent/test_portal_tags.py` for the base tag pair, fresh-list contract, ambient-context publish/clear/reset round-trip, ambient-over-explicit precedence, empty-id falsiness, cross-thread isolation, the bare-worker loss plus propagated-worker retention of `test_ambient_context_propagates_via_thread_context_helper` (through the module's own `ConversationContext`/`propagate_conversation_context_to_thread` capture), and captured-context stability/reuse. Pending seams: the live `hermes_cli.__version__` read is pinned to the `b9aa928` value `0.20.0`, `test_compress_context_preserves_ambient_context` needs the unported `AIAgent._compress_context` turn wrapper, and the fan-out call sites must adopt this capture (or register it with `hermes_tools::thread_context`'s single snapshot-factory slot once the composite approval/gateway contextvars layer exists) |
 | `hermes_cli/managed_scope.py` (214 LOC) | ✅ | `hermes-agent::managed_scope`; 12 parity tests (`unit`/`mock`) in `crates/hermes-agent/tests/parity_managed_scope.rs` cover the `HERMES_MANAGED_DIR`-then-`/etc/hermes` resolver tiers (including the non-existent and whitespace-only cases), the `(mtime_ns, size)` managed-file cache and its invalidation hook, single-file fail-open config loading for absent/malformed/non-mapping/empty documents, the documented `.env` subset (comment, blank, no-`=`, first-`=` partition, quote stripping), dotted leaf-key flattening with empty mappings as leaves, `is_key_managed`/`is_env_managed`, and `apply_managed_overlay` precedence including the bare-string `model` promotion. Upstream logs the same warnings through its own logger configuration; the Rust port uses the `log` facade without `exc_info` |
 | `agent/auxiliary_client.py` client-header and Portal `extra_body` sections (lines 807-911, 2369-2386, 2479-2515, 5654-5687, 6044-6066, 6926-6932, 8068-8086) | 🟡 | `hermes-agent::auxiliary_client` plus `hermes-agent::config` (`cfg_get`, `openrouter_defaults`); 14 added parity tests (`unit`) in `crates/hermes-agent/tests/parity_auxiliary_client.rs` cover `build_or_headers` attribution/base-shape/fresh-copy behavior, Python-truthiness cache gating, `[1, 86400]` TTL bounds with the bool-is-int quirk, `HERMES_OPENROUTER_CACHE`/`_TTL` env precedence and `str.isdigit()` rejection, the two-site OpenRouter route/host gate union, the kimi → Copilot → NVIDIA → profile fallback chain with `is_vision` gating, `copilot_request_headers` defaults, NVIDIA host gating (cloud host only), the `model.default_headers`/`model.extra_headers` alias merge with null-only skipping and verbatim keys, the composite provider → OpenRouter → user ordering, `get_auxiliary_extra_body`, and the Nous-spelling `tags`/`session_id` transport fallback. Concrete client construction, transport lifecycle, xAI header routing, and URL-inferred provider fallback remain pending |
 
@@ -558,7 +558,7 @@ oracle tests). Upstream oracle files currently mirrored:
 - `plugins/model-providers/xiaomi/__init__.py` → `crates/hermes-providers/tests/parity_xiaomi.rs` (2 source-derived profile/registration parity tests; `unit`; no dedicated upstream plugin-profile test module)
 - `plugins/model-providers/zai/__init__.py` + `tests/plugins/model_providers/test_zai_profile.py` + provider wiring/transport cases → `crates/hermes-providers/tests/parity_zai.rs` (18 source-derived profile/GLM-gating/endpoint/cache parity tests; `unit`/`mock`; API-key fingerprinting, cached endpoint validation, endpoint-state serialization, and cache-aware URL precedence are covered; CLI credential/model-picker and provider transport integration remain future higher-layer oracles)
 
-- `agent/portal_tags.py` + `tests/agent/test_portal_tags.py` → `crates/hermes-agent/tests/parity_portal_tags.rs` (9 source-derived ambient-context/tag-shape/precedence/fresh-list/thread-isolation parity tests; `unit`; the ContextVar propagation and `_compress_context` turn-wrapper cases remain pending seams)
+- `agent/portal_tags.py` + `tests/agent/test_portal_tags.py` → `crates/hermes-agent/tests/parity_portal_tags.rs` (12 source-derived ambient-context/tag-shape/precedence/fresh-list/isolation/propagation parity tests; `unit`; only the `_compress_context` turn-wrapper case remains pending, with the ContextVar propagation half covered through the module's captured-context seam)
 - `hermes_cli/managed_scope.py` + `tests/hermes_cli/test_managed_scope.py` + `test_managed_scope_config.py` + `test_managed_scope_overlay.py` + `test_managed_scope_env.py` → `crates/hermes-agent/tests/parity_managed_scope.rs` (12 resolver/cache/loader/key/overlay parity tests; `unit`/`mock`) and `crates/hermes-agent/tests/parity_config.rs` (6 merged-loader managed-scope parity tests; `mock`)
 - `agent/auxiliary_client.py` header/extra-body sections + `tests/agent/test_openrouter_response_cache.py` + `tests/agent/test_user_default_headers.py` → `crates/hermes-agent/tests/parity_auxiliary_client.rs` (14 added client-header, OpenRouter cache, Portal `extra_body`, and Nous fallback parity tests; `unit`)
 - `plugins/model-providers/nous/__init__.py` + `tests/providers/test_provider_profiles.py` + `tests/agent/transports/test_chat_completions.py` → `crates/hermes-providers/tests/parity_nous.rs` (3 source-derived profile/registration/Portal-hook parity tests; `unit`; pinned CLI version and ambient conversation propagation remain future higher-layer seams)
@@ -571,6 +571,46 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 ## 7. Session log
 
+- 2026-08-28 (session 4d2): Closed the ambient-propagation seam recorded by
+  session 4d1 on `agent.portal_tags`. `ConversationContext` (capture / run) and
+  `propagate_conversation_context_to_thread` now reproduce the
+  `contextvars.copy_context()` + `Context.run` half of
+  `tools.thread_context.propagate_context_to_thread` for this module's single
+  `ContextVar`: capture happens on the parent thread, the wrapper is
+  re-invocable, writes made inside a run persist in that captured context
+  (reused-`Context` semantics), and the worker's own ambient id is restored on
+  exit including on unwind. Two CPython guarantees are recorded rather than
+  reproduced — recursive entry and cross-thread entry of the same `Context`
+  raise `RuntimeError` there, while the Rust port serializes both — and the
+  fan-out call sites plus `hermes_tools::thread_context`'s single
+  snapshot-factory slot (reserved for the approval/gateway contextvars layer)
+  remain the adoption seam.
+  Tests (TDD, written red first): 3 new parity cases in
+  `crates/hermes-agent/tests/parity_portal_tags.rs` (12 total) covering
+  bare-worker loss, propagated-worker retention, and captured-context
+  stability/reuse; `agent.portal_tags` therefore now mirrors
+  `tests/agent/test_portal_tags.py` except
+  `test_compress_context_preserves_ambient_context`. Exact checks:
+  `/home/mustbearnold/.cargo/bin/cargo test -p hermes-agent --test
+  parity_portal_tags` (12 passed), `/home/mustbearnold/.cargo/bin/cargo build
+  --workspace`, the required serialized
+  `/home/mustbearnold/.cargo/bin/cargo test --workspace -- --test-threads=1`
+  (1,200 passed, 5 intentionally ignored), targeted
+  `/home/mustbearnold/.cargo/bin/rustfmt --edition 2021 --check` on the two
+  changed files, targeted
+  `/home/mustbearnold/.cargo/bin/cargo clippy -p hermes-agent --all-targets`
+  (only the two pre-existing `auxiliary_client` `too_many_arguments` and
+  `needless_lifetimes` diagnostics remain), and `git diff --check`.
+  No module-status change: `agent.portal_tags` stays `partial` (pinned CLI
+  version, `_compress_context` wrapper, fan-out adoption) and
+  `hermes_cli.managed_scope` stays `done`; regenerated ledger is unchanged at
+  74 done / 12 partial / 3,796 missing tracked and 74 done / 12 partial /
+  1,017 missing production modules: 1.91% all-tracked strict completion and
+  6.71% production-only. Next dependency-safe units: the remaining
+  `agent.auxiliary_client` request/response lifecycle (xAI default headers and
+  the URL-inferred provider fallback in the async chain), and the
+  `AIAgent._compress_context` turn wrapper that publishes/restores the ambient
+  conversation id per turn.
 - 2026-08-28 (session 4d1): Finished the Portal-attribution wave that was
   left uncommitted and one test-red in the working tree, correcting three
   upstream-fidelity divergences found by the line-by-line review.

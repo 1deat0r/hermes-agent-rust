@@ -7,7 +7,8 @@
 
 use hermes_agent::portal_tags::{
     conversation_tag, get_conversation_context, hermes_client_tag, nous_portal_tags,
-    reset_conversation_context, set_conversation_context, HERMES_VERSION,
+    propagate_conversation_context_to_thread, reset_conversation_context, set_conversation_context,
+    ConversationContext, HERMES_VERSION,
 };
 use serde_json::{Map, Value};
 
@@ -117,10 +118,7 @@ fn ambient_context_is_isolated_between_threads() {
 }
 
 // A bare worker thread starts with no ambient id, matching upstream's bare
-// `executor.submit(nous_portal_tags)` case. The propagated-worker half of
-// `test_ambient_context_propagates_via_thread_context_helper` is still a
-// pending seam: `agent.portal_tags` is not yet wired into
-// `hermes_tools::thread_context`'s snapshot factory (see PLAN §7).
+// `executor.submit(nous_portal_tags)` case.
 #[test]
 fn bare_thread_loses_the_ambient_context() {
     let token = set_conversation_context(Some("moa-root"));
@@ -174,4 +172,85 @@ fn nous_sticky_key_matches_the_conversation_tag() {
     );
 
     reset_conversation_context(token);
+}
+
+// Mirrors the propagated half of
+// test_ambient_context_propagates_via_thread_context_helper: the wrapper is
+// built on the parent thread and the worker observes the ambient id.
+#[test]
+fn propagated_worker_keeps_the_ambient_context() {
+    let token = set_conversation_context(Some("moa-root"));
+
+    let plain = || nous_portal_tags(None);
+    let propagated = propagate_conversation_context_to_thread(plain);
+
+    let bare = std::thread::spawn(plain).join().expect("bare worker");
+    assert!(!bare.iter().any(|tag| tag.starts_with("conversation=")));
+
+    let worker = std::thread::spawn(propagated).join().expect("worker");
+    assert!(worker.contains(&conversation_tag("moa-root")));
+
+    reset_conversation_context(token);
+    // A wrapper captured after the turn ends carries no ambient id, and the
+    // worker's own thread-local is restored when a run finishes.
+    let after = propagate_conversation_context_to_thread(get_conversation_context);
+    let seen = std::thread::spawn(after).join().expect("restored");
+    assert_eq!(seen, None);
+}
+
+// A captured context behaves like a reused Python `Context`: it carries the
+// id it captured, not whatever the publishing thread does afterwards, and
+// values a run writes stay in that context for its next run.
+#[test]
+fn captured_context_is_stable_and_reusable() {
+    let token = set_conversation_context(Some("turn-root"));
+    let context = ConversationContext::capture();
+    reset_conversation_context(token);
+
+    // The publisher moved on; the captured context still says `turn-root`.
+    let seen = context.run(get_conversation_context);
+    assert_eq!(seen.as_deref(), Some("turn-root"));
+    // ... and the calling thread's own ambient id is restored afterwards.
+    assert_eq!(get_conversation_context(), None);
+
+    // A write inside the run persists in that context only.
+    context.run(|| {
+        set_conversation_context(Some("rotated-segment"));
+    });
+    assert_eq!(get_conversation_context(), None);
+    assert_eq!(
+        context.run(get_conversation_context).as_deref(),
+        Some("rotated-segment")
+    );
+
+    // Nesting one context inside its own run is a Python RuntimeError; the Rust
+    // port returns the ambient id for the outer frame and leaves the context
+    // untouched, which no upstream test relies on.
+    let outer = context.run(|| context.run(get_conversation_context));
+    assert_eq!(outer.as_deref(), Some("rotated-segment"));
+
+    // Fresh captures see the current ambient id again.
+    let token = set_conversation_context(Some("next-turn"));
+    assert_eq!(
+        ConversationContext::capture()
+            .run(get_conversation_context)
+            .as_deref(),
+        Some("next-turn")
+    );
+    reset_conversation_context(token);
+}
+
+// The agent loop turn wrapper pairs capture with restore, mirroring
+// `set_conversation_context` on entry / `reset_conversation_context` on exit.
+#[test]
+fn turn_publish_and_restore_round_trip() {
+    let mut previous = set_conversation_context(Some("turn-1"));
+    assert_eq!(get_conversation_context().as_deref(), Some("turn-1"));
+    previous = {
+        reset_conversation_context(previous.take());
+        set_conversation_context(Some("turn-2"))
+    };
+    assert_eq!(get_conversation_context().as_deref(), Some("turn-2"));
+    reset_conversation_context(previous);
+    assert_eq!(get_conversation_context(), None);
 }

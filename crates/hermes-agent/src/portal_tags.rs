@@ -22,15 +22,24 @@
 //! import-failure fallback (line 95) has no Rust analogue: the version is a
 //! compile-time constant here, so the branch is unreachable.
 //!
-//! PENDING SEAM: upstream publishes the ambient conversation id through a
-//! `ContextVar`, which `tools.thread_context.propagate_context_to_thread`
-//! copies onto worker threads (upstream test
-//! `test_ambient_context_propagates_via_thread_context_helper`). The Rust
-//! port is thread-local, which matches a bare Python thread (no ambient id)
-//! but the propagation wrapper is not yet wired to
-//! `hermes_tools::thread_context`'s snapshot factory. See PLAN §7.
+//! Ambient propagation: upstream stores the id in a `ContextVar`, so
+//! `tools.thread_context.propagate_context_to_thread` carries it onto worker
+//! threads through `contextvars.copy_context()` (upstream test
+//! `test_ambient_context_propagates_via_thread_context_helper`). The Rust port
+//! is thread-local — which already matches a bare Python worker, where the id
+//! is absent — and [`ConversationContext`] plus
+//! [`propagate_conversation_context_to_thread`] reproduce the captured-Context
+//! half of that contract for this one variable.
+//!
+//! PENDING SEAM: the fan-out call sites (tool executor, MoA fan-out, background
+//! review) are not ported yet, and `hermes_tools::thread_context` still owns a
+//! single process-wide snapshot factory slot reserved for the
+//! approval/gateway contextvars layer. When that composite layer lands, this
+//! module's capture should register with it instead of each consumer wrapping
+//! the call itself.
 
 use std::cell::RefCell;
+use std::sync::{Arc, Mutex};
 
 /// PARITY: `hermes_cli.__version__` at upstream `b9aa928`
 /// (`hermes_cli/__init__.py` line 17).
@@ -126,4 +135,108 @@ pub fn nous_portal_tags(session_id: Option<&str>) -> Vec<String> {
         tags.push(conversation_tag(&effective));
     }
     tags
+}
+
+/// A captured ambient conversation context.
+///
+/// PARITY: the `contextvars.Context` object that
+/// `tools.thread_context.propagate_context_to_thread` builds with
+/// `copy_context()` (upstream `tools/thread_context.py` line 84) and enters on
+/// the worker with `ctx.run(_inner)` (line 116), specialized to this module's
+/// single `ContextVar`. Like a reused Python `Context`, the captured value is
+/// stable against later publishes on the capturing thread, values written
+/// inside a run persist in this context for its next run, and the calling
+/// thread's own ambient id is restored when the run returns — including on
+/// unwind, which is the Rust analogue of CPython restoring the context after
+/// the callable exits.
+#[derive(Default)]
+pub struct ConversationContext {
+    state: Mutex<Option<String>>,
+}
+
+struct ContextRestore<'a> {
+    slot: &'a Mutex<Option<String>>,
+    previous: Option<String>,
+}
+
+impl Drop for ContextRestore<'_> {
+    fn drop(&mut self) {
+        // Persist what the frame wrote into the captured context, then put the
+        // worker's own ambient id back. Poisoning only happens if a nested run
+        // panicked while holding the slot, so recovering the guard keeps the
+        // restore path non-raising like upstream's context exit.
+        let mut guard = self
+            .slot
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        *guard = get_conversation_context();
+        drop(guard);
+        reset_conversation_context(self.previous.take());
+    }
+}
+
+impl ConversationContext {
+    /// Snapshot the calling thread's ambient conversation id.
+    ///
+    /// PARITY: `contextvars.copy_context()` called on the parent thread.
+    pub fn capture() -> Self {
+        Self {
+            state: Mutex::new(get_conversation_context()),
+        }
+    }
+
+    /// Run `f` under this captured context and return its result.
+    ///
+    /// PARITY: `Context.run`. Two CPython guarantees are deliberately not
+    /// reproduced: entering the same `Context` recursively, or entering one
+    /// that another thread is already inside, raises `RuntimeError` there.
+    /// Here both cases are serialized through the captured slot — the nested
+    /// frame sees (and can write back to) the same captured value, and two
+    /// concurrent workers each get their own thread-local while sharing the
+    /// captured value. No upstream behavior depends on that distinction
+    /// because each fan-out site wraps a fresh context.
+    pub fn run<T>(&self, f: impl FnOnce() -> T) -> T {
+        let captured = self
+            .state
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clone();
+        let previous = set_conversation_context(captured.as_deref());
+        let _restore = ContextRestore {
+            slot: &self.state,
+            previous,
+        };
+        f()
+    }
+}
+
+/// Wrap `target` so a worker thread runs it under the *current* thread's
+/// ambient conversation id.
+///
+/// PARITY: `tools.thread_context.propagate_context_to_thread` (upstream
+/// `tools/thread_context.py` lines 66-118) restricted to this module's
+/// `ContextVar`: capture happens on the parent thread at call time, the
+/// returned callable may be invoked repeatedly (each call re-enters the
+/// captured context), and the worker's own ambient id is restored on exit.
+/// Positional/keyword forwarding is left to the caller's closure, since Rust
+/// has no `*args`; the argument-carrying general case stays with
+/// `hermes_tools::thread_context::propagate_context_to_thread`.
+/// The approval/sudo callback propagation half of the upstream helper stays
+/// with `hermes_tools::thread_context`, whose snapshot-factory slot is where a
+/// composite multi-variable context will register.
+pub fn propagate_conversation_context_to_thread<R, F>(
+    target: F,
+) -> impl Fn() -> R + Send + Sync + 'static
+where
+    R: Send + 'static,
+    F: Fn() -> R + Send + Sync + 'static,
+{
+    let context = Arc::new(ConversationContext::capture());
+    let target = Arc::new(target);
+    move || {
+        // The run only needs `&self`, so the shared captured context can serve
+        // every invocation of this wrapper.
+        let target = Arc::clone(&target);
+        context.run(move || (target)())
+    }
 }

@@ -1,6 +1,6 @@
 # Hermes Agent Rust — Next-session handoff
 
-Date: 2026-08-28 (Pacific/Auckland), session 4d1.
+Date: 2026-08-28 (Pacific/Auckland), session 4d2.
 
 ## Resume point
 
@@ -8,13 +8,22 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
-Current branch/HEAD: `main` is aligned with `origin/main` at
-`448a4f6` (`feat(agent): port portal tags and managed scope @ b9aa928`),
-verified with `git ls-remote origin refs/heads/main`; this documentation
-checkpoint is the follow-up `handoff:` commit on top of it. Logical units
-continue to publish with `git push origin main`.
+Current branch/HEAD: `main` carries the ambient-propagation unit
+(`agent.portal_tags` captured-context seam) committed with this documentation
+checkpoint; `origin/main` is updated by the push that follows this commit and
+verified with `git ls-remote origin refs/heads/main`. The previous unit —
+Portal attribution and managed configuration — is published as `448a4f6`
+plus the `a284322` handoff commit. Logical units continue to publish with
+`git push origin main`.
 
-Latest synchronized source unit: Portal attribution and managed
+Latest synchronized source unit: Portal ambient propagation —
+`ConversationContext` capture/run plus
+`propagate_conversation_context_to_thread` in `hermes-agent::portal_tags`,
+closing the ContextVar-propagation seam recorded by session 4d1. No
+module-status change; `agent.portal_tags` remains `partial` for the pinned
+CLI version, the unported `AIAgent._compress_context` turn wrapper, and the
+unported fan-out call sites that must adopt the capture.
+Previous synchronized source unit: Portal attribution and managed
 configuration — `agent.portal_tags`, `hermes_cli.managed_scope`, the merged
 managed-directory fold, and the auxiliary-client header/`extra_body` chain at
 upstream `b9aa928` (`448a4f6`, published to `origin/main`).
@@ -204,6 +213,21 @@ GitHub `11245d8` (`plugins.model-providers.arcee.__init__`), local `ec9db5aa`
 recorded above with the config/Z.AI source commit and its verified tree.
 
 ## What landed this session
+
+Session 4d2 took the one portal seam session 4d1 had recorded as pending: the
+ambient conversation id now propagates to worker threads. Upstream gets this
+for free because `tools.thread_context.propagate_context_to_thread` copies the
+whole `contextvars.Context`; the Rust port reproduces that contract for this
+module's own variable with `ConversationContext::capture`/`run` and
+`propagate_conversation_context_to_thread`, keeping the capture on the parent
+thread, the re-invocable wrapper, the reused-`Context` write-back semantics,
+and an RAII restore so a panic inside the target cannot leak the id into a
+recycled thread. CPython's recursive/cross-thread `RuntimeError` guards are
+documented as deliberately serialized instead of reproduced, and
+`hermes_tools::thread_context`'s single snapshot-factory slot stays reserved
+for the approval/gateway contextvars layer that will register a composite
+context. Tests were written first and were red before the implementation.
+
 
 Session 4d1 finished the wave a previous turn left uncommitted and red, then
 closed it with the review, tests, and ledger. Three upstream-fidelity defects
@@ -764,17 +788,23 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-The Portal-attribution unit is committed as one source commit with this
-documentation checkpoint, and the ledger changed in the same commit. Worktree
-cleanliness and commit/tree parity are verified after the push attempt.
-Generated summary: 74 done / 12 partial / 3,796 missing tracked modules and 74
-done / 12 partial / 1,017 missing production modules (1.91% tracked, 6.71%
-production).
+The ambient-propagation unit is committed with this documentation checkpoint.
+**No ledger change**: the module-status rows are identical to the
+Portal-attribution unit's — 74 done / 12 partial / 3,796 missing tracked
+modules and 74 done / 12 partial / 1,017 missing production modules (1.91%
+tracked, 6.71% production) — regenerated with `tools/inventory.sh` and
+`python3 tools/conversion_ledger.py`, with `cargo build --workspace` and the
+serialized workspace run green at 1,200 tests / 5 ignored.
 
 1. Continue the remaining `agent.auxiliary_client` request/response lifecycle:
    concrete client construction against these header/`extra_body` seams, xAI
    default headers, and the URL-inferred provider fallback used by the async
    conversion chain.
+2a. Publish the ambient conversation id at the real fan-out sites
+   (`agent/tool_executor`, MoA fan-out, background review) with
+   `propagate_conversation_context_to_thread`, or register the capture with a
+   composite context once the approval/gateway contextvars layer owns
+   `hermes_tools::thread_context`'s snapshot factory.
 2. Publish the ambient conversation id from the agent turn wrapper
    (`AIAgent._compress_context` / turn entry) once that surface is ported, and
    wire `agent.portal_tags` into `hermes_tools::thread_context`'s snapshot
@@ -832,14 +862,17 @@ The strict production formula is `done production modules / 1,103`; partial rows
   keys, and lets a non-empty `model.extra_headers` alias win; the OpenRouter
   cache gate is the union of the `_try_openrouter` route gate and the
   `_to_async_client` `base_url_host_matches(..., "openrouter.ai")` host gate.
-- Approved Portal-attribution divergences, all awaiting the missing
-  `hermes-cli` crate: `agent.portal_tags` pins `hermes_client_tag` to the
-  `b9aa928` `hermes_cli.__version__` value `0.20.0` instead of importing it
-  live, and the ambient conversation id is a Rust `thread_local!` (matching a
-  bare Python thread) rather than a propagated `contextvars.Context`; the
-  upstream `propagate_context_to_thread` and `_compress_context` ambient
-  tests therefore stay pending, and `hermes_tools::thread_context` has an
-  unused snapshot-factory seam for exactly this wiring.
+- Approved Portal-attribution divergences: `agent.portal_tags` pins
+  `hermes_client_tag` to the `b9aa928` `hermes_cli.__version__` value `0.20.0`
+  instead of importing it live, which awaits the missing `hermes-cli` crate.
+  The ambient conversation id is a Rust `thread_local!`, so a bare worker
+  already behaves like a bare Python thread, and session 4d2 added the
+  captured-context half (`ConversationContext` + the module-local propagate
+  wrapper). Remaining deltas there: CPython raises `RuntimeError` when a
+  `Context` is entered recursively or by two threads at once, while the port
+  serializes both, and the wrapper covers this one variable until a composite
+  approval/gateway context registers with
+  `hermes_tools::thread_context`'s snapshot factory.
 - Header-value stringification matches Python `str()` for scalars
   (`True`/`False`, `None` skipped) and renders list/dict values as JSON rather
   than Python `repr`; no upstream test pins the degenerate container shapes.
@@ -1011,6 +1044,22 @@ passed 3/3. Targeted rustfmt passed; concrete Z.AI HTTP/cache and full merged
 CLI config behavior remain deferred.
 
 ## Verification evidence
+
+For the current ambient-propagation unit, the red-first focused
+`/home/mustbearnold/.cargo/bin/cargo test -p hermes-agent --test
+parity_portal_tags` run now passes 12 tests,
+`/home/mustbearnold/.cargo/bin/cargo build --workspace` passed, and the
+required serialized `/home/mustbearnold/.cargo/bin/cargo test --workspace --
+--test-threads=1` passed with 1,200 tests and the same 5 intentionally ignored
+doc tests. Targeted
+`/home/mustbearnold/.cargo/bin/rustfmt --edition 2021 --check` on the two
+changed files is clean, targeted
+`/home/mustbearnold/.cargo/bin/cargo clippy -p hermes-agent --all-targets`
+reports only the two pre-existing `auxiliary_client` `too_many_arguments` and
+`needless_lifetimes` diagnostics, and `git diff --check` passed. Ledger counts
+are unchanged (no module-status change), so `tools/inventory.json`,
+`CONVERSION-LEDGER.md`, and the README snapshot regenerate identically.
+
 
 For the current Portal-attribution/managed-scope unit, the focused
 `/home/mustbearnold/.cargo/bin/cargo test -p hermes-agent --test
