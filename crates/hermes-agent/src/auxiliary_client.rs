@@ -927,46 +927,120 @@ fn auxiliary_expand_user(path: &str) -> String {
     path.to_owned()
 }
 
-fn auxiliary_effective_ca_bundle(ca_bundle: Option<&str>) -> Option<String> {
-    // The source's `or` chain means a non-empty explicit path wins even when
-    // it is stale; a missing explicit path therefore falls back to the default
-    // certificates rather than silently trying a lower-priority env path.
+/// The operator-facing warning `resolve_httpx_verify` emits.
+///
+/// PARITY: the two `logger.warning` calls in `agent/ssl_verify.py`
+/// (lines 40-44 and 58-61). Upstream logs them from inside the resolver; the
+/// Rust port exposes them as a value so the text is testable, and
+/// [`resolve_auxiliary_tls_verify`] logs the same string through `log`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum AuxiliaryTlsVerifyWarning {
+    /// Verification was disabled explicitly. `base_url` is the endpoint named
+    /// in the message; `None` reproduces the source's
+    /// `"a custom provider endpoint"` placeholder for callers without a URL.
+    Insecure { base_url: Option<String> },
+    /// The selected CA bundle path does not exist, so the default certificate
+    /// store is used instead. The path is reported before `~` expansion, as the
+    /// source reports the configured value.
+    MissingCaBundle { configured: String },
+}
+
+impl AuxiliaryTlsVerifyWarning {
+    /// The exact message text the source logs.
+    pub fn text(&self) -> String {
+        match self {
+            Self::Insecure { base_url } => format!(
+                "TLS certificate verification DISABLED (ssl_verify: false) for {} — \
+                 this is intended for local development only and is unsafe on any \
+                 network you do not fully control.",
+                base_url
+                    .as_deref()
+                    .filter(|value| !value.is_empty())
+                    .unwrap_or("a custom provider endpoint")
+            ),
+            Self::MissingCaBundle { configured } => format!(
+                "CA bundle path does not exist: {configured} — falling back to \
+                 default certificates"
+            ),
+        }
+    }
+}
+
+/// The first non-empty CA bundle source in the env precedence chain, without
+/// the existence check.
+///
+/// PARITY: the `effective_ca` `or` chain (`agent/ssl_verify.py` lines 46-52).
+/// The source's `or` chain means a non-empty explicit path wins even when it is
+/// stale — a missing explicit path therefore falls back to the default
+/// certificates rather than silently trying a lower-priority env variable.
+fn auxiliary_configured_ca_bundle(ca_bundle: Option<&str>) -> Option<String> {
     let env_value = |key: &str| {
         std::env::var(key)
             .ok()
             .map(|value| value.trim().to_owned())
             .filter(|value| !value.is_empty())
     };
-    let explicit = ca_bundle
+    ca_bundle
         .map(str::trim)
         .filter(|value| !value.is_empty())
-        .map(ToOwned::to_owned);
-    let configured = explicit
+        .map(ToOwned::to_owned)
         .or_else(|| env_value("HERMES_CA_BUNDLE"))
         .or_else(|| env_value("SSL_CERT_FILE"))
         .or_else(|| env_value("REQUESTS_CA_BUNDLE"))
-        .or_else(|| env_value("CURL_CA_BUNDLE"))?;
-    let expanded = auxiliary_expand_user(&configured);
-    Path::new(&expanded).is_file().then_some(expanded)
+        .or_else(|| env_value("CURL_CA_BUNDLE"))
 }
 
 /// Resolve the source's `httpx verify` setting without binding the Rust port
 /// to a particular HTTP client implementation.
 ///
 /// The caller supplies the already-resolved provider TLS fields. A missing or
-/// invalid CA path fails open to the HTTP client's default certificate store.
-///
-/// PARITY: agent/ssl_verify.py lines 14-65.
+/// invalid CA path fails open to the HTTP client's default certificate store,
+/// and `base_url` is used only for the insecure-mode warning message, exactly as
+/// the source documents.
 pub fn resolve_auxiliary_tls_verify(
     ca_bundle: Option<&str>,
     ssl_verify: Option<&AuxiliarySslVerifySetting>,
+    base_url: Option<&str>,
 ) -> AuxiliaryTlsVerify {
-    if auxiliary_ssl_verification_disabled(ssl_verify) {
-        return AuxiliaryTlsVerify::Disabled;
+    let (verify, warning) = auxiliary_tls_verify_resolution(ca_bundle, ssl_verify, base_url);
+    if let Some(warning) = &warning {
+        log::warn!("{}", warning.text());
     }
-    auxiliary_effective_ca_bundle(ca_bundle)
-        .map(AuxiliaryTlsVerify::CaBundle)
-        .unwrap_or(AuxiliaryTlsVerify::Default)
+    verify
+}
+
+/// The resolved setting together with the warning the source would log.
+///
+/// PARITY: `resolve_httpx_verify` (`agent/ssl_verify.py` lines 23-65) in its
+/// pure form: insecure coercion first, then the CA bundle precedence chain and
+/// its existence check, then the default.
+pub fn auxiliary_tls_verify_resolution(
+    ca_bundle: Option<&str>,
+    ssl_verify: Option<&AuxiliarySslVerifySetting>,
+    base_url: Option<&str>,
+) -> (AuxiliaryTlsVerify, Option<AuxiliaryTlsVerifyWarning>) {
+    if auxiliary_ssl_verification_disabled(ssl_verify) {
+        return (
+            AuxiliaryTlsVerify::Disabled,
+            Some(AuxiliaryTlsVerifyWarning::Insecure {
+                base_url: base_url.map(str::to_string),
+            }),
+        );
+    }
+    match auxiliary_configured_ca_bundle(ca_bundle) {
+        None => (AuxiliaryTlsVerify::Default, None),
+        Some(configured) => {
+            let expanded = auxiliary_expand_user(&configured);
+            if Path::new(&expanded).is_file() {
+                (AuxiliaryTlsVerify::CaBundle(expanded), None)
+            } else {
+                (
+                    AuxiliaryTlsVerify::Default,
+                    Some(AuxiliaryTlsVerifyWarning::MissingCaBundle { configured }),
+                )
+            }
+        }
+    }
 }
 
 /// Build the first-party headers required by the Codex OAuth endpoint.

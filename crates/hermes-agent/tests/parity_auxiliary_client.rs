@@ -1,19 +1,19 @@
 use hermes_agent::auxiliary_client::{
     apply_user_default_headers, auxiliary_default_headers, auxiliary_http_client_config,
     auxiliary_max_tokens_param, auxiliary_proxy_for_base_url, auxiliary_proxy_from_env,
-    build_auxiliary_http_client, build_nvidia_nim_headers, build_or_headers,
-    codex_cloudflare_headers, compression_threshold_for_model, copilot_request_headers,
-    fixed_temperature_for_model, get_auxiliary_extra_body, is_anthropic_compatible_host,
-    is_arcee_trinity_thinking, is_codex_gpt54_or_gpt55, is_codex_spark, is_kimi_model,
-    is_model_incompatible_error, is_model_not_found_error, is_payment_error, is_rate_limit_error,
-    normalize_aux_provider, nous_extra_body, nous_portal_fallback_extra, openai_client_config,
-    openai_client_config_with_transport, openrouter_cache_headers, pool_runtime_api_key,
-    pool_runtime_base_url, read_codex_access_token, resolve_aux_task_provider_model,
-    resolve_auxiliary_tls_verify, resolve_pool_first_runtime_credentials,
-    resolve_provider_default_headers, select_auxiliary_pool_entry, to_openai_base_url,
-    AuxiliaryError, AuxiliaryHttpClient, AuxiliaryHttpClientConfig, AuxiliaryPoolEntry,
-    AuxiliaryRuntimeCredentials, AuxiliarySslVerifySetting, AuxiliaryTaskConfig,
-    AuxiliaryTemperaturePolicy, AuxiliaryTlsVerify,
+    auxiliary_tls_verify_resolution, build_auxiliary_http_client, build_nvidia_nim_headers,
+    build_or_headers, codex_cloudflare_headers, compression_threshold_for_model,
+    copilot_request_headers, fixed_temperature_for_model, get_auxiliary_extra_body,
+    is_anthropic_compatible_host, is_arcee_trinity_thinking, is_codex_gpt54_or_gpt55,
+    is_codex_spark, is_kimi_model, is_model_incompatible_error, is_model_not_found_error,
+    is_payment_error, is_rate_limit_error, normalize_aux_provider, nous_extra_body,
+    nous_portal_fallback_extra, openai_client_config, openai_client_config_with_transport,
+    openrouter_cache_headers, pool_runtime_api_key, pool_runtime_base_url, read_codex_access_token,
+    resolve_aux_task_provider_model, resolve_auxiliary_tls_verify,
+    resolve_pool_first_runtime_credentials, resolve_provider_default_headers,
+    select_auxiliary_pool_entry, to_openai_base_url, AuxiliaryError, AuxiliaryHttpClient,
+    AuxiliaryHttpClientConfig, AuxiliaryPoolEntry, AuxiliaryRuntimeCredentials,
+    AuxiliarySslVerifySetting, AuxiliaryTaskConfig, AuxiliaryTemperaturePolicy, AuxiliaryTlsVerify,
 };
 use parking_lot::Mutex;
 use serde_json::json;
@@ -1040,7 +1040,7 @@ fn auxiliary_tls_verify_defaults_to_httpx_certificates() {
     clear_auxiliary_env();
 
     assert_eq!(
-        resolve_auxiliary_tls_verify(None, None),
+        resolve_auxiliary_tls_verify(None, None, None),
         AuxiliaryTlsVerify::Default
     );
 }
@@ -1057,14 +1057,14 @@ fn auxiliary_tls_verify_uses_existing_ca_bundle_and_explicit_precedence() {
 
     unsafe { std::env::set_var("HERMES_CA_BUNDLE", "missing-ca-bundle.pem") };
     assert_eq!(
-        resolve_auxiliary_tls_verify(Some(&ca_bundle), None),
+        resolve_auxiliary_tls_verify(Some(&ca_bundle), None, None),
         AuxiliaryTlsVerify::CaBundle(ca_bundle.clone())
     );
 
     unsafe { std::env::remove_var("HERMES_CA_BUNDLE") };
     unsafe { std::env::set_var("HERMES_CA_BUNDLE", &ca_bundle) };
     assert_eq!(
-        resolve_auxiliary_tls_verify(None, None),
+        resolve_auxiliary_tls_verify(None, None, None),
         AuxiliaryTlsVerify::CaBundle(ca_bundle)
     );
 }
@@ -1077,15 +1077,19 @@ fn auxiliary_tls_verify_accepts_false_settings_and_fails_open_for_missing_ca() {
     clear_auxiliary_env();
 
     assert_eq!(
-        resolve_auxiliary_tls_verify(None, Some(&AuxiliarySslVerifySetting::Boolean(false)),),
+        resolve_auxiliary_tls_verify(None, Some(&AuxiliarySslVerifySetting::Boolean(false)), None),
         AuxiliaryTlsVerify::Disabled
     );
     assert_eq!(
-        resolve_auxiliary_tls_verify(None, Some(&AuxiliarySslVerifySetting::Text("off".into())),),
+        resolve_auxiliary_tls_verify(
+            None,
+            Some(&AuxiliarySslVerifySetting::Text("off".into())),
+            None
+        ),
         AuxiliaryTlsVerify::Disabled
     );
     assert_eq!(
-        resolve_auxiliary_tls_verify(Some("missing-ca-bundle.pem"), None),
+        resolve_auxiliary_tls_verify(Some("missing-ca-bundle.pem"), None, None),
         AuxiliaryTlsVerify::Default
     );
 }
@@ -1632,4 +1636,52 @@ fn auxiliary_extra_body_and_portal_fallback_track_the_ambient_context() {
     assert_eq!(tags.as_array().expect("tags").len(), 2);
     set_conversation_context(token.as_deref());
     let _ = conversation_tag("unused");
+}
+
+// Tier: unit — mirrors the two `logger.warning` calls the source emits inside
+// `resolve_httpx_verify` (agent/ssl_verify.py lines 40-44 and 58-61).
+#[test]
+fn auxiliary_tls_verify_warnings_match_the_source_text() {
+    let _lock = AUXILIARY_ENV_MUTEX.lock();
+    let _environment = EnvironmentSnapshot::new();
+    clear_auxiliary_env();
+
+    let (verify, warning) = auxiliary_tls_verify_resolution(
+        None,
+        Some(&AuxiliarySslVerifySetting::Boolean(false)),
+        Some("http://127.0.0.1:11434/v1"),
+    );
+    assert_eq!(verify, AuxiliaryTlsVerify::Disabled);
+    assert_eq!(
+        warning.expect("insecure warning").text(),
+        "TLS certificate verification DISABLED (ssl_verify: false) for \
+         http://127.0.0.1:11434/v1 — this is intended for local development only \
+         and is unsafe on any network you do not fully control."
+    );
+
+    // No endpoint still yields the source's placeholder.
+    let (_, warning) = auxiliary_tls_verify_resolution(
+        None,
+        Some(&AuxiliarySslVerifySetting::Text("  OFF ".into())),
+        None,
+    );
+    assert!(warning
+        .expect("insecure warning")
+        .text()
+        .contains("for a custom provider endpoint —"));
+
+    let (verify, warning) =
+        auxiliary_tls_verify_resolution(Some("missing-ca-bundle.pem"), None, None);
+    assert_eq!(verify, AuxiliaryTlsVerify::Default);
+    assert_eq!(
+        warning.expect("missing bundle warning").text(),
+        "CA bundle path does not exist: missing-ca-bundle.pem — falling back to \
+         default certificates"
+    );
+
+    // A resolved bundle logs nothing.
+    unsafe { std::env::remove_var("HERMES_CA_BUNDLE") };
+    assert!(auxiliary_tls_verify_resolution(None, None, None)
+        .1
+        .is_none());
 }

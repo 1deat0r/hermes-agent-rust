@@ -47,6 +47,9 @@
  "agent.session_activity": {
     "status": "done"
   },
+ "agent.ssl_verify": {
+    "status": "done"
+  },
 
   "hermes_cli.managed_scope": {
     "status": "done"

@@ -8,12 +8,20 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
-Current branch/HEAD: `main` is aligned with `origin/main` at
-`fee2b4f` (`feat(agent): port turn retry, verify hooks, kanban stop,
-compression feedback @ b9aa928`), verified with
-`git ls-remote origin refs/heads/main`; the follow-up `handoff:` commit records
-this line. Earlier published units: `91b472e` (+ `c63f3a3`), `8a9e8f3` (+
-`0aea517`), `448a4f6` (+ `a284322`).
+Current branch/HEAD: `main` carries the `agent.ssl_verify` promotion committed
+with this documentation checkpoint; published history before it is `fee2b4f`
+(+ `27c1329` handoff), `91b472e` (+ `c63f3a3`), `8a9e8f3` (+ `0aea517`),
+`448a4f6` (+ `a284322`). Confirm with
+`git ls-remote origin refs/heads/main` after the push.
+
+Latest synchronized source unit: `agent.ssl_verify` promoted to `done` — the
+TLS resolver in `hermes-agent::auxiliary_client` regained the source's
+`base_url` input and both operator warnings, exposed through the pure
+`auxiliary_tls_verify_resolution` so the byte-exact text is asserted.
+**Decision awaiting sign-off:** `agent/jiter_preload` is recorded as an
+explicit non-port (a build-time-linked Rust binary has no deferred
+native-extension import to pre-seed), so its row stays `missing` with a
+rationale instead of gaining a no-op function.
 
 Latest synchronized source unit: the second small-module batch —
 `agent.turn_retry_state`, `agent.verify_hooks`, `agent.kanban_stop`, and
@@ -832,9 +840,9 @@ hardening remains in the preceding synchronized history.
 
 ## Exact working-tree state
 
-This batch **changed the ledger**: 83 done / 13 partial / 3,786 missing tracked
-modules and 83 done / 13 partial / 1,007 missing production modules —
-**2.14%** tracked and **7.52%** production strict completion — regenerated with
+Sessions 4d4/4d5 **changed the ledger**: 84 done / 13 partial / 3,785 missing
+tracked modules and 84 done / 13 partial / 1,006 missing production modules —
+**2.16%** tracked and **7.62%** production strict completion — regenerated with
 `HERMES_UPSTREAM=/run/media/mustbearnold/Projects/Research/hermes-agent-repo
 tools/inventory.sh` and `python3 tools/conversion_ledger.py`, with
 `cargo build --workspace` and the serialized workspace run green at 1,262 tests
@@ -882,8 +890,8 @@ tools/inventory.sh` and `python3 tools/conversion_ledger.py`, with
 
 `CONVERSION-LEDGER.md` is generated and contains one row for every 3,882 upstream inventory modules: 1,103 production tasks plus 2,779 oracle/test tasks. Only `done` counts toward completion.
 
-- All tracked modules: 83 done / 13 partial / 3,786 missing = **2.14%**.
-- Production modules: 83 done / 13 partial / 1,007 missing = **7.52%**.
+- All tracked modules: 84 done / 13 partial / 3,785 missing = **2.16%**.
+- Production modules: 84 done / 13 partial / 1,006 missing = **7.62%**.
 
 The thirteen partial production rows are `agent.auxiliary_client`,
 `agent.credential_pool`, `agent.interrupt_compat`, `agent.portal_tags`,
@@ -909,6 +917,13 @@ The strict production formula is `done production modules / 1,103`; partial rows
 
 ## Fidelity notes
 
+- Session 4d5: `agent.ssl_verify`'s two `logger.warning` calls are part of its
+  contract (the fail-open is only honest if the operator hears about it), so the
+  port keeps them as `AuxiliaryTlsVerifyWarning::text()` and logs through
+  `log::warn!`; the resolver therefore gained the source's `base_url` argument,
+  which upstream uses for nothing else. `agent.jiter_preload` is an explicit
+  non-port pending sign-off (see PLAN §7, session 4d5): porting it would mean
+  writing a function that cannot fail and a module global nothing reads.
 - Session 4d4 batch details: `agent.verify_hooks` is ported without the
   `hermes_cli.plugins` `pre_verify` hook aggregation (that module is unported),
   so only the policy helpers exist here; `_agent_cfg(None)` reads the process
@@ -1115,6 +1130,17 @@ passed 3/3. Targeted rustfmt passed; concrete Z.AI HTTP/cache and full merged
 CLI config behavior remain deferred.
 
 ## Verification evidence
+
+For the current `agent.ssl_verify` promotion,
+`/home/mustbearnold/.cargo/bin/cargo test -p hermes-agent --test
+parity_auxiliary_client` passed 62 tests (one new warning-parity case, three
+existing TLS cases updated for the resolver's `base_url` input). The second
+batch's numbers stay valid for the rest of the workspace: serialized
+`/home/mustbearnold/.cargo/bin/cargo test --workspace -- --test-threads=1`,
+`/home/mustbearnold/.cargo/bin/cargo build --workspace`, targeted
+`rustfmt --edition 2021 --check`, `cargo clippy -p hermes-agent --all-targets`
+and `git diff --check` are recorded immediately below.
+
 
 For the current four-module batch, the red-first focused
 `/home/mustbearnold/.cargo/bin/cargo test -p hermes-agent --test
