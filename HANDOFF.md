@@ -8,8 +8,10 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
-Current branch/HEAD: `main` carries the `hermes-cli` crate-opening unit
-committed with this documentation checkpoint; published history before it is
+Current branch/HEAD: `main` is aligned with `origin/main` at
+`2468dc7` (`feat(cli): open hermes-cli crate with build_info and input_sanitize
+@ b9aa928`), verified with `git ls-remote origin refs/heads/main`; the
+follow-up `handoff:` commit records that line. Published history before it:
 `2747f77` (+ `2b28e63` handoff), `fee2b4f`
 (+ `27c1329` handoff), `91b472e` (+ `c63f3a3`), `8a9e8f3` (+ `0aea517`),
 `448a4f6` (+ `a284322`). Confirm with
