@@ -538,6 +538,7 @@ version = "0.1.0"
 dependencies = [
  "hermes-cli",
  "hermes-constants",
+ "hermes-state",
  "hermes-time",
  "libc",
  "serde_json",

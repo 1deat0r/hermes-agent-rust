@@ -489,6 +489,8 @@ The gateway crate opened ahead of Phase 4 as a dependency-free leaf, the same pr
 | gateway/cgroup_cleanup.py (81 LOC) | ✅ | `hermes-gateway::cgroup_cleanup` (gains `libc` for per-PID SIGKILL); 8 parity tests (`unit`/`mock`, incl. one live kill) mirror `tests/gateway/test_cgroup_cleanup.py` — the `^0::(.+)$` v2 line parse (and the no-unified-line None arm), lenient pid parsing (blank/non-numeric skipped), reap as a no-op with `count 0` when `cgroup.procs` is unreadable, own-pid skip, and a real spawned `sleep` child SIGKILLed and counted; ESRCH/EPERM don't count toward the kill tally per upstream's except arms. `reap_cgroup(None)` is never invoked in tests (it would kill the test process's own cgroup) |
 | gateway/rich_sent_store.py (83 LOC) | ✅ | `hermes-gateway::rich_sent_store` (gains `hermes-constants`, `hermes-time`, `serde_json`); 8 parity tests (`unit`, source-derived — no dedicated upstream test file; gap noted). Oracle: `chat:message` keying, 2000-char text cut, Python-falsiness guards (empty/None text, None ids touch no disk), fail-open lookup on missing/corrupt/non-dict store and falsy `t`, the 1000-entry trim by oldest `ts` (stable sort → insertion order breaks ties), and recovery from a corrupt store |
 | `hermes_cli/main.py` `_read_packed_ref` + `_read_git_revision_fingerprint` (main.py marked partial) | ✅ | `hermes_cli::git_revision`; 8 parity tests (`unit`, source-derived — no dedicated upstream test file; gap noted). Real `.git` fixtures: detached HEAD `git:HEAD:<sha>`, loose refs in worktree gitdir, packed-refs (comments/peel lines skipped), the `unresolved` marker, worktree `.git`-file indirection with `commondir` resolution, and OSError fail-open to `None`. Upstream keeps the two helpers private inside `main.py`; public here because `gateway/code_skew.py` imports one across the package boundary |
+| tools/skill_provenance.py (79 LOC) | ✅ | `hermes-tools::skill_provenance` (stub filled); 5 parity tests (`unit`) mirror `tests/tools/test_skill_provenance.py` — set/get round-trip, the `origin or "foreground"` set-boundary coercion, nested set/reset restore order, and context isolation (a scoped thread stands in for `contextvars.copy_context().run`); the reset token carries the full prior value like `ContextVar.reset(token)`. `run_agent`'s set sites stay PENDING with that module |
+| gateway/session_stall.py (121 LOC) | ✅ | `hermes-gateway::session_stall`; 8 parity tests (`unit`) mirror the direct policy cases in `tests/gateway/test_session_stall_watchdog.py` — emit requires timeout>0 + pending inbound + not-already-notified + known idle ≥ timeout; clear fires on pending-gone or resumed activity, holds the latch on unknown idle; the #72016 copy with floor-divide minutes (min 1); and idle resolution from the shared #72039 snapshot only — `seconds_since_activity` preferred (numeric strings accepted, non-finite/negative handled), `last_activity_at`/`last_activity_ts` fallback, no turn-start/pending-inbound clocks. The `GatewayRunner._check_session_stalls` notify-once loop stays PENDING with `gateway.run` |
 
 ### hermes-providers base (Phase 2, upstream @ b9aa928)
 
@@ -636,40 +638,52 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 ## 7. Session log
 
-- 2026-08-31 (session 4da): Four units across two crates, all red-first:
-  the `hermes_cli/main.py` private git-fingerprint helpers
+- 2026-08-31 (session 4da): Six units across three crates, all red-first:
+  batch 1 — the `hermes_cli/main.py` private git-fingerprint helpers
   (`_read_packed_ref`, `_read_git_revision_fingerprint`) into
   `hermes-cli::git_revision` (8 tests), then `gateway/code_skew.py` (10
   tests), `gateway/cgroup_cleanup.py` (8 tests, incl. one live SIGKILL of a
   spawned `sleep` child), and `gateway/rich_sent_store.py` (8 tests,
   source-derived — no dedicated upstream test file; gap noted) into
-  `hermes-gateway`, which gains `hermes-cli`, `hermes-constants`,
-  `hermes-time`, `serde_json`, and `libc` — all still below the agent/tools
-  layers. `hermes_cli.main` is marked `partial` (two private helpers of a
-  ~5k-line module). Production strict completion moves 8.52% → 8.79%
-  (97 done). Fidelity points: code_skew's boot snapshot is idempotent and
-  the `unresolved`/short-sha/empty-sha arms of `_short` are pinned
-  byte-exact; cgroup reaping counts only successful kills (upstream's
+  `hermes-gateway`; batch 2 — the `tools/skill_provenance.py` stub filled
+  (5 tests mirroring `tests/tools/test_skill_provenance.py`; scoped thread
+  stands in for `copy_context().run`, token carries the prior value like
+  `ContextVar.reset`) and `gateway/session_stall.py` (8 tests; the
+  `GatewayRunner` notify-once loop stays PENDING with `gateway.run`,
+  `tools.close_terminal_tool` was skipped as blocked on the 2,937-LOC
+  `tools.process_registry`). `hermes-gateway` gains `hermes-cli`,
+  `hermes-constants`, `hermes-time`, `serde_json`, `libc`, and
+  `hermes-state` (dev) — all still below the agent/tools layers.
+  `hermes_cli.main` is marked `partial` (two private helpers of a ~5k-line
+  module). Production strict completion moves 8.52% → 8.98% (99 done).
+  Fidelity points: code_skew's boot snapshot is idempotent and the
+  `unresolved`/short-sha/empty-sha arms of `_short` are pinned byte-exact;
+  cgroup reaping counts only successful kills (upstream's
   ProcessLookupError/PermissionError arms both `continue` without
   counting) and `reap_cgroup(None)` is never exercised in tests because it
   would kill the test process's own cgroup; rich_sent_store's trim uses a
   stable sort so same-second timestamps trim in insertion order, and the
-  guards/fail-open arms mirror Python falsiness exactly. Process note:
-  upstream HEAD has advanced far past the pin, so the inventory was
-  regenerated against a pinned `b9aa928` git worktree (the stale
-  `/home/mustbearn` default in `tools/inventory.sh`/AGENTS.md was corrected
-  to the current checkout path).
-  Evidence: `cargo test -p hermes-gateway -p hermes-cli` → 34 new tests
-  green (86 total across the two crates); `cargo clippy -p hermes-gateway
-  -p hermes-cli --all-targets` clean on all new code; `rustfmt --edition
+  guards/fail-open arms mirror Python falsiness exactly; session_stall's
+  idle resolution accepts numeric strings (Python `float()`), falls through
+  on non-finite/non-numeric `seconds_since_activity`, and clamps negative
+  idle to 0.0. Process note: upstream HEAD has advanced far past the pin,
+  so the inventory was regenerated against a pinned `b9aa928` git worktree
+  (the stale `/home/mustbearn` default in `tools/inventory.sh`/AGENTS.md
+  was corrected to the current checkout path).
+  Evidence: `cargo test -p hermes-gateway -p hermes-cli -p hermes-tools` →
+  47 new tests green; `cargo clippy -p hermes-gateway -p hermes-cli -p
+  hermes-tools --all-targets` clean on all new code; `rustfmt --edition
   2021` clean on all changed files; serialized
   `/home/mustbearnold/.cargo/bin/cargo test --workspace -- --test-threads=1`
-  passed 1,361 tests with 5 intentional ignores; `git diff --check` clean.
-  Ledger: 97 done / 15 partial / 3,770 tracked (**2.50%**) and 97 done /
-  15 partial / 991 production (**8.79%**). Next: more small `tools/`/
-  `gateway/` leaves (e.g. `tools.close_terminal_tool`,
-  `tools.skill_provenance`, `gateway.session_stall`), or the deferred
-  higher-layer seams (desktop/gateway emitter wiring, plugin registry).
+  passed 1,374 tests with 6 intentional ignores (the new one is
+  skill_provenance's `ignore` doc example); `git diff --check` clean.
+  Ledger: 99 done / 15 partial / 3,768 tracked (**2.55%**) and 99 done /
+  15 partial / 989 production (**8.98%**). Next: more small `tools/`/
+  `gateway/` leaves (e.g. `gateway.readiness`, `gateway.rich_sent_store`
+  neighbors `gateway.code_skew` consumers, `tools.open_preview_tool`), the
+  `tools.process_registry` mega-module (unblocks
+  `tools.close_terminal_tool`), or the deferred higher-layer seams
+  (desktop/gateway emitter wiring, plugin registry).
 
 - 2026-08-30 (session 4d9): Three more oracle-backed leaves across two
   crates: `tools/browser_camofox_state.py` and `tools/focus_pane_tool.py`

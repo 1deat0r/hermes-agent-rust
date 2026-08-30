@@ -1,7 +1,7 @@
 # Hermes Agent → Hermes Agent Rust Conversion Ledger
 
-**Current strict completion: 2.05% of all tracked upstream modules (97/4740).**
-Production-only strict completion: **7.89%** (97/1229 production modules).
+**Current strict completion: 2.09% of all tracked upstream modules (99/4740).**
+Production-only strict completion: **8.06%** (99/1229 production modules).
 
 > This file is generated from `tools/inventory.json`; update the source ledger in `tools/port_status.json`, regenerate the inventory, then run `python3 tools/conversion_ledger.py`. Only `done` counts toward the percentage. `partial` is intentionally zero credit until its stated parity seams are closed.
 
@@ -9,10 +9,10 @@ Production-only strict completion: **7.89%** (97/1229 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 97 | 15 | 4628 | 2.05% | 40,678/1,910,919 done LOC |
-| Production modules | 97 | 15 | 1117 | 7.89% | 40,678/993,168 done LOC |
+| All tracked modules | 99 | 15 | 4626 | 2.09% | 40,877/1,910,919 done LOC |
+| Production modules | 99 | 15 | 1115 | 8.06% | 40,877/993,168 done LOC |
 
-Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-31T08:01:50`.
+Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-31T08:11:16`.
 
 ## Definition of 100.00%
 
@@ -422,7 +422,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `gateway.session` | production | P4 | 4,251 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `gateway.session_context` | production | P4 | 525 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `gateway.session_db_recovery` | production | P4 | 189 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `gateway.session_stall` | production | P4 | 121 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `gateway.session_stall` | production | P4 | 121 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `gateway.session_state` | production | P4 | 475 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `gateway.shutdown_flush` | production | P4 | 469 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `gateway.shutdown_forensics` | production | P4 | 476 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
@@ -4750,7 +4750,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `tools.skill_ledger` | production | P2 | 388 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.skill_linter` | production | P2 | 462 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.skill_manager_tool` | production | P2 | 2,175 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `tools.skill_provenance` | production | P2 | 78 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `tools.skill_provenance` | production | P2 | 78 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `tools.skill_usage` | production | P2 | 1,393 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.skillevaluator_scan` | production | P2 | 240 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.skills_ast_audit` | production | P2 | 133 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |

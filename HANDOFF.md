@@ -28,7 +28,7 @@ this documentation checkpoint. Previous: `d138528` (4d9's
 
 ## What landed this session (4da)
 
-Four units across two crates, all red-first, 34 new parity tests:
+Six units across three crates, all red-first, 47 new parity tests:
 
 - `hermes_cli/main.py` `_read_packed_ref` + `_read_git_revision_fingerprint`
   → `hermes-cli::git_revision` (8 tests, source-derived — no dedicated
@@ -52,24 +52,35 @@ Four units across two crates, all red-first, 34 new parity tests:
   (missing/corrupt/non-dict/falsy-`t`), 1000-entry trim by oldest `ts` with
   a stable sort (same-second timestamps trim in insertion order).
 
+Batch 2: `tools/skill_provenance.py` → `hermes-tools::skill_provenance`
+stub filled (5 tests; scoped thread = `copy_context().run`; token carries
+the prior value like `ContextVar.reset`) and `gateway/session_stall.py` →
+`hermes-gateway::session_stall` (8 tests; numeric-string `float()` accepts,
+non-finite fall-through, negative-idle clamp; the `GatewayRunner`
+notify-once loop stays PENDING with `gateway.run`).
+
 `hermes-gateway` gains `hermes-cli`, `hermes-constants`, `hermes-time`,
-`serde_json`, `libc` — all still below the agent/tools layers.
+`serde_json`, `libc`, and `hermes-state` (dev) — all still below the
+agent/tools layers. `tools.close_terminal_tool` was skipped: blocked on the
+2,937-LOC `tools.process_registry`.
 
 ## Exact working-tree state
 
-Session 4da **changed the ledger**: 97 done / 15 partial / 3,770 missing
-tracked modules and 97 done / 15 partial / 991 missing production modules —
-**2.50%** tracked and **8.79%** production strict completion — regenerated
+Session 4da **changed the ledger**: 99 done / 15 partial / 3,768 missing
+tracked modules and 99 done / 15 partial / 989 missing production modules —
+**2.55%** tracked and **8.98%** production strict completion — regenerated
 against the pinned `b9aa928` worktree (commands above), with
-`cargo build --workspace` and the serialized workspace run green at 1,361
-tests / 5 ignored.
+`cargo build --workspace` and the serialized workspace run green at 1,374
+tests / 6 ignored (the 6th is skill_provenance's intentional `ignore` doc
+example).
 
 ## Next actions, in order
 
 1. Keep taking the small-module batch. Same-shape candidates:
-   `tools.close_terminal_tool` (62 LOC), `tools.skill_provenance` (78 LOC),
-   `gateway.session_stall` (121 LOC), `gateway.readiness` (138 LOC), and the
-   remaining small oracle-backed `tools/`/`gateway/`/`hermes_cli` leaves.
+   `gateway.readiness` (138 LOC, yaml+sqlite probes), and the remaining
+   small oracle-backed `tools/`/`gateway/`/`hermes_cli` leaves. The big
+   `tools.process_registry` (2,937 LOC) unblocks `tools.close_terminal_tool`
+   and `tools.read_terminal_tool` callers when taken.
 2. Continue the remaining `agent.auxiliary_client` request/response lifecycle
    and the deferred higher-layer seams (desktop/gateway emitter wiring,
    plugin registry).
@@ -77,12 +88,18 @@ tests / 5 ignored.
 
 ## Current conversion ledger
 
-97 done / 15 partial / 3,770 missing tracked (**2.50%** strict completion);
-97 done / 15 partial / 991 missing production (**8.79%**). Regenerated via
+99 done / 15 partial / 3,768 missing tracked (**2.55%** strict completion);
+99 done / 15 partial / 989 missing production (**8.98%**). Regenerated via
 `tools/inventory.sh` (pinned worktree) + `python3 tools/conversion_ledger.py`.
 
 ## Fidelity notes
 
+- Session 4da (batch 2): `session_stall` idle resolution mirrors Python
+  `float()` semantics — numeric strings parse, non-numeric/non-finite
+  `seconds_since_activity` falls through to `last_activity_at`/`_ts`,
+  negative values clamp to 0.0, and an empty mapping is falsy like
+  `if not activity`. `skill_provenance`'s set-boundary coercion is
+  `origin or "foreground"`.
 - Session 4da: `code_skew._short` keeps Python's `sha or fingerprint`
   empty-string fallback; `record_boot_fingerprint` is idempotent like the
   upstream module global. `cgroup_cleanup` per-PID kills map
@@ -100,10 +117,10 @@ tests / 5 ignored.
 ## Verification evidence
 
 - `/home/mustbearnold/.cargo/bin/cargo build --workspace` — green.
-- `cargo test -p hermes-gateway -p hermes-cli` — 34 new tests green (86
-  total across the two crates).
+- `cargo test -p hermes-gateway -p hermes-cli -p hermes-tools` — 47 new
+  tests green.
 - Serialized `/home/mustbearnold/.cargo/bin/cargo test --workspace --
-  --test-threads=1` — 1,361 passed, 0 failed, 5 intentional ignores.
+  --test-threads=1` — 1,374 passed, 0 failed, 6 intentional ignores.
 - `cargo clippy -p hermes-gateway -p hermes-cli --all-targets` — clean on
   all new code.
 - `rustfmt --edition 2021 --check` — clean on all changed files.

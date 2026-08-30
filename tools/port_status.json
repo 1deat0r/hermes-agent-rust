@@ -62,6 +62,9 @@
  "gateway.rich_sent_store": {
   "status": "done"
  },
+ "gateway.session_stall": {
+  "status": "done"
+ },
  "hermes_cli.__init__": {
   "status": "partial"
  },
@@ -294,6 +297,9 @@
   "status": "done"
  },
  "tools.session_search_tool": {
+  "status": "done"
+ },
+ "tools.skill_provenance": {
   "status": "done"
  },
  "tools.slash_confirm": {
