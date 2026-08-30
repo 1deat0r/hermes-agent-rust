@@ -7,16 +7,12 @@ use regex::Regex;
 
 const ANSI_ESCAPE: &str = r"\x1b(?:\[[\x30-\x3f]*[\x20-\x2f]*[\x40-\x7e]|\][\s\S]*?(?:\x07|\x1b\\)|[PX^_][\s\S]*?(?:\x1b\\)|[\x20-\x2f]+[\x30-\x7e]|[\x30-\x7e])|\x9b[\x30-\x3f]*[\x20-\x2f]*[\x40-\x7e]|\x9d[\s\S]*?(?:\x07|\x9c)|[\x80-\x9f]";
 
-static ANSI_ESCAPE_RE: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(ANSI_ESCAPE).expect("ansi escape re")
-});
+static ANSI_ESCAPE_RE: Lazy<Regex> = Lazy::new(|| Regex::new(ANSI_ESCAPE).expect("ansi escape re"));
 static HAS_ESCAPE: Lazy<Regex> = Lazy::new(|| Regex::new(r"[\x1b\x80-\x9f]").expect("has escape"));
-static CONTROL_CHARS_RE: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]").expect("control re")
-});
-static HAS_CONTROL: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"[\x00-\x08\x0b-\x1f\x7f-\x9f]").expect("has control")
-});
+static CONTROL_CHARS_RE: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]").expect("control re"));
+static HAS_CONTROL: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"[\x00-\x08\x0b-\x1f\x7f-\x9f]").expect("has control"));
 
 /// Remove ANSI escape sequences from text (fast path when clean).
 pub fn strip_ansi(text: &str) -> String {

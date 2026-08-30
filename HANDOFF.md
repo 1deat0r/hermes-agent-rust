@@ -28,7 +28,7 @@ this documentation checkpoint. Previous: `d138528` (4d9's
 
 ## What landed this session (4da)
 
-Sixteen units across four crates, all red-first, 102 new parity tests:
+Seventeen units across four crates, all red-first, 111 new parity tests:
 
 - `hermes_cli/main.py` `_read_packed_ref` + `_read_git_revision_fingerprint`
   → `hermes-cli::git_revision` (8 tests, source-derived — no dedicated
@@ -107,6 +107,14 @@ reproduces the portal layout; the crate gains `aes-gcm`, `base64`, `rand`),
 `unknown` — a Rust runtime has no interpreter, documented in the module;
 `coerce_list` keeps Python `str()` semantics incl. `True`/`False`).
 
+Batch 9: `tools/mcp_stdio_watchdog.py` → `hermes-tools::mcp_stdio_watchdog`
+lib module + native binary `src/bin/mcp_stdio_watchdog.rs` (9
+source-derived tests, gap noted). The child runs in its own process group
+(`Command::process_group(0)` = `start_new_session`); SIGTERM/SIGINT are
+forwarded to the child's group async-signal-safely, exiting 128+sig; the
+watchdog thread polls getppid at 2s and SIGTERMs then SIGKILLs the child's
+group after the 3s grace. hermes-tools gains `libc` in [dependencies].
+
 `hermes-gateway` also gains `hermes-cli`, `hermes-constants`, `hermes-time`,
 `serde_json`, `libc` — all still below the agent/tools layers.
 `tools.close_terminal_tool` was skipped: blocked on the 2,937-LOC
@@ -116,9 +124,9 @@ reproduces the portal layout; the crate gains `aes-gcm`, `base64`, `rand`),
 
 Session 4da **changed the ledger**: 99 done / 15 partial / 3,768 missing
 tracked modules and 99 done / 15 partial / 989 missing production modules —
-**2.81%** tracked and **9.88%** production strict completion — regenerated
+**2.83%** tracked and **9.97%** production strict completion — regenerated
 against the pinned `b9aa928` worktree (commands above), with
-`cargo build --workspace` and the serialized workspace run green at 1,429
+`cargo build --workspace` and the serialized workspace run green at 1,438
 tests / 6 ignored (the 6th is skill_provenance's intentional `ignore` doc
 example).
 
@@ -137,11 +145,16 @@ example).
 ## Current conversion ledger
 
 99 done / 15 partial / 3,768 missing tracked (**2.55%** strict completion);
-109 done / 15 partial / 979 missing production (**9.88%**). Regenerated via
+110 done / 15 partial / 978 missing production (**9.97%**). Regenerated via
 `tools/inventory.sh` (pinned worktree) + `python3 tools/conversion_ledger.py`.
 
 ## Fidelity notes
 
+- Session 4da (batch 9): the in-process `run` test must record the test
+  process's *real* parent (`libc::getppid()`), not its own pid — the
+  watchdog compares against the live getppid, so a self-referential record
+  reads as instantly orphaned (that's the live-kill test's premise, not a
+  defect). Signal handlers run async-signal-safely (killpg + _exit only).
 - Session 4da (batch 8): qqbot `decrypt_secret` maps Python's raising
   `AESGCM.decrypt` to `Result<String, String>` (upstream lets the
   exception propagate; the Rust error strings carry no secrets). The
@@ -200,9 +213,9 @@ example).
 
 - `/home/mustbearnold/.cargo/bin/cargo build --workspace` — green.
 - `cargo test -p hermes-gateway -p hermes-cli -p hermes-tools -p
-  hermes-agent` — 102 new tests green.
+  hermes-agent` — 111 new tests green.
 - Serialized `/home/mustbearnold/.cargo/bin/cargo test --workspace --
-  --test-threads=1` — 1,429 passed, 0 failed, 6 intentional ignores.
+  --test-threads=1` — 1,438 passed, 0 failed, 6 intentional ignores.
 - `cargo clippy -p hermes-gateway -p hermes-cli --all-targets` — clean on
   all new code.
 - `rustfmt --edition 2021 --check` — clean on all changed files.

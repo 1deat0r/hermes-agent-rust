@@ -17,53 +17,143 @@ macro_rules! re {
     }};
 }
 
-fn md_code_block_re() -> &'static Regex { re!(r"```[\s\S]*?```") }
-fn md_link_re() -> &'static Regex { re!(r"\[([^\]]+)\]\((?:[^()]|\([^)]*\))*\)") }
-fn md_image_re() -> &'static Regex { re!(r"!\[([^\]]*)\]\((?:[^()]|\([^)]*\))*\)") }
-fn md_inline_code_re() -> &'static Regex { re!(r"`([^`]+)`") }
-fn md_bold_re() -> &'static Regex { re!(r"(?s)\*\*(.+?)\*\*") }
-fn md_underscore_bold_re() -> &'static Regex { re!(r"(?s)__(.+?)__") }
-fn md_italic_re() -> &'static Regex { re!(r"(?s)(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)") }
-fn md_underscore_italic_re() -> &'static Regex { re!(r"(?s)(?<!_)_(?!_)(.+?)(?<!_)_(?!_)") }
-fn md_strike_re() -> &'static Regex { re!(r"(?s)~~(.+?)~~") }
-fn md_heading_line_re() -> &'static Regex { re!(r"(?m)^[ \t]{0,3}#{1,6}[ \t]+(.+?)[ \t]*#*[ \t]*$") }
-fn md_blockquote_re() -> &'static Regex { re!(r"(?m)^\s*>\s?") }
-fn md_list_item_re() -> &'static Regex { re!(r"(?m)^\s*(?:[-*+]|\d+[.)])\s+") }
-fn md_hr_re() -> &'static Regex { re!(r"(?m)^\s*[-*_]{3,}\s*$") }
-fn md_table_pipe_re() -> &'static Regex { re!(r"\s*\|\s*") }
-fn url_re() -> &'static Regex { re!(r"https?://\S+") }
-fn emoji_re() -> &'static Regex { re!(r"[\u{1F1E6}-\u{1F1FF}\u{1F300}-\u{1F5FF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FAFF}☀-➿]+") }
-fn variation_selector_re() -> &'static Regex { re!("[\u{FE0E}\u{FE0F}]") }
-fn nbsp_spaces_re() -> &'static Regex { re!("[\u{a0}\u{2007}\u{202f}]") }
-fn temp_range_c_re() -> &'static Regex { re!(r"(?i)(?<!\w)([-+\u{2212}]?\d+(?:\.\d+)?)\s*[\u{2013}\u{2014}-]\s*([-+\u{2212}]?\d+(?:\.\d+)?)\s*°\s*C\b") }
-fn temp_range_f_re() -> &'static Regex { re!(r"(?i)(?<!\w)([-+\u{2212}]?\d+(?:\.\d+)?)\s*[\u{2013}\u{2014}-]\s*([-+\u{2212}]?\d+(?:\.\d+)?)\s*°\s*F\b") }
-fn temp_single_c_re() -> &'static Regex { re!(r"(?i)(?<!\w)([-+]?\d+(?:\.\d+)?)\s*°\s*C\b") }
-fn temp_single_f_re() -> &'static Regex { re!(r"(?i)(?<!\w)([-+]?\d+(?:\.\d+)?)\s*°\s*F\b") }
-fn temp_bare_c_re() -> &'static Regex { re!(r"(?i)°\s*C\b") }
-fn temp_bare_f_re() -> &'static Regex { re!(r"(?i)°\s*F\b") }
-fn temp_angle_re() -> &'static Regex { re!(r"(?<!\w)([-+]?\d+(?:\.\d+)?)\s*°") }
-fn unit_kmh_re() -> &'static Regex { re!(r"(?i)(?<=\d)\s*km\s*/\s*h\b") }
-fn unit_kmh2_re() -> &'static Regex { re!(r"(?i)(?<=\d)\s*km/h\b") }
-fn unit_mm_re() -> &'static Regex { re!(r"(?i)(?<=\d)\s*mm\b") }
-fn unit_cm_re() -> &'static Regex { re!(r"(?i)(?<=\d)\s*cm\b") }
-fn unit_m_re() -> &'static Regex { re!(r"(?i)(?<=\d)\s*m\b") }
-fn numeric_rate_re() -> &'static Regex { re!(r"(?<=\d)\s*/\s*(?=[A-Za-z])") }
-fn nz_money_re() -> &'static Regex { re!(r"(?i)NZ\$\s*([\d,]*\d(?:\.\d+)?)") }
-fn au_money_re() -> &'static Regex { re!(r"(?i)A\$\s*([\d,]*\d(?:\.\d+)?)") }
-fn us_money_re() -> &'static Regex { re!(r"(?i)US\$\s*([\d,]*\d(?:\.\d+)?)") }
-fn euro_money_re() -> &'static Regex { re!(r"€\s*([\d,]*\d(?:\.\d+)?)") }
-fn pound_money_re() -> &'static Regex { re!(r"£\s*([\d,]*\d(?:\.\d+)?)") }
-fn dollar_money_re() -> &'static Regex { re!(r"\$\s*([\d,]*\d(?:\.\d+)?)") }
-fn percent_re() -> &'static Regex { re!(r"(?<=\d)\s*%") }
-fn bullet_re() -> &'static Regex { re!("[•◦▪▫]") }
+fn md_code_block_re() -> &'static Regex {
+    re!(r"```[\s\S]*?```")
+}
+fn md_link_re() -> &'static Regex {
+    re!(r"\[([^\]]+)\]\((?:[^()]|\([^)]*\))*\)")
+}
+fn md_image_re() -> &'static Regex {
+    re!(r"!\[([^\]]*)\]\((?:[^()]|\([^)]*\))*\)")
+}
+fn md_inline_code_re() -> &'static Regex {
+    re!(r"`([^`]+)`")
+}
+fn md_bold_re() -> &'static Regex {
+    re!(r"(?s)\*\*(.+?)\*\*")
+}
+fn md_underscore_bold_re() -> &'static Regex {
+    re!(r"(?s)__(.+?)__")
+}
+fn md_italic_re() -> &'static Regex {
+    re!(r"(?s)(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)")
+}
+fn md_underscore_italic_re() -> &'static Regex {
+    re!(r"(?s)(?<!_)_(?!_)(.+?)(?<!_)_(?!_)")
+}
+fn md_strike_re() -> &'static Regex {
+    re!(r"(?s)~~(.+?)~~")
+}
+fn md_heading_line_re() -> &'static Regex {
+    re!(r"(?m)^[ \t]{0,3}#{1,6}[ \t]+(.+?)[ \t]*#*[ \t]*$")
+}
+fn md_blockquote_re() -> &'static Regex {
+    re!(r"(?m)^\s*>\s?")
+}
+fn md_list_item_re() -> &'static Regex {
+    re!(r"(?m)^\s*(?:[-*+]|\d+[.)])\s+")
+}
+fn md_hr_re() -> &'static Regex {
+    re!(r"(?m)^\s*[-*_]{3,}\s*$")
+}
+fn md_table_pipe_re() -> &'static Regex {
+    re!(r"\s*\|\s*")
+}
+fn url_re() -> &'static Regex {
+    re!(r"https?://\S+")
+}
+fn emoji_re() -> &'static Regex {
+    re!(
+        r"[\u{1F1E6}-\u{1F1FF}\u{1F300}-\u{1F5FF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FAFF}☀-➿]+"
+    )
+}
+fn variation_selector_re() -> &'static Regex {
+    re!("[\u{FE0E}\u{FE0F}]")
+}
+fn nbsp_spaces_re() -> &'static Regex {
+    re!("[\u{a0}\u{2007}\u{202f}]")
+}
+fn temp_range_c_re() -> &'static Regex {
+    re!(
+        r"(?i)(?<!\w)([-+\u{2212}]?\d+(?:\.\d+)?)\s*[\u{2013}\u{2014}-]\s*([-+\u{2212}]?\d+(?:\.\d+)?)\s*°\s*C\b"
+    )
+}
+fn temp_range_f_re() -> &'static Regex {
+    re!(
+        r"(?i)(?<!\w)([-+\u{2212}]?\d+(?:\.\d+)?)\s*[\u{2013}\u{2014}-]\s*([-+\u{2212}]?\d+(?:\.\d+)?)\s*°\s*F\b"
+    )
+}
+fn temp_single_c_re() -> &'static Regex {
+    re!(r"(?i)(?<!\w)([-+]?\d+(?:\.\d+)?)\s*°\s*C\b")
+}
+fn temp_single_f_re() -> &'static Regex {
+    re!(r"(?i)(?<!\w)([-+]?\d+(?:\.\d+)?)\s*°\s*F\b")
+}
+fn temp_bare_c_re() -> &'static Regex {
+    re!(r"(?i)°\s*C\b")
+}
+fn temp_bare_f_re() -> &'static Regex {
+    re!(r"(?i)°\s*F\b")
+}
+fn temp_angle_re() -> &'static Regex {
+    re!(r"(?<!\w)([-+]?\d+(?:\.\d+)?)\s*°")
+}
+fn unit_kmh_re() -> &'static Regex {
+    re!(r"(?i)(?<=\d)\s*km\s*/\s*h\b")
+}
+fn unit_kmh2_re() -> &'static Regex {
+    re!(r"(?i)(?<=\d)\s*km/h\b")
+}
+fn unit_mm_re() -> &'static Regex {
+    re!(r"(?i)(?<=\d)\s*mm\b")
+}
+fn unit_cm_re() -> &'static Regex {
+    re!(r"(?i)(?<=\d)\s*cm\b")
+}
+fn unit_m_re() -> &'static Regex {
+    re!(r"(?i)(?<=\d)\s*m\b")
+}
+fn numeric_rate_re() -> &'static Regex {
+    re!(r"(?<=\d)\s*/\s*(?=[A-Za-z])")
+}
+fn nz_money_re() -> &'static Regex {
+    re!(r"(?i)NZ\$\s*([\d,]*\d(?:\.\d+)?)")
+}
+fn au_money_re() -> &'static Regex {
+    re!(r"(?i)A\$\s*([\d,]*\d(?:\.\d+)?)")
+}
+fn us_money_re() -> &'static Regex {
+    re!(r"(?i)US\$\s*([\d,]*\d(?:\.\d+)?)")
+}
+fn euro_money_re() -> &'static Regex {
+    re!(r"€\s*([\d,]*\d(?:\.\d+)?)")
+}
+fn pound_money_re() -> &'static Regex {
+    re!(r"£\s*([\d,]*\d(?:\.\d+)?)")
+}
+fn dollar_money_re() -> &'static Regex {
+    re!(r"\$\s*([\d,]*\d(?:\.\d+)?)")
+}
+fn percent_re() -> &'static Regex {
+    re!(r"(?<=\d)\s*%")
+}
+fn bullet_re() -> &'static Regex {
+    re!("[•◦▪▫]")
+}
 // PARITY: upstream `_THINK_BLOCK_RE` is `<think[\s>].*? response` (a literal
 // closing ` response` tag, no space). The `<`/`>` are written as \x3c/\x3e so an
 // HTML-interpreting renderer can never corrupt them.
-fn think_block_re() -> &'static Regex { re!(r"(?is)\x3cthink[\s>].*?\x3c/think\x3e") }
-fn think_block_open_re() -> &'static Regex { re!(r"(?is)\x3cthink[\s>].*\z") }
+fn think_block_re() -> &'static Regex {
+    re!(r"(?is)\x3cthink[\s>].*?\x3c/think\x3e")
+}
+fn think_block_open_re() -> &'static Regex {
+    re!(r"(?is)\x3cthink[\s>].*\z")
+}
 // PARITY: upstream `_VERIFIER_FOOTER_RE` = `^\s*⚠️?\s*File-mutation verifier:...`
 // — the warning sign is ⚠ U+26A0 plus an optional variation selector U+FE0F.
-fn verifier_footer_re() -> &'static Regex { re!(r"(?m)^\s*\u{26a0}\u{fe0f}?\s*File-mutation verifier:.*(?:\n[ \t]+\u{2022}.*)*") }
+fn verifier_footer_re() -> &'static Regex {
+    re!(r"(?m)^\s*\u{26a0}\u{fe0f}?\s*File-mutation verifier:.*(?:\n[ \t]+\u{2022}.*)*")
+}
 
 fn replace_all(regex: &Regex, text: &str, replacement: &str) -> String {
     regex.replace_all(text, replacement).into_owned()
@@ -169,8 +259,14 @@ fn html_unescape(text: &str) -> String {
             let mut name_end = j;
             while name_end < bytes.len() && name_end - name_start < 32 {
                 let b = bytes[name_end];
-                if b == b'\t' || b == b'\n' || b == b'\x0c' || b == b' ' || b == b'<'
-                    || b == b'&' || b == b'#' || b == b';'
+                if b == b'\t'
+                    || b == b'\n'
+                    || b == b'\x0c'
+                    || b == b' '
+                    || b == b'<'
+                    || b == b'&'
+                    || b == b'#'
+                    || b == b';'
                 {
                     break;
                 }
@@ -341,8 +437,14 @@ fn replace_temp_ranges(text: &str, regex: &Regex, unit: &str) -> String {
         let m = m.expect("temp match");
         let full = m.get(0).expect("full").range();
         out.push_str(&text[last..full.start]);
-        let g1 = m.get(1).map(|g| g.as_str().replace('\u{2212}', "-")).unwrap_or_default();
-        let g2 = m.get(2).map(|g| g.as_str().replace('\u{2212}', "-")).unwrap_or_default();
+        let g1 = m
+            .get(1)
+            .map(|g| g.as_str().replace('\u{2212}', "-"))
+            .unwrap_or_default();
+        let g2 = m
+            .get(2)
+            .map(|g| g.as_str().replace('\u{2212}', "-"))
+            .unwrap_or_default();
         out.push_str(&format!("{g1} to {g2} degrees {unit}"));
         last = full.end;
     }
@@ -411,14 +513,19 @@ pub fn smooth_whitespace_for_tts(text: &str) -> String {
     let mut text = re!(r"\n{3,}").replace_all(&joined, "\n\n").into_owned();
     text = re!(r"[ \t]{2,}").replace_all(&text, " ").into_owned();
     text = re!(r"\s+([,.;:!?])").replace_all(&text, "$1").into_owned();
-    text = re!(r"([,.;:!?])([A-Za-z])").replace_all(&text, "$1 $2").into_owned();
+    text = re!(r"([,.;:!?])([A-Za-z])")
+        .replace_all(&text, "$1 $2")
+        .into_owned();
     text = re!(r"\.{4,}").replace_all(&text, "...").into_owned();
     text.trim().to_string()
 }
 
 fn flush_pending(lines: &mut Vec<String>, pending_heading: &mut Option<String>) {
     if let Some(heading) = pending_heading.take() {
-        lines.push(format!("{}.", heading.trim_end_matches(['.', ':', ';', ','])));
+        lines.push(format!(
+            "{}.",
+            heading.trim_end_matches(['.', ':', ';', ','])
+        ));
     }
 }
 
@@ -454,7 +561,12 @@ pub fn prepare_spoken_text(text: &str, max_chars: Option<usize>) -> String {
     spoken = flatten_newlines_for_payload(&spoken);
     if let Some(max) = max_chars {
         if max > 0 && spoken.chars().count() > max {
-            spoken = spoken.chars().take(max).collect::<String>().trim_end().to_string();
+            spoken = spoken
+                .chars()
+                .take(max)
+                .collect::<String>()
+                .trim_end()
+                .to_string();
         }
     }
     spoken

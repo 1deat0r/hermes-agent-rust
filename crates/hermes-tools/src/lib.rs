@@ -20,40 +20,41 @@
 //!   tool-catalog list once the tool renderers land.
 
 pub mod ansi_strip;
+pub mod audio_container;
 pub mod binary_extensions;
-pub mod file_safety;
-pub mod file_state;
-pub mod open_preview_tool;
-pub mod path_security;
-pub mod read_extract;
+pub mod blueprints;
+pub mod browser_camofox_state;
 pub mod budget_config;
-pub mod tool_result_storage;
-pub mod html5_entities;
 pub mod computer_use_schema;
 pub mod credential_files;
-pub mod desktop_ui;
-pub mod mcp_schema_cache;
-pub mod todo_tool;
-pub mod tts_text_normalize;
-pub mod audio_container;
-pub mod blueprints;
 pub mod daemon_pool;
 pub mod debug_helpers;
 pub mod delegation_output_schema;
+pub mod desktop_ui;
 pub mod env_probe;
-pub mod browser_camofox_state;
 pub mod fal_common;
+pub mod file_safety;
+pub mod file_state;
 pub mod focus_pane_tool;
-pub mod read_preview_tool;
+pub mod html5_entities;
 pub mod interrupt;
+pub mod mcp_schema_cache;
+pub mod mcp_stdio_watchdog;
+pub mod open_preview_tool;
+pub mod path_security;
+pub mod read_extract;
+pub mod read_preview_tool;
 pub mod read_terminal_tool;
 pub mod skill_provenance;
 pub mod slash_confirm;
 pub mod terminal_hints;
 pub mod thread_context;
 pub mod threat_patterns;
+pub mod todo_tool;
 pub mod tool_backend_helpers;
 pub mod tool_output_limits;
+pub mod tool_result_storage;
+pub mod tts_text_normalize;
 pub mod website_policy;
 pub mod working_diff;
 
@@ -64,28 +65,34 @@ pub fn session_search_check_expr() -> bool {
     true
 }
 pub mod clarify;
-pub mod session_search;
 pub mod registry;
 pub mod schema_sanitizer;
+pub mod session_search;
 
-pub use schema_sanitizer::{
-    collapse_const_unions, sanitize_property_key, sanitize_tool_schemas,
-    strip_nullable_unions, strip_pattern_and_format, strip_slash_enum, unrename_tool_args,
-};
 pub use ansi_strip::{sanitize_display_text, strip_ansi};
 pub use binary_extensions::{is_binary_extension, BINARY_EXTENSIONS};
+pub use budget_config::{budget_for_context_window, BudgetConfig, BudgetThreshold};
+pub use clarify::{register_clarify, set_clarify_callback};
 pub use file_safety::{
     get_read_block_error, get_write_denied_error, is_write_denied, raise_if_read_blocked,
 };
-pub use file_state::{check_stale, get_registry, known_reads, note_write, record_read, writes_since, FileStateRegistry};
+pub use file_state::{
+    check_stale, get_registry, known_reads, note_write, record_read, writes_since,
+    FileStateRegistry,
+};
 pub use path_security::validate_within_dir;
 pub use read_extract::{extract_document_text, is_extractable_document, ExtractionError};
-pub use budget_config::{budget_for_context_window, BudgetConfig, BudgetThreshold};
-pub use tool_result_storage::{enforce_turn_budget, generate_preview, maybe_persist_tool_result};
-pub use tts_text_normalize::{normalize_symbols_for_tts, prepare_spoken_text, smooth_whitespace_for_tts, strip_markdown_for_tts, strip_nonspoken_blocks};
-pub use clarify::{register_clarify, set_clarify_callback};
-pub use session_search::{register_session_search, session_search};
 pub use registry::{
-    registry, tool_error, tool_result, CheckFnCache, ToolEntry, ToolHandler,
-    ToolRegistry, ToolResult,
+    registry, tool_error, tool_result, CheckFnCache, ToolEntry, ToolHandler, ToolRegistry,
+    ToolResult,
+};
+pub use schema_sanitizer::{
+    collapse_const_unions, sanitize_property_key, sanitize_tool_schemas, strip_nullable_unions,
+    strip_pattern_and_format, strip_slash_enum, unrename_tool_args,
+};
+pub use session_search::{register_session_search, session_search};
+pub use tool_result_storage::{enforce_turn_budget, generate_preview, maybe_persist_tool_result};
+pub use tts_text_normalize::{
+    normalize_symbols_for_tts, prepare_spoken_text, smooth_whitespace_for_tts,
+    strip_markdown_for_tts, strip_nonspoken_blocks,
 };

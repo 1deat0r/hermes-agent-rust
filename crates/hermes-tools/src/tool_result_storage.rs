@@ -35,7 +35,11 @@ fn resolve_storage_dir(executor: Option<&dyn SandboxExecutor>, temp_dir: Option<
     if let Some(temp_dir) = temp_dir {
         let temp_dir = temp_dir.trim_end_matches(['/', '\\']);
         if !temp_dir.is_empty() {
-            let base = if temp_dir == "/" { String::new() } else { temp_dir.to_string() };
+            let base = if temp_dir == "/" {
+                String::new()
+            } else {
+                temp_dir.to_string()
+            };
             return format!("{base}/hermes-results");
         }
     }
@@ -45,7 +49,11 @@ fn resolve_storage_dir(executor: Option<&dyn SandboxExecutor>, temp_dir: Option<
 
 /// A single safe filename for a tool result id.
 pub fn safe_result_filename(tool_use_id: &str) -> String {
-    let raw_id = if tool_use_id.is_empty() { "tool_result" } else { tool_use_id };
+    let raw_id = if tool_use_id.is_empty() {
+        "tool_result"
+    } else {
+        tool_use_id
+    };
     let safe_stem: String = raw_id
         .chars()
         .map(|c| {
@@ -56,14 +64,12 @@ pub fn safe_result_filename(tool_use_id: &str) -> String {
             }
         })
         .collect();
-    let safe_stem = safe_stem.trim_matches(|c: char| c == '.' || c == '_' || c == '-').to_string();
+    let safe_stem = safe_stem
+        .trim_matches(|c: char| c == '.' || c == '_' || c == '-')
+        .to_string();
     let changed = safe_stem != raw_id;
 
-    let changed = if safe_stem.is_empty() {
-        true
-    } else {
-        changed
-    };
+    let changed = if safe_stem.is_empty() { true } else { changed };
     let mut safe_stem = if safe_stem.is_empty() {
         "tool_result".to_string()
     } else {
@@ -74,7 +80,11 @@ pub fn safe_result_filename(tool_use_id: &str) -> String {
         let digest = short_sha256(raw_id);
         let cut: String = safe_stem.chars().take(MAX_RESULT_FILENAME_STEM).collect();
         let cut = cut.trim_end_matches(['.', '_', '-']).to_string();
-        safe_stem = format!("{}_{}", if cut.is_empty() { "tool_result" } else { &cut }, digest);
+        safe_stem = format!(
+            "{}_{}",
+            if cut.is_empty() { "tool_result" } else { &cut },
+            digest
+        );
     }
     format!("{safe_stem}.txt")
 }
@@ -104,7 +114,6 @@ pub fn generate_preview(content: &str, max_chars: usize) -> (String, bool) {
     (truncated, true)
 }
 
-
 fn shell_quote(s: &str) -> String {
     format!("'{}'", s.replace('\'', "'\\''"))
 }
@@ -120,7 +129,12 @@ fn write_to_sandbox(content: &str, remote_path: &str, executor: &dyn SandboxExec
     result.returncode == 0
 }
 
-fn build_persisted_message(preview: &str, has_more: bool, original_size: usize, file_path: &str) -> String {
+fn build_persisted_message(
+    preview: &str,
+    has_more: bool,
+    original_size: usize,
+    file_path: &str,
+) -> String {
     let size_kb = original_size as f64 / 1024.0;
     let size_str = if size_kb >= 1024.0 {
         format!("{:.1} MB", size_kb / 1024.0)
@@ -137,7 +151,10 @@ fn build_persisted_message(preview: &str, has_more: bool, original_size: usize, 
     ));
     msg.push_str(&format!("Full output saved to: {file_path}\n"));
     msg.push_str("Use the read_file tool with offset and limit to access specific sections of this output.\n\n");
-    msg.push_str(&format!("Preview (first {} chars):\n", preview.chars().count()));
+    msg.push_str(&format!(
+        "Preview (first {} chars):\n",
+        preview.chars().count()
+    ));
     msg.push_str(preview);
     if has_more {
         msg.push_str("\n...");
@@ -201,7 +218,10 @@ pub fn enforce_turn_budget(
     let mut candidates: Vec<(usize, usize)> = Vec::new();
     let mut total_size: usize = 0;
     for (i, msg) in tool_messages.iter().enumerate() {
-        let content = msg.get("content").and_then(serde_json::Value::as_str).unwrap_or("");
+        let content = msg
+            .get("content")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("");
         let size = content.chars().count();
         total_size += size;
         if !content.contains(PERSISTED_OUTPUT_TAG) {
@@ -239,7 +259,10 @@ pub fn enforce_turn_budget(
         if replacement != content {
             total_size = total_size.saturating_sub(size) + replacement.chars().count();
             if let Some(obj) = tool_messages[idx].as_object_mut() {
-                obj.insert("content".to_string(), serde_json::Value::String(replacement));
+                obj.insert(
+                    "content".to_string(),
+                    serde_json::Value::String(replacement),
+                );
             }
         }
     }

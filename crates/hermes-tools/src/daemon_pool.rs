@@ -70,7 +70,10 @@ impl<R> DaemonFuture<R> {
     pub fn result(self, timeout: Option<Duration>) -> Result<R, mpsc::RecvTimeoutError> {
         match timeout {
             Some(t) => self.rx.recv_timeout(t),
-            None => self.rx.recv().map_err(|_| mpsc::RecvTimeoutError::Disconnected),
+            None => self
+                .rx
+                .recv()
+                .map_err(|_| mpsc::RecvTimeoutError::Disconnected),
         }
     }
 }

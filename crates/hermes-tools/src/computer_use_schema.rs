@@ -329,8 +329,7 @@ const COMPUTER_USE_SCHEMA_JSON: &str = r####"
 
 /// Return the generic OpenAI function-calling schema.
 pub fn get_computer_use_schema() -> &'static serde_json::Value {
-    static SCHEMA: Lazy<serde_json::Value> = Lazy::new(|| {
-        serde_json::from_str(COMPUTER_USE_SCHEMA_JSON).expect("computer_use schema")
-    });
+    static SCHEMA: Lazy<serde_json::Value> =
+        Lazy::new(|| serde_json::from_str(COMPUTER_USE_SCHEMA_JSON).expect("computer_use schema"));
     &SCHEMA
 }

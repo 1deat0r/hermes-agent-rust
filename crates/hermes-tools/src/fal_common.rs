@@ -107,11 +107,17 @@ impl std::fmt::Display for FalImportError {
 impl std::error::Error for FalImportError {}
 
 fn ensure_hook() -> Option<Arc<EnsureHook>> {
-    ENSURE_HOOK.get().and_then(|m| m.lock().ok()).and_then(|guard| guard.clone())
+    ENSURE_HOOK
+        .get()
+        .and_then(|m| m.lock().ok())
+        .and_then(|guard| guard.clone())
 }
 
 fn fal_client_provider() -> Option<Arc<FalClientProvider>> {
-    FAL_CLIENT_PROVIDER.get().and_then(|m| m.lock().ok()).and_then(|guard| guard.clone())
+    FAL_CLIENT_PROVIDER
+        .get()
+        .and_then(|m| m.lock().ok())
+        .and_then(|guard| guard.clone())
 }
 
 /// Import `fal_client` and return the module reference.
@@ -133,8 +139,9 @@ pub fn import_fal_client() -> Result<Arc<FalClientModule>, FalImportError> {
         }
     }
     match fal_client_provider() {
-        Some(provider) => provider()
-            .ok_or_else(|| FalImportError("import of fal_client failed".to_string())),
+        Some(provider) => {
+            provider().ok_or_else(|| FalImportError("import of fal_client failed".to_string()))
+        }
         None => Err(FalImportError("import of fal_client failed".to_string())),
     }
 }
@@ -242,13 +249,8 @@ pub type RaiseForStatusFn = dyn Fn(&FalResponse) -> Result<(), String> + Send + 
 
 /// `fal_client.client.SyncRequestHandle(request_id=..., response_url=...,
 /// status_url=..., cancel_url=..., client=...)` construction.
-pub type RequestHandleFactory = dyn Fn(
-    String,
-    String,
-    String,
-    String,
-    Arc<dyn HttpClientLike>,
-) -> RequestHandle + Send + Sync;
+pub type RequestHandleFactory =
+    dyn Fn(String, String, String, String, Arc<dyn HttpClientLike>) -> RequestHandle + Send + Sync;
 
 /// Result handle returned by [`ManagedFalSyncClient::submit`].
 #[derive(Clone)]
@@ -458,9 +460,7 @@ impl ManagedFalSyncClient {
                 .ok_or_else(|| {
                     // Upstream would raise KeyError/TypeError here; the Rust
                     // seam surfaces the same failure as a message.
-                    ManagedFalError::Runtime(format!(
-                        "missing string field in FAL response: {key}"
-                    ))
+                    ManagedFalError::Runtime(format!("missing string field in FAL response: {key}"))
                 })
         };
         let request_id = string_field("request_id")?;

@@ -58,7 +58,11 @@ pub fn flatten_choice(c: &Value) -> String {
             String::new()
         }
         Value::Array(items) => {
-            let joined: Vec<String> = items.iter().map(flatten_choice).filter(|s| !s.is_empty()).collect();
+            let joined: Vec<String> = items
+                .iter()
+                .map(flatten_choice)
+                .filter(|s| !s.is_empty())
+                .collect();
             joined.join(" ").trim().to_string()
         }
         other => other.to_string().trim().to_string(),
@@ -109,11 +113,7 @@ pub fn parse_multi_select_response(raw_response: Value) -> Vec<String> {
 /// Ask the user a question, optionally with multiple-choice options.
 ///
 /// PARITY: tools/clarify_tool.py clarify_tool @ b9aa928
-pub fn clarify_tool(
-    question: &str,
-    choices: Option<Vec<Value>>,
-    multi_select: bool,
-) -> String {
+pub fn clarify_tool(question: &str, choices: Option<Vec<Value>>, multi_select: bool) -> String {
     let question = question.trim();
     if question.is_empty() {
         return tool_error("Question text is required.", &[]);
@@ -121,16 +121,15 @@ pub fn clarify_tool(
 
     // Validate and trim choices.
     let mut choices: Option<Vec<String>> = choices.map(|cs| {
-        let mut flat: Vec<String> = cs.iter().map(flatten_choice).filter(|s| !s.is_empty()).collect();
+        let mut flat: Vec<String> = cs
+            .iter()
+            .map(flatten_choice)
+            .filter(|s| !s.is_empty())
+            .collect();
         if flat.len() > MAX_CHOICES {
             flat.truncate(MAX_CHOICES);
         }
-        if flat.is_empty() {
-            None
-        } else {
-            Some(flat)
-        }
-            .unwrap_or_default()
+        if flat.is_empty() { None } else { Some(flat) }.unwrap_or_default()
     });
     // Choices is "None"/open-ended when the original was empty after flatten.
     let choices_have = choices.as_ref().map(|c| !c.is_empty()).unwrap_or(false);
@@ -147,7 +146,10 @@ pub fn clarify_tool(
         Some(out)
     });
     let Some(raw_response) = raw_response else {
-        return tool_error("Clarify tool is not available in this execution context.", &[]);
+        return tool_error(
+            "Clarify tool is not available in this execution context.",
+            &[],
+        );
     };
 
     let user_response: Value = if multi_select && choices.is_some() {
@@ -176,11 +178,11 @@ struct ClarifyHandler;
 impl ToolHandler for ClarifyHandler {
     fn call(&self, args: Value, _: Option<&str>, _: Option<&str>) -> ToolResult {
         let question = args.get("question").and_then(Value::as_str).unwrap_or("");
-        let choices = args
-            .get("choices")
-            .and_then(Value::as_array)
-            .cloned();
-        let multi_select = args.get("multi_select").and_then(Value::as_bool).unwrap_or(false);
+        let choices = args.get("choices").and_then(Value::as_array).cloned();
+        let multi_select = args
+            .get("multi_select")
+            .and_then(Value::as_bool)
+            .unwrap_or(false);
         ToolResult::Text(clarify_tool(question, choices, multi_select))
     }
 }

@@ -39,9 +39,8 @@ type HintFn = fn(&str, &str) -> Option<String>;
 /// ~9,175x: gh CLI version drift — model asks for fields the installed
 /// gh doesn't know. gh already prints the valid field list.
 fn hint_gh_unknown_json_field(_command: &str, output: &str) -> Option<String> {
-    static RE: Lazy<Regex> = Lazy::new(|| {
-        Regex::new(r#"Unknown JSON field: "?(\w+)"#).expect("terminal_hints regex")
-    });
+    static RE: Lazy<Regex> =
+        Lazy::new(|| Regex::new(r#"Unknown JSON field: "?(\w+)"#).expect("terminal_hints regex"));
     let m = RE.captures(output)?;
     let field = m.get(1)?.as_str();
     Some(format!(

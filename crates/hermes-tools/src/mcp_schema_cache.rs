@@ -18,13 +18,23 @@ const CACHE_FILENAME: &str = "mcp_schema_cache.json";
 static CACHE_LOCK: Lazy<Mutex<()>> = Lazy::new(|| Mutex::new(()));
 
 fn cache_path() -> PathBuf {
-    hermes_constants::home::get_hermes_home().join("cache").join(CACHE_FILENAME)
+    hermes_constants::home::get_hermes_home()
+        .join("cache")
+        .join(CACHE_FILENAME)
 }
 
 /// Stable hash of the connection-defining parts of an MCP server config.
 pub fn config_fingerprint(config: &Value) -> String {
-    let tools_filter = config.get("tools").filter(|v| !v.is_null()).cloned().unwrap_or_default();
-    let tools_filter = if tools_filter.is_object() { tools_filter } else { Value::Object(Default::default()) };
+    let tools_filter = config
+        .get("tools")
+        .filter(|v| !v.is_null())
+        .cloned()
+        .unwrap_or_default();
+    let tools_filter = if tools_filter.is_object() {
+        tools_filter
+    } else {
+        Value::Object(Default::default())
+    };
     let payload = json!({
         "command": config.get("command").filter(|v| !v.is_null()),
         "args": config.get("args").and_then(|v| v.as_array()).cloned().unwrap_or_default(),
@@ -60,7 +70,11 @@ fn sorted_strings(v: &Value, key: &str) -> Vec<String> {
     let mut out: Vec<String> = v
         .get(key)
         .and_then(|x| x.as_array())
-        .map(|arr| arr.iter().filter_map(|s| s.as_str().map(str::to_string)).collect())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|s| s.as_str().map(str::to_string))
+                .collect()
+        })
         .unwrap_or_default();
     out.sort();
     out
@@ -107,7 +121,8 @@ fn compact_json(v: &Value) -> String {
             out
         }
         Value::Object(items) => {
-            let mut entries: Vec<(String, &Value)> = items.iter().map(|(k, v)| (k.clone(), v)).collect();
+            let mut entries: Vec<(String, &Value)> =
+                items.iter().map(|(k, v)| (k.clone(), v)).collect();
             entries.sort_by(|a, b| a.0.cmp(&b.0));
             let mut out = String::from("{");
             for (i, (k, v)) in entries.iter().enumerate() {

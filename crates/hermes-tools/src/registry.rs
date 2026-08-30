@@ -274,8 +274,16 @@ impl ToolRegistry {
                     // Plugin ownership opt-in gate (same policy upstream).
                     if let Some(owner) = &owner_module {
                         if owner.starts_with("hermes_plugins.")
-                            && !inner.plugin_override_policy.get(owner).copied().unwrap_or(false)
-                            && existing.owner_module.as_deref().map(|o| o != owner).unwrap_or(true)
+                            && !inner
+                                .plugin_override_policy
+                                .get(owner)
+                                .copied()
+                                .unwrap_or(false)
+                            && existing
+                                .owner_module
+                                .as_deref()
+                                .map(|o| o != owner)
+                                .unwrap_or(true)
                         {
                             raised = Some(format!(
                                 "Plugin module {owner:?} cannot override built-in tool {name:?} without operator opt-in (allow_tool_override)."
@@ -366,13 +374,12 @@ impl ToolRegistry {
             }
         }
         inner.tools.remove(name);
-        let toolset_still_exists = inner
-            .tools
-            .values()
-            .any(|e| e.toolset == entry.toolset);
+        let toolset_still_exists = inner.tools.values().any(|e| e.toolset == entry.toolset);
         if !toolset_still_exists {
             inner.toolset_checks.remove(&entry.toolset);
-            inner.toolset_aliases.retain(|_, target| target != &entry.toolset);
+            inner
+                .toolset_aliases
+                .retain(|_, target| target != &entry.toolset);
         }
         inner.generation += 1;
         Ok(())
@@ -395,7 +402,9 @@ impl ToolRegistry {
                 );
             }
         }
-        inner.toolset_aliases.insert(alias.to_string(), toolset.to_string());
+        inner
+            .toolset_aliases
+            .insert(alias.to_string(), toolset.to_string());
         inner.generation += 1;
     }
 
@@ -457,11 +466,13 @@ impl ToolRegistry {
         let mut names: Vec<&String> = tool_names.iter().collect();
         names.sort();
         for name in names {
-            let Some(entry) = entries_by_name.get(name) else { continue };
+            let Some(entry) = entries_by_name.get(name) else {
+                continue;
+            };
             if let Some(check) = &entry.check_fn {
-                let verdict = *check_results.entry(check.id).or_insert_with(|| {
-                    self.check_fn_cache.cached(check, &scope)
-                });
+                let verdict = *check_results
+                    .entry(check.id)
+                    .or_insert_with(|| self.check_fn_cache.cached(check, &scope));
                 if !verdict {
                     if !quiet {
                         eprintln!("[hermes-tools] DEBUG: Tool {name} unavailable (check failed)");
@@ -523,7 +534,11 @@ impl ToolRegistry {
     }
 
     pub fn get_all_tool_names(&self) -> Vec<String> {
-        let mut names: Vec<String> = self.snapshot_entries().iter().map(|e| e.name.clone()).collect();
+        let mut names: Vec<String> = self
+            .snapshot_entries()
+            .iter()
+            .map(|e| e.name.clone())
+            .collect();
         names.sort();
         names
     }
@@ -538,7 +553,13 @@ impl ToolRegistry {
 
     pub fn get_emoji(&self, name: &str, default: &str) -> String {
         self.get_entry(name)
-            .map(|e| if e.emoji.is_empty() { default.to_string() } else { e.emoji.clone() })
+            .map(|e| {
+                if e.emoji.is_empty() {
+                    default.to_string()
+                } else {
+                    e.emoji.clone()
+                }
+            })
             .unwrap_or_else(|| default.to_string())
     }
 
@@ -559,9 +580,9 @@ impl ToolRegistry {
             let Some(check) = &entry.check_fn else {
                 return true;
             };
-            let verdict = *check_results.entry(check.id).or_insert_with(|| {
-                self.check_fn_cache.cached(check, &scope)
-            });
+            let verdict = *check_results
+                .entry(check.id)
+                .or_insert_with(|| self.check_fn_cache.cached(check, &scope));
             if verdict {
                 return true;
             }
@@ -608,7 +629,10 @@ impl ToolRegistry {
                     .unwrap()
                     .push(json!(entry.name.clone()));
                 for env in &entry.requires_env {
-                    let reqs = obj.get_mut("requirements").and_then(Value::as_array_mut).unwrap();
+                    let reqs = obj
+                        .get_mut("requirements")
+                        .and_then(Value::as_array_mut)
+                        .unwrap();
                     if !reqs.iter().any(|v| v.as_str() == Some(env)) {
                         reqs.push(json!(env.clone()));
                     }
@@ -640,7 +664,10 @@ impl ToolRegistry {
                     tools.push(json!(entry.name.clone()));
                 }
                 for env in &entry.requires_env {
-                    let envs = obj.get_mut("env_vars").and_then(Value::as_array_mut).unwrap();
+                    let envs = obj
+                        .get_mut("env_vars")
+                        .and_then(Value::as_array_mut)
+                        .unwrap();
                     if !envs.iter().any(|v| v.as_str() == Some(env)) {
                         envs.push(json!(env.clone()));
                     }
@@ -658,8 +685,11 @@ impl ToolRegistry {
         let mut available: Vec<String> = Vec::new();
         let mut unavailable: Vec<Value> = Vec::new();
         for ts in &toolsets {
-            let ts_entries: Vec<Arc<ToolEntry>> =
-                entries.iter().filter(|e| &e.toolset == ts).cloned().collect();
+            let ts_entries: Vec<Arc<ToolEntry>> = entries
+                .iter()
+                .filter(|e| &e.toolset == ts)
+                .cloned()
+                .collect();
             if self.toolset_has_exposable_tools(ts, &entries) {
                 available.push(ts.clone());
             } else {

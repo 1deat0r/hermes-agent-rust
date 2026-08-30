@@ -59,7 +59,9 @@ pub fn extract_document_text(path: &str) -> Result<String, ExtractionError> {
         ".ipynb" => extract_notebook(path),
         ".docx" => extract_docx(path),
         ".xlsx" => extract_xlsx(path),
-        _ => Err(ExtractionError(format!("Unsupported document type: {path:?}"))),
+        _ => Err(ExtractionError(format!(
+            "Unsupported document type: {path:?}"
+        ))),
     }
 }
 
@@ -80,7 +82,9 @@ fn extract_notebook(path: &str) -> Result<String, ExtractionError> {
     let nb: Value = serde_json::from_slice(&content)
         .map_err(|e| ExtractionError(format!("Not a valid notebook: {e}")))?;
     if !nb.is_object() {
-        return Err(ExtractionError("Notebook root is not an object".to_string()));
+        return Err(ExtractionError(
+            "Notebook root is not an object".to_string(),
+        ));
     }
     let nb_obj = nb.as_object().unwrap();
     let cells: Vec<Value> = match nb_obj.get("cells").and_then(Value::as_array) {
@@ -91,7 +95,12 @@ fn extract_notebook(path: &str) -> Result<String, ExtractionError> {
             .map(|ws| {
                 ws.iter()
                     .filter_map(|w| w.as_object())
-                    .flat_map(|w| w.get("cells").and_then(Value::as_array).cloned().unwrap_or_default())
+                    .flat_map(|w| {
+                        w.get("cells")
+                            .and_then(Value::as_array)
+                            .cloned()
+                            .unwrap_or_default()
+                    })
                     .collect()
             })
             .unwrap_or_default(),
@@ -103,23 +112,41 @@ fn extract_notebook(path: &str) -> Result<String, ExtractionError> {
     let labels = [("markdown", "Markdown"), ("code", "Code"), ("raw", "Raw")];
     let mut out: Vec<String> = Vec::new();
     for cell in &cells {
-        let Some(obj) = cell.as_object() else { continue };
-        let Some(typ) = obj.get("cell_type").and_then(Value::as_str) else { continue };
-        let Some((_, label)) = labels.iter().find(|(t, _)| *t == typ) else { continue };
-        let n = *counts.entry(typ.to_string()).and_modify(|c| *c += 1).or_insert(1usize);
-        let suffix = if typ == "raw" { String::new() } else { format!(" {n}") };
+        let Some(obj) = cell.as_object() else {
+            continue;
+        };
+        let Some(typ) = obj.get("cell_type").and_then(Value::as_str) else {
+            continue;
+        };
+        let Some((_, label)) = labels.iter().find(|(t, _)| *t == typ) else {
+            continue;
+        };
+        let n = *counts
+            .entry(typ.to_string())
+            .and_modify(|c| *c += 1)
+            .or_insert(1usize);
+        let suffix = if typ == "raw" {
+            String::new()
+        } else {
+            format!(" {n}")
+        };
         let src = source_text(obj.get("source").unwrap_or(&Value::Null));
         out.push(format!("# ── {label} cell{suffix} ──"));
         out.push(src.trim_end_matches('\n').to_string());
         out.push(String::new());
     }
     if out.is_empty() {
-        return Err(ExtractionError("Notebook contains no readable cells".to_string()));
+        return Err(ExtractionError(
+            "Notebook contains no readable cells".to_string(),
+        ));
     }
     Ok(format!("{}\n", out.join("\n").trim_end_matches('\n')))
 }
 
-fn zip_xml(zf: &mut zip::ZipArchive<std::io::BufReader<std::fs::File>>, name: &str) -> Result<String, ExtractionError> {
+fn zip_xml(
+    zf: &mut zip::ZipArchive<std::io::BufReader<std::fs::File>>,
+    name: &str,
+) -> Result<String, ExtractionError> {
     let mut entry = zf
         .by_name(name)
         .map_err(|e| ExtractionError(format!("Missing {name}: {e}")))?;
@@ -139,7 +166,10 @@ fn extract_docx(path: &str) -> Result<String, ExtractionError> {
         .map_err(|e| ExtractionError(format!("Malformed XML in word/document.xml: {e}")))?;
 
     let mut lines: Vec<String> = Vec::new();
-    for para in doc.descendants().filter(|n| n.is_element() && n.tag_name().name() == "p") {
+    for para in doc
+        .descendants()
+        .filter(|n| n.is_element() && n.tag_name().name() == "p")
+    {
         let mut buf: Vec<String> = Vec::new();
         for node in para.descendants() {
             if !node.is_element() {
@@ -155,7 +185,9 @@ fn extract_docx(path: &str) -> Result<String, ExtractionError> {
         lines.extend(buf.join("").split('\n').map(|s| s.to_string()));
     }
     if !lines.iter().any(|l| !l.trim().is_empty()) {
-        return Err(ExtractionError("DOCX contains no extractable text".to_string()));
+        return Err(ExtractionError(
+            "DOCX contains no extractable text".to_string(),
+        ));
     }
     Ok(format!("{}\n", lines.join("\n").trim_end_matches('\n')))
 }
@@ -177,8 +209,12 @@ fn extract_xlsx(path: &str) -> Result<String, ExtractionError> {
         if !names.contains(&part) {
             continue;
         }
-        let Ok(xml) = zip_xml(&mut zf, &part) else { continue };
-        let Ok(rows) = sheet_rows(&xml, &shared) else { continue };
+        let Ok(xml) = zip_xml(&mut zf, &part) else {
+            continue;
+        };
+        let Ok(rows) = sheet_rows(&xml, &shared) else {
+            continue;
+        };
         out.push(format!("# ── Sheet: {name} ──"));
         for row in &rows {
             out.push(row.join("\t"));
@@ -189,19 +225,31 @@ fn extract_xlsx(path: &str) -> Result<String, ExtractionError> {
         out.push(String::new());
     }
     if out.is_empty() {
-        return Err(ExtractionError("XLSX has no visible sheets with content".to_string()));
+        return Err(ExtractionError(
+            "XLSX has no visible sheets with content".to_string(),
+        ));
     }
     Ok(format!("{}\n", out.join("\n").trim_end_matches('\n')))
 }
 
-fn shared_strings(zf: &mut zip::ZipArchive<std::io::BufReader<std::fs::File>>, names: &std::collections::HashSet<String>) -> Vec<String> {
+fn shared_strings(
+    zf: &mut zip::ZipArchive<std::io::BufReader<std::fs::File>>,
+    names: &std::collections::HashSet<String>,
+) -> Vec<String> {
     if !names.contains("xl/sharedStrings.xml") {
         return Vec::new();
     }
-    let Ok(xml) = zip_xml(zf, "xl/sharedStrings.xml") else { return Vec::new() };
-    let Ok(doc) = roxmltree::Document::parse(&xml) else { return Vec::new() };
+    let Ok(xml) = zip_xml(zf, "xl/sharedStrings.xml") else {
+        return Vec::new();
+    };
+    let Ok(doc) = roxmltree::Document::parse(&xml) else {
+        return Vec::new();
+    };
     let mut out = Vec::new();
-    for si in doc.descendants().filter(|n| n.is_element() && n.tag_name().name() == "si") {
+    for si in doc
+        .descendants()
+        .filter(|n| n.is_element() && n.tag_name().name() == "si")
+    {
         let text: String = si
             .descendants()
             .filter(|n| n.is_element() && n.tag_name().name() == "t")
@@ -212,33 +260,49 @@ fn shared_strings(zf: &mut zip::ZipArchive<std::io::BufReader<std::fs::File>>, n
     out
 }
 
-fn workbook_sheets(zf: &mut zip::ZipArchive<std::io::BufReader<std::fs::File>>) -> Result<Vec<(String, String, String)>, ExtractionError> {
+fn workbook_sheets(
+    zf: &mut zip::ZipArchive<std::io::BufReader<std::fs::File>>,
+) -> Result<Vec<(String, String, String)>, ExtractionError> {
     let xml = zip_xml(zf, "xl/workbook.xml")?;
-    let doc = roxmltree::Document::parse(&xml).map_err(|e| ExtractionError(format!("Malformed XML in xl/workbook.xml: {e}")))?;
+    let doc = roxmltree::Document::parse(&xml)
+        .map_err(|e| ExtractionError(format!("Malformed XML in xl/workbook.xml: {e}")))?;
     let mut out = Vec::new();
-    for sheet in doc.descendants().filter(|n| n.is_element() && n.tag_name().name() == "sheet") {
+    for sheet in doc
+        .descendants()
+        .filter(|n| n.is_element() && n.tag_name().name() == "sheet")
+    {
         let name = sheet.attribute("name").unwrap_or("Sheet").to_string();
         let state = sheet.attribute("state").unwrap_or("visible").to_string();
-        let rid = sheet
-            .attribute((NS_REL, "id"))
-            .unwrap_or("")
-            .to_string();
+        let rid = sheet.attribute((NS_REL, "id")).unwrap_or("").to_string();
         out.push((name, state, rid));
     }
     Ok(out)
 }
 
-fn workbook_rels(zf: &mut zip::ZipArchive<std::io::BufReader<std::fs::File>>, names: &std::collections::HashSet<String>) -> std::collections::HashMap<String, String> {
+fn workbook_rels(
+    zf: &mut zip::ZipArchive<std::io::BufReader<std::fs::File>>,
+    names: &std::collections::HashSet<String>,
+) -> std::collections::HashMap<String, String> {
     let rels_path = "xl/_rels/workbook.xml.rels";
     if !names.contains(rels_path) {
         return std::collections::HashMap::new();
     }
-    let Ok(xml) = zip_xml(zf, rels_path) else { return std::collections::HashMap::new() };
-    let Ok(doc) = roxmltree::Document::parse(&xml) else { return std::collections::HashMap::new() };
+    let Ok(xml) = zip_xml(zf, rels_path) else {
+        return std::collections::HashMap::new();
+    };
+    let Ok(doc) = roxmltree::Document::parse(&xml) else {
+        return std::collections::HashMap::new();
+    };
     let mut out = std::collections::HashMap::new();
-    for rel in doc.descendants().filter(|n| n.is_element() && n.tag_name().name() == "Relationship") {
+    for rel in doc
+        .descendants()
+        .filter(|n| n.is_element() && n.tag_name().name() == "Relationship")
+    {
         if let Some(id) = rel.attribute("Id") {
-            out.insert(id.to_string(), rel.attribute("Target").unwrap_or("").to_string());
+            out.insert(
+                id.to_string(),
+                rel.attribute("Target").unwrap_or("").to_string(),
+            );
         }
     }
     out
@@ -285,14 +349,21 @@ fn sheet_rows(xml: &str, shared: &[String]) -> Result<Vec<Vec<String>>, Extracti
     let doc = roxmltree::Document::parse(xml)
         .map_err(|e| ExtractionError(format!("Malformed XML in sheet: {e}")))?;
     let mut rows: Vec<Vec<String>> = Vec::new();
-    for row in doc.descendants().filter(|n| n.is_element() && n.tag_name().name() == "row") {
+    for row in doc
+        .descendants()
+        .filter(|n| n.is_element() && n.tag_name().name() == "row")
+    {
         if rows.len() >= MAX_XLSX_ROWS_PER_SHEET {
             break;
         }
-        let mut cells: std::collections::BTreeMap<usize, String> = std::collections::BTreeMap::new();
+        let mut cells: std::collections::BTreeMap<usize, String> =
+            std::collections::BTreeMap::new();
         let mut max_col: isize = -1;
         let mut cell_count = 0usize;
-        for cell in row.descendants().filter(|n| n.is_element() && n.tag_name().name() == "c") {
+        for cell in row
+            .descendants()
+            .filter(|n| n.is_element() && n.tag_name().name() == "c")
+        {
             cell_count += 1;
             let col = match cell.attribute("r") {
                 Some(r) => col_index(r),
@@ -307,13 +378,19 @@ fn sheet_rows(xml: &str, shared: &[String]) -> Result<Vec<Vec<String>>, Extracti
         }
         let _ = cell_count;
         if max_col >= 0 {
-            let row_vals: Vec<String> = (0..=max_col as usize).map(|i| cells.get(&i).cloned().unwrap_or_default()).collect();
+            let row_vals: Vec<String> = (0..=max_col as usize)
+                .map(|i| cells.get(&i).cloned().unwrap_or_default())
+                .collect();
             rows.push(row_vals);
         } else {
             rows.push(Vec::new());
         }
     }
-    while rows.last().map(|r| r.iter().all(|v| v.trim().is_empty())).unwrap_or(false) {
+    while rows
+        .last()
+        .map(|r| r.iter().all(|v| v.trim().is_empty()))
+        .unwrap_or(false)
+    {
         rows.pop();
     }
     Ok(rows)
@@ -328,11 +405,21 @@ fn cell_value(cell: roxmltree::Node, shared: &[String]) -> String {
         .to_string();
     let typ = cell.attribute("t").unwrap_or("").to_string();
     match typ.as_str() {
-        "s" => value.parse::<usize>().ok().and_then(|i| shared.get(i).cloned()).unwrap_or_default(),
+        "s" => value
+            .parse::<usize>()
+            .ok()
+            .and_then(|i| shared.get(i).cloned())
+            .unwrap_or_default(),
         "inlineStr" => {
             let mut text = String::new();
-            if let Some(is_node) = cell.children().find(|n| n.is_element() && n.tag_name().name() == "is") {
-                for t in is_node.descendants().filter(|n| n.is_element() && n.tag_name().name() == "t") {
+            if let Some(is_node) = cell
+                .children()
+                .find(|n| n.is_element() && n.tag_name().name() == "is")
+            {
+                for t in is_node
+                    .descendants()
+                    .filter(|n| n.is_element() && n.tag_name().name() == "t")
+                {
                     text.push_str(t.text().unwrap_or(""));
                 }
             }
@@ -377,7 +464,10 @@ mod tests {
 
     #[test]
     fn posix_normpath_normalizes() {
-        assert_eq!(posix_normpath("xl/worksheets/sheet1.xml"), "xl/worksheets/sheet1.xml");
+        assert_eq!(
+            posix_normpath("xl/worksheets/sheet1.xml"),
+            "xl/worksheets/sheet1.xml"
+        );
         assert_eq!(posix_normpath("xl/../workbook.xml"), "workbook.xml");
         assert_eq!(posix_normpath("../share"), "share");
     }

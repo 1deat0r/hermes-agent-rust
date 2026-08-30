@@ -36,8 +36,6 @@ thread_local! {
     static REGISTERED: RefCell<Vec<(String, String)>> = RefCell::new(Vec::new());
 }
 
-
-
 /// Config-sourced credential paths (loaded once per process like upstream;
 /// raw strings are resolved to host/container pairs at load time).
 fn config_files() -> &'static Mutex<Option<Vec<String>>> {
@@ -112,7 +110,10 @@ pub fn register_credential_file(relative_path: &str, container_base: &str) -> bo
 
     let resolved = host_path.canonicalize().unwrap_or(host_path);
     if !resolved.is_file() {
-        log::debug!("credential_files: skipping {} (not found)", resolved.display());
+        log::debug!(
+            "credential_files: skipping {} (not found)",
+            resolved.display()
+        );
         return false;
     }
 
@@ -143,7 +144,11 @@ pub fn register_credential_file(relative_path: &str, container_base: &str) -> bo
             registered.push((container_path.clone(), host_path));
         }
     });
-    log::debug!("credential_files: registered {} -> {}", resolved.display(), container_path);
+    log::debug!(
+        "credential_files: registered {} -> {}",
+        resolved.display(),
+        container_path
+    );
     true
 }
 
@@ -193,7 +198,11 @@ fn load_config_files() -> Vec<ConfigFile> {
         }
         let host_path = hermes_home.join(rel);
         if let Some(err) = validate_within_dir(&host_path, &hermes_home) {
-            log::warn!("credential_files: rejected config path traversal {:?} ({})", rel, err);
+            log::warn!(
+                "credential_files: rejected config path traversal {:?} ({})",
+                rel,
+                err
+            );
             continue;
         }
         let resolved_path = host_path.canonicalize().unwrap_or(host_path);
@@ -210,8 +219,7 @@ fn load_config_files() -> Vec<ConfigFile> {
 
 /// Return all credential files that should be mounted into remote sandboxes.
 pub fn get_credential_file_mounts() -> Vec<Mount> {
-    let registered_files: Vec<(String, String)> =
-        REGISTERED.with(|slot| slot.borrow().clone());
+    let registered_files: Vec<(String, String)> = REGISTERED.with(|slot| slot.borrow().clone());
     let mut mounts: Vec<(String, String)> = Vec::new(); // (container, host)
 
     // Skill-registered files (re-check existence; may have been deleted).
@@ -232,7 +240,10 @@ pub fn get_credential_file_mounts() -> Vec<Mount> {
 
     mounts
         .into_iter()
-        .map(|(container_path, host_path)| Mount { host_path, container_path })
+        .map(|(container_path, host_path)| Mount {
+            host_path,
+            container_path,
+        })
         .collect()
 }
 
@@ -297,7 +308,10 @@ fn safe_skills_path(skills_dir: &Path) -> String {
     copy_tree_skipping_symlinks(skills_dir, &safe_dir);
 
     *SAFE_SKILLS_TEMPDIR.lock().unwrap() = Some(safe_dir.clone());
-    log::info!("credential_files: created symlink-safe skills copy at {}", safe_dir.display());
+    log::info!(
+        "credential_files: created symlink-safe skills copy at {}",
+        safe_dir.display()
+    );
     safe_dir.to_string_lossy().into_owned()
 }
 

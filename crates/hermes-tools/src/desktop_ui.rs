@@ -52,8 +52,7 @@ pub fn emit(event: &str, payload: serde_json::Value) -> bool {
     let Some(emitter) = EMITTER.lock().unwrap().clone() else {
         return false;
     };
-    let sid = SID_PROVIDER
-        .with(|sp| sp.get().map(|g| g()).unwrap_or_default());
+    let sid = SID_PROVIDER.with(|sp| sp.get().map(|g| g()).unwrap_or_default());
     emitter(sid, event.to_string(), payload);
     true
 }

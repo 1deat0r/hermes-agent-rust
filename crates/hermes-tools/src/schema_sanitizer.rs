@@ -49,11 +49,7 @@ pub fn sanitize_property_key(key: &str) -> String {
 /// entries omitted; collisions get numeric suffixes).
 fn rename_property_keys(props: &Map<String, Value>) -> std::collections::HashMap<String, String> {
     let mut renames: std::collections::HashMap<String, String> = std::collections::HashMap::new();
-    let mut taken: Vec<String> = props
-        .keys()
-        .filter(|k| prop_key_re(k))
-        .cloned()
-        .collect();
+    let mut taken: Vec<String> = props.keys().filter(|k| prop_key_re(k)).cloned().collect();
     for key in props.keys() {
         if prop_key_re(key) {
             continue;
@@ -76,8 +72,12 @@ fn rename_property_keys(props: &Map<String, Value>) -> std::collections::HashMap
 
 /// Map sanitized property keys in model-emitted args back to wire names.
 pub fn unrename_tool_args(params_schema: &Value, args: &Value) -> Value {
-    let Value::Object(params) = params_schema else { return args.clone() };
-    let Value::Object(args) = args else { return args.clone() };
+    let Value::Object(params) = params_schema else {
+        return args.clone();
+    };
+    let Value::Object(args) = args else {
+        return args.clone();
+    };
     let Some(props_schema) = params.get("properties").and_then(Value::as_object) else {
         return Value::Object(args.clone());
     };
@@ -138,7 +138,11 @@ fn sanitize_single_tool(tool: &Value) -> Value {
     let Some(fn_obj) = out.get_mut("function").and_then(Value::as_object_mut) else {
         return out;
     };
-    let name = fn_obj.get("name").and_then(Value::as_str).unwrap_or("<tool>").to_string();
+    let name = fn_obj
+        .get("name")
+        .and_then(Value::as_str)
+        .unwrap_or("<tool>")
+        .to_string();
     let params = fn_obj.get("parameters").cloned();
     match params {
         Some(Value::Object(_)) => {
@@ -204,7 +208,9 @@ const TOP_LEVEL_FORBIDDEN_KEYS: [&str; 5] = ["allOf", "anyOf", "oneOf", "enum", 
 /// Drop combinator keywords from the top level of a function parameters
 /// schema (OpenAI Codex backend).
 fn strip_top_level_combinators(params: &Value, _path: &str) -> Value {
-    let Value::Object(map) = params else { return params.clone() };
+    let Value::Object(map) = params else {
+        return params.clone();
+    };
     let mut out = map.clone();
     for key in TOP_LEVEL_FORBIDDEN_KEYS {
         out.remove(key);
@@ -227,7 +233,9 @@ pub fn strip_nullable_unions(schema: &Value, keep_nullable_hint: bool) -> Value 
                 stripped.insert(k.clone(), strip_nullable_unions(v, keep_nullable_hint));
             }
             for key in ["anyOf", "oneOf"] {
-                let Some(Value::Array(variants)) = stripped.get(key) else { continue };
+                let Some(Value::Array(variants)) = stripped.get(key) else {
+                    continue;
+                };
                 let non_null: Vec<&Value> = variants
                     .iter()
                     .filter(|item| {
@@ -266,13 +274,20 @@ pub fn strip_nullable_unions(schema: &Value, keep_nullable_hint: bool) -> Value 
 
 /// JSON-Schema primitive type of a pure `const` branch (bool before int).
 fn const_branch_type(branch: &Value) -> Option<&'static str> {
-    let Value::Object(obj) = branch else { return None };
+    let Value::Object(obj) = branch else {
+        return None;
+    };
     if !obj.contains_key("const") {
         return None;
     }
     let extra: Vec<&String> = obj
         .keys()
-        .filter(|k| k.as_str() != "const" && k.as_str() != "type" && k.as_str() != "title" && k.as_str() != "description")
+        .filter(|k| {
+            k.as_str() != "const"
+                && k.as_str() != "type"
+                && k.as_str() != "title"
+                && k.as_str() != "description"
+        })
         .collect();
     if !extra.is_empty() {
         return None;
@@ -303,7 +318,9 @@ pub fn collapse_const_unions(schema: &Value) -> Value {
                 out.insert(k.clone(), collapse_const_unions(v));
             }
             for key in ["anyOf", "oneOf"] {
-                let Some(Value::Array(variants)) = out.get(key) else { continue };
+                let Some(Value::Array(variants)) = out.get(key) else {
+                    continue;
+                };
                 if variants.is_empty() {
                     continue;
                 }
@@ -322,8 +339,10 @@ pub fn collapse_const_unions(schema: &Value) -> Value {
                 if null_branches.len() > 1 || const_branches.is_empty() {
                     continue;
                 }
-                let branch_types: std::collections::HashSet<Option<&'static str>> =
-                    const_branches.iter().map(|b| const_branch_type(b)).collect();
+                let branch_types: std::collections::HashSet<Option<&'static str>> = const_branches
+                    .iter()
+                    .map(|b| const_branch_type(b))
+                    .collect();
                 if branch_types.len() != 1 || branch_types.contains(&None) {
                     continue;
                 }
@@ -406,12 +425,7 @@ fn sanitize_node(node: &Value, path: &str) -> Value {
                         if non_null.len() >= 2 {
                             out.insert(
                                 "anyOf".to_string(),
-                                Value::Array(
-                                    non_null
-                                        .iter()
-                                        .map(|t| json!({"type": t}))
-                                        .collect(),
-                                ),
+                                Value::Array(non_null.iter().map(|t| json!({"type": t})).collect()),
                             );
                             if has_null {
                                 out.entry("nullable".to_string()).or_insert(json!(true));
@@ -428,12 +442,20 @@ fn sanitize_node(node: &Value, path: &str) -> Value {
                 if matches!(key.as_str(), "properties" | "$defs" | "definitions")
                     && value.is_object()
                 {
-                    let empty_renames: std::collections::HashMap<String, String> = Default::default();
-                    let renames_here = if key == "properties" { &prop_renames } else { &empty_renames };
+                    let empty_renames: std::collections::HashMap<String, String> =
+                        Default::default();
+                    let renames_here = if key == "properties" {
+                        &prop_renames
+                    } else {
+                        &empty_renames
+                    };
                     let mut new_props = Map::new();
                     if let Some(props) = value.as_object() {
                         for (sub_k, sub_v) in props {
-                            let out_k = renames_here.get(sub_k).cloned().unwrap_or_else(|| sub_k.clone());
+                            let out_k = renames_here
+                                .get(sub_k)
+                                .cloned()
+                                .unwrap_or_else(|| sub_k.clone());
                             let sub_path = format!("{path}.{key}.{out_k}");
                             new_props.insert(out_k, sanitize_node(sub_v, &sub_path));
                         }
@@ -452,7 +474,10 @@ fn sanitize_node(node: &Value, path: &str) -> Value {
                         arr.push(sanitize_node(item, &format!("{path}.{key}[{i}]")));
                     }
                     out.insert(key.clone(), Value::Array(arr));
-                } else if matches!(key.as_str(), "required" | "enum" | "examples" | "dependentRequired") {
+                } else if matches!(
+                    key.as_str(),
+                    "required" | "enum" | "examples" | "dependentRequired"
+                ) {
                     if key == "required" && !prop_renames.is_empty() {
                         if let Value::Array(reqs) = value {
                             out.insert(
@@ -497,7 +522,11 @@ fn sanitize_node(node: &Value, path: &str) -> Value {
             // Prune required entries that don't exist in properties.
             if out.get("type").and_then(Value::as_str) == Some("object") {
                 if let Some(Value::Array(reqs)) = out.get("required").cloned() {
-                    let props = out.get("properties").and_then(Value::as_object).cloned().unwrap_or_default();
+                    let props = out
+                        .get("properties")
+                        .and_then(Value::as_object)
+                        .cloned()
+                        .unwrap_or_default();
                     let valid: Vec<Value> = reqs
                         .iter()
                         .filter(|r| r.as_str().map(|s| props.contains_key(s)).unwrap_or(false))
@@ -647,7 +676,10 @@ mod tests {
             "type": "function",
             "function": {"name": "t", "parameters": {"type": "object", "properties": {"x": "string"}}},
         })]);
-        assert_eq!(out[0]["function"]["parameters"]["properties"]["x"], json!({"type": "string"}));
+        assert_eq!(
+            out[0]["function"]["parameters"]["properties"]["x"],
+            json!({"type": "string"})
+        );
     }
 
     #[test]
@@ -683,7 +715,10 @@ mod tests {
     #[test]
     fn missing_parameters_gets_default_schema() {
         let out = sanitize_tool_schemas(&[json!({"function": {"name": "t"}})]);
-        assert_eq!(out[0]["function"]["parameters"], json!({"type": "object", "properties": {}}));
+        assert_eq!(
+            out[0]["function"]["parameters"],
+            json!({"type": "object", "properties": {}})
+        );
     }
 
     #[test]
@@ -693,9 +728,16 @@ mod tests {
             "properties": {"issue_class~neq": {"type": "string"}},
             "required": ["issue_class~neq"],
         });
-        let sanitized = sanitize_tool_schemas(&[json!({"function": {"name": "t", "parameters": schema.clone()}})]);
+        let sanitized = sanitize_tool_schemas(&[
+            json!({"function": {"name": "t", "parameters": schema.clone()}}),
+        ]);
         let params = &sanitized[0]["function"]["parameters"];
-        let keys: Vec<&str> = params["properties"].as_object().unwrap().keys().map(|k| k.as_str()).collect();
+        let keys: Vec<&str> = params["properties"]
+            .as_object()
+            .unwrap()
+            .keys()
+            .map(|k| k.as_str())
+            .collect();
         // Original key renamed to the conforming pattern.
         assert!(!keys.contains(&"issue_class~neq"));
         let renamed_key = keys[0];
@@ -705,7 +747,10 @@ mod tests {
         // unrename maps args back to the wire name.
         let args = json!({renamed_key: "v"});
         let out = unrename_tool_args(&schema, &args);
-        assert_eq!(out.get("issue_class~neq").and_then(Value::as_str), Some("v"));
+        assert_eq!(
+            out.get("issue_class~neq").and_then(Value::as_str),
+            Some("v")
+        );
     }
 
     #[test]

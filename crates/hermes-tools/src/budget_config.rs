@@ -8,7 +8,8 @@ use std::collections::HashMap;
 
 /// Tools whose thresholds must never be overridden (read_file=inf prevents
 /// infinite persist->read->persist loops).
-pub const PINNED_THRESHOLDS: &[(&str, BudgetThreshold)] = &[("read_file", BudgetThreshold::Infinite)];
+pub const PINNED_THRESHOLDS: &[(&str, BudgetThreshold)] =
+    &[("read_file", BudgetThreshold::Infinite)];
 
 pub const DEFAULT_RESULT_SIZE_CHARS: usize = 100_000;
 pub const DEFAULT_TURN_BUDGET_CHARS: usize = 200_000;
@@ -72,8 +73,8 @@ impl BudgetConfig {
         if let Some(override_val) = self.tool_overrides.get(tool_name) {
             return BudgetThreshold::Chars(*override_val);
         }
-        let registry_value =
-            crate::registry::registry().get_max_result_size(tool_name, Some(self.default_result_size as i64));
+        let registry_value = crate::registry::registry()
+            .get_max_result_size(tool_name, Some(self.default_result_size as i64));
         let registry_value = registry_value as usize;
         if registry_value >= i64::MAX as usize {
             return BudgetThreshold::Infinite; // registry sentinel for inf is not used; keep numeric path
@@ -93,8 +94,12 @@ pub fn budget_for_context_window(context_length: Option<i64>) -> BudgetConfig {
     let window_chars = context_length * CHARS_PER_TOKEN;
     let per_result = ((window_chars as f64) * PER_RESULT_WINDOW_FRACTION) as i64;
     let per_turn = ((window_chars as f64) * PER_TURN_WINDOW_FRACTION) as i64;
-    let per_result = per_result.max(MIN_RESULT_SIZE_CHARS).min(DEFAULT_RESULT_SIZE_CHARS as i64);
-    let per_turn = per_turn.max(MIN_TURN_BUDGET_CHARS).min(DEFAULT_TURN_BUDGET_CHARS as i64);
+    let per_result = per_result
+        .max(MIN_RESULT_SIZE_CHARS)
+        .min(DEFAULT_RESULT_SIZE_CHARS as i64);
+    let per_turn = per_turn
+        .max(MIN_TURN_BUDGET_CHARS)
+        .min(DEFAULT_TURN_BUDGET_CHARS as i64);
     BudgetConfig {
         default_result_size: per_result as usize,
         turn_budget: per_turn as usize,

@@ -93,7 +93,11 @@ const PATTERNS: &[(&str, &str, Scope)] = &[
         "prompt_injection",
         Scope::All,
     ),
-    (r"system\s+prompt\s+override", "sys_prompt_override", Scope::All),
+    (
+        r"system\s+prompt\s+override",
+        "sys_prompt_override",
+        Scope::All,
+    ),
     (
         r"disregard\s+(?:\w+\s+){0,8}(your|all|any)\s+(?:\w+\s+){0,8}(instructions|rules|guidelines)",
         "disregard_rules",
@@ -152,23 +156,43 @@ const PATTERNS: &[(&str, &str, Scope)] = &[
     ),
     // "name yourself X" is a Brainworm-specific tell. Anchored on the verb
     // pair so it doesn't match "name your variables" etc.
-    (r"\bname\s+yourself\s+\w+", "identity_override", Scope::Context),
+    (
+        r"\bname\s+yourself\s+\w+",
+        "identity_override",
+        Scope::Context,
+    ),
     // ── C2 / Brainworm-style promptware (context scope) ──────────────
-    (r"register\s+(as\s+)?a?\s*node", "c2_node_registration", Scope::Context),
+    (
+        r"register\s+(as\s+)?a?\s*node",
+        "c2_node_registration",
+        Scope::Context,
+    ),
     (
         r"(heartbeat|beacon|check[\s\-]?in)\s+(to|with)\s+",
         "c2_heartbeat",
         Scope::Context,
     ),
-    (r"pull\s+(down\s+)?(?:new\s+)?task(?:ing|s)?\b", "c2_task_pull", Scope::Context),
-    (r"connect\s+to\s+the\s+network\b", "c2_network_connect", Scope::Context),
+    (
+        r"pull\s+(down\s+)?(?:new\s+)?task(?:ing|s)?\b",
+        "c2_task_pull",
+        Scope::Context,
+    ),
+    (
+        r"connect\s+to\s+the\s+network\b",
+        "c2_network_connect",
+        Scope::Context,
+    ),
     // Verb-anchored "you must register/connect/report/beacon".
     (
         r"you\s+must\s+(?:\w+\s+){0,3}(register|connect|report|beacon)\b",
         "forced_action",
         Scope::Context,
     ),
-    (r"only\s+use\s+one[\s\-]?liners?\b", "anti_forensic_oneliner", Scope::Context),
+    (
+        r"only\s+use\s+one[\s\-]?liners?\b",
+        "anti_forensic_oneliner",
+        Scope::Context,
+    ),
     (
         r"never\s+(?:\w+\s+){0,8}(?:create|write)\s+(?:\w+\s+){0,8}(?:script|file)\s+(?:\w+\s+){0,8}disk",
         "anti_forensic_disk",
@@ -187,8 +211,16 @@ const PATTERNS: &[(&str, &str, Scope)] = &[
         "known_c2_framework",
         Scope::Context,
     ),
-    (r"\bc2\s+(?:server|channel|infrastructure|beacon)\b", "c2_explicit", Scope::Context),
-    (r"\bcommand\s+and\s+control\b", "c2_explicit_long", Scope::Context),
+    (
+        r"\bc2\s+(?:server|channel|infrastructure|beacon)\b",
+        "c2_explicit",
+        Scope::Context,
+    ),
+    (
+        r"\bcommand\s+and\s+control\b",
+        "c2_explicit_long",
+        Scope::Context,
+    ),
     // ── Exfiltration via curl/wget/cat with secrets (applies everywhere) ──
     (
         r"curl\s+[^\n]{0,2048}\$\{?\w*(KEY|TOKEN|SECRET|PASSWORD|CREDENTIAL|API)",
@@ -218,7 +250,11 @@ const PATTERNS: &[(&str, &str, Scope)] = &[
     // ── Persistence / SSH backdoor (strict scope — memory + skills) ──
     (r"authorized_keys", "ssh_backdoor", Scope::Strict),
     (r"\$HOME/\.ssh|~/\.ssh", "ssh_access", Scope::Strict),
-    (r"\$HOME/\.hermes/\.env|~/\.hermes/\.env", "hermes_env", Scope::Strict),
+    (
+        r"\$HOME/\.hermes/\.env|~/\.hermes/\.env",
+        "hermes_env",
+        Scope::Strict,
+    ),
     (
         r"(update|modify|edit|write|change|append|add\s+to)\s+[^\n]{0,2048}(?:AGENTS\.md|CLAUDE\.md|\.cursorrules|\.clinerules)",
         "agent_config_mod",
@@ -310,7 +346,11 @@ fn compile_sets() -> CompiledSets {
             }
         }
     }
-    CompiledSets { all, context, strict }
+    CompiledSets {
+        all,
+        context,
+        strict,
+    }
 }
 
 static COMPILED: LazyLock<CompiledSets> = LazyLock::new(compile_sets);
@@ -441,7 +481,12 @@ mod tests {
             assert!(context_ids.contains(&pid), "{pid} missing from context");
             assert!(strict_ids.contains(&pid), "{pid} missing from strict");
         }
-        for pid in ["ssh_backdoor", "hardcoded_secret", "send_to_url", "agent_config_mod"] {
+        for pid in [
+            "ssh_backdoor",
+            "hardcoded_secret",
+            "send_to_url",
+            "agent_config_mod",
+        ] {
             assert!(!all_ids.contains(&pid), "{pid} must not be in all");
             assert!(!context_ids.contains(&pid), "{pid} must not be in context");
             assert!(strict_ids.contains(&pid), "{pid} missing from strict");

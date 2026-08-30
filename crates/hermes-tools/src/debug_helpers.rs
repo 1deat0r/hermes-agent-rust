@@ -119,7 +119,10 @@ impl DebugSession {
         }
         let mut entry = Map::new();
         entry.insert("timestamp".to_string(), Value::String(now_isoformat()));
-        entry.insert("tool_name".to_string(), Value::String(call_name.to_string()));
+        entry.insert(
+            "tool_name".to_string(),
+            Value::String(call_name.to_string()),
+        );
         if let Value::Object(map) = call_data {
             for (key, value) in map {
                 entry.insert(key, value);
@@ -144,11 +147,20 @@ impl DebugSession {
         let filename = format!("{}_debug_{}.json", self.tool_name, self.session_id);
         let filepath = self.log_dir.join(filename);
         let mut payload = Map::new();
-        payload.insert("session_id".to_string(), Value::String(self.session_id.clone()));
-        payload.insert("start_time".to_string(), Value::String(self.start_time.clone()));
+        payload.insert(
+            "session_id".to_string(),
+            Value::String(self.session_id.clone()),
+        );
+        payload.insert(
+            "start_time".to_string(),
+            Value::String(self.start_time.clone()),
+        );
         payload.insert("end_time".to_string(), Value::String(now_isoformat()));
         payload.insert("debug_enabled".to_string(), Value::Bool(true));
-        payload.insert("total_calls".to_string(), Value::from(self.calls.len() as u64));
+        payload.insert(
+            "total_calls".to_string(),
+            Value::from(self.calls.len() as u64),
+        );
         payload.insert("tool_calls".to_string(), Value::Array(self.calls.clone()));
         match serde_json::to_string_pretty(&Value::Object(payload)) {
             Ok(text) => match std::fs::write(&filepath, text) {
@@ -195,8 +207,7 @@ fn new_uuid4_string() -> String {
     use std::io::Read;
     let mut bytes = [0u8; 16];
     let mut rng = std::fs::File::open("/dev/urandom").expect("open /dev/urandom");
-    rng.read_exact(&mut bytes)
-        .expect("read /dev/urandom");
+    rng.read_exact(&mut bytes).expect("read /dev/urandom");
     bytes[6] = (bytes[6] & 0x0f) | 0x40; // version 4
     bytes[8] = (bytes[8] & 0x3f) | 0x80; // variant 10xx
     let hex: String = bytes.iter().map(|b| format!("{b:02x}")).collect();
@@ -217,5 +228,7 @@ fn new_uuid4_string() -> String {
 /// (6 digits, or none when zero); chrono emits nanosecond precision trimmed
 /// to 0/3/6/9 digits. Both are naive local wall-clock ISO-8601 strings.
 fn now_isoformat() -> String {
-    chrono::Local::now().format("%Y-%m-%dT%H:%M:%S%.f").to_string()
+    chrono::Local::now()
+        .format("%Y-%m-%dT%H:%M:%S%.f")
+        .to_string()
 }

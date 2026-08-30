@@ -47,7 +47,11 @@ pub struct TodoItem {
 
 impl TodoItem {
     fn from_parts(id: String, content: String, status: String) -> Self {
-        TodoItem { id, content, status }
+        TodoItem {
+            id,
+            content,
+            status,
+        }
     }
 }
 
@@ -107,7 +111,10 @@ impl TodoStore {
             let mut seen = std::collections::HashSet::new();
             let mut rebuilt = Vec::with_capacity(self.items.len());
             for item in &self.items {
-                let current = existing.get(&item.id).cloned().unwrap_or_else(|| item.clone());
+                let current = existing
+                    .get(&item.id)
+                    .cloned()
+                    .unwrap_or_else(|| item.clone());
                 if seen.insert(current.id.clone()) {
                     rebuilt.push(current);
                 }
@@ -181,7 +188,11 @@ impl TodoStore {
             );
         }
         let item_id = json_str(item, "id").trim().to_string();
-        let item_id = if item_id.is_empty() { "?".to_string() } else { item_id };
+        let item_id = if item_id.is_empty() {
+            "?".to_string()
+        } else {
+            item_id
+        };
 
         let mut content = json_str(item, "content").trim().to_string();
         if content.is_empty() {
@@ -209,7 +220,11 @@ impl TodoStore {
                 continue;
             }
             let item_id = json_str(item, "id").trim().to_string();
-            let key = if item_id.is_empty() { "?".to_string() } else { item_id };
+            let key = if item_id.is_empty() {
+                "?".to_string()
+            } else {
+                item_id
+            };
             last_index.push((key, i));
         }
         // Keep the last index per key; then restore order.
@@ -228,11 +243,7 @@ impl TodoStore {
 }
 
 /// Single entry point for the todo tool: reads or writes depending on params.
-pub fn todo_tool(
-    todos: Option<Value>,
-    merge: bool,
-    store: Option<&mut TodoStore>,
-) -> String {
+pub fn todo_tool(todos: Option<Value>, merge: bool, store: Option<&mut TodoStore>) -> String {
     let Some(store) = store else {
         return tool_error("TodoStore not initialized", &[]);
     };

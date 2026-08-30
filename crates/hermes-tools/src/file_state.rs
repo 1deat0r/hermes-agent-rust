@@ -40,13 +40,7 @@ impl FileStateRegistry {
         }
     }
 
-    pub fn record_read(
-        &self,
-        task_id: &str,
-        resolved: &str,
-        partial: bool,
-        mtime: Option<f64>,
-    ) {
+    pub fn record_read(&self, task_id: &str, resolved: &str, partial: bool, mtime: Option<f64>) {
         if disabled() {
             return;
         }
@@ -83,7 +77,9 @@ impl FileStateRegistry {
         };
         let now = now_ts();
         let mut inner = self.inner.lock().expect("file state lock");
-        inner.last_writer.insert(resolved.to_string(), (task_id.to_string(), now));
+        inner
+            .last_writer
+            .insert(resolved.to_string(), (task_id.to_string(), now));
         cap_dict(&mut inner.last_writer, MAX_GLOBAL_WRITERS);
         let agent_reads = inner.reads.entry(task_id.to_string()).or_default();
         agent_reads.insert(resolved.to_string(), (mtime, now, false));
@@ -97,7 +93,11 @@ impl FileStateRegistry {
         let (stamp, last_writer) = {
             let inner = self.inner.lock().expect("file state lock");
             (
-                inner.reads.get(task_id).and_then(|r| r.get(resolved)).copied(),
+                inner
+                    .reads
+                    .get(task_id)
+                    .and_then(|r| r.get(resolved))
+                    .copied(),
                 inner.last_writer.get(resolved).cloned(),
             )
         };
@@ -240,7 +240,11 @@ pub fn note_write(task_id: &str, path: &str) {
 pub fn check_stale(task_id: &str, path: &str) -> Option<String> {
     get_registry().check_stale(task_id, path)
 }
-pub fn writes_since(exclude_task_id: &str, since_ts: f64, paths: &[String]) -> HashMap<String, Vec<String>> {
+pub fn writes_since(
+    exclude_task_id: &str,
+    since_ts: f64,
+    paths: &[String],
+) -> HashMap<String, Vec<String>> {
     get_registry().writes_since(exclude_task_id, since_ts, paths)
 }
 pub fn known_reads(task_id: &str) -> Vec<String> {

@@ -16,18 +16,14 @@ pub static BINARY_EXTENSIONS: Lazy<HashSet<&'static str>> = Lazy::new(|| {
         // Archives
         ".zip", ".tar", ".gz", ".bz2", ".7z", ".rar", ".xz", ".z", ".tgz", ".iso",
         // Executables/binaries
-        ".exe", ".dll", ".so", ".dylib", ".bin", ".o", ".a", ".obj", ".lib",
-        ".app", ".msi", ".deb", ".rpm",
-        // Documents (exclude .pdf)
-        ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx",
-        ".odt", ".ods", ".odp",
+        ".exe", ".dll", ".so", ".dylib", ".bin", ".o", ".a", ".obj", ".lib", ".app", ".msi", ".deb",
+        ".rpm", // Documents (exclude .pdf)
+        ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".odt", ".ods", ".odp",
         // Fonts
-        ".ttf", ".otf", ".woff", ".woff2", ".eot",
-        // Bytecode / VM artifacts
+        ".ttf", ".otf", ".woff", ".woff2", ".eot", // Bytecode / VM artifacts
         ".pyc", ".pyo", ".class", ".jar", ".war", ".ear", ".node", ".wasm", ".rlib",
         // Database files
-        ".sqlite", ".sqlite3", ".db", ".mdb", ".idx",
-        // Design / 3D
+        ".sqlite", ".sqlite3", ".db", ".mdb", ".idx", // Design / 3D
         ".psd", ".ai", ".eps", ".sketch", ".fig", ".xd", ".blend", ".3ds", ".max",
         // Flash / misc
         ".swf",

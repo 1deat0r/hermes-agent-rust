@@ -305,6 +305,9 @@
  "tools.mcp_schema_cache": {
   "status": "done"
  },
+ "tools.mcp_stdio_watchdog": {
+  "status": "done"
+ },
  "tools.open_preview_tool": {
   "status": "done"
  },

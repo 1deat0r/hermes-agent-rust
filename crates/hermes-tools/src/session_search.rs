@@ -9,27 +9,34 @@
 //! profiles crate (P3); until then `profile` is rejected with the upstream
 //! error shape and the bare-id `@session:id` link form is emitted.
 
-
 use chrono::{DateTime, Local};
 use serde_json::{json, Value};
 
+use crate::ansi_strip::strip_ansi;
+use crate::registry::{registry, tool_error, CheckFn, ToolHandler, ToolResult};
 use hermes_state::state::SessionDB;
 use rusqlite::OptionalExtension;
-use crate::registry::{registry, tool_error, CheckFn, ToolHandler, ToolResult};
-use crate::ansi_strip::strip_ansi;
 
 const HIDDEN_SESSION_SOURCES: [&str; 3] = ["kanban", "subagent", "tool"];
 const DEMOTED_SESSION_SOURCES: [&str; 1] = ["cron"];
 const DISCOVER_SCAN_LIMIT: i64 = 300;
 const DISCOVER_SEARCH_FIELDS: [&str; 7] = [
-    "id", "session_id", "role", "snippet", "source", "model", "session_started",
+    "id",
+    "session_id",
+    "role",
+    "snippet",
+    "source",
+    "model",
+    "session_started",
 ];
 const COMPACTION_PREFIXES: [&str; 2] = ["[CONTEXT COMPACTION", "[CONTEXT SUMMARY]:"];
 const LINK_MAX_CONTENT_LEN: usize = 1200;
 const WINDOW_MAX_CONTENT_LEN: usize = 4000;
 
 fn format_timestamp(ts: Option<&Value>) -> String {
-    let Some(v) = ts else { return "unknown".to_string() };
+    let Some(v) = ts else {
+        return "unknown".to_string();
+    };
     let f = |secs: f64| -> String {
         let secs = secs.floor() as i64;
         let dt: DateTime<Local> = DateTime::from_timestamp(secs, 0)
@@ -41,7 +48,9 @@ fn format_timestamp(ts: Option<&Value>) -> String {
         Value::Null => "unknown".to_string(),
         Value::Number(n) => n.as_f64().map(f).unwrap_or_else(|| v.to_string()),
         Value::String(s) => {
-            let numeric = s.chars().all(|c| c.is_ascii_digit() || c == '.' || c == '-');
+            let numeric = s
+                .chars()
+                .all(|c| c.is_ascii_digit() || c == '.' || c == '-');
             if numeric && !s.is_empty() {
                 s.parse::<f64>().ok().map(f).unwrap_or_else(|| s.clone())
             } else {
@@ -63,11 +72,15 @@ fn resolve_to_parent(db: &SessionDB, session_id: &str) -> (String, bool) {
     let mut has_compression = false;
     while !cur.is_empty() && !visited.contains(&cur) {
         visited.insert(cur.clone());
-        let Ok(Some(s)) = db.get_session(&cur) else { break };
+        let Ok(Some(s)) = db.get_session(&cur) else {
+            break;
+        };
         if s.end_reason.as_deref() == Some("compression") {
             has_compression = true;
         }
-        let Some(parent) = s.parent_session_id else { break };
+        let Some(parent) = s.parent_session_id else {
+            break;
+        };
         cur = parent;
     }
     (cur, has_compression)
@@ -93,7 +106,13 @@ fn get_message_storage_state(db: &SessionDB, message_id: i64) -> Option<(String,
     conn.query_row(
         "SELECT session_id, active, compacted FROM messages WHERE id = ?",
         rusqlite::params![message_id],
-        |r| Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?, r.get::<_, i64>(2)?)),
+        |r| {
+            Ok((
+                r.get::<_, String>(0)?,
+                r.get::<_, i64>(1)?,
+                r.get::<_, i64>(2)?,
+            ))
+        },
     )
     .optional()
     .ok()
@@ -107,7 +126,9 @@ fn is_compacted_message(db: &SessionDB, message_id: i64) -> bool {
 }
 
 fn annotate_rebuild_status(db: &SessionDB, payload: &mut serde_json::Map<String, Value>) {
-    let Some(status) = db.fts_rebuild_status() else { return };
+    let Some(status) = db.fts_rebuild_status() else {
+        return;
+    };
     if let Some(percent) = status.get("percent").and_then(Value::as_f64) {
         payload.insert(
             "index_rebuild".to_string(),
@@ -144,13 +165,23 @@ fn shape_message(m: &Value, anchor_id: Option<i64>, max_content_len: Option<usiz
     let (content, truncated, original_chars) = match (max_content_len, &raw) {
         (Some(max), Value::String(s)) if s.chars().count() > max => {
             let cut: String = s.chars().take(max).collect();
-            (Value::String(format!("{cut}…")), true, Some(s.chars().count()))
+            (
+                Value::String(format!("{cut}…")),
+                true,
+                Some(s.chars().count()),
+            )
         }
         _ => (raw, false, None),
     };
     let mut entry = serde_json::Map::new();
-    entry.insert("id".to_string(), m.get("id").cloned().unwrap_or(Value::Null));
-    entry.insert("role".to_string(), m.get("role").cloned().unwrap_or(Value::Null));
+    entry.insert(
+        "id".to_string(),
+        m.get("id").cloned().unwrap_or(Value::Null),
+    );
+    entry.insert(
+        "role".to_string(),
+        m.get("role").cloned().unwrap_or(Value::Null),
+    );
     entry.insert("content".to_string(), Value::Null);
     entry.insert("timestamp".to_string(), Value::Null);
     if let Some(tn) = m.get("tool_name") {
@@ -189,16 +220,25 @@ fn read_session(db: &SessionDB, session_id: &str, link_profile: Option<&str>) ->
     let meta = match db.get_session(session_id) {
         Ok(Some(m)) => m,
         _ => {
-            return tool_error(format!("session_id not found: {session_id}"), &[("success".to_string(), json!(false))]);
+            return tool_error(
+                format!("session_id not found: {session_id}"),
+                &[("success".to_string(), json!(false))],
+            );
         }
     };
     let rows = match db.get_messages(session_id, false, None, 0) {
         Ok(rows) => rows,
         Err(e) => {
-            return tool_error(format!("failed to load session: {e}"), &[("success".to_string(), json!(false))]);
+            return tool_error(
+                format!("failed to load session: {e}"),
+                &[("success".to_string(), json!(false))],
+            );
         }
     };
-    let shaped: Vec<Value> = rows.iter().map(|m| shape_message(&message_to_value(m), None, None)).collect();
+    let shaped: Vec<Value> = rows
+        .iter()
+        .map(|m| shape_message(&message_to_value(m), None, None))
+        .collect();
     let total = shaped.len();
     let head = 20usize;
     let tail = 10usize;
@@ -215,7 +255,10 @@ fn read_session(db: &SessionDB, session_id: &str, link_profile: Option<&str>) ->
     response.insert("success".to_string(), json!(true));
     response.insert("mode".to_string(), json!("read"));
     response.insert("session_id".to_string(), json!(session_id));
-    response.insert("link".to_string(), json!(session_link(session_id, link_profile)));
+    response.insert(
+        "link".to_string(),
+        json!(session_link(session_id, link_profile)),
+    );
     response.insert(
         "session_meta".to_string(),
         json!({
@@ -261,7 +304,10 @@ fn list_recent_sessions(
     let sessions = db
         .list_sessions_rich(&hermes_state::rich::RichListParams {
             limit: limit + 5,
-            exclude_sources: HIDDEN_SESSION_SOURCES.iter().map(|s| s.to_string()).collect(),
+            exclude_sources: HIDDEN_SESSION_SOURCES
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
             order_by_last_active: true,
             ..Default::default()
         })
@@ -269,13 +315,20 @@ fn list_recent_sessions(
     let current_root = current_session_id.map(|sid| resolve_lineage(db, sid));
     let mut results: Vec<Value> = Vec::new();
     for s in &sessions {
-        let sid = s.get("id").and_then(Value::as_str).unwrap_or("").to_string();
+        let sid = s
+            .get("id")
+            .and_then(Value::as_str)
+            .unwrap_or("")
+            .to_string();
         if let Some(root) = &current_root {
             if &sid == root || Some(sid.as_str()) == current_session_id {
                 continue;
             }
         }
-        if s.get("parent_session_id").map(|v| !v.is_null()).unwrap_or(false) {
+        if s.get("parent_session_id")
+            .map(|v| !v.is_null())
+            .unwrap_or(false)
+        {
             continue;
         }
         results.push(json!({
@@ -312,7 +365,10 @@ fn scroll(
 ) -> String {
     let session_id = session_id.trim().to_string();
     if session_id.is_empty() {
-        return tool_error("scroll requires session_id", &[("success".to_string(), json!(false))]);
+        return tool_error(
+            "scroll requires session_id",
+            &[("success".to_string(), json!(false))],
+        );
     }
     let window = window.clamp(1, 20);
 
@@ -341,11 +397,20 @@ fn scroll(
 
     let session_meta = db.get_session(&session_id).ok().flatten();
     if session_meta.is_none() {
-        return tool_error(format!("session_id not found: {session_id}"), &[("success".to_string(), json!(false))]);
+        return tool_error(
+            format!("session_id not found: {session_id}"),
+            &[("success".to_string(), json!(false))],
+        );
     }
 
-    let mut view = db.get_messages_around(&session_id, around_message_id, window).unwrap_or_default();
-    let mut messages = view.get("window").and_then(Value::as_array).cloned().unwrap_or_default();
+    let mut view = db
+        .get_messages_around(&session_id, around_message_id, window)
+        .unwrap_or_default();
+    let mut messages = view
+        .get("window")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
 
     let mut session_id = session_id;
     let mut session_meta = session_meta;
@@ -356,8 +421,14 @@ fn scroll(
                 let a_root = resolve_lineage(db, &session_id);
                 let o_root = resolve_lineage(db, owning);
                 if !a_root.is_empty() && !o_root.is_empty() && a_root == o_root {
-                    if let Ok(rebind_view) = db.get_messages_around(owning, around_message_id, window) {
-                        let rebound = rebind_view.get("window").and_then(Value::as_array).cloned().unwrap_or_default();
+                    if let Ok(rebind_view) =
+                        db.get_messages_around(owning, around_message_id, window)
+                    {
+                        let rebound = rebind_view
+                            .get("window")
+                            .and_then(Value::as_array)
+                            .cloned()
+                            .unwrap_or_default();
                         if !rebound.is_empty() {
                             view = rebind_view;
                             messages = rebound;
@@ -400,15 +471,26 @@ fn scroll(
     response.insert("window".to_string(), json!(window));
     response.insert(
         "messages".to_string(),
-        Value::Array(messages.iter().map(|m| shape_message(m, Some(around_message_id), None)).collect()),
+        Value::Array(
+            messages
+                .iter()
+                .map(|m| shape_message(m, Some(around_message_id), None))
+                .collect(),
+        ),
     );
     response.insert(
         "messages_before".to_string(),
-        json!(view.get("messages_before").and_then(Value::as_i64).unwrap_or(0)),
+        json!(view
+            .get("messages_before")
+            .and_then(Value::as_i64)
+            .unwrap_or(0)),
     );
     response.insert(
         "messages_after".to_string(),
-        json!(view.get("messages_after").and_then(Value::as_i64).unwrap_or(0)),
+        json!(view
+            .get("messages_after")
+            .and_then(Value::as_i64)
+            .unwrap_or(0)),
     );
     if let Some(w) = rebind_warning {
         response.insert("warning".to_string(), json!(w));
@@ -417,7 +499,12 @@ fn scroll(
 }
 
 fn normalize_title_query(query: &str) -> String {
-    query.trim().trim_matches('`').trim_matches('\'').trim_matches('"').to_string()
+    query
+        .trim()
+        .trim_matches('`')
+        .trim_matches('\'')
+        .trim_matches('"')
+        .to_string()
 }
 
 fn message_shape_from_rows(rows: &[Value]) -> Vec<Value> {
@@ -445,13 +532,23 @@ fn discover(
         .search_messages(
             query,
             None,
-            Some(&HIDDEN_SESSION_SOURCES.iter().map(|s| s.to_string()).collect::<Vec<_>>()),
+            Some(
+                &HIDDEN_SESSION_SOURCES
+                    .iter()
+                    .map(|s| s.to_string())
+                    .collect::<Vec<_>>(),
+            ),
             Some(&role_list),
             DISCOVER_SCAN_LIMIT,
             0,
             sort,
             false,
-            Some(&DISCOVER_SEARCH_FIELDS.iter().map(|s| s.to_string()).collect::<Vec<_>>()),
+            Some(
+                &DISCOVER_SEARCH_FIELDS
+                    .iter()
+                    .map(|s| s.to_string())
+                    .collect::<Vec<_>>(),
+            ),
         )
         .unwrap_or_default();
 
@@ -473,7 +570,10 @@ fn discover(
     let mut results: Vec<Value> = Vec::new();
 
     if let Some(mut title_entry) = title_result {
-        let title_lineage = title_entry.get("_lineage_root").and_then(Value::as_str).map(|s| s.to_string());
+        let title_lineage = title_entry
+            .get("_lineage_root")
+            .and_then(Value::as_str)
+            .map(|s| s.to_string());
         if let Some(lg) = &title_lineage {
             seen_sessions.push((lg.clone(), Value::Null, true));
         }
@@ -485,9 +585,17 @@ fn discover(
         if seen_sessions.len() >= limit as usize {
             break;
         }
-        let raw_sid = r.get("session_id").and_then(Value::as_str).unwrap_or("").to_string();
+        let raw_sid = r
+            .get("session_id")
+            .and_then(Value::as_str)
+            .unwrap_or("")
+            .to_string();
         let (resolved_sid, _) = resolve_to_parent(db, &raw_sid);
-        let is_compacted = r.get("id").and_then(Value::as_i64).map(|id| is_compacted_message(db, id)).unwrap_or(false);
+        let is_compacted = r
+            .get("id")
+            .and_then(Value::as_i64)
+            .map(|id| is_compacted_message(db, id))
+            .unwrap_or(false);
         let is_ended = is_compression_ended(db, &raw_sid);
         if let Some(root) = &current_lineage_root {
             if &resolved_sid == root && !(is_ended || is_compacted) {
@@ -499,9 +607,14 @@ fn discover(
                 continue;
             }
         }
-        if !seen_sessions.iter().any(|(root, _, _)| root == &resolved_sid) {
+        if !seen_sessions
+            .iter()
+            .any(|(root, _, _)| root == &resolved_sid)
+        {
             let mut row = r.clone();
-            row.as_object_mut().unwrap().insert("_lineage_root".to_string(), json!(resolved_sid));
+            row.as_object_mut()
+                .unwrap()
+                .insert("_lineage_root".to_string(), json!(resolved_sid));
             seen_sessions.push((resolved_sid.clone(), row, false));
         }
         if seen_sessions.len() >= limit as usize {
@@ -513,7 +626,11 @@ fn discover(
         if *title_only {
             continue;
         }
-        let hit_sid = match_info.get("session_id").and_then(Value::as_str).unwrap_or(lineage_root).to_string();
+        let hit_sid = match_info
+            .get("session_id")
+            .and_then(Value::as_str)
+            .unwrap_or(lineage_root)
+            .to_string();
         let msg_id = match_info.get("id").and_then(Value::as_i64);
         let Some(msg_id) = msg_id else { continue };
         let view = match db.get_anchored_view(&hit_sid, msg_id, 5, 3, None) {
@@ -528,7 +645,9 @@ fn discover(
             .cloned()
             .unwrap_or_default()
             .into_iter()
-            .filter(|m| !is_compaction_summary(m.get("content").and_then(Value::as_str).unwrap_or("")))
+            .filter(|m| {
+                !is_compaction_summary(m.get("content").and_then(Value::as_str).unwrap_or(""))
+            })
             .map(|m| shape_message(&m, None, Some(LINK_MAX_CONTENT_LEN)))
             .collect();
         let window_messages: Vec<Value> = view
@@ -545,7 +664,9 @@ fn discover(
             .cloned()
             .unwrap_or_default()
             .into_iter()
-            .filter(|m| !is_compaction_summary(m.get("content").and_then(Value::as_str).unwrap_or("")))
+            .filter(|m| {
+                !is_compaction_summary(m.get("content").and_then(Value::as_str).unwrap_or(""))
+            })
             .map(|m| shape_message(&m, None, Some(LINK_MAX_CONTENT_LEN)))
             .collect();
 
@@ -555,30 +676,69 @@ fn discover(
         let started_ts: Option<Value> = meta.as_ref().map(|m| json!(m.started_at));
         entry.insert(
             "when".to_string(),
-            json!(format_timestamp(started_ts.as_ref().or_else(|| match_info.get("session_started")))),
+            json!(format_timestamp(
+                started_ts
+                    .as_ref()
+                    .or_else(|| match_info.get("session_started"))
+            )),
         );
         entry.insert(
             "source".to_string(),
-            json!(meta.as_ref().map(|m| m.source.clone()).or_else(|| match_info.get("source").and_then(Value::as_str).map(|s| s.to_string())).unwrap_or_else(|| "unknown".to_string())),
+            json!(meta
+                .as_ref()
+                .map(|m| m.source.clone())
+                .or_else(|| match_info
+                    .get("source")
+                    .and_then(Value::as_str)
+                    .map(|s| s.to_string()))
+                .unwrap_or_else(|| "unknown".to_string())),
         );
         entry.insert(
             "model".to_string(),
-            json!(meta.as_ref().and_then(|m| m.model.clone()).or_else(|| match_info.get("model").and_then(Value::as_str).map(|s| s.to_string())).unwrap_or_else(|| "unknown".to_string())),
+            json!(meta
+                .as_ref()
+                .and_then(|m| m.model.clone())
+                .or_else(|| match_info
+                    .get("model")
+                    .and_then(Value::as_str)
+                    .map(|s| s.to_string()))
+                .unwrap_or_else(|| "unknown".to_string())),
         );
-        entry.insert("title".to_string(), meta.as_ref().and_then(|m| m.title.clone()).map(Value::String).unwrap_or(Value::Null));
-        entry.insert("matched_role".to_string(), match_info.get("role").cloned().unwrap_or(Value::Null));
+        entry.insert(
+            "title".to_string(),
+            meta.as_ref()
+                .and_then(|m| m.title.clone())
+                .map(Value::String)
+                .unwrap_or(Value::Null),
+        );
+        entry.insert(
+            "matched_role".to_string(),
+            match_info.get("role").cloned().unwrap_or(Value::Null),
+        );
         entry.insert("match_message_id".to_string(), json!(msg_id));
-        entry.insert("snippet".to_string(), match_info.get("snippet").cloned().unwrap_or(Value::String(String::new())));
+        entry.insert(
+            "snippet".to_string(),
+            match_info
+                .get("snippet")
+                .cloned()
+                .unwrap_or(Value::String(String::new())),
+        );
         entry.insert("bookend_start".to_string(), Value::Array(bookend_start));
         entry.insert("messages".to_string(), Value::Array(window_messages));
         entry.insert("bookend_end".to_string(), Value::Array(bookend_end));
         entry.insert(
             "messages_before".to_string(),
-            json!(view.get("messages_before").and_then(Value::as_i64).unwrap_or(0)),
+            json!(view
+                .get("messages_before")
+                .and_then(Value::as_i64)
+                .unwrap_or(0)),
         );
         entry.insert(
             "messages_after".to_string(),
-            json!(view.get("messages_after").and_then(Value::as_i64).unwrap_or(0)),
+            json!(view
+                .get("messages_after")
+                .and_then(Value::as_i64)
+                .unwrap_or(0)),
         );
         if lineage_root != &hit_sid {
             entry.insert("parent_session_id".to_string(), json!(lineage_root));
@@ -637,7 +797,9 @@ fn title_match_result(
     if HIDDEN_SESSION_SOURCES.contains(&source) {
         return None;
     }
-    let messages = db.get_messages(&session_id, false, None, 0).unwrap_or_default();
+    let messages = db
+        .get_messages(&session_id, false, None, 0)
+        .unwrap_or_default();
     let anchor_id = messages.first().map(|m| m.id);
     let view = anchor_id
         .and_then(|aid| db.get_anchored_view(&session_id, aid, 5, 3, None).ok())
@@ -650,43 +812,101 @@ fn title_match_result(
         json!(format_timestamp(Some(&json!(session_meta.started_at)))),
     );
     entry.insert("source".to_string(), json!(session_meta.source));
-    entry.insert("model".to_string(), json!(session_meta.model.clone().unwrap_or_else(|| "unknown".to_string())));
-    entry.insert("title".to_string(), json!(session_meta.title.clone().unwrap_or_else(|| title_query.clone())));
+    entry.insert(
+        "model".to_string(),
+        json!(session_meta
+            .model
+            .clone()
+            .unwrap_or_else(|| "unknown".to_string())),
+    );
+    entry.insert(
+        "title".to_string(),
+        json!(session_meta
+            .title
+            .clone()
+            .unwrap_or_else(|| title_query.clone())),
+    );
     entry.insert("matched_role".to_string(), json!("session_title"));
-    entry.insert("match_message_id".to_string(), anchor_id.map(Value::from).unwrap_or(Value::Null));
-    entry.insert("snippet".to_string(), json!(format!("Session title matched: {}", session_meta.title.clone().unwrap_or_else(|| title_query.clone()))));
+    entry.insert(
+        "match_message_id".to_string(),
+        anchor_id.map(Value::from).unwrap_or(Value::Null),
+    );
+    entry.insert(
+        "snippet".to_string(),
+        json!(format!(
+            "Session title matched: {}",
+            session_meta
+                .title
+                .clone()
+                .unwrap_or_else(|| title_query.clone())
+        )),
+    );
     entry.insert(
         "bookend_start".to_string(),
         Value::Array(
-            view.get("bookend_start").and_then(Value::as_array).cloned()
+            view.get("bookend_start")
+                .and_then(Value::as_array)
+                .cloned()
                 .map(|rows| message_shape_from_rows(rows.as_slice()))
-                .unwrap_or_else(|| window_rows[..3.min(window_rows.len())].iter().map(|m| shape_message(m, None, None)).collect()),
+                .unwrap_or_else(|| {
+                    window_rows[..3.min(window_rows.len())]
+                        .iter()
+                        .map(|m| shape_message(m, None, None))
+                        .collect()
+                }),
         ),
     );
     entry.insert(
         "messages".to_string(),
         Value::Array(
-            view.get("window").and_then(Value::as_array).cloned()
-                .map(|rows| rows.iter().map(|m| shape_message(m, anchor_id, None)).collect())
-                .unwrap_or_else(|| window_rows[..5.min(window_rows.len())].iter().map(|m| shape_message(m, anchor_id, None)).collect()),
+            view.get("window")
+                .and_then(Value::as_array)
+                .cloned()
+                .map(|rows| {
+                    rows.iter()
+                        .map(|m| shape_message(m, anchor_id, None))
+                        .collect()
+                })
+                .unwrap_or_else(|| {
+                    window_rows[..5.min(window_rows.len())]
+                        .iter()
+                        .map(|m| shape_message(m, anchor_id, None))
+                        .collect()
+                }),
         ),
     );
     entry.insert(
         "bookend_end".to_string(),
         Value::Array(
-            view.get("bookend_end").and_then(Value::as_array).cloned()
+            view.get("bookend_end")
+                .and_then(Value::as_array)
+                .cloned()
                 .map(|rows| message_shape_from_rows(rows.as_slice()))
                 .unwrap_or_else(|| {
-                    if window_rows.is_empty() { vec![] } else {
-                        window_rows[window_rows.len() - 3..].iter().map(|m| shape_message(m, None, None)).collect()
+                    if window_rows.is_empty() {
+                        vec![]
+                    } else {
+                        window_rows[window_rows.len() - 3..]
+                            .iter()
+                            .map(|m| shape_message(m, None, None))
+                            .collect()
                     }
                 }),
         ),
     );
-    entry.insert("messages_before".to_string(), json!(view.get("messages_before").and_then(Value::as_i64).unwrap_or(0)));
+    entry.insert(
+        "messages_before".to_string(),
+        json!(view
+            .get("messages_before")
+            .and_then(Value::as_i64)
+            .unwrap_or(0)),
+    );
     entry.insert(
         "messages_after".to_string(),
-        json!(view.get("messages_after").and_then(Value::as_i64).unwrap_or_else(|| (window_rows.len().saturating_sub(5)) as i64)),
+        json!(view
+            .get("messages_after")
+            .and_then(Value::as_i64)
+            .unwrap_or_else(|| (window_rows.len().saturating_sub(5)) as i64)),
     );
     entry.insert("_lineage_root".to_string(), json!(lineage_root));
     if lineage_root != session_id {
@@ -714,7 +934,10 @@ pub fn session_search(
     // The db is always provided by the handler (the upstream lazily opens
     // SessionDB() when None — deferred to the caller seam).
     let Some(db) = db else {
-        return tool_error("Session database not available", &[("success".to_string(), json!(false))]);
+        return tool_error(
+            "Session database not available",
+            &[("success".to_string(), json!(false))],
+        );
     };
 
     let _ = profile; // cross-profile DB seam deferred (hermes_cli profiles)
@@ -756,7 +979,10 @@ pub fn session_search(
         if rf.is_empty() {
             Vec::new()
         } else {
-            rf.split(',').map(|r| r.trim().to_string()).filter(|r| !r.is_empty()).collect()
+            rf.split(',')
+                .map(|r| r.trim().to_string())
+                .filter(|r| !r.is_empty())
+                .collect()
         }
     });
 
@@ -770,7 +996,15 @@ pub fn session_search(
         }
     });
 
-    discover(db, query.trim(), role_list.as_deref(), limit, sort_norm, current_session_id, None)
+    discover(
+        db,
+        query.trim(),
+        role_list.as_deref(),
+        limit,
+        sort_norm,
+        current_session_id,
+        None,
+    )
 }
 
 pub struct SessionSearchCheck;
@@ -793,7 +1027,16 @@ impl ToolHandler for SessionSearchHandler {
         let sort = args.get("sort").and_then(Value::as_str);
         let profile = args.get("profile").and_then(Value::as_str);
         ToolResult::Text(session_search(
-            None, query, role_filter, limit, session_id, around_message_id, window, sort, profile, None,
+            None,
+            query,
+            role_filter,
+            limit,
+            session_id,
+            around_message_id,
+            window,
+            sort,
+            profile,
+            None,
         ))
     }
 }

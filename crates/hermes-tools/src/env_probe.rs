@@ -86,8 +86,7 @@ static PROBE_COND: Condvar = Condvar::new();
 // `_build_probe_line` and `_PROBE_WAIT_TIMEOUT` (Rust cannot reassign
 // functions/module constants; the seams are inert unless a test sets
 // them).
-static TEST_BUILD_OVERRIDE: Mutex<Option<Arc<dyn Fn() -> String + Send + Sync>>> =
-    Mutex::new(None);
+static TEST_BUILD_OVERRIDE: Mutex<Option<Arc<dyn Fn() -> String + Send + Sync>>> = Mutex::new(None);
 static TEST_WAIT_TIMEOUT: Mutex<Option<Duration>> = Mutex::new(None);
 
 fn build_probe_line() -> String {
@@ -168,9 +167,9 @@ pub fn _run(cmd: &[&str], timeout: Duration) -> (i32, String, String) {
     if cmd.is_empty() {
         return (-1, String::new(), "oserror: empty command".to_string());
     }
-    let files = match temp_probe_file("out").and_then(|out| {
-        temp_probe_file("err").map(|err| TempProbeFiles { out, err })
-    }) {
+    let files = match temp_probe_file("out")
+        .and_then(|out| temp_probe_file("err").map(|err| TempProbeFiles { out, err }))
+    {
         Ok(f) => f,
         Err(e) => return (-1, String::new(), format!("oserror: {e}")),
     };
@@ -376,10 +375,8 @@ fn _build_probe_line() -> String {
         (Some(pip), Some(py3)) => !py3.starts_with(pip.as_str()),
         _ => false,
     };
-    let silent_conditions = py3_ver.is_some()
-        && py3_has_pip
-        && !mismatch
-        && (!py3_pep668 || has_uv);
+    let silent_conditions =
+        py3_ver.is_some() && py3_has_pip && !mismatch && (!py3_pep668 || has_uv);
     if silent_conditions {
         return String::new();
     }
@@ -435,9 +432,8 @@ fn _build_probe_line() -> String {
 /// Body of the single probe thread — computes and publishes the line.
 fn probe_worker(gen: u64) {
     // Never let probe failure propagate (mirrors upstream try/except).
-    let line =
-        std::panic::catch_unwind(std::panic::AssertUnwindSafe(build_probe_line))
-            .unwrap_or_default();
+    let line = std::panic::catch_unwind(std::panic::AssertUnwindSafe(build_probe_line))
+        .unwrap_or_default();
     let mut state = STATE.lock().unwrap();
     if state.probe_gen != gen {
         return; // superseded by a reset (tests) — discard stale result

@@ -184,15 +184,21 @@ pub fn get_write_denied_error(path: &str, verb: &str) -> Option<String> {
 }
 
 /// Common secret-bearing project-local environment file basenames.
-pub static BLOCKED_PROJECT_ENV_BASENAMES: once_cell::sync::Lazy<std::collections::HashSet<&'static str>> =
-    once_cell::sync::Lazy::new(|| {
-        [
-            ".env", ".env.local", ".env.development", ".env.production",
-            ".env.test", ".env.staging", ".envrc",
-        ]
-        .into_iter()
-        .collect()
-    });
+pub static BLOCKED_PROJECT_ENV_BASENAMES: once_cell::sync::Lazy<
+    std::collections::HashSet<&'static str>,
+> = once_cell::sync::Lazy::new(|| {
+    [
+        ".env",
+        ".env.local",
+        ".env.development",
+        ".env.production",
+        ".env.test",
+        ".env.staging",
+        ".envrc",
+    ]
+    .into_iter()
+    .collect()
+});
 
 /// Error message when a read targets a denied Hermes path, or None.
 pub fn get_read_block_error(path: &str) -> Option<String> {
@@ -209,10 +215,7 @@ pub fn get_read_block_error(path: &str) -> Option<String> {
 
     // Skills .hub: prompt-injection carriers.
     for hd in &hermes_dirs {
-        for sub in [
-            "skills/.hub/index-cache",
-            "skills/.hub",
-        ] {
+        for sub in ["skills/.hub/index-cache", "skills/.hub"] {
             let blocked = realpath(&hd.join(sub));
             if resolved.starts_with(&blocked) {
                 return Some(format!(
