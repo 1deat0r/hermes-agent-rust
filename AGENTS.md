@@ -7,7 +7,7 @@
 
 ## 1. Fixed reference points (do not rediscover)
 
-- Upstream: `/home/mustbearn/Projects/Research/hermes-agent-repo` (pinned @ `b9aa928`)
+- Upstream: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` (pinned @ `b9aa928`; upstream HEAD has moved far past the pin — regenerate the inventory against a pinned `b9aa928` worktree, not HEAD)
 - Master plan + parity matrix: `PLAN.md`
 - Machine-readable ledger: `tools/inventory.json` (regenerate: `tools/inventory.sh`)
 - Rust workspace root: this directory. Crates under `crates/`.

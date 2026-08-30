@@ -50,7 +50,16 @@
  "agent.verify_hooks": {
   "status": "done"
  },
+ "gateway.cgroup_cleanup": {
+  "status": "done"
+ },
+ "gateway.code_skew": {
+  "status": "done"
+ },
  "gateway.cwd_placeholder": {
+  "status": "done"
+ },
+ "gateway.rich_sent_store": {
   "status": "done"
  },
  "hermes_cli.__init__": {
@@ -64,6 +73,9 @@
  },
  "hermes_cli.lifecycle": {
   "status": "done"
+ },
+ "hermes_cli.main": {
+  "status": "partial"
  },
  "hermes_cli.managed_scope": {
   "status": "done"

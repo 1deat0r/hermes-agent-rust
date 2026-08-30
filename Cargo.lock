@@ -535,6 +535,14 @@ dependencies = [
 [[package]]
 name = "hermes-gateway"
 version = "0.1.0"
+dependencies = [
+ "hermes-cli",
+ "hermes-constants",
+ "hermes-time",
+ "libc",
+ "serde_json",
+ "tempfile",
+]
 
 [[package]]
 name = "hermes-logging"

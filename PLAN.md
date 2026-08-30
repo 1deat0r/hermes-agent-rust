@@ -485,6 +485,10 @@ The gateway crate opened ahead of Phase 4 as a dependency-free leaf, the same pr
 | Module / upstream surface | Status | Rust home, oracle, and evidence tier |
 |---|---|---|
 | gateway/cwd_placeholder.py (50 LOC) | ✅ | `hermes-gateway::cwd_placeholder`; 8 parity tests (`unit`) mirror `tests/gateway/test_cwd_placeholder.py` (local placeholder prefers `MESSAGING_CWD`; docker without the workspace mount stays unset) plus the source arms — explicit configured paths verbatim, the `.`/`auto`/`cwd` placeholders, backend normalization and `local` defaulting, docker+mount requiring a real host path, other backends unset, and `_truthy_env`'s true/1/yes grammar |
+| gateway/code_skew.py (64 LOC) | ✅ | `hermes-gateway::code_skew` (needs `hermes-cli` for the fingerprint reader, matching upstream's `hermes_cli.main` import); 10 parity tests (`unit`) mirror `tests/test_code_skew.py`'s `TestDetectCodeSkew`/`TestShort` classes — no boot snapshot means no skew (never a false positive), drift detected with 10-char short revs, unchanged fingerprints stay silent, an unreadable disk fingerprint after boot stays silent, boot recording is idempotent, and `_short`'s long-sha cut / `unresolved` marker / short-sha pass-through / empty-sha `or`-fallback. `TestModelSwitchSkewGuard` stays PENDING with `gateway.slash_commands` (not ported) |
+| gateway/cgroup_cleanup.py (81 LOC) | ✅ | `hermes-gateway::cgroup_cleanup` (gains `libc` for per-PID SIGKILL); 8 parity tests (`unit`/`mock`, incl. one live kill) mirror `tests/gateway/test_cgroup_cleanup.py` — the `^0::(.+)$` v2 line parse (and the no-unified-line None arm), lenient pid parsing (blank/non-numeric skipped), reap as a no-op with `count 0` when `cgroup.procs` is unreadable, own-pid skip, and a real spawned `sleep` child SIGKILLed and counted; ESRCH/EPERM don't count toward the kill tally per upstream's except arms. `reap_cgroup(None)` is never invoked in tests (it would kill the test process's own cgroup) |
+| gateway/rich_sent_store.py (83 LOC) | ✅ | `hermes-gateway::rich_sent_store` (gains `hermes-constants`, `hermes-time`, `serde_json`); 8 parity tests (`unit`, source-derived — no dedicated upstream test file; gap noted). Oracle: `chat:message` keying, 2000-char text cut, Python-falsiness guards (empty/None text, None ids touch no disk), fail-open lookup on missing/corrupt/non-dict store and falsy `t`, the 1000-entry trim by oldest `ts` (stable sort → insertion order breaks ties), and recovery from a corrupt store |
+| `hermes_cli/main.py` `_read_packed_ref` + `_read_git_revision_fingerprint` (main.py marked partial) | ✅ | `hermes_cli::git_revision`; 8 parity tests (`unit`, source-derived — no dedicated upstream test file; gap noted). Real `.git` fixtures: detached HEAD `git:HEAD:<sha>`, loose refs in worktree gitdir, packed-refs (comments/peel lines skipped), the `unresolved` marker, worktree `.git`-file indirection with `commondir` resolution, and OSError fail-open to `None`. Upstream keeps the two helpers private inside `main.py`; public here because `gateway/code_skew.py` imports one across the package boundary |
 
 ### hermes-providers base (Phase 2, upstream @ b9aa928)
 
@@ -631,6 +635,41 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 + the exact command, e.g. `cargo test -p hermes-time (unit)`.
 
 ## 7. Session log
+
+- 2026-08-31 (session 4da): Four units across two crates, all red-first:
+  the `hermes_cli/main.py` private git-fingerprint helpers
+  (`_read_packed_ref`, `_read_git_revision_fingerprint`) into
+  `hermes-cli::git_revision` (8 tests), then `gateway/code_skew.py` (10
+  tests), `gateway/cgroup_cleanup.py` (8 tests, incl. one live SIGKILL of a
+  spawned `sleep` child), and `gateway/rich_sent_store.py` (8 tests,
+  source-derived — no dedicated upstream test file; gap noted) into
+  `hermes-gateway`, which gains `hermes-cli`, `hermes-constants`,
+  `hermes-time`, `serde_json`, and `libc` — all still below the agent/tools
+  layers. `hermes_cli.main` is marked `partial` (two private helpers of a
+  ~5k-line module). Production strict completion moves 8.52% → 8.79%
+  (97 done). Fidelity points: code_skew's boot snapshot is idempotent and
+  the `unresolved`/short-sha/empty-sha arms of `_short` are pinned
+  byte-exact; cgroup reaping counts only successful kills (upstream's
+  ProcessLookupError/PermissionError arms both `continue` without
+  counting) and `reap_cgroup(None)` is never exercised in tests because it
+  would kill the test process's own cgroup; rich_sent_store's trim uses a
+  stable sort so same-second timestamps trim in insertion order, and the
+  guards/fail-open arms mirror Python falsiness exactly. Process note:
+  upstream HEAD has advanced far past the pin, so the inventory was
+  regenerated against a pinned `b9aa928` git worktree (the stale
+  `/home/mustbearn` default in `tools/inventory.sh`/AGENTS.md was corrected
+  to the current checkout path).
+  Evidence: `cargo test -p hermes-gateway -p hermes-cli` → 34 new tests
+  green (86 total across the two crates); `cargo clippy -p hermes-gateway
+  -p hermes-cli --all-targets` clean on all new code; `rustfmt --edition
+  2021` clean on all changed files; serialized
+  `/home/mustbearnold/.cargo/bin/cargo test --workspace -- --test-threads=1`
+  passed 1,361 tests with 5 intentional ignores; `git diff --check` clean.
+  Ledger: 97 done / 15 partial / 3,770 tracked (**2.50%**) and 97 done /
+  15 partial / 991 production (**8.79%**). Next: more small `tools/`/
+  `gateway/` leaves (e.g. `tools.close_terminal_tool`,
+  `tools.skill_provenance`, `gateway.session_stall`), or the deferred
+  higher-layer seams (desktop/gateway emitter wiring, plugin registry).
 
 - 2026-08-30 (session 4d9): Three more oracle-backed leaves across two
   crates: `tools/browser_camofox_state.py` and `tools/focus_pane_tool.py`

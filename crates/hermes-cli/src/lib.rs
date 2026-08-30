@@ -5,6 +5,7 @@
 //! it upstream.
 
 pub mod build_info;
+pub mod git_revision;
 pub mod input_sanitize;
 pub mod lifecycle;
 pub mod model_search;
