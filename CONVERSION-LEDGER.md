@@ -1,7 +1,7 @@
 # Hermes Agent → Hermes Agent Rust Conversion Ledger
 
-**Current strict completion: 2.43% of all tracked upstream modules (115/4740).**
-Production-only strict completion: **9.36%** (115/1229 production modules).
+**Current strict completion: 2.45% of all tracked upstream modules (116/4740).**
+Production-only strict completion: **9.44%** (116/1229 production modules).
 
 > This file is generated from `tools/inventory.json`; update the source ledger in `tools/port_status.json`, regenerate the inventory, then run `python3 tools/conversion_ledger.py`. Only `done` counts toward the percentage. `partial` is intentionally zero credit until its stated parity seams are closed.
 
@@ -9,10 +9,10 @@ Production-only strict completion: **9.36%** (115/1229 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 115 | 19 | 4606 | 2.43% | 42,604/1,910,919 done LOC |
-| Production modules | 115 | 19 | 1095 | 9.36% | 42,604/993,168 done LOC |
+| All tracked modules | 116 | 19 | 4605 | 2.45% | 42,642/1,910,919 done LOC |
+| Production modules | 116 | 19 | 1094 | 9.44% | 42,642/993,168 done LOC |
 
-Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-31T09:39:52`.
+Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-31T09:44:23`.
 
 ## Definition of 100.00%
 
@@ -482,7 +482,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `hermes_cli.codex_models` | production | P3 | 282 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `hermes_cli.codex_runtime_plugin_migration` | production | P3 | 757 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `hermes_cli.codex_runtime_switch` | production | P3 | 279 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `hermes_cli.colors` | production | P3 | 38 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `hermes_cli.colors` | production | P3 | 38 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `hermes_cli.commands` | production | P3 | 2,481 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `hermes_cli.completion` | production | P3 | 319 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `hermes_cli.config` | production | P3 | 6,226 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |

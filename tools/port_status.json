@@ -125,6 +125,9 @@
  "hermes_cli.build_info": {
   "status": "done"
  },
+ "hermes_cli.colors": {
+  "status": "done"
+ },
  "hermes_cli.input_sanitize": {
   "status": "done"
  },
