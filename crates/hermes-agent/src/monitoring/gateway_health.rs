@@ -254,8 +254,10 @@ fn safe_metric_value(raw: Option<&Value>, limit: usize) -> String {
 
 /// Return a stable opaque instance key without exporting the source ID.
 ///
-/// PARITY: `_safe_instance_id` (upstream lines 131-135).
-fn safe_instance_id(raw: Option<&Value>) -> String {
+/// PARITY: `_safe_instance_id` (upstream lines 131-135). Private upstream;
+/// public here because `gateway_health_export._runtime_resource_attributes`
+/// imports it across the module boundary.
+pub fn safe_instance_id(raw: Option<&Value>) -> String {
     let text = match raw {
         Some(Value::String(s)) if !s.is_empty() => s.clone(),
         Some(other) if !other.is_null() => other.to_string(),

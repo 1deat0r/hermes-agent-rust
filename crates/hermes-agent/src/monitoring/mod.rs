@@ -19,6 +19,7 @@ pub mod cron_health;
 pub mod emitter;
 pub mod events;
 pub mod gateway_health;
+pub mod gateway_health_export;
 pub mod otlp_exporter;
 pub mod redaction;
 

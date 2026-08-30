@@ -28,7 +28,7 @@ this documentation checkpoint. Previous: `d138528` (4d9's
 
 ## What landed this session (4da)
 
-Twenty-four units across four crates, all red-first, 150 new parity tests:
+Twenty-five units across four crates, all red-first, 159 new parity tests:
 
 - `hermes_cli/main.py` `_read_packed_ref` + `_read_git_revision_fingerprint`
   → `hermes-cli::git_revision` (8 tests, source-derived — no dedicated
@@ -151,6 +151,18 @@ opentelemetry-sdk transport (`_require_sdk`/`build_exporter`/
 Rust optional-SDK analog; the SDK seam is the `SpanSink` the operator
 plane wires — and `_resource_attributes` (needs `policy.ensure_install_id`).
 
+Batch 14: `agent/monitoring/gateway_health_export.py` → **partial**.
+Ported: `_safe_resource_attributes` (allowlist + `^[A-Za-z0-9._:/-]{1,128}$`
+grammar + redaction-changed rejection + sha256 instance-id routing),
+`_diagnostic_log_attributes`, both config probes and `_enabled`,
+`_metric_endpoint`/`_logs_endpoint`, `_supervision_mode` env probe,
+`_severity_number` (OTel enum values: FATAL=24/ERROR=17/WARN=13/INFO=9/
+DEBUG=5), `_gateway_health_event` plane filter, `_redact_string`, and
+`_DEFAULT_DIAGNOSTIC_SCOPE`. PENDING: `GatewayHealthExportRuntime`/
+`start_gateway_health_export` and the SDK streamer/provider classes (OTel
+transport, snapshot thread, root-logger attachment) and `_install_id`
+(`policy.ensure_install_id`).
+
 `hermes-gateway` also gains `hermes-cli`, `hermes-constants`, `hermes-time`,
 `serde_json`, `libc` — all still below the agent/tools layers.
 `tools.close_terminal_tool` was skipped: blocked on the 2,937-LOC
@@ -160,9 +172,9 @@ plane wires — and `_resource_attributes` (needs `policy.ensure_install_id`).
 
 Session 4da **changed the ledger**: 99 done / 15 partial / 3,768 missing
 tracked modules and 99 done / 15 partial / 989 missing production modules —
-**2.96%** tracked and **10.52%** production strict completion — regenerated
+**2.96%** tracked and **10.61%** production strict completion — regenerated
 against the pinned `b9aa928` worktree (commands above), with
-`cargo build --workspace` and the serialized workspace run green at 1,477
+`cargo build --workspace` and the serialized workspace run green at 1,486
 tests / 6 ignored (the 6th is skill_provenance's intentional `ignore` doc
 example).
 
@@ -181,11 +193,18 @@ example).
 ## Current conversion ledger
 
 99 done / 15 partial / 3,768 missing tracked (**2.55%** strict completion);
-115 done / 17 partial / 971 missing production (**10.52%**). Regenerated via
+115 done / 18 partial / 970 missing production (**10.61%**). Regenerated via
 `tools/inventory.sh` (pinned worktree) + `python3 tools/conversion_ledger.py`.
 
 ## Fidelity notes
 
+- Session 4da (batch 14): `safe_resource_attributes` rejects values that
+  redaction would CHANGE (a defense-in-depth arm unique to this plane —
+  an e-mail-shaped label passes the grammar but must not export verbatim).
+  `_supervision_mode` env precedence: INVOCATION_ID → S6_* →
+  container/.dockerenv → LAUNCHD_SOCKET → manual. `gateway_health`'s
+  `safe_instance_id` went pub for this module (upstream imports the
+  private helper across the module boundary the same way).
 - Session 4da (batch 13): the OTLP partial keeps the module's security
   notes: header *names* in config, values read from env at export time
   and never logged; the `event_filter` plane-scoping seam becomes the
@@ -273,9 +292,9 @@ example).
 
 - `/home/mustbearnold/.cargo/bin/cargo build --workspace` — green.
 - `cargo test -p hermes-gateway -p hermes-cli -p hermes-tools -p
-  hermes-agent` — 150 new tests green.
+  hermes-agent` — 159 new tests green.
 - Serialized `/home/mustbearnold/.cargo/bin/cargo test --workspace --
-  --test-threads=1` — 1,477 passed, 0 failed, 6 intentional ignores.
+  --test-threads=1` — 1,486 passed, 0 failed, 6 intentional ignores.
 - `cargo clippy -p hermes-gateway -p hermes-cli --all-targets` — clean on
   all new code.
 - `rustfmt --edition 2021 --check` — clean on all changed files.
