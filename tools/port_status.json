@@ -50,6 +50,9 @@
  "agent.tool_result_classification": {
   "status": "done"
  },
+ "agent.trajectory": {
+  "status": "done"
+ },
  "agent.turn_retry_state": {
   "status": "done"
  },
