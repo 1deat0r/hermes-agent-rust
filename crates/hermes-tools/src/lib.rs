@@ -39,6 +39,7 @@ pub mod focus_pane_tool;
 pub mod html5_entities;
 pub mod interrupt;
 pub mod mcp_schema_cache;
+pub mod mcp_dashboard_oauth;
 pub mod mcp_stdio_watchdog;
 pub mod open_preview_tool;
 pub mod path_security;

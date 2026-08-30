@@ -1,7 +1,7 @@
 # Hermes Agent → Hermes Agent Rust Conversion Ledger
 
-**Current strict completion: 2.78% of all tracked upstream modules (132/4740).**
-Production-only strict completion: **10.74%** (132/1229 production modules).
+**Current strict completion: 2.81% of all tracked upstream modules (133/4740).**
+Production-only strict completion: **10.82%** (133/1229 production modules).
 
 > This file is generated from `tools/inventory.json`; update the source ledger in `tools/port_status.json`, regenerate the inventory, then run `python3 tools/conversion_ledger.py`. Only `done` counts toward the percentage. `partial` is intentionally zero credit until its stated parity seams are closed.
 
@@ -9,10 +9,10 @@ Production-only strict completion: **10.74%** (132/1229 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 132 | 21 | 4587 | 2.78% | 45,541/1,910,919 done LOC |
-| Production modules | 132 | 21 | 1076 | 10.74% | 45,541/993,168 done LOC |
+| All tracked modules | 133 | 21 | 4586 | 2.81% | 45,686/1,910,919 done LOC |
+| Production modules | 133 | 21 | 1075 | 10.82% | 45,686/993,168 done LOC |
 
-Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-31T11:31:01`.
+Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-31T11:40:24`.
 
 ## Definition of 100.00%
 
@@ -4722,7 +4722,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `tools.kanban_tools` | production | P2 | 2,480 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.lazy_deps` | production | P2 | 1,249 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.managed_tool_gateway` | production | P2 | 452 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `tools.mcp_dashboard_oauth` | production | P2 | 145 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `tools.mcp_dashboard_oauth` | production | P2 | 145 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `tools.mcp_oauth` | production | P2 | 1,957 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.mcp_oauth_manager` | production | P2 | 965 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.mcp_schema_cache` | production | P2 | 151 | ✅ done | Maintain parity evidence; no remaining task in this row. |

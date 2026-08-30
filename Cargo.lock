@@ -711,6 +711,7 @@ dependencies = [
  "sha2",
  "shellexpand",
  "tempfile",
+ "thiserror",
  "zip",
 ]
 

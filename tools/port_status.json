@@ -395,6 +395,9 @@
  "tools.interrupt": {
   "status": "done"
  },
+ "tools.mcp_dashboard_oauth": {
+  "status": "done"
+ },
  "tools.mcp_schema_cache": {
   "status": "done"
  },
