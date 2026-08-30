@@ -47,6 +47,9 @@
  "agent.monitoring.gateway_health": {
   "status": "done"
  },
+ "agent.monitoring.otlp_exporter": {
+  "status": "partial"
+ },
  "agent.monitoring.redaction": {
   "status": "done"
  },

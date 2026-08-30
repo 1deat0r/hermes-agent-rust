@@ -28,7 +28,7 @@ this documentation checkpoint. Previous: `d138528` (4d9's
 
 ## What landed this session (4da)
 
-Twenty-three units across four crates, all red-first, 142 new parity tests:
+Twenty-four units across four crates, all red-first, 150 new parity tests:
 
 - `hermes_cli/main.py` `_read_packed_ref` + `_read_git_revision_fingerprint`
   → `hermes-cli::git_revision` (8 tests, source-derived — no dedicated
@@ -141,6 +141,16 @@ cron_health snapshot builder. The singleton-touching tests serialize
 behind a mutex — parallel tests closing the shared emitter race each
 other's dispatch.
 
+Batch 13: `agent/monitoring/otlp_exporter.py` → **partial**. Ported: the
+config probe, `is_enabled`, `resolve_headers` (env-name indirection,
+missing vars skipped, values never logged), `span_attrs` per-kind keep
+lists with redaction+500-char bounds, and `export_batch` over a
+caller-wired `SpanSink` trait (panic fail-isolated). PENDING: the
+opentelemetry-sdk transport (`_require_sdk`/`build_exporter`/
+`_make_provider`/`OTLPStreamer`/`start_streaming`/`is_available`) — no
+Rust optional-SDK analog; the SDK seam is the `SpanSink` the operator
+plane wires — and `_resource_attributes` (needs `policy.ensure_install_id`).
+
 `hermes-gateway` also gains `hermes-cli`, `hermes-constants`, `hermes-time`,
 `serde_json`, `libc` — all still below the agent/tools layers.
 `tools.close_terminal_tool` was skipped: blocked on the 2,937-LOC
@@ -150,9 +160,9 @@ other's dispatch.
 
 Session 4da **changed the ledger**: 99 done / 15 partial / 3,768 missing
 tracked modules and 99 done / 15 partial / 989 missing production modules —
-**2.96%** tracked and **10.43%** production strict completion — regenerated
+**2.96%** tracked and **10.52%** production strict completion — regenerated
 against the pinned `b9aa928` worktree (commands above), with
-`cargo build --workspace` and the serialized workspace run green at 1,469
+`cargo build --workspace` and the serialized workspace run green at 1,477
 tests / 6 ignored (the 6th is skill_provenance's intentional `ignore` doc
 example).
 
@@ -171,11 +181,15 @@ example).
 ## Current conversion ledger
 
 99 done / 15 partial / 3,768 missing tracked (**2.55%** strict completion);
-115 done / 16 partial / 972 missing production (**10.43%**). Regenerated via
+115 done / 17 partial / 971 missing production (**10.52%**). Regenerated via
 `tools/inventory.sh` (pinned worktree) + `python3 tools/conversion_ledger.py`.
 
 ## Fidelity notes
 
+- Session 4da (batch 13): the OTLP partial keeps the module's security
+  notes: header *names* in config, values read from env at export time
+  and never logged; the `event_filter` plane-scoping seam becomes the
+  sink contract; `OtlpUnavailable` survives as the no-sink error shape.
 - Session 4da (batch 12): upstream's `gateway.status` try/except fallbacks
   are the ported code paths (no gateway.status module exists yet);
   `_safe_profile` falls back to "default" and `_safe_version` to
@@ -259,9 +273,9 @@ example).
 
 - `/home/mustbearnold/.cargo/bin/cargo build --workspace` — green.
 - `cargo test -p hermes-gateway -p hermes-cli -p hermes-tools -p
-  hermes-agent` — 142 new tests green.
+  hermes-agent` — 150 new tests green.
 - Serialized `/home/mustbearnold/.cargo/bin/cargo test --workspace --
-  --test-threads=1` — 1,469 passed, 0 failed, 6 intentional ignores.
+  --test-threads=1` — 1,477 passed, 0 failed, 6 intentional ignores.
 - `cargo clippy -p hermes-gateway -p hermes-cli --all-targets` — clean on
   all new code.
 - `rustfmt --edition 2021 --check` — clean on all changed files.

@@ -9,10 +9,10 @@ Production-only strict completion: **9.36%** (115/1229 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 115 | 16 | 4609 | 2.43% | 42,604/1,910,919 done LOC |
-| Production modules | 115 | 16 | 1098 | 9.36% | 42,604/993,168 done LOC |
+| All tracked modules | 115 | 17 | 4608 | 2.43% | 42,604/1,910,919 done LOC |
+| Production modules | 115 | 17 | 1097 | 9.36% | 42,604/993,168 done LOC |
 
-Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-31T09:23:09`.
+Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-31T09:28:32`.
 
 ## Definition of 100.00%
 
@@ -33,6 +33,7 @@ The conversion is complete only when all of these are true:
 | `agent.credential_pool` | P2 | 3,566 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `agent.interrupt_compat` | P2 | 64 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `agent.monitoring.cron_health` | P2 | 203 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
+| `agent.monitoring.otlp_exporter` | P2 | 270 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `agent.portal_tags` | P2 | 144 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `hermes_cli.__init__` | P3 | 92 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `hermes_cli.main` | P3 | 14,786 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
@@ -194,7 +195,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `agent.monitoring.events` | production | P2 | 86 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.monitoring.gateway_health` | production | P2 | 469 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.monitoring.gateway_health_export` | production | P2 | 643 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `agent.monitoring.otlp_exporter` | production | P2 | 270 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `agent.monitoring.otlp_exporter` | production | P2 | 270 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
 | `agent.monitoring.policy` | production | P2 | 57 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.monitoring.redaction` | production | P2 | 71 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.moonshot_schema` | production | P2 | 269 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |

@@ -1,6 +1,6 @@
 {
  "generated_from": "/run/media/mustbearnold/Projects/Research/hermes-agent-repo",
- "generated_at": "2026-08-31T09:23:09",
+ "generated_at": "2026-08-31T09:28:32",
  "summary": {
   "modules": 4740,
   "total_lines": 1910919,
@@ -8,13 +8,13 @@
   "production_lines": 993168,
   "status_counts": {
    "done": 115,
-   "partial": 16,
-   "missing": 4609
+   "partial": 17,
+   "missing": 4608
   },
   "prod_status_counts": {
    "done": 115,
-   "partial": 16,
-   "missing": 1098
+   "partial": 17,
+   "missing": 1097
   },
   "packages": {
    "gateway": {
@@ -67,8 +67,8 @@
     "lines": 157608,
     "modules": 209,
     "status": {
-     "missing": 183,
-     "partial": 5,
+     "missing": 182,
+     "partial": 6,
      "done": 21
     }
    },
@@ -12835,7 +12835,7 @@
   "agent.monitoring.otlp_exporter": {
    "lines": 270,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "partial",
    "is_test": false
   },
   "tools.environments.daytona": {
