@@ -28,7 +28,7 @@ this documentation checkpoint. Previous: `d138528` (4d9's
 
 ## What landed this session (4da)
 
-Thirteen units across four crates, all red-first, 92 new parity tests:
+Sixteen units across four crates, all red-first, 102 new parity tests:
 
 - `hermes_cli/main.py` `_read_packed_ref` + `_read_git_revision_fingerprint`
   → `hermes-cli::git_revision` (8 tests, source-derived — no dedicated
@@ -99,6 +99,14 @@ fail-open IO). `save_trajectory` returns the written path for callers;
 upstream returns None implicitly. The AIAgent method
 `_convert_to_trajectory_format` stays pending with run_agent.
 
+Batch 8: `gateway/platforms/qqbot` package opened — `crypto`
+(AES-256-GCM `generate_bind_key`/`decrypt_secret`; test-side encryptor
+reproduces the portal layout; the crate gains `aes-gcm`, `base64`, `rand`),
+`constants` (all values pinned incl. `QQ_PORTAL_HOST` Lazy read-once), and
+`utils` (`build_user_agent` grammar with a Python-version slot reporting
+`unknown` — a Rust runtime has no interpreter, documented in the module;
+`coerce_list` keeps Python `str()` semantics incl. `True`/`False`).
+
 `hermes-gateway` also gains `hermes-cli`, `hermes-constants`, `hermes-time`,
 `serde_json`, `libc` — all still below the agent/tools layers.
 `tools.close_terminal_tool` was skipped: blocked on the 2,937-LOC
@@ -108,9 +116,9 @@ upstream returns None implicitly. The AIAgent method
 
 Session 4da **changed the ledger**: 99 done / 15 partial / 3,768 missing
 tracked modules and 99 done / 15 partial / 989 missing production modules —
-**2.73%** tracked and **9.61%** production strict completion — regenerated
+**2.81%** tracked and **9.88%** production strict completion — regenerated
 against the pinned `b9aa928` worktree (commands above), with
-`cargo build --workspace` and the serialized workspace run green at 1,419
+`cargo build --workspace` and the serialized workspace run green at 1,429
 tests / 6 ignored (the 6th is skill_provenance's intentional `ignore` doc
 example).
 
@@ -129,11 +137,17 @@ example).
 ## Current conversion ledger
 
 99 done / 15 partial / 3,768 missing tracked (**2.55%** strict completion);
-106 done / 15 partial / 982 missing production (**9.61%**). Regenerated via
+109 done / 15 partial / 979 missing production (**9.88%**). Regenerated via
 `tools/inventory.sh` (pinned worktree) + `python3 tools/conversion_ledger.py`.
 
 ## Fidelity notes
 
+- Session 4da (batch 8): qqbot `decrypt_secret` maps Python's raising
+  `AESGCM.decrypt` to `Result<String, String>` (upstream lets the
+  exception propagate; the Rust error strings carry no secrets). The
+  User-Agent's Python slot is `unknown` by design — the pinned grammar
+  lives in `build_user_agent_with`. `coerce_list` renders JSON booleans
+  as Python `str()` would (`True`/`False`).
 - Session 4da (batch 7): `trajectory` timestamps use naive local
   microsecond ISO (Python `datetime.now().isoformat()` — no offset
   suffix); the fail-open IO arm logs via the `log` facade and returns
@@ -186,9 +200,9 @@ example).
 
 - `/home/mustbearnold/.cargo/bin/cargo build --workspace` — green.
 - `cargo test -p hermes-gateway -p hermes-cli -p hermes-tools -p
-  hermes-agent` — 92 new tests green.
+  hermes-agent` — 102 new tests green.
 - Serialized `/home/mustbearnold/.cargo/bin/cargo test --workspace --
-  --test-threads=1` — 1,419 passed, 0 failed, 6 intentional ignores.
+  --test-threads=1` — 1,429 passed, 0 failed, 6 intentional ignores.
 - `cargo clippy -p hermes-gateway -p hermes-cli --all-targets` — clean on
   all new code.
 - `rustfmt --edition 2021 --check` — clean on all changed files.

@@ -1,28 +1,28 @@
 {
  "generated_from": "/run/media/mustbearnold/Projects/Research/hermes-agent-repo",
- "generated_at": "2026-08-31T08:44:33",
+ "generated_at": "2026-08-31T08:52:56",
  "summary": {
   "modules": 4740,
   "total_lines": 1910919,
   "production_modules": 1229,
   "production_lines": 993168,
   "status_counts": {
-   "done": 106,
+   "done": 109,
    "partial": 15,
-   "missing": 4619
+   "missing": 4616
   },
   "prod_status_counts": {
-   "done": 106,
+   "done": 109,
    "partial": 15,
-   "missing": 1108
+   "missing": 1105
   },
   "packages": {
    "gateway": {
     "lines": 117873,
     "modules": 96,
     "status": {
-     "missing": 89,
-     "done": 7
+     "missing": 86,
+     "done": 10
     }
    },
    "cli": {
@@ -28191,7 +28191,7 @@
   "gateway.platforms.qqbot.constants": {
    "lines": 74,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "tests.test_display_hermes_home": {
@@ -28524,7 +28524,7 @@
   "gateway.platforms.qqbot.utils": {
    "lines": 71,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "tools.apply_layout_tool": {
@@ -31394,7 +31394,7 @@
   "gateway.platforms.qqbot.crypto": {
    "lines": 45,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "optional-skills.security.godmode.scripts.load_godmode": {

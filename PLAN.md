@@ -640,7 +640,7 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 ## 7. Session log
 
-- 2026-08-31 (session 4da): Thirteen units across four crates, all red-first:
+- 2026-08-31 (session 4da): Sixteen units across four crates, all red-first:
   batch 1 — the `hermes_cli/main.py` private git-fingerprint helpers
   (`_read_packed_ref`, `_read_git_revision_fingerprint`) into
   `hermes-cli::git_revision` (8 tests), then `gateway/code_skew.py` (10
@@ -703,19 +703,26 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   incomplete-scratchpad detection incl. a stray closing tag, JSONL append
   semantics (one line per call, never truncates), the
   completed→default-filename decision, naive-local ISO timestamps, and
-  fail-open IO errors). Process note: upstream HEAD has advanced far past the pin,
+  fail-open IO errors). Batch 8 —
+  the `gateway/platforms/qqbot` package opened with `crypto` (AES-256-GCM
+  scan-to-configure secret decryption; 4 tests with a test-side encryptor
+  reproducing the portal's IV‖ciphertext‖tag layout), `constants` (3
+  tests pinning every constant incl. env-configurable `QQ_PORTAL_HOST`
+  read-once semantics) and `utils` (3 tests: User-Agent grammar via an
+  explicit-host-facts form, API header set, and `coerce_list` Python
+  str() semantics) — 10 tests total, source-derived (gap noted). Process note: upstream HEAD has advanced far past the pin,
   so the inventory was regenerated against a pinned `b9aa928` git worktree
   (the stale `/home/mustbearn` default in `tools/inventory.sh`/AGENTS.md
   was corrected to the current checkout path).
   Evidence: `cargo test -p hermes-gateway -p hermes-cli -p hermes-tools -p
-  hermes-agent` → 92 new tests green; `cargo clippy -p hermes-gateway -p hermes-cli -p
+  hermes-agent` → 102 new tests green; `cargo clippy -p hermes-gateway -p hermes-cli -p
   hermes-tools --all-targets` clean on all new code; `rustfmt --edition
   2021` clean on all changed files; serialized
   `/home/mustbearnold/.cargo/bin/cargo test --workspace -- --test-threads=1`
-  passed 1,419 tests with 6 intentional ignores (the new one is
+  passed 1,429 tests with 6 intentional ignores (the new one is
   skill_provenance's `ignore` doc example); `git diff --check` clean.
-  Ledger: 106 done / 15 partial / 3,761 tracked (**2.73%**) and 106 done /
-  15 partial / 982 production (**9.61%**). Next: more small `tools/`/
+  Ledger: 109 done / 15 partial / 3,758 tracked (**2.81%**) and 109 done /
+  15 partial / 979 production (**9.88%**). Next: more small `tools/`/
   `gateway/` leaves (e.g. `gateway.readiness`, `gateway.rich_sent_store`
   neighbors `gateway.code_skew` consumers, `tools.open_preview_tool`), the
   `tools.process_registry` mega-module (unblocks

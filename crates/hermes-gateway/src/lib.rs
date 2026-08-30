@@ -10,6 +10,7 @@ pub mod cgroup_cleanup;
 pub mod code_skew;
 pub mod cwd_placeholder;
 pub mod platform_http_limits;
+pub mod qqbot;
 pub mod readiness;
 pub mod rich_sent_store;
 pub mod session_stall;

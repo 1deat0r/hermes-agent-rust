@@ -1,7 +1,7 @@
 # Hermes Agent → Hermes Agent Rust Conversion Ledger
 
-**Current strict completion: 2.24% of all tracked upstream modules (106/4740).**
-Production-only strict completion: **8.62%** (106/1229 production modules).
+**Current strict completion: 2.30% of all tracked upstream modules (109/4740).**
+Production-only strict completion: **8.87%** (109/1229 production modules).
 
 > This file is generated from `tools/inventory.json`; update the source ledger in `tools/port_status.json`, regenerate the inventory, then run `python3 tools/conversion_ledger.py`. Only `done` counts toward the percentage. `partial` is intentionally zero credit until its stated parity seams are closed.
 
@@ -9,10 +9,10 @@ Production-only strict completion: **8.62%** (106/1229 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 106 | 15 | 4619 | 2.24% | 41,391/1,910,919 done LOC |
-| Production modules | 106 | 15 | 1108 | 8.62% | 41,391/993,168 done LOC |
+| All tracked modules | 109 | 15 | 4616 | 2.30% | 41,581/1,910,919 done LOC |
+| Production modules | 109 | 15 | 1105 | 8.87% | 41,581/993,168 done LOC |
 
-Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-31T08:44:33`.
+Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-31T08:52:56`.
 
 ## Definition of 100.00%
 
@@ -385,11 +385,11 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `gateway.platforms.qqbot.__init__` | production | P4 | 91 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `gateway.platforms.qqbot.adapter` | production | P4 | 3,275 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `gateway.platforms.qqbot.chunked_upload` | production | P4 | 602 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `gateway.platforms.qqbot.constants` | production | P4 | 74 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `gateway.platforms.qqbot.crypto` | production | P4 | 45 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `gateway.platforms.qqbot.constants` | production | P4 | 74 | ✅ done | Maintain parity evidence; no remaining task in this row. |
+| `gateway.platforms.qqbot.crypto` | production | P4 | 45 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `gateway.platforms.qqbot.keyboards` | production | P4 | 461 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `gateway.platforms.qqbot.onboard` | production | P4 | 220 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `gateway.platforms.qqbot.utils` | production | P4 | 71 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `gateway.platforms.qqbot.utils` | production | P4 | 71 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `gateway.platforms.signal` | production | P4 | 1,832 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `gateway.platforms.signal_format` | production | P4 | 140 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `gateway.platforms.signal_rate_limit` | production | P4 | 374 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |

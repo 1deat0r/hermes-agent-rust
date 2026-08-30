@@ -71,6 +71,15 @@
  "gateway.platforms._http_client_limits": {
   "status": "done"
  },
+ "gateway.platforms.qqbot.constants": {
+  "status": "done"
+ },
+ "gateway.platforms.qqbot.crypto": {
+  "status": "done"
+ },
+ "gateway.platforms.qqbot.utils": {
+  "status": "done"
+ },
  "gateway.readiness": {
   "status": "done"
  },
