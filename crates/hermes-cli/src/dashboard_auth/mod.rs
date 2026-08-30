@@ -17,8 +17,9 @@
 //! `ctx.register_dashboard_auth_provider`.
 
 pub mod audit;
-pub mod cookies;
 pub mod base;
+pub mod cookies;
+pub mod native_flow;
 pub mod prefix;
 pub mod public_paths;
 pub mod registry;

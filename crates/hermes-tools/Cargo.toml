@@ -25,5 +25,6 @@ serde_json = { workspace = true }
 once_cell = { workspace = true }
 log = "0.4"
 hermes-utils = { version = "0.1.0", path = "../hermes-utils" }
-sha2 = "0.11.0"
+
 sha1 = "0.10"
+sha2 = "0.10"

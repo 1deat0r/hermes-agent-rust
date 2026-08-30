@@ -158,6 +158,9 @@
  "hermes_cli.dashboard_auth.cookies": {
   "status": "done"
  },
+ "hermes_cli.dashboard_auth.native_flow": {
+  "status": "done"
+ },
  "hermes_cli.dashboard_auth.prefix": {
   "status": "partial"
  },
