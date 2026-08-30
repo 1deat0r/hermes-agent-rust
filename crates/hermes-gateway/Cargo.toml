@@ -1,0 +1,9 @@
+[package]
+name = "hermes-gateway"
+description = "1:1 Rust port of gateway/ (Nous Research Hermes Agent)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dev-dependencies]

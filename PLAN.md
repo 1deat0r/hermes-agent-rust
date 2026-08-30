@@ -348,6 +348,7 @@ rich/routing/cooldown/meta/reactions/conversation/delete modules.
 | Module / upstream surface | Status | Rust home, oracle, and evidence tier |
 |---|---|---|
 | tools/audio_container.py (97 LOC) | ✅ | `audio_container.rs`; 6 parity tests (`unit`) |
+| tools/browser_camofox_state.py (48 LOC) | ✅ | `browser_camofox_state.rs`; 5 parity tests (`unit`) mirror `tests/tools/test_browser_camofox_state.py` (profile-scoped paths, deterministic identity, default task scope and prefixes) plus golden `uuid.uuid5(NAMESPACE_URL, …)` digests computed from the Python reference — SHA-1 namespace framing, version-5/variant bits, lowercase hex, `[:10]`/`[:16]` truncations — and an explicit-home pure form |
 | tools/computer_use/schema.py (353 LOC) | ✅ | generated `computer_use_schema.rs`; byte-identical golden + 4 parity tests (`unit`) |
 | tools/credential_files.py (530 LOC) | 🟡 | `credential_files.rs`; 27 parity tests (`mock`); config, external-skills, atexit, and ContextVar→thread-local seams remain |
 | tools/daemon_pool.py (64 LOC) | ✅ | `daemon_pool.rs`; 10 parity tests (`unit`) |
@@ -356,6 +357,7 @@ rich/routing/cooldown/meta/reactions/conversation/delete modules.
 | tools/desktop_ui.py (40 LOC) | ✅ | `desktop_ui.rs`; 2 emitter-routing parity tests (`mock`) |
 | tools/env_probe.py (370 LOC) | ✅ | `env_probe.rs`; 13 fake-executable/cache parity tests (`mock`) |
 | tools/fal_common.py (163 LOC) | ✅ | `fal_common.rs`; 47 injected-client/dependency parity tests (`mock`) |
+| tools/focus_pane_tool.py (65 LOC) | ✅ | `focus_pane_tool.rs`; 6 parity tests (`unit`/`mock`) mirror `tests/tools/test_focus_pane_tool.py` (parametrized `pane.reveal` emit through the ported `desktop_ui` bridge; registration inputs) plus the source error arms — unknown/blank pane naming the allowed list, desktop-only with no emitter wired, and the emitter-panic arm rendered as `str(exc)` like `read_preview_tool`. Schema (enum order, required, byte-exact description) and the `desktop_ui` toolset are pinned for the registry wiring |
 | tools/interrupt.py (124 LOC) | ✅ | `interrupt.rs`; 4 parity tests (`unit`); broader agent/gateway signal tests deferred with those crates |
 | tools/mcp_schema_cache.py (121 LOC) | ✅ | `mcp_schema_cache.rs`; 12 cache/fingerprint parity tests (`mock`) |
 | tools/read_preview_tool.py (94 LOC) | ✅ | `read_preview_tool.rs`; 8 callback/schema parity tests (`mock`) |
@@ -476,6 +478,14 @@ The crate opened as a dependency-free leaf so upstream's own layering is honoure
 | `hermes_cli/lifecycle.py` (63 LOC) | ✅ | `hermes_cli::lifecycle`; 12 parity tests (`unit`/`mock`) mirror `tests/hermes_cli/test_lifecycle.py` (builtin→plugin notify order; finalize closes core before the plugin export, with `profile_key` from the injected coordinator) and the fail-open arms: observer failure, inspection failure, relay failure, and the missing/empty/`0`/`False` session ids — `str(kwargs.get("session_id") or "")` reproduces Python `or`-falsiness, and truthy non-strings stringify (`str(5)` → `"5"`). The three call-time imports (`observability`, `plugins`, `agent.relay_runtime`) are installable seams: upstream puts the imports *inside* its `try` blocks, so an uninstalled slot reproduces the `ImportError` arm (same warning, fail-open) instead of skipping silently, and `current_profile_key` is fallible because upstream evaluates it inside the same `try` as `finalize_conversation` — one shared "Core Relay session finalization failed" channel. `plugins.invoke_hook` propagates errors because upstream guards nothing there; the `hermes_cli.plugins` registry itself is PENDING for the plugin-registry crate |
 | `hermes_cli/toolset_validation.py` (75 LOC) | ✅ | `hermes_cli::toolset_validation`; 7 parity tests (`unit`) mirror `tests/hermes_cli/test_toolset_validation.py` in full (the #38798 `cli: ["hermes"]` corruption warns, suggests `hermes-cli`, and trips the zero-valid-toolsets safety net; mixed valid/invalid flags only the invalid) plus byte-exact warning strings (U+2014 em dashes), the scalar entry form (`raw if isinstance(raw, list) else [raw]`), non-mapping/empty inputs yielding nothing, non-string/empty names skipped but still counting against validity, and the no-suggestion arm when `hermes-<platform>` is also unknown. The `is_valid_toolset` predicate is injected exactly as the source's decoupled-helper pattern; warnings follow config insertion order via serde_json `preserve_order` |
 | `hermes_cli/setup_hidden_env.py` (57 LOC) | ✅ | `hermes_cli::setup_hidden_env`; 4 parity tests (`unit`) mirror `tests/hermes_cli/test_setup_hidden_env.py`'s predicate oracle — the parametrized knob list and the IRC/SimpleX/ntfy/LINE suffix sweep — plus credentials/allowlists staying visible, leading-underscore suffix boundaries, and every suffix hiding a canonical example. The 13-entry `SETUP_HIDDEN_ENV_SUFFIXES` table is exported in upstream order. The card/wizard/gateway halves of the oracle drive `web_server`, the setup wizard, and the gateway env reader — PENDING until those surfaces port |
+### hermes-gateway leaf (Phase 4 crate opened early, upstream @ b9aa928)
+
+The gateway crate opened ahead of Phase 4 as a dependency-free leaf, the same precedent as `hermes-cli`: its first module is pure stdlib logic upstream, so it lands without dragging the messaging-platform transport layers in.
+
+| Module / upstream surface | Status | Rust home, oracle, and evidence tier |
+|---|---|---|
+| gateway/cwd_placeholder.py (50 LOC) | ✅ | `hermes-gateway::cwd_placeholder`; 8 parity tests (`unit`) mirror `tests/gateway/test_cwd_placeholder.py` (local placeholder prefers `MESSAGING_CWD`; docker without the workspace mount stays unset) plus the source arms — explicit configured paths verbatim, the `.`/`auto`/`cwd` placeholders, backend normalization and `local` defaulting, docker+mount requiring a real host path, other backends unset, and `_truthy_env`'s true/1/yes grammar |
+
 ### hermes-providers base (Phase 2, upstream @ b9aa928)
 
 | Module / upstream surface | Status | Rust home, oracle, and evidence tier |
@@ -621,6 +631,35 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 + the exact command, e.g. `cargo test -p hermes-time (unit)`.
 
 ## 7. Session log
+
+- 2026-08-30 (session 4d9): Three more oracle-backed leaves across two
+  crates: `tools/browser_camofox_state.py` and `tools/focus_pane_tool.py`
+  into `hermes-tools`, and `gateway/cwd_placeholder.py` into a new
+  `hermes-gateway` leaf crate opened ahead of Phase 4 (the `hermes-cli`
+  precedent — its first module is pure stdlib upstream, so the crate lands
+  dependency-free). All three `done`, 19 new red-first parity tests
+  (8 + 5 + 6). Production strict completion moves 8.25% → 8.52% (94 done).
+  Fidelity points worth keeping visible: the Camofox identity is pinned
+  byte-exact against Python's `uuid.uuid5` reference (SHA-1 over
+  NAMESPACE_URL bytes + name, version-5/variant bits, lowercase hex,
+  `[:10]`/`[:16]` cuts) — `get_camofox_identity` re-derives the scope root
+  from the live `get_hermes_home()` every call, so an override or env
+  change re-scopes immediately; `focus_pane_tool`'s `except` arm around
+  `desktop_ui.emit` is unreachable for error *returns* in Rust (the emitter
+  is infallible) and is reproduced for panics via `catch_unwind` +
+  `str(exc)`-equivalent, matching `read_preview_tool`; the tool exports its
+  schema/toolset and a `register_focus_pane()` for the registry wiring, so
+  the registry-entry oracle is asserted as registration inputs.
+  Evidence: `cargo test -p hermes-tools -p hermes-gateway` → 19 new tests
+  green; `cargo clippy -p hermes-tools -p hermes-gateway --all-targets`
+  clean on all new code (remaining warnings are pre-existing modules);
+  `rustfmt --edition 2021` clean on changed files; serialized
+  `/home/mustbearnold/.cargo/bin/cargo test --workspace -- --test-threads=1`
+  passed 1,327 tests with 5 intentional ignores; `git diff --check` clean.
+  Ledger: 94 done / 14 partial / 3,774 tracked (**2.42%**) and 94 done /
+  14 partial / 995 production (**8.52%**). Next: more small
+  `tools/`/`gateway/` leaves in this shape, or the deferred higher-layer
+  seams (desktop/gateway emitter wiring, plugin registry).
 
 - 2026-08-30 (session 4d8): Published 4d7's tree first (`a06d8fb`), then took
   the next three oracle-backed `hermes_cli` leaves in the same

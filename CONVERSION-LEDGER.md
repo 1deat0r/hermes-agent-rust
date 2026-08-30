@@ -1,7 +1,7 @@
 # Hermes Agent → Hermes Agent Rust Conversion Ledger
 
-**Current strict completion: 2.34% of all tracked upstream modules (91/3882).**
-Production-only strict completion: **8.25%** (91/1103 production modules).
+**Current strict completion: 2.42% of all tracked upstream modules (94/3882).**
+Production-only strict completion: **8.52%** (94/1103 production modules).
 
 > This file is generated from `tools/inventory.json`; update the source ledger in `tools/port_status.json`, regenerate the inventory, then run `python3 tools/conversion_ledger.py`. Only `done` counts toward the percentage. `partial` is intentionally zero credit until its stated parity seams are closed.
 
@@ -9,10 +9,10 @@ Production-only strict completion: **8.25%** (91/1103 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 91 | 14 | 3777 | 2.34% | 31,186/1,510,733 done LOC |
-| Production modules | 91 | 14 | 998 | 8.25% | 31,186/843,792 done LOC |
+| All tracked modules | 94 | 14 | 3774 | 2.42% | 31,346/1,510,733 done LOC |
+| Production modules | 94 | 14 | 995 | 8.52% | 31,346/843,792 done LOC |
 
-Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-30T12:47:30`.
+Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-30T13:21:43`.
 
 ## Definition of 100.00%
 
@@ -306,7 +306,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `gateway.channel_directory` | production | P4 | 658 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `gateway.code_skew` | production | P4 | 64 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `gateway.config` | production | P4 | 2,693 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `gateway.cwd_placeholder` | production | P4 | 49 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `gateway.cwd_placeholder` | production | P4 | 49 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `gateway.dead_targets` | production | P4 | 143 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `gateway.delivery` | production | P4 | 646 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `gateway.delivery_ledger` | production | P4 | 374 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
@@ -3819,7 +3819,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `tools.binary_extensions` | production | P2 | 42 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `tools.blueprints` | production | P2 | 324 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.browser_camofox` | production | P2 | 953 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `tools.browser_camofox_state` | production | P2 | 47 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `tools.browser_camofox_state` | production | P2 | 47 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `tools.browser_cdp_tool` | production | P2 | 684 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.browser_dialog_tool` | production | P2 | 148 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.browser_supervisor` | production | P2 | 1,518 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
@@ -3870,7 +3870,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `tools.file_state` | production | P2 | 332 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `tools.file_tools` | production | P2 | 2,579 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.flux3_video_tool` | production | P2 | 1,249 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `tools.focus_pane_tool` | production | P2 | 64 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `tools.focus_pane_tool` | production | P2 | 64 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `tools.fuzzy_match` | production | P2 | 1,108 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.homeassistant_tool` | production | P2 | 514 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.hook_output_spill` | production | P2 | 232 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |

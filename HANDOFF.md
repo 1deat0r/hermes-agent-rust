@@ -1,6 +1,6 @@
 # Hermes Agent Rust — Next-session handoff
 
-Date: 2026-08-30 (Pacific/Auckland), session 4d8.
+Date: 2026-08-30 (Pacific/Auckland), session 4d9.
 
 ## Resume point
 
@@ -8,26 +8,38 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
-Current branch/HEAD: `main` carries the three additional `hermes_cli` leaves
-(`lifecycle`, `toolset_validation`, `setup_hidden_env`) committed with this
-documentation checkpoint. Published history before it: `a06d8fb`
-(4d7's `timeouts`/`model_search` unit, pushed), `aedb1f2` (+ `2468dc7`),
+Current branch/HEAD: `main` carries the three additional leaves
+(`tools.browser_camofox_state`, `tools.focus_pane_tool`,
+`gateway.cwd_placeholder`) committed with this documentation checkpoint.
+Published history before it: `e6079b9` (4d8's `hermes_cli` leaves, pushed),
+`a06d8fb` (4d7's `timeouts`/`model_search` unit), `aedb1f2` (+ `2468dc7`),
 `2b28e63` (+ `2747f77`), `27c1329` (+ `fee2b4f`), `c63f3a3` (+ `91b472e`),
 `0aea517` (+ `8a9e8f3`), `a284322` (+ `448a4f6`). Confirm with
 `git ls-remote origin refs/heads/main` after the push.
 
-Latest synchronized source unit: `hermes_cli.lifecycle`,
+Latest synchronized source unit: `tools.browser_camofox_state`,
+`tools.focus_pane_tool`, and `gateway.cwd_placeholder` ported `done` — 19
+more red-first parity tests (8 + 5 + 6), workspace at 1,327 tests / 5
+ignored and **8.52%** production strict completion (94 done).
+`hermes-gateway` opened ahead of Phase 4 as a dependency-free leaf (the
+`hermes-cli` precedent). The Camofox identity is pinned byte-exact against
+Python's `uuid.uuid5` reference (new `sha1` dependency; scope root
+re-derived from the live `get_hermes_home()` every call);
+`focus_pane_tool` reproduces the source's `except` arm for emitter panics
+via `catch_unwind` and exports its schema/toolset plus
+`register_focus_pane()` for the registry wiring.
+Previous synchronized source unit: `hermes_cli.lifecycle`,
 `hermes_cli.toolset_validation`, and `hermes_cli.setup_hidden_env` ported
-`done` — 23 more red-first parity tests (12 + 7 + 4), `cargo clippy -p
-hermes-cli --all-targets` still clean, workspace at 1,308 tests / 5 ignored
-and **8.25%** production strict completion (91 done). The crate gains the
-`log` facade and `parking_lot`; both sit below the Hermes layer so the
-dependency-free-leaf discipline holds. Lifecycle's three call-time imports
-(`observability`, `plugins`, `agent.relay_runtime`) are installable seams:
-upstream puts the imports inside its `try` blocks, so an uninstalled slot
-reproduces the `ImportError` arm (same warning, fail-open) instead of
-skipping silently, and `current_profile_key` is fallible because the source
-evaluates it inside the same `try` as `finalize_conversation`.
+`done` — 23 more red-first parity tests (12 + 7 + 4), workspace at 1,308
+tests / 5 ignored and **8.25%** production strict completion (91 done,
+published as `e6079b9` this session). The crate gained the `log` facade and
+`parking_lot`; both sit below the Hermes layer so the dependency-free-leaf
+discipline holds. Lifecycle's three call-time imports (`observability`,
+`plugins`, `agent.relay_runtime`) are installable seams: upstream puts the
+imports inside its `try` blocks, so an uninstalled slot reproduces the
+`ImportError` arm (same warning, fail-open) instead of skipping silently,
+and `current_profile_key` is fallible because the source evaluates it
+inside the same `try` as `finalize_conversation`.
 Previous synchronized source unit: `hermes_cli.timeouts` and
 `hermes_cli.model_search` ported `done` into the new crate — 9 more red-first
 parity tests, workspace at 1,285 tests / 5 ignored and **7.98%** production
@@ -260,6 +272,28 @@ GitHub `11245d8` (`plugins.model-providers.arcee.__init__`), local `ec9db5aa`
 recorded above with the config/Z.AI source commit and its verified tree.
 
 ## What landed this session
+
+Session 4d9 took three more oracle-backed leaves across two crates, all
+`done`: `tools/browser_camofox_state.py` (profile-scoped Camofox
+identity/state paths; the identity is pinned byte-exact against Python's
+`uuid.uuid5` reference — the suite computed the digests independently from
+the Python source, so SHA-1 namespace framing, version-5/variant bits, hex
+casing, and the `[:10]`/`[:16]` cuts cannot drift), `tools/
+focus_pane_tool.py` (the `pane.reveal` emit oracle through the already
+ported `desktop_ui` bridge, with the unknown-pane, desktop-only, and
+emitter-panic arms, plus schema/toolset pinned for the registry wiring), and
+`gateway/cwd_placeholder.py` in a new `hermes-gateway` dependency-free leaf
+crate opened ahead of Phase 4 (the `hermes-cli` precedent).
+
+Two fidelity notes: the Camofox identity re-derives its scope root from the
+live `get_hermes_home()` on every call (upstream's `str(Path)` of the state
+dir), so a Hermes-home override re-scopes immediately and the identity is
+never cached; and `focus_pane_tool`'s `except Exception` arm is reproduced
+for emitter panics (`catch_unwind` + a `str(exc)`-equivalent), since the
+Rust emitter closure is otherwise infallible.
+
+`hermes-tools` gains `sha1` (the `uuid5` PRF) and a dev-only `parking_lot`;
+both fit the crate's existing dependency set.
 
 Session 4d8 published 4d7's tree (`a06d8fb`) and then took three more
 oracle-backed leaves in the same dependency-free crate, all `done`:

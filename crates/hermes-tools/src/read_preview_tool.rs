@@ -119,7 +119,7 @@ fn build_window(start: Option<&Value>, count: Option<&Value>) -> Result<HashMap<
 
 /// Best-effort panic message extraction (`str(exc)`-equivalent for
 /// callback failures).
-fn panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
+pub(crate) fn panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
     if let Some(s) = panic.downcast_ref::<&str>() {
         (*s).to_string()
     } else if let Some(s) = panic.downcast_ref::<String>() {

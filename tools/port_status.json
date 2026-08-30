@@ -50,6 +50,9 @@
  "agent.verify_hooks": {
   "status": "done"
  },
+ "gateway.cwd_placeholder": {
+  "status": "done"
+ },
  "hermes_cli.__init__": {
   "status": "partial"
  },
@@ -215,6 +218,9 @@
  "tools.binary_extensions": {
   "status": "done"
  },
+ "tools.browser_camofox_state": {
+  "status": "done"
+ },
  "tools.budget_config": {
   "status": "done"
  },
@@ -246,6 +252,9 @@
   "status": "done"
  },
  "tools.file_state": {
+  "status": "done"
+ },
+ "tools.focus_pane_tool": {
   "status": "done"
  },
  "tools.interrupt": {

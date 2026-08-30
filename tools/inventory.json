@@ -1,27 +1,28 @@
 {
  "generated_from": "/run/media/mustbearnold/Projects/Research/hermes-agent-repo",
- "generated_at": "2026-08-30T12:47:30",
+ "generated_at": "2026-08-30T13:21:43",
  "summary": {
   "modules": 3882,
   "total_lines": 1510733,
   "production_modules": 1103,
   "production_lines": 843792,
   "status_counts": {
-   "done": 91,
+   "done": 94,
    "partial": 14,
-   "missing": 3777
+   "missing": 3774
   },
   "prod_status_counts": {
-   "done": 91,
+   "done": 94,
    "partial": 14,
-   "missing": 998
+   "missing": 995
   },
   "packages": {
    "gateway": {
     "lines": 101551,
     "modules": 88,
     "status": {
-     "missing": 88
+     "missing": 87,
+     "done": 1
     }
    },
    "cli": {
@@ -90,8 +91,8 @@
     "lines": 123020,
     "modules": 131,
     "status": {
-     "missing": 98,
-     "done": 27,
+     "missing": 96,
+     "done": 29,
      "partial": 6
     }
    },
@@ -23589,7 +23590,7 @@
   "tools.focus_pane_tool": {
    "lines": 64,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "tests.test_code_skew": {
@@ -24989,7 +24990,7 @@
   "gateway.cwd_placeholder": {
    "lines": 49,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "tests.acp.test_auth": {
@@ -25163,7 +25164,7 @@
    "imports": [
     "hermes_constants"
    ],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "tools.openrouter_client": {
