@@ -1,7 +1,7 @@
 # Hermes Agent → Hermes Agent Rust Conversion Ledger
 
-**Current strict completion: 2.22% of all tracked upstream modules (86/3882).**
-Production-only strict completion: **7.80%** (86/1103 production modules).
+**Current strict completion: 2.27% of all tracked upstream modules (88/3882).**
+Production-only strict completion: **7.98%** (88/1103 production modules).
 
 > This file is generated from `tools/inventory.json`; update the source ledger in `tools/port_status.json`, regenerate the inventory, then run `python3 tools/conversion_ledger.py`. Only `done` counts toward the percentage. `partial` is intentionally zero credit until its stated parity seams are closed.
 
@@ -9,10 +9,10 @@ Production-only strict completion: **7.80%** (86/1103 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 86 | 14 | 3782 | 2.22% | 30,861/1,510,733 done LOC |
-| Production modules | 86 | 14 | 1003 | 7.80% | 30,861/843,792 done LOC |
+| All tracked modules | 88 | 14 | 3780 | 2.27% | 30,993/1,510,733 done LOC |
+| Production modules | 88 | 14 | 1001 | 7.98% | 30,993/843,792 done LOC |
 
-Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-28T10:19:28`.
+Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-30T12:24:38`.
 
 ## Definition of 100.00%
 
@@ -499,7 +499,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `hermes_cli.model_catalog` | production | P3 | 471 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `hermes_cli.model_cost_guard` | production | P3 | 134 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `hermes_cli.model_normalize` | production | P3 | 582 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `hermes_cli.model_search` | production | P3 | 50 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `hermes_cli.model_search` | production | P3 | 50 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `hermes_cli.model_setup_flows` | production | P3 | 3,151 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `hermes_cli.model_switch` | production | P3 | 3,203 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `hermes_cli.models` | production | P3 | 5,453 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
@@ -625,7 +625,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `hermes_cli.suggestions_cmd` | production | P3 | 158 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `hermes_cli.telegram_managed_bot` | production | P3 | 358 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `hermes_cli.timefmt` | production | P3 | 30 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `hermes_cli.timeouts` | production | P3 | 82 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `hermes_cli.timeouts` | production | P3 | 82 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `hermes_cli.tips` | production | P3 | 485 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `hermes_cli.tools_config` | production | P3 | 5,452 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `hermes_cli.toolset_validation` | production | P3 | 74 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |

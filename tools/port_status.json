@@ -63,6 +63,12 @@
   "hermes_cli.managed_scope": {
     "status": "done"
   },
+  "hermes_cli.model_search": {
+    "status": "done"
+  },
+  "hermes_cli.timeouts": {
+    "status": "done"
+  },
   "hermes_constants": {
     "status": "partial"
   },

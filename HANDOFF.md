@@ -1,6 +1,6 @@
 # Hermes Agent Rust — Next-session handoff
 
-Date: 2026-08-28 (Pacific/Auckland), session 4d6.
+Date: 2026-08-28 (Pacific/Auckland), session 4d7.
 
 ## Resume point
 
@@ -8,16 +8,19 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
-Current branch/HEAD: `main` is aligned with `origin/main` at
-`2468dc7` (`feat(cli): open hermes-cli crate with build_info and input_sanitize
-@ b9aa928`), verified with `git ls-remote origin refs/heads/main`; the
-follow-up `handoff:` commit records that line. Published history before it:
+Current branch/HEAD: `main` carries the two additional `hermes_cli` leaves
+(`timeouts`, `model_search`) committed with this documentation checkpoint.
+Published history before it: `2468dc7` (+ `aedb1f2` handoff),
 `2747f77` (+ `2b28e63` handoff), `fee2b4f`
 (+ `27c1329` handoff), `91b472e` (+ `c63f3a3`), `8a9e8f3` (+ `0aea517`),
 `448a4f6` (+ `a284322`). Confirm with
 `git ls-remote origin refs/heads/main` after the push.
 
-Latest synchronized source unit: the `hermes-cli` crate opened as a
+Latest synchronized source unit: `hermes_cli.timeouts` and
+`hermes_cli.model_search` ported `done` into the new crate — 9 more red-first
+parity tests, `cargo clippy -p hermes-cli --all-targets` still clean, workspace
+at 1,285 tests / 5 ignored and **7.98%** production strict completion.
+Previous synchronized source unit: the `hermes-cli` crate opened as a
 dependency-free leaf with `hermes_cli/__init__.py` (version + release date,
 `_ensure_utf8` pending), `hermes_cli/build_info.py` (done), and
 `hermes_cli/input_sanitize.py` (done) — plus `agent.portal_tags` switching to a
@@ -245,6 +248,20 @@ GitHub `11245d8` (`plugins.model-providers.arcee.__init__`), local `ec9db5aa`
 recorded above with the config/Z.AI source commit and its verified tree.
 
 ## What landed this session
+
+Session 4d7 stayed inside the crate opened by 4d6 and took its next two
+oracle-backed leaves: `hermes_cli/timeouts.py` (three call forms — process path,
+explicit path, loaded document — standing in for the source's function-level
+`load_config_readonly` import, because this crate must stay a dependency leaf)
+and `hermes_cli/model_search.py` (picker search aliases, with the upstream
+`ui-tui`/`web` TypeScript sync duty recorded in the doc comment since that
+duplication is UI-parity scope).
+
+Two source quirks were preserved rather than "fixed": `float(True) == 1.0` makes
+a YAML boolean a valid 1-second timeout, and `model_search_text` returns the
+*original* argument for a whitespace-only id but the trimmed id otherwise
+(`return model or ""` versus `mid`).
+
 
 Session 4d6 stopped waiting on the absent CLI crate and opened it. `hermes-cli`
 is a dependency-free leaf holding the three smallest oracle-backed
@@ -916,8 +933,8 @@ tools/inventory.sh` and `python3 tools/conversion_ledger.py`, with
 
 `CONVERSION-LEDGER.md` is generated and contains one row for every 3,882 upstream inventory modules: 1,103 production tasks plus 2,779 oracle/test tasks. Only `done` counts toward completion.
 
-- All tracked modules: 86 done / 14 partial / 3,782 missing = **2.22%**.
-- Production modules: 86 done / 14 partial / 1,003 missing = **7.80%**.
+- All tracked modules: 88 done / 14 partial / 3,780 missing = **2.27%**.
+- Production modules: 88 done / 14 partial / 1,001 missing = **7.98%**.
 
 The fourteen partial production rows are `agent.auxiliary_client`,
 `agent.credential_pool`, `agent.interrupt_compat`, `agent.portal_tags`,
@@ -925,7 +942,7 @@ The fourteen partial production rows are `agent.auxiliary_client`,
 `tools.credential_files`, `tools.delegation_output_schema`,
 `tools.threat_patterns`, `tools.todo_tool`, `tools.tool_backend_helpers`,
 and `tools.tool_output_limits`. Their closure
-seams are listed in the ledger and PLAN.md. Sessions 4d3/4d4/4d6 added twelve `done` rows
+seams are listed in the ledger and PLAN.md. Sessions 4d3/4d4/4d6/4d7 added fourteen `done` rows
 (`agent.errors`, `agent.message_content`, `agent.tool_result_classification`,
 `agent.lmstudio_reasoning`, `agent.reasoning_summaries`,
 `agent.turn_retry_state`, `agent.verify_hooks`, `agent.kanban_stop`,
@@ -944,6 +961,13 @@ The strict production formula is `done production modules / 1,103`; partial rows
 
 ## Fidelity notes
 
+- Session 4d7: `hermes-cli` is deliberately a dependency leaf
+  (`hermes-constants`/`hermes-utils`/`serde_json`/`fancy-regex`), so config
+  reading is parameterized instead of importing `hermes_cli.config`;
+  `load_config_readonly()`'s merged read is equivalent here because no
+  `providers.*` key exists in `DEFAULT_CONFIG`. `_coerce_timeout` keeps
+  Python's bool-to-float coercion, and `model_search_text` keeps the
+  original-vs-trimmed asymmetry for whitespace-only ids.
 - Session 4d6: `hermes-cli` is a leaf crate that must not import `hermes-agent`,
   so the Portal version is published into a per-process slot
   (`set_hermes_version`) instead of the source's `from hermes_cli import
@@ -1168,6 +1192,16 @@ passed 3/3. Targeted rustfmt passed; concrete Z.AI HTTP/cache and full merged
 CLI config behavior remain deferred.
 
 ## Verification evidence
+
+For the current `hermes_cli.timeouts`/`hermes_cli.model_search` unit,
+`/home/mustbearnold/.cargo/bin/cargo test -p hermes-cli --test parity_timeouts
+--test parity_model_search` passed 6 + 3 tests, the whole crate suite is green,
+`cargo clippy -p hermes-cli --all-targets` emitted no warnings,
+`cargo build --workspace` passed, the required serialized
+`cargo test --workspace -- --test-threads=1` passed with 1,285 tests and the
+same 5 intentionally ignored doc tests, targeted rustfmt `--check` passed, and
+`git diff --check` was clean.
+
 
 For the current CLI-crate unit, `/home/mustbearnold/.cargo/bin/cargo test -p
 hermes-cli --test parity_build_info --test parity_input_sanitize --test

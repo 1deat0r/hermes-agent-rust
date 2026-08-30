@@ -471,7 +471,8 @@ The crate opened as a dependency-free leaf so upstream's own layering is honoure
 | `hermes_cli/__init__.py` (92 LOC) | 🟡 | `hermes_cli::{VERSION, RELEASE_DATE}`; 1 parity test (`unit`) pins the `b9aa928` values `0.20.0` / `2026.8.3`. PENDING SEAM: `_ensure_utf8()` has no Rust analogue — a Rust binary writes bytes to its streams and cannot raise `UnicodeEncodeError`, so the reconfigure/reopen ladder and the `PYTHONUTF8`/`PYTHONIOENCODING` child nudges are only meaningful once the CLI entry point exists (and the latter two belong to whatever Python subprocesses the port still spawns) |
 | `hermes_cli/build_info.py` (51 LOC) | ✅ | `hermes_cli::build_info`; 4 parity tests (`unit`) mirror `tests/hermes_cli/test_build_info.py` (absent file, `short=12/0/-1` truncation) and the module's documented error tolerance (blank file, directory-instead-of-file) plus code-point-based truncation. The `__file__`-relative default path becomes the compile-time workspace root with a `HERMES_BUILD_SHA_FILE` override, and every reader has an explicit-path form standing in for the upstream `_BUILD_SHA_FILE` patch target |
 | `hermes_cli/input_sanitize.py` (70 LOC) | ✅ | `hermes_cli::input_sanitize`; 7 parity tests (`unit`) mirror `tests/hermes_cli/test_input_sanitize.py` in full (plain text, embedded `literal[200~tag`, the #62557 CJK corruption tail, preserved trailing punctuation, the combined sanitizer) plus the source-derived canonical/ESC/caret wrapper forms, the boundary-only degraded strip, the `min_repeats` threshold, and the dangling-`[` trim. The four patterns keep their `(?=$\|[…])` lookaheads, so this crate depends on `fancy-regex` exactly as `hermes-tools` does, and the run collapses markers on code points rather than bytes |
-
+| `hermes_cli/timeouts.py` (82 LOC) | ✅ | `hermes_cli::timeouts`; 6 parity tests (`unit`/`mock`) assert the same precedence the upstream oracle exercises through `AIAgent._resolved_api_call_timeout` — per-model `timeout_seconds` wins, then the provider `request_timeout_seconds`, with the stale getter using `stale_timeout_seconds` at both levels as the source does — plus `float()` coercion accept/reject shapes (`"45.5"` yes, `"abc"`/mapping no, `True` → `1.0` because Python floats bools), non-positive rejection, non-mapping provider entries aborting to `None`, and a missing or malformed config file failing open. PENDING ORACLE: the upstream test's `build_anthropic_client(timeout=…)` arm and its `AIAgent` reload cases land with `agent.anthropic_adapter` and `run_agent` |
+| `hermes_cli/model_search.py` (50 LOC) | ✅ | `hermes_cli::model_search`; 3 parity tests (`unit`) mirror `tests/hermes_cli/test_model_search.py` for the alias surface (ordinary ids unchanged, `k3` → `k3 kimi-k3 kimi` with case-insensitive lookup and preserved wire spelling, canonical slug = first alias lowercased, identity-and-lowercase otherwise, blank passthrough). The `_filter_indices` half of that oracle belongs to the unported `hermes_cli.curses_ui`. The table also records the upstream cross-language sync duty with `ui-tui`/`web` `model-search-text.ts`, which is UI-parity scope |
 ### hermes-providers base (Phase 2, upstream @ b9aa928)
 
 | Module / upstream surface | Status | Rust home, oracle, and evidence tier |
@@ -600,6 +601,8 @@ oracle tests). Upstream oracle files currently mirrored:
 - `agent/lmstudio_reasoning.py` + `tests/agent/test_lmstudio_reasoning.py` → `crates/hermes-agent/tests/parity_lmstudio_reasoning.rs` (8 parity tests; `unit`)
 - `agent/reasoning_summaries.py` + `tests/agent/test_reasoning_summaries.py` → `crates/hermes-agent/tests/parity_reasoning_summaries.rs` (7 parity tests; `unit`, full oracle coverage)
 - `agent/interrupt_compat.py` + `tests/agent/test_interrupt_compat.py` → `crates/hermes-agent/tests/parity_interrupt_compat.rs` (6 parity tests; `unit`; the `run_agent.AIAgent` inheritance and `tools.delegate_tool` subagent cases remain with those modules)
+- `hermes_cli/timeouts.py` + `tests/hermes_cli/test_timeouts.py` → `crates/hermes-cli/tests/parity_timeouts.rs` (6 precedence/coercion parity tests; `unit`/`mock`; the anthropic-adapter and `AIAgent` arms of that oracle remain with those modules)
+- `hermes_cli/model_search.py` + `tests/hermes_cli/test_model_search.py` → `crates/hermes-cli/tests/parity_model_search.rs` (3 parity tests; `unit`; `_filter_indices` stays with `hermes_cli.curses_ui`)
 - `hermes_cli/build_info.py` + `tests/hermes_cli/test_build_info.py` → `crates/hermes-cli/tests/parity_build_info.rs` (4 parity tests; `unit`)
 - `hermes_cli/input_sanitize.py` + `tests/hermes_cli/test_input_sanitize.py` → `crates/hermes-cli/tests/parity_input_sanitize.rs` (7 parity tests; `unit`, full oracle coverage)
 - `hermes_cli/__init__.py` → `crates/hermes-cli/tests/parity_cli_package.rs` (1 version/release-date test; `unit`; upstream has no oracle for the package marker, and `_ensure_utf8` is recorded as the pending seam)
@@ -615,6 +618,36 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 + the exact command, e.g. `cargo test -p hermes-time (unit)`.
 
 ## 7. Session log
+
+- 2026-08-28 (session 4d7): Kept going in the same crate with two more
+  `hermes_cli` leaves: `hermes_cli/timeouts.py` and
+  `hermes_cli/model_search.py`, both `done`, 9 new red-first parity tests.
+  `hermes-cli` stays a dependency leaf (`hermes-constants`, `hermes-utils`,
+  `serde_json`, `fancy-regex` only), which is why the timeout getters come in
+  three forms — process-config path, explicit path, and loaded document — the
+  Rust answer to upstream's function-level `from hermes_cli.config import
+  load_config_readonly`. For these two knobs the raw file read is equivalent to
+  the source's merged read because no `providers.*` key exists in
+  `DEFAULT_CONFIG`.
+  Two fidelity details worth keeping visible: `_coerce_timeout` accepts `True`
+  as `1.0` because Python floats bools (a naive Rust port would reject it), and
+  `model_search_text` returns the *original* argument for a whitespace-only id
+  while returning the trimmed id otherwise — the source's `return model or ""`
+  versus `mid`. `model_search` also carries upstream's cross-language sync
+  obligation with `ui-tui/src/lib/model-search-text.ts` and
+  `web/src/lib/model-search-text.ts` into the Rust doc comment, because that
+  duplication is UI-parity scope and must not be re-derived later.
+  Evidence: `cargo test -p hermes-cli` → 20 tests (4 build_info + 7
+  input_sanitize + 1 package + 6 timeouts + 3 model_search, one row of the
+  earlier 12 still counted in the crate total); `cargo clippy -p hermes-cli
+  --all-targets` clean; `cargo build --workspace` green; the required serialized
+  `/home/mustbearnold/.cargo/bin/cargo test --workspace -- --test-threads=1`
+  passed with 1,285 tests and 5 intentional ignores; `git diff --check` clean.
+  Ledger: 88 done / 14 partial / 3,780 tracked (**2.27%**) and 88 done / 14
+  partial / 1,001 production (**7.98%**). Next in the same shape:
+  `hermes_cli.lifecycle`, `hermes_cli.toolset_validation`,
+  `hermes_cli.setup_hidden_env`, `tools.browser_camofox_state`,
+  `tools.focus_pane_tool`, `gateway.cwd_placeholder`.
 
 - 2026-08-28 (session 4d6): Opened the `hermes-cli` crate early as a
   dependency-free leaf and landed its three smallest oracle-backed modules —

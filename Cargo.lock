@@ -511,6 +511,9 @@ name = "hermes-cli"
 version = "0.1.0"
 dependencies = [
  "fancy-regex",
+ "hermes-constants",
+ "hermes-utils",
+ "serde_json",
  "tempfile",
 ]
 
