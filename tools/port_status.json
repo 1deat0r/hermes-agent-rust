@@ -146,6 +146,9 @@
  "hermes_cli.setup_hidden_env": {
   "status": "done"
  },
+ "hermes_cli.sqlite_util": {
+  "status": "done"
+ },
  "hermes_cli.timefmt": {
   "status": "done"
  },

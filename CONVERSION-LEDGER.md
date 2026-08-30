@@ -1,7 +1,7 @@
 # Hermes Agent → Hermes Agent Rust Conversion Ledger
 
-**Current strict completion: 2.45% of all tracked upstream modules (116/4740).**
-Production-only strict completion: **9.44%** (116/1229 production modules).
+**Current strict completion: 2.47% of all tracked upstream modules (117/4740).**
+Production-only strict completion: **9.52%** (117/1229 production modules).
 
 > This file is generated from `tools/inventory.json`; update the source ledger in `tools/port_status.json`, regenerate the inventory, then run `python3 tools/conversion_ledger.py`. Only `done` counts toward the percentage. `partial` is intentionally zero credit until its stated parity seams are closed.
 
@@ -9,10 +9,10 @@ Production-only strict completion: **9.44%** (116/1229 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 116 | 19 | 4605 | 2.45% | 42,642/1,910,919 done LOC |
-| Production modules | 116 | 19 | 1094 | 9.44% | 42,642/993,168 done LOC |
+| All tracked modules | 117 | 19 | 4604 | 2.47% | 42,691/1,910,919 done LOC |
+| Production modules | 117 | 19 | 1093 | 9.52% | 42,691/993,168 done LOC |
 
-Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-31T09:44:23`.
+Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-31T09:48:40`.
 
 ## Definition of 100.00%
 
@@ -654,7 +654,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `hermes_cli.slash_exec` | production | P3 | 287 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `hermes_cli.sqlite_runtime` | production | P3 | 124 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `hermes_cli.sqlite_safe_read` | production | P3 | 415 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `hermes_cli.sqlite_util` | production | P3 | 49 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `hermes_cli.sqlite_util` | production | P3 | 49 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `hermes_cli.status` | production | P3 | 739 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `hermes_cli.stderr_timestamp` | production | P3 | 165 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `hermes_cli.stdio` | production | P3 | 251 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |

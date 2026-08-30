@@ -584,6 +584,7 @@ dependencies = [
  "log",
  "parking_lot",
  "regex",
+ "rusqlite",
  "serde_json",
  "tempfile",
 ]
