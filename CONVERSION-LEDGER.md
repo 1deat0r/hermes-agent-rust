@@ -1,7 +1,7 @@
 # Hermes Agent → Hermes Agent Rust Conversion Ledger
 
-**Current strict completion: 2.76% of all tracked upstream modules (131/4740).**
-Production-only strict completion: **10.66%** (131/1229 production modules).
+**Current strict completion: 2.78% of all tracked upstream modules (132/4740).**
+Production-only strict completion: **10.74%** (132/1229 production modules).
 
 > This file is generated from `tools/inventory.json`; update the source ledger in `tools/port_status.json`, regenerate the inventory, then run `python3 tools/conversion_ledger.py`. Only `done` counts toward the percentage. `partial` is intentionally zero credit until its stated parity seams are closed.
 
@@ -9,10 +9,10 @@ Production-only strict completion: **10.66%** (131/1229 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 131 | 21 | 4588 | 2.76% | 45,440/1,910,919 done LOC |
-| Production modules | 131 | 21 | 1077 | 10.66% | 45,440/993,168 done LOC |
+| All tracked modules | 132 | 21 | 4587 | 2.78% | 45,541/1,910,919 done LOC |
+| Production modules | 132 | 21 | 1076 | 10.74% | 45,541/993,168 done LOC |
 
-Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-31T11:20:40`.
+Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-31T11:31:01`.
 
 ## Definition of 100.00%
 
@@ -260,7 +260,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `agent.skill_commands` | production | P2 | 904 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.skill_preprocessing` | production | P2 | 144 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.skill_utils` | production | P2 | 1,260 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `agent.ssl_guard` | production | P2 | 101 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `agent.ssl_guard` | production | P2 | 101 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.ssl_verify` | production | P2 | 63 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.stream_diag` | production | P2 | 280 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.stream_single_writer` | production | P2 | 70 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |

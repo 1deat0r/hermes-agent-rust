@@ -28,7 +28,7 @@ this documentation checkpoint. Previous: `d138528` (4d9's
 
 ## What landed this session (4da)
 
-Forty-three units across four crates, all red-first, 262 new parity tests:
+Forty-four units across four crates, all red-first, 268 new parity tests:
 
 - `hermes_cli/main.py` `_read_packed_ref` + `_read_git_revision_fingerprint`
   → `hermes-cli::git_revision` (8 tests, source-derived — no dedicated
@@ -288,6 +288,15 @@ CodeExpired arm is dead in practice — GC inside redeem_code drops expired
 entries before lookup, so expiry reports CodeInvalid; verified against
 the Python oracle. The crate gains `sha2`.
 
+Batch 28: `agent/ssl_guard.py` → `hermes-agent::ssl_guard` done (7 tests
+mirroring `tests/agent/test_ssl_ca_guard.py`). Certifi's leg is
+parameterised as the platform bundle path; the
+`ssl.create_default_context`/`get_ca_certs()` check degrades to PEM
+certificate-block presence (true x509 parsing left to the TLS stack —
+documented divergence). Guard order: skip env → 4 env vars → platform
+bundle (substantial ≥1024 bytes + certificate blocks). Repair hint joins
+the message with a newline, verbatim.
+
 `hermes-gateway` also gains `hermes-cli`, `hermes-constants`, `hermes-time`,
 `serde_json`, `libc` — all still below the agent/tools layers.
 `tools.close_terminal_tool` was skipped: blocked on the 2,937-LOC
@@ -297,9 +306,9 @@ the Python oracle. The crate gains `sha2`.
 
 Session 4da **changed the ledger**: 99 done / 15 partial / 3,768 missing
 tracked modules and 99 done / 15 partial / 989 missing production modules —
-**3.37%** tracked and **11.88%** production strict completion — regenerated
+**3.40%** tracked and **11.97%** production strict completion — regenerated
 against the pinned `b9aa928` worktree (commands above), with
-`cargo build --workspace` and the serialized workspace run green at 1,587
+`cargo build --workspace` and the serialized workspace run green at 1,594
 tests / 6 ignored (the 6th is skill_provenance's intentional `ignore` doc
 example).
 
@@ -318,11 +327,17 @@ example).
 ## Current conversion ledger
 
 99 done / 15 partial / 3,768 missing tracked (**2.55%** strict completion);
-131 done / 21 partial / 951 missing production (**11.88%**). Regenerated via
+132 done / 21 partial / 950 missing production (**11.97%**). Regenerated via
 `tools/inventory.sh` (pinned worktree) + `python3 tools/conversion_ledger.py`.
 
 ## Fidelity notes
 
+- Session 4da (batch 28): ssl_guard validates in upstream's order (skip
+  env → env vars → platform bundle) with the check ladder exists →
+  is-file → substantial → loads-certificates; the "loads" leg counts PEM
+  certificate blocks rather than x509-parsing (the Rust TLS stack owns
+  real parsing at client construction). Path.expanduser mapped to $HOME
+  prefix substitution.
 - Session 4da (batch 27): native_flow is the security-critical cut of the
   dashboard_auth package — pop-before-PKCE (no retry), per-IP pending cap
   on the public pre-auth route, GC-before-lookup (so CodeExpired is
@@ -498,9 +513,9 @@ example).
 
 - `/home/mustbearnold/.cargo/bin/cargo build --workspace` — green.
 - `cargo test -p hermes-gateway -p hermes-cli -p hermes-tools -p
-  hermes-agent` — 262 new tests green.
+  hermes-agent` — 268 new tests green.
 - Serialized `/home/mustbearnold/.cargo/bin/cargo test --workspace --
-  --test-threads=1` — 1,587 passed, 0 failed, 6 intentional ignores.
+  --test-threads=1` — 1,594 passed, 0 failed, 6 intentional ignores.
 - `cargo clippy -p hermes-gateway -p hermes-cli --all-targets` — clean on
   all new code.
 - `rustfmt --edition 2021 --check` — clean on all changed files.

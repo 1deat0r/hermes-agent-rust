@@ -71,6 +71,9 @@
  "agent.session_activity": {
   "status": "done"
  },
+ "agent.ssl_guard": {
+  "status": "done"
+ },
  "agent.ssl_verify": {
   "status": "done"
  },

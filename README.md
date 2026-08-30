@@ -6,10 +6,10 @@ An in-progress **1:1 Rust port of [NousResearch/hermes-agent](https://github.com
 
 The live conversion ledger currently reports:
 
-- **All tracked modules:** **2.76%** — `131 / 4,740` done, `21` partial,
-  `4,588` missing.
-- **Production modules:** **10.66%** — `131 / 1,229` done, `21` partial,
-  `1,077` missing.
+- **All tracked modules:** **2.78%** — `132 / 4,740` done, `21` partial,
+  `4,587` missing.
+- **Production modules:** **10.74%** — `132 / 1,229` done, `21` partial,
+  `1,076` missing.
 
 Only `done` rows receive credit; partial rows remain zero-credit until their
 parity seams are closed. Regenerate the inventory and ledger with:
