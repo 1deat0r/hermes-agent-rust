@@ -28,7 +28,7 @@ this documentation checkpoint. Previous: `d138528` (4d9's
 
 ## What landed this session (4da)
 
-Thirty units across four crates, all red-first, 196 new parity tests:
+Thirty-one units across four crates, all red-first, 200 new parity tests:
 
 - `hermes_cli/main.py` `_read_packed_ref` + `_read_git_revision_fingerprint`
   → `hermes-cli::git_revision` (8 tests, source-derived — no dedicated
@@ -202,6 +202,13 @@ print_* helpers route through colors; `prompt`/`prompt_yes_no` take an
 injected line reader as the input() seam — EOF returns "" not the
 default, matching upstream's except arm).
 
+Batch 19: `hermes_cli/default_soul.py` → `hermes-cli::default_soul` done
+(4 in-crate tests, source-derived, gap noted). The legacy-template table
+is a safety guarantee: the two comment-only scaffolds carry zero user
+intent so a match is safe to upgrade in place; `_normalize_soul` unifies
+CRLF/CR, strips a leading BOM, and trims; any deviation (even edits inside
+the comment) defeats the match.
+
 `hermes-gateway` also gains `hermes-cli`, `hermes-constants`, `hermes-time`,
 `serde_json`, `libc` — all still below the agent/tools layers.
 `tools.close_terminal_tool` was skipped: blocked on the 2,937-LOC
@@ -211,9 +218,9 @@ default, matching upstream's except arm).
 
 Session 4da **changed the ledger**: 99 done / 15 partial / 3,768 missing
 tracked modules and 99 done / 15 partial / 989 missing production modules —
-**3.07%** tracked and **10.79%** production strict completion — regenerated
+**3.09%** tracked and **10.88%** production strict completion — regenerated
 against the pinned `b9aa928` worktree (commands above), with
-`cargo build --workspace` and the serialized workspace run green at 1,521
+`cargo build --workspace` and the serialized workspace run green at 1,525
 tests / 6 ignored (the 6th is skill_provenance's intentional `ignore` doc
 example).
 
@@ -232,11 +239,16 @@ example).
 ## Current conversion ledger
 
 99 done / 15 partial / 3,768 missing tracked (**2.55%** strict completion);
-119 done / 19 partial / 965 missing production (**10.79%**). Regenerated via
+120 done / 19 partial / 964 missing production (**10.88%**). Regenerated via
 `tools/inventory.sh` (pinned worktree) + `python3 tools/conversion_ledger.py`.
 
 ## Fidelity notes
 
+- Session 4da (batch 19): default_soul's match is exact-equality over
+  normalized text (not substring), so a scaffold with an extra sentence —
+  even more comment text — is user content. Tests live in-crate this once
+  (cfg(test)); the workspace convention remains tests/parity_*.rs for new
+  modules.
 - Session 4da (batch 18): secret_prompt's `\b \b` erase sequence is
   written per real erase (Python writes the same three bytes); the
   getpass fallback in non-TTY environments reads plainly (no /dev/tty
@@ -357,9 +369,9 @@ example).
 
 - `/home/mustbearnold/.cargo/bin/cargo build --workspace` — green.
 - `cargo test -p hermes-gateway -p hermes-cli -p hermes-tools -p
-  hermes-agent` — 196 new tests green.
+  hermes-agent` — 200 new tests green.
 - Serialized `/home/mustbearnold/.cargo/bin/cargo test --workspace --
-  --test-threads=1` — 1,521 passed, 0 failed, 6 intentional ignores.
+  --test-threads=1` — 1,525 passed, 0 failed, 6 intentional ignores.
 - `cargo clippy -p hermes-gateway -p hermes-cli --all-targets` — clean on
   all new code.
 - `rustfmt --edition 2021 --check` — clean on all changed files.

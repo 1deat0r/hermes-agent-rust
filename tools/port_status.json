@@ -131,6 +131,9 @@
  "hermes_cli.colors": {
   "status": "done"
  },
+ "hermes_cli.default_soul": {
+  "status": "done"
+ },
  "hermes_cli.input_sanitize": {
   "status": "done"
  },

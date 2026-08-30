@@ -15,6 +15,7 @@
 //! Deliberately out of scope here: run/model/tool trajectory capture,
 //! usage analytics, and any content-bearing signal.
 
+
 pub mod cron_health;
 pub mod emitter;
 pub mod events;
