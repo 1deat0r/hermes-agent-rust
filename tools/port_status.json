@@ -35,10 +35,16 @@
  "agent.monitoring.__init__": {
   "status": "done"
  },
+ "agent.monitoring.cron_health": {
+  "status": "partial"
+ },
  "agent.monitoring.emitter": {
   "status": "done"
  },
  "agent.monitoring.events": {
+  "status": "done"
+ },
+ "agent.monitoring.redaction": {
   "status": "done"
  },
  "agent.portal_tags": {

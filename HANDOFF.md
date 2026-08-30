@@ -28,7 +28,7 @@ this documentation checkpoint. Previous: `d138528` (4d9's
 
 ## What landed this session (4da)
 
-Twenty units across four crates, all red-first, 121 new parity tests:
+Twenty-two units across four crates, all red-first, 131 new parity tests:
 
 - `hermes_cli/main.py` `_read_packed_ref` + `_read_git_revision_fingerprint`
   → `hermes-cli::git_revision` (8 tests, source-derived — no dedicated
@@ -125,6 +125,15 @@ re-exports. The hot-path invariant (`emit` never blocks on
 disk/network, never raises) is preserved via a bounded Mutex+Condvar
 queue with panic-isolated subscriber fan-out.
 
+Batch 11: `agent/monitoring/redaction.py` → `monitoring::redaction` done
+(force-redactor wrap + bearer/token/literal/residue shapes + PII →
+`[email]`/`[id]`/`[phone]`; the `regex` crate has no lookbehind so the
+phone pattern's `(?<!\w)`/`(?!\w)` guards became boundary capture groups
+that are restored on replacement) and `cron_health.py` → **partial** (pure
+projections ported: classify/job-key/duration/projection/terminal-emit;
+`build_cron_health_snapshot`/`_is_overdue` PENDING with
+`cron.jobs`/`cron.scheduler`/`GatewayMetric`).
+
 `hermes-gateway` also gains `hermes-cli`, `hermes-constants`, `hermes-time`,
 `serde_json`, `libc` — all still below the agent/tools layers.
 `tools.close_terminal_tool` was skipped: blocked on the 2,937-LOC
@@ -134,9 +143,9 @@ queue with panic-isolated subscriber fan-out.
 
 Session 4da **changed the ledger**: 99 done / 15 partial / 3,768 missing
 tracked modules and 99 done / 15 partial / 989 missing production modules —
-**2.91%** tracked and **10.25%** production strict completion — regenerated
+**2.94%** tracked and **10.34%** production strict completion — regenerated
 against the pinned `b9aa928` worktree (commands above), with
-`cargo build --workspace` and the serialized workspace run green at 1,448
+`cargo build --workspace` and the serialized workspace run green at 1,458
 tests / 6 ignored (the 6th is skill_provenance's intentional `ignore` doc
 example).
 
@@ -155,11 +164,18 @@ example).
 ## Current conversion ledger
 
 99 done / 15 partial / 3,768 missing tracked (**2.55%** strict completion);
-113 done / 15 partial / 975 missing production (**10.25%**). Regenerated via
+114 done / 16 partial / 973 missing production (**10.34%**). Regenerated via
 `tools/inventory.sh` (pinned worktree) + `python3 tools/conversion_ledger.py`.
 
 ## Fidelity notes
 
+- Session 4da (batch 11): redaction is defense-in-depth stacking — the
+  hermes-logging force-redactor masks tokens FIRST (possibly to partial
+  masks the shape regexes then pass through), so the egress contract is
+  "the raw secret never survives", not "the shape regex always fires".
+  `cron_health` project/emit parity pins the branch-order nuance that an
+  unknown non-empty source becomes "external" while the literal "unknown"
+  stays.
 - Session 4da (batch 10): monitoring crossed the 10% production mark.
   `emit`'s setdefault runs twice by design (once per payload insert like
   upstream's emit/put pair); subscriber identity dedup uses `Arc::ptr_eq`
@@ -228,9 +244,9 @@ example).
 
 - `/home/mustbearnold/.cargo/bin/cargo build --workspace` — green.
 - `cargo test -p hermes-gateway -p hermes-cli -p hermes-tools -p
-  hermes-agent` — 121 new tests green.
+  hermes-agent` — 131 new tests green.
 - Serialized `/home/mustbearnold/.cargo/bin/cargo test --workspace --
-  --test-threads=1` — 1,448 passed, 0 failed, 6 intentional ignores.
+  --test-threads=1` — 1,458 passed, 0 failed, 6 intentional ignores.
 - `cargo clippy -p hermes-gateway -p hermes-cli --all-targets` — clean on
   all new code.
 - `rustfmt --edition 2021 --check` — clean on all changed files.

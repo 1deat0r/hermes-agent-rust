@@ -1,20 +1,20 @@
 {
  "generated_from": "/run/media/mustbearnold/Projects/Research/hermes-agent-repo",
- "generated_at": "2026-08-31T09:08:29",
+ "generated_at": "2026-08-31T09:15:10",
  "summary": {
   "modules": 4740,
   "total_lines": 1910919,
   "production_modules": 1229,
   "production_lines": 993168,
   "status_counts": {
-   "done": 113,
-   "partial": 15,
-   "missing": 4612
+   "done": 114,
+   "partial": 16,
+   "missing": 4610
   },
   "prod_status_counts": {
-   "done": 113,
-   "partial": 15,
-   "missing": 1101
+   "done": 114,
+   "partial": 16,
+   "missing": 1099
   },
   "packages": {
    "gateway": {
@@ -67,9 +67,9 @@
     "lines": 157608,
     "modules": 209,
     "status": {
-     "missing": 186,
-     "partial": 4,
-     "done": 19
+     "missing": 184,
+     "partial": 5,
+     "done": 20
     }
    },
    "plugins": {
@@ -16227,7 +16227,7 @@
    "imports": [
     "hermes_time"
    ],
-   "port_status": "missing",
+   "port_status": "partial",
    "is_test": false
   },
   "hermes_cli.context_switch_guard": {
@@ -28512,7 +28512,7 @@
   "agent.monitoring.redaction": {
    "lines": 71,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "skills.productivity.pdf.scripts.pdf_secure": {
