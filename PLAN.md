@@ -640,7 +640,7 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 ## 7. Session log
 
-- 2026-08-31 (session 4da): Ten units across four crates, all red-first:
+- 2026-08-31 (session 4da): Twelve units across four crates, all red-first:
   batch 1 — the `hermes_cli/main.py` private git-fingerprint helpers
   (`_read_packed_ref`, `_read_git_revision_fingerprint`) into
   `hermes-cli::git_revision` (8 tests), then `gateway/code_skew.py` (10
@@ -687,19 +687,29 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   source-derived; gap noted — cap/exhaustion, refund no-ops and never
   negative, the `max(0, ...)` remaining clamp under a shrunk public
   `max_total`, independent per-agent budgets, and an 8-thread consume
-  race staying exactly at the cap). Process note: upstream HEAD has advanced far past the pin,
+  race staying exactly at the cap). Batch 6 —
+  `agent/reactions.py` (6 tests, source-derived; gap noted — vibe lexicon
+  arms incl. `<3`-not-`</3`, the heart-emoji class, word-boundary pins
+  verified against the Python oracle: `good\s*bot` has no internal
+  boundary so "goodbot" fires while `\bty\b` keeps "empty"/"tyty" silent)
+  and `gateway/platforms/_http_client_limits.py` (5 tests mirroring
+  `tests/gateway/test_platform_http_client_limits.py`'s applicable cases —
+  defaults 10/2.0, garbage/zero/blank env overrides fall back, positive
+  overrides honored, int-rejects-float; ported as a transport-agnostic
+  `HttpPoolLimits` struct, the `httpx is None` arm has no Rust analog,
+  noted in the module doc). Process note: upstream HEAD has advanced far past the pin,
   so the inventory was regenerated against a pinned `b9aa928` git worktree
   (the stale `/home/mustbearn` default in `tools/inventory.sh`/AGENTS.md
   was corrected to the current checkout path).
   Evidence: `cargo test -p hermes-gateway -p hermes-cli -p hermes-tools -p
-  hermes-agent` → 74 new tests green; `cargo clippy -p hermes-gateway -p hermes-cli -p
+  hermes-agent` → 85 new tests green; `cargo clippy -p hermes-gateway -p hermes-cli -p
   hermes-tools --all-targets` clean on all new code; `rustfmt --edition
   2021` clean on all changed files; serialized
   `/home/mustbearnold/.cargo/bin/cargo test --workspace -- --test-threads=1`
-  passed 1,401 tests with 6 intentional ignores (the new one is
+  passed 1,412 tests with 6 intentional ignores (the new one is
   skill_provenance's `ignore` doc example); `git diff --check` clean.
-  Ledger: 103 done / 15 partial / 3,764 tracked (**2.65%**) and 103 done /
-  15 partial / 985 production (**9.34%**). Next: more small `tools/`/
+  Ledger: 105 done / 15 partial / 3,762 tracked (**2.70%**) and 105 done /
+  15 partial / 983 production (**9.52%**). Next: more small `tools/`/
   `gateway/` leaves (e.g. `gateway.readiness`, `gateway.rich_sent_store`
   neighbors `gateway.code_skew` consumers, `tools.open_preview_tool`), the
   `tools.process_registry` mega-module (unblocks

@@ -1,7 +1,7 @@
 # Hermes Agent → Hermes Agent Rust Conversion Ledger
 
-**Current strict completion: 2.17% of all tracked upstream modules (103/4740).**
-Production-only strict completion: **8.38%** (103/1229 production modules).
+**Current strict completion: 2.22% of all tracked upstream modules (105/4740).**
+Production-only strict completion: **8.54%** (105/1229 production modules).
 
 > This file is generated from `tools/inventory.json`; update the source ledger in `tools/port_status.json`, regenerate the inventory, then run `python3 tools/conversion_ledger.py`. Only `done` counts toward the percentage. `partial` is intentionally zero credit until its stated parity seams are closed.
 
@@ -9,10 +9,10 @@ Production-only strict completion: **8.38%** (103/1229 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 103 | 15 | 4622 | 2.17% | 41,195/1,910,919 done LOC |
-| Production modules | 103 | 15 | 1111 | 8.38% | 41,195/993,168 done LOC |
+| All tracked modules | 105 | 15 | 4620 | 2.22% | 41,335/1,910,919 done LOC |
+| Production modules | 105 | 15 | 1109 | 8.54% | 41,335/993,168 done LOC |
 
-Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-31T08:33:20`.
+Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-31T08:39:23`.
 
 ## Definition of 100.00%
 
@@ -226,7 +226,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `agent.proxy_sources.__init__` | production | P2 | 8 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.proxy_sources.iron_proxy` | production | P2 | 2,494 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.rate_limit_tracker` | production | P2 | 246 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `agent.reactions` | production | P2 | 56 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `agent.reactions` | production | P2 | 56 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.reasoning_effort` | production | P2 | 230 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.reasoning_summaries` | production | P2 | 67 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.reasoning_timeouts` | production | P2 | 251 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
@@ -375,7 +375,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `gateway.pairing` | production | P4 | 935 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `gateway.platform_registry` | production | P4 | 698 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `gateway.platforms.__init__` | production | P4 | 45 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `gateway.platforms._http_client_limits` | production | P4 | 84 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `gateway.platforms._http_client_limits` | production | P4 | 84 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `gateway.platforms.api_server` | production | P4 | 8,575 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `gateway.platforms.base` | production | P4 | 7,623 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `gateway.platforms.bluebubbles` | production | P4 | 1,077 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |

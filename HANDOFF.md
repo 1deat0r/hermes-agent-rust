@@ -28,7 +28,7 @@ this documentation checkpoint. Previous: `d138528` (4d9's
 
 ## What landed this session (4da)
 
-Ten units across four crates, all red-first, 74 new parity tests:
+Twelve units across four crates, all red-first, 85 new parity tests:
 
 - `hermes_cli/main.py` `_read_packed_ref` + `_read_git_revision_fingerprint`
   → `hermes-cli::git_revision` (8 tests, source-derived — no dedicated
@@ -82,6 +82,15 @@ source-derived tests, gap noted; consume/refund contract, remaining clamp
 under a shrunk public `max_total`, independent per-agent budgets, 8-thread
 race stays exactly at the cap).
 
+Batch 6: `agent/reactions.py` → `hermes-agent::reactions` (6 source-derived
+tests, gap noted; the vibe lexicon pinned arm-by-arm, with boundary cases
+verified against the Python oracle: "goodbot" fires because `good\s*bot`
+has no internal boundary, "empty"/"tyty" stay silent via `\bty\b`) and
+`gateway/platforms/_http_client_limits.py` →
+`hermes-gateway::platform_http_limits` (5 tests mirroring the applicable
+oracle cases; ported as a transport-agnostic `HttpPoolLimits` struct — the
+`httpx is None → None` arm has no Rust analog, noted in the module doc).
+
 `hermes-gateway` also gains `hermes-cli`, `hermes-constants`, `hermes-time`,
 `serde_json`, `libc` — all still below the agent/tools layers.
 `tools.close_terminal_tool` was skipped: blocked on the 2,937-LOC
@@ -91,9 +100,9 @@ race stays exactly at the cap).
 
 Session 4da **changed the ledger**: 99 done / 15 partial / 3,768 missing
 tracked modules and 99 done / 15 partial / 989 missing production modules —
-**2.65%** tracked and **9.34%** production strict completion — regenerated
+**2.70%** tracked and **9.52%** production strict completion — regenerated
 against the pinned `b9aa928` worktree (commands above), with
-`cargo build --workspace` and the serialized workspace run green at 1,401
+`cargo build --workspace` and the serialized workspace run green at 1,412
 tests / 6 ignored (the 6th is skill_provenance's intentional `ignore` doc
 example).
 
@@ -112,11 +121,17 @@ example).
 ## Current conversion ledger
 
 99 done / 15 partial / 3,768 missing tracked (**2.55%** strict completion);
-103 done / 15 partial / 985 missing production (**9.34%**). Regenerated via
+105 done / 15 partial / 983 missing production (**9.52%**). Regenerated via
 `tools/inventory.sh` (pinned worktree) + `python3 tools/conversion_ledger.py`.
 
 ## Fidelity notes
 
+- Session 4da (batch 6): the reactions regex is a verbatim arm-for-arm pin
+  of the upstream lexicon; boundary assertions were checked against the
+  Python oracle first (`goodbot` DOES fire — `good\s*bot` has no boundary
+  between the words; `\bty\b` keeps "empty" and "tyty" silent). The httpx
+  limits port keeps the env-var grammar byte-comparable (blank/non-numeric/
+  non-positive → default) with the httpx-specific None arm documented away.
 - Session 4da (batch 5): `timefmt.relative_time` reproduces Python falsiness
   (`None`/`0.0` → "?"), truncating `int(delta/x)` divisions, the
   `delta < 60` arm that makes future timestamps read "just now", and the
@@ -158,9 +173,9 @@ example).
 
 - `/home/mustbearnold/.cargo/bin/cargo build --workspace` — green.
 - `cargo test -p hermes-gateway -p hermes-cli -p hermes-tools -p
-  hermes-agent` — 74 new tests green.
+  hermes-agent` — 85 new tests green.
 - Serialized `/home/mustbearnold/.cargo/bin/cargo test --workspace --
-  --test-threads=1` — 1,401 passed, 0 failed, 6 intentional ignores.
+  --test-threads=1` — 1,412 passed, 0 failed, 6 intentional ignores.
 - `cargo clippy -p hermes-gateway -p hermes-cli --all-targets` — clean on
   all new code.
 - `rustfmt --edition 2021 --check` — clean on all changed files.

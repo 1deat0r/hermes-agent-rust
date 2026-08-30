@@ -13,6 +13,7 @@ pub mod managed_scope;
 pub mod manual_compression_feedback;
 pub mod message_content;
 pub mod portal_tags;
+pub mod reactions;
 pub mod reasoning_summaries;
 pub mod tool_result_classification;
 pub mod turn_retry_state;

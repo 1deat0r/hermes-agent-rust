@@ -32,6 +32,9 @@
  "agent.portal_tags": {
   "status": "partial"
  },
+ "agent.reactions": {
+  "status": "done"
+ },
  "agent.reasoning_summaries": {
   "status": "done"
  },
@@ -60,6 +63,9 @@
   "status": "done"
  },
  "gateway.cwd_placeholder": {
+  "status": "done"
+ },
+ "gateway.platforms._http_client_limits": {
   "status": "done"
  },
  "gateway.readiness": {

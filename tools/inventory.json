@@ -1,28 +1,28 @@
 {
  "generated_from": "/run/media/mustbearnold/Projects/Research/hermes-agent-repo",
- "generated_at": "2026-08-31T08:33:20",
+ "generated_at": "2026-08-31T08:39:23",
  "summary": {
   "modules": 4740,
   "total_lines": 1910919,
   "production_modules": 1229,
   "production_lines": 993168,
   "status_counts": {
-   "done": 103,
+   "done": 105,
    "partial": 15,
-   "missing": 4622
+   "missing": 4620
   },
   "prod_status_counts": {
-   "done": 103,
+   "done": 105,
    "partial": 15,
-   "missing": 1111
+   "missing": 1109
   },
   "packages": {
    "gateway": {
     "lines": 117873,
     "modules": 96,
     "status": {
-     "missing": 90,
-     "done": 6
+     "missing": 89,
+     "done": 7
     }
    },
    "cli": {
@@ -67,9 +67,9 @@
     "lines": 157608,
     "modules": 209,
     "status": {
-     "missing": 191,
+     "missing": 190,
      "partial": 4,
-     "done": 14
+     "done": 15
     }
    },
    "plugins": {
@@ -26975,7 +26975,7 @@
   "gateway.platforms._http_client_limits": {
    "lines": 84,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "tui_gateway.loop_noise": {
@@ -30336,7 +30336,7 @@
   "agent.reactions": {
    "lines": 56,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "hermes_cli.setup_hidden_env": {
