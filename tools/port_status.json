@@ -104,6 +104,9 @@
  "gateway.platforms.qqbot.crypto": {
   "status": "done"
  },
+ "gateway.platforms.qqbot.keyboards": {
+  "status": "partial"
+ },
  "gateway.platforms.qqbot.utils": {
   "status": "done"
  },

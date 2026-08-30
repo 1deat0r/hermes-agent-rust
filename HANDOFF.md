@@ -28,7 +28,7 @@ this documentation checkpoint. Previous: `d138528` (4d9's
 
 ## What landed this session (4da)
 
-Twenty-five units across four crates, all red-first, 159 new parity tests:
+Twenty-six units across four crates, all red-first, 172 new parity tests:
 
 - `hermes_cli/main.py` `_read_packed_ref` + `_read_git_revision_fingerprint`
   → `hermes-cli::git_revision` (8 tests, source-derived — no dedicated
@@ -163,6 +163,19 @@ DEBUG=5), `_gateway_health_event` plane filter, `_redact_string`, and
 transport, snapshot thread, root-logger attachment) and `_install_id`
 (`policy.ensure_install_id`).
 
+Batch 15: `gateway/platforms/qqbot/keyboards.py` → **partial**. Ported:
+the keyboard dataclass tree (`InlineKeyboard`→`KeyboardContent`→rows→
+buttons with render/action/permission), approval + update-prompt
+builders (mutually-exclusive `group_id="approval"`, allow-always toggle,
+grey deny styling), the greedy-session-key button_data parsers
+(`approve:<key>:(allow-once|allow-always|deny)` — key may contain
+colons; needs ≥1 char), `ApprovalRequest` + exec/plugin markdown
+renderers (300-char preview bound, title suppressed when equal to the
+preview, severity icons), and `InteractionEvent` parsing with the
+group→user→resolver `or`-chain operator openid. PENDING:
+`ApprovalSender` (async HTTP over adapter callables) — adapter
+transport.
+
 `hermes-gateway` also gains `hermes-cli`, `hermes-constants`, `hermes-time`,
 `serde_json`, `libc` — all still below the agent/tools layers.
 `tools.close_terminal_tool` was skipped: blocked on the 2,937-LOC
@@ -172,9 +185,9 @@ transport, snapshot thread, root-logger attachment) and `_install_id`
 
 Session 4da **changed the ledger**: 99 done / 15 partial / 3,768 missing
 tracked modules and 99 done / 15 partial / 989 missing production modules —
-**2.96%** tracked and **10.61%** production strict completion — regenerated
+**2.96%** tracked and **10.70%** production strict completion — regenerated
 against the pinned `b9aa928` worktree (commands above), with
-`cargo build --workspace` and the serialized workspace run green at 1,486
+`cargo build --workspace` and the serialized workspace run green at 1,499
 tests / 6 ignored (the 6th is skill_provenance's intentional `ignore` doc
 example).
 
@@ -193,11 +206,17 @@ example).
 ## Current conversion ledger
 
 99 done / 15 partial / 3,768 missing tracked (**2.55%** strict completion);
-115 done / 18 partial / 970 missing production (**10.61%**). Regenerated via
+115 done / 19 partial / 969 missing production (**10.70%**). Regenerated via
 `tools/inventory.sh` (pinned worktree) + `python3 tools/conversion_ledger.py`.
 
 ## Fidelity notes
 
+- Session 4da (batch 15): the greedy session-key parse reproduces
+  Python's `^approve:(.+):(allow-once|allow-always|deny)$` — the key runs
+  to the LAST valid decision suffix, so keys containing colons (and even
+  the word "allow-once") parse; `.+` still demands at least one char.
+  `operator_openid` mirrors Python `or`-falsiness (first non-empty of
+  group_member/user/resolver).
 - Session 4da (batch 14): `safe_resource_attributes` rejects values that
   redaction would CHANGE (a defense-in-depth arm unique to this plane —
   an e-mail-shaped label passes the grammar but must not export verbatim).
@@ -292,9 +311,9 @@ example).
 
 - `/home/mustbearnold/.cargo/bin/cargo build --workspace` — green.
 - `cargo test -p hermes-gateway -p hermes-cli -p hermes-tools -p
-  hermes-agent` — 159 new tests green.
+  hermes-agent` — 172 new tests green.
 - Serialized `/home/mustbearnold/.cargo/bin/cargo test --workspace --
-  --test-threads=1` — 1,486 passed, 0 failed, 6 intentional ignores.
+  --test-threads=1` — 1,499 passed, 0 failed, 6 intentional ignores.
 - `cargo clippy -p hermes-gateway -p hermes-cli --all-targets` — clean on
   all new code.
 - `rustfmt --edition 2021 --check` — clean on all changed files.

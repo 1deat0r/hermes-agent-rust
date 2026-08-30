@@ -9,10 +9,10 @@ Production-only strict completion: **9.36%** (115/1229 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 115 | 18 | 4607 | 2.43% | 42,604/1,910,919 done LOC |
-| Production modules | 115 | 18 | 1096 | 9.36% | 42,604/993,168 done LOC |
+| All tracked modules | 115 | 19 | 4606 | 2.43% | 42,604/1,910,919 done LOC |
+| Production modules | 115 | 19 | 1095 | 9.36% | 42,604/993,168 done LOC |
 
-Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-31T09:32:40`.
+Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-31T09:39:52`.
 
 ## Definition of 100.00%
 
@@ -36,6 +36,7 @@ The conversion is complete only when all of these are true:
 | `agent.monitoring.gateway_health_export` | P2 | 643 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `agent.monitoring.otlp_exporter` | P2 | 270 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `agent.portal_tags` | P2 | 144 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
+| `gateway.platforms.qqbot.keyboards` | P4 | 461 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `hermes_cli.__init__` | P3 | 92 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `hermes_cli.main` | P3 | 14,786 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `hermes_constants` | P1 | 1,853 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
@@ -390,7 +391,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `gateway.platforms.qqbot.chunked_upload` | production | P4 | 602 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `gateway.platforms.qqbot.constants` | production | P4 | 74 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `gateway.platforms.qqbot.crypto` | production | P4 | 45 | ✅ done | Maintain parity evidence; no remaining task in this row. |
-| `gateway.platforms.qqbot.keyboards` | production | P4 | 461 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `gateway.platforms.qqbot.keyboards` | production | P4 | 461 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
 | `gateway.platforms.qqbot.onboard` | production | P4 | 220 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `gateway.platforms.qqbot.utils` | production | P4 | 71 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `gateway.platforms.signal` | production | P4 | 1,832 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
