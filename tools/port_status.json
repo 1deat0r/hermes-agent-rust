@@ -281,6 +281,9 @@
  "tools.mcp_schema_cache": {
   "status": "done"
  },
+ "tools.open_preview_tool": {
+  "status": "done"
+ },
  "tools.path_security": {
   "status": "done"
  },

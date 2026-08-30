@@ -23,6 +23,7 @@ pub mod ansi_strip;
 pub mod binary_extensions;
 pub mod file_safety;
 pub mod file_state;
+pub mod open_preview_tool;
 pub mod path_security;
 pub mod read_extract;
 pub mod budget_config;

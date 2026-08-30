@@ -28,7 +28,7 @@ this documentation checkpoint. Previous: `d138528` (4d9's
 
 ## What landed this session (4da)
 
-Seven units across three crates, all red-first, 56 new parity tests:
+Eight units across three crates, all red-first, 63 new parity tests:
 
 - `hermes_cli/main.py` `_read_packed_ref` + `_read_git_revision_fingerprint`
   → `hermes-cli::git_revision` (8 tests, source-derived — no dedicated
@@ -66,6 +66,13 @@ source-derived probe cases: corrupt db degrades without repair, empty YAML
 counting, negative-counter clamps). The crate gains `rusqlite` and
 `serde_yaml` for the probes; `hermes-state` remains dev-only.
 
+Batch 4: `tools/open_preview_tool.py` → `hermes-tools::open_preview_tool`
+(7 tests; registry entry oracle `desktop_ui`/no check_fn, emitter-panic
+except-arm reproduction, no-emitter desktop-only arm, and the
+`_normalize_target` grammar — bare-domain https, localhost/loopback http
+with re.I and `[::1]`, sub-2-char TLDs bare, path/scheme/`file:`/`~`
+pass-through, backtick/whitespace stripping).
+
 `hermes-gateway` also gains `hermes-cli`, `hermes-constants`, `hermes-time`,
 `serde_json`, `libc` — all still below the agent/tools layers.
 `tools.close_terminal_tool` was skipped: blocked on the 2,937-LOC
@@ -75,18 +82,17 @@ counting, negative-counter clamps). The crate gains `rusqlite` and
 
 Session 4da **changed the ledger**: 99 done / 15 partial / 3,768 missing
 tracked modules and 99 done / 15 partial / 989 missing production modules —
-**2.58%** tracked and **9.07%** production strict completion — regenerated
+**2.60%** tracked and **9.16%** production strict completion — regenerated
 against the pinned `b9aa928` worktree (commands above), with
-`cargo build --workspace` and the serialized workspace run green at 1,383
+`cargo build --workspace` and the serialized workspace run green at 1,390
 tests / 6 ignored (the 6th is skill_provenance's intentional `ignore` doc
 example).
 
 ## Next actions, in order
 
-1. Keep taking the small-module batch. Same-shape candidates:
-   `tools.open_preview_tool` (92 LOC), `tools.close_terminal_tool`'s
-   remaining siblings, and the remaining small oracle-backed
-   `tools/`/`gateway/`/`hermes_cli` leaves. The big
+1. Keep taking the small-module batch. Same-shape candidates: the
+   remaining small oracle-backed `tools/`/`gateway/`/`hermes_cli` leaves
+   (`tools.close_terminal_tool`'s siblings). The big
    `tools.process_registry` (2,937 LOC) unblocks `tools.close_terminal_tool`
    and `tools.read_terminal_tool` callers when taken.
 2. Continue the remaining `agent.auxiliary_client` request/response lifecycle
@@ -97,11 +103,17 @@ example).
 ## Current conversion ledger
 
 99 done / 15 partial / 3,768 missing tracked (**2.55%** strict completion);
-100 done / 15 partial / 988 missing production (**9.07%**). Regenerated via
+101 done / 15 partial / 987 missing production (**9.16%**). Regenerated via
 `tools/inventory.sh` (pinned worktree) + `python3 tools/conversion_ledger.py`.
 
 ## Fidelity notes
 
+- Session 4da (batch 4): `open_preview_tool`'s `_normalize_target` pins both
+  upstream regexes verbatim (LazyLock) — re.I matters (LOCALHOST:3000 gains
+  http://), `\w` stays unicode-aware, and the strip order is
+  whitespace → backticks → whitespace, matching
+  `raw.strip().strip("`").strip()`. The emitter except arm is reproduced
+  via catch_unwind with the panic message surfaced, per read_preview_tool.
 - Session 4da (batch 3): `readiness` opens the state db read-only via URI
   with a 1s busy timeout so probes never compete with writers; empty YAML
   documents count as defaults (`safe_load` → None); `disk_usage` reproduces
@@ -130,10 +142,10 @@ example).
 ## Verification evidence
 
 - `/home/mustbearnold/.cargo/bin/cargo build --workspace` — green.
-- `cargo test -p hermes-gateway -p hermes-cli -p hermes-tools` — 56 new
+- `cargo test -p hermes-gateway -p hermes-cli -p hermes-tools` — 63 new
   tests green.
 - Serialized `/home/mustbearnold/.cargo/bin/cargo test --workspace --
-  --test-threads=1` — 1,383 passed, 0 failed, 6 intentional ignores.
+  --test-threads=1` — 1,390 passed, 0 failed, 6 intentional ignores.
 - `cargo clippy -p hermes-gateway -p hermes-cli --all-targets` — clean on
   all new code.
 - `rustfmt --edition 2021 --check` — clean on all changed files.
