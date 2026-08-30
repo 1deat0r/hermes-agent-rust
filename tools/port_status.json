@@ -29,6 +29,18 @@
  "agent.message_content": {
   "status": "done"
  },
+ "agent.monitoring": {
+  "status": "done"
+ },
+ "agent.monitoring.__init__": {
+  "status": "done"
+ },
+ "agent.monitoring.emitter": {
+  "status": "done"
+ },
+ "agent.monitoring.events": {
+  "status": "done"
+ },
  "agent.portal_tags": {
   "status": "partial"
  },

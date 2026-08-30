@@ -28,7 +28,7 @@ this documentation checkpoint. Previous: `d138528` (4d9's
 
 ## What landed this session (4da)
 
-Seventeen units across four crates, all red-first, 111 new parity tests:
+Twenty units across four crates, all red-first, 121 new parity tests:
 
 - `hermes_cli/main.py` `_read_packed_ref` + `_read_git_revision_fingerprint`
   → `hermes-cli::git_revision` (8 tests, source-derived — no dedicated
@@ -115,6 +115,16 @@ forwarded to the child's group async-signal-safely, exiting 128+sig; the
 watchdog thread polls getppid at 2s and SIGTERMs then SIGKILLs the child's
 group after the 3s grace. hermes-tools gains `libc` in [dependencies].
 
+Batch 10: `agent/monitoring/` package — `events.py` (three typed
+content-free event dataclasses with `to_dict()` discriminator-first
+dicts), `emitter.py` (bounded 10k ring queue, drop-oldest-when-full,
+lazy 256-batch dispatcher thread, fail-isolated subscribers,
+opt-in singleton starting disabled, flush/stats/close, and the
+`TelemetryEmitter` back-compat alias), and the package `__init__`
+re-exports. The hot-path invariant (`emit` never blocks on
+disk/network, never raises) is preserved via a bounded Mutex+Condvar
+queue with panic-isolated subscriber fan-out.
+
 `hermes-gateway` also gains `hermes-cli`, `hermes-constants`, `hermes-time`,
 `serde_json`, `libc` — all still below the agent/tools layers.
 `tools.close_terminal_tool` was skipped: blocked on the 2,937-LOC
@@ -124,9 +134,9 @@ group after the 3s grace. hermes-tools gains `libc` in [dependencies].
 
 Session 4da **changed the ledger**: 99 done / 15 partial / 3,768 missing
 tracked modules and 99 done / 15 partial / 989 missing production modules —
-**2.83%** tracked and **9.97%** production strict completion — regenerated
+**2.91%** tracked and **10.25%** production strict completion — regenerated
 against the pinned `b9aa928` worktree (commands above), with
-`cargo build --workspace` and the serialized workspace run green at 1,438
+`cargo build --workspace` and the serialized workspace run green at 1,448
 tests / 6 ignored (the 6th is skill_provenance's intentional `ignore` doc
 example).
 
@@ -145,11 +155,16 @@ example).
 ## Current conversion ledger
 
 99 done / 15 partial / 3,768 missing tracked (**2.55%** strict completion);
-110 done / 15 partial / 978 missing production (**9.97%**). Regenerated via
+113 done / 15 partial / 975 missing production (**10.25%**). Regenerated via
 `tools/inventory.sh` (pinned worktree) + `python3 tools/conversion_ledger.py`.
 
 ## Fidelity notes
 
+- Session 4da (batch 10): monitoring crossed the 10% production mark.
+  `emit`'s setdefault runs twice by design (once per payload insert like
+  upstream's emit/put pair); subscriber identity dedup uses `Arc::ptr_eq`
+  (Python uses list identity); the OTLP exporter plane itself remains
+  PENDING with `agent/monitoring/otlp_exporter.py` and siblings.
 - Session 4da (batch 9): the in-process `run` test must record the test
   process's *real* parent (`libc::getppid()`), not its own pid — the
   watchdog compares against the live getppid, so a self-referential record
@@ -213,9 +228,9 @@ example).
 
 - `/home/mustbearnold/.cargo/bin/cargo build --workspace` — green.
 - `cargo test -p hermes-gateway -p hermes-cli -p hermes-tools -p
-  hermes-agent` — 111 new tests green.
+  hermes-agent` — 121 new tests green.
 - Serialized `/home/mustbearnold/.cargo/bin/cargo test --workspace --
-  --test-threads=1` — 1,438 passed, 0 failed, 6 intentional ignores.
+  --test-threads=1` — 1,448 passed, 0 failed, 6 intentional ignores.
 - `cargo clippy -p hermes-gateway -p hermes-cli --all-targets` — clean on
   all new code.
 - `rustfmt --edition 2021 --check` — clean on all changed files.
