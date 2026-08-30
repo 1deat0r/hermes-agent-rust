@@ -24,6 +24,7 @@ pub mod audio_container;
 pub mod binary_extensions;
 pub mod blueprints;
 pub mod browser_camofox_state;
+pub mod browser_dialog_tool;
 pub mod budget_config;
 pub mod computer_use_schema;
 pub mod credential_files;

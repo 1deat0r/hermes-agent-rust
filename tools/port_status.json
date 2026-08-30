@@ -356,6 +356,9 @@
  "tools.browser_camofox_state": {
   "status": "done"
  },
+ "tools.browser_dialog_tool": {
+  "status": "done"
+ },
  "tools.budget_config": {
   "status": "done"
  },

@@ -22,7 +22,6 @@ use std::collections::VecDeque;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use once_cell::sync::Lazy;
 use serde_json::{json, Value};
 
 /// PARITY: `DashboardOAuthFlow` public dataclass fields (upstream lines
@@ -302,9 +301,9 @@ impl DashboardOAuthFlowHandle {
     }
 }
 
-/// PARITY: the module-level `dashboard_oauth_flow` context manager +
-/// `get_dashboard_oauth_flow` (upstream lines 152-170) — a thread-local
-/// current-flow slot (the crate convention for ContextVars).
+// PARITY: the module-level `dashboard_oauth_flow` context manager +
+// `get_dashboard_oauth_flow` (upstream lines 152-170) — a thread-local
+// current-flow slot (the crate convention for ContextVars).
 thread_local! {
     static CURRENT_FLOW: RefCell<Option<Arc<DashboardOAuthFlowHandle>>> =
         const { RefCell::new(None) };

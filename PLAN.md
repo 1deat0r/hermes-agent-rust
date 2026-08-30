@@ -640,7 +640,7 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 ## 7. Session log
 
-- 2026-08-31 (session 4da): Forty-five units across four crates, all red-first:
+- 2026-08-31 (session 4da): Forty-six units across four crates, all red-first:
   batch 1 — the `hermes_cli/main.py` private git-fingerprint helpers
   (`_read_packed_ref`, `_read_git_revision_fingerprint`) into
   `hermes-cli::git_revision` (8 tests), then `gateway/code_skew.py` (10
@@ -722,7 +722,7 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   passed 1,581 tests with 6 intentional ignores (the new one is
   skill_provenance's `ignore` doc example); `git diff --check` clean.
   Ledger: 133 done / 21 partial / 3,728 tracked (**3.43%**) and 133 done /
-  21 partial / 949 production (**12.06%). Next: more small `tools/`/
+  21 partial / 949 production (**12.15%). Next: more small `tools/`/
   `gateway/` leaves (e.g. `gateway.readiness`, `gateway.rich_sent_store`
   neighbors `gateway.code_skew` consumers, `tools.open_preview_tool`), the
   `tools.process_registry` mega-module (unblocks
@@ -3013,7 +3013,14 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   duplicates/mismatches, and wraps missing-code/error payloads in the
   authorization-failed raise; mark_error wakes waiters and is a no-op
   after approval; worker-done flag; the ContextVar current-flow becomes a
-  thread-local slot with a restore-on-drop guard).an
+  thread-local slot with a restore-on-drop guard). Batch 30 -
+  `tools/browser_dialog_tool.py` done (6 tests, source-derived - gap
+  noted: registry entry in the browser-cdp toolset, task_id-default
+  supervisor dispatch, verbatim responder-error pass-through, the
+  no-supervisor desktop-only error object, and prompt_text/dialog_id
+  forwarding; the CDP supervisor itself stays PENDING - the lookup seam
+  is a settable closure returning a DialogResponder trait object whose
+  result dict carries ok/dialog/error exactly as the supervisor method).an
 
 Target: https://github.com/NousResearch/hermes-agent @ `b9aa928` (local clone:
 `/home/mustbearn/Projects/Research/hermes-agent-repo`)
@@ -3655,7 +3662,7 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 ## 7. Session log
 
-- 2026-08-31 (session 4da): Forty-five units across four crates, all red-first:
+- 2026-08-31 (session 4da): Forty-six units across four crates, all red-first:
   batch 1 — the `hermes_cli/main.py` private git-fingerprint helpers
   (`_read_packed_ref`, `_read_git_revision_fingerprint`) into
   `hermes-cli::git_revision` (8 tests), then `gateway/code_skew.py` (10
@@ -3737,7 +3744,7 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   passed 1,581 tests with 6 intentional ignores (the new one is
   skill_provenance's `ignore` doc example); `git diff --check` clean.
   Ledger: 133 done / 21 partial / 3,728 tracked (**3.43%**) and 133 done /
-  21 partial / 949 production (**12.06%). Next: more small `tools/`/
+  21 partial / 949 production (**12.15%). Next: more small `tools/`/
   `gateway/` leaves (e.g. `gateway.readiness`, `gateway.rich_sent_store`
   neighbors `gateway.code_skew` consumers, `tools.open_preview_tool`), the
   `tools.process_registry` mega-module (unblocks

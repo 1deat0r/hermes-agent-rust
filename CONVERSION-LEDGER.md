@@ -1,7 +1,7 @@
 # Hermes Agent → Hermes Agent Rust Conversion Ledger
 
-**Current strict completion: 2.81% of all tracked upstream modules (133/4740).**
-Production-only strict completion: **10.82%** (133/1229 production modules).
+**Current strict completion: 2.83% of all tracked upstream modules (134/4740).**
+Production-only strict completion: **10.90%** (134/1229 production modules).
 
 > This file is generated from `tools/inventory.json`; update the source ledger in `tools/port_status.json`, regenerate the inventory, then run `python3 tools/conversion_ledger.py`. Only `done` counts toward the percentage. `partial` is intentionally zero credit until its stated parity seams are closed.
 
@@ -9,10 +9,10 @@ Production-only strict completion: **10.82%** (133/1229 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 133 | 21 | 4586 | 2.81% | 45,686/1,910,919 done LOC |
-| Production modules | 133 | 21 | 1075 | 10.82% | 45,686/993,168 done LOC |
+| All tracked modules | 134 | 21 | 4585 | 2.83% | 45,834/1,910,919 done LOC |
+| Production modules | 134 | 21 | 1074 | 10.90% | 45,834/993,168 done LOC |
 
-Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-31T11:40:24`.
+Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-31T11:46:05`.
 
 ## Definition of 100.00%
 
@@ -4658,7 +4658,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `tools.browser_camofox` | production | P2 | 974 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.browser_camofox_state` | production | P2 | 47 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `tools.browser_cdp_tool` | production | P2 | 763 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `tools.browser_dialog_tool` | production | P2 | 148 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `tools.browser_dialog_tool` | production | P2 | 148 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `tools.browser_extension_router` | production | P2 | 269 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.browser_supervisor` | production | P2 | 1,518 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.browser_tool` | production | P2 | 6,329 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
