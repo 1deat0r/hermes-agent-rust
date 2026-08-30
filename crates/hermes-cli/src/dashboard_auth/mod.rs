@@ -22,3 +22,4 @@ pub mod prefix;
 pub mod public_paths;
 pub mod registry;
 pub mod token_auth;
+pub mod ws_tickets;

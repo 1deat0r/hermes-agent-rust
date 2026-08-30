@@ -28,7 +28,7 @@ this documentation checkpoint. Previous: `d138528` (4d9's
 
 ## What landed this session (4da)
 
-Forty units across four crates, all red-first, 241 new parity tests:
+Forty-one units across four crates, all red-first, 246 new parity tests:
 
 - `hermes_cli/main.py` `_read_packed_ref` + `_read_git_revision_fingerprint`
   → `hermes-cli::git_revision` (8 tests, source-derived — no dedicated
@@ -258,6 +258,15 @@ returned values; audit_token_failure covers both TOKEN_AUTH_FAILURE
 shapes). Registry-touching tests serialize behind a mutex (the provider
 registry is process-global).
 
+Batch 25: `hermes_cli/dashboard_auth/ws_tickets.py` →
+`dashboard_auth::ws_tickets` done (5 source-derived tests, gap noted).
+Single-use browser tickets (43-char base64url, TTL 30s, `expires_at <
+now` expiry with expired-ticket GC, truncated unknown-ticket error) and
+the process-lifetime internal credential (multi-use, never expires,
+constant-time compare, rejected before first mint). Explicit-clock
+`*_at` forms are the `time.time` patch seam. Tests serialize over the
+process-global store.
+
 `hermes-gateway` also gains `hermes-cli`, `hermes-constants`, `hermes-time`,
 `serde_json`, `libc` — all still below the agent/tools layers.
 `tools.close_terminal_tool` was skipped: blocked on the 2,937-LOC
@@ -267,9 +276,9 @@ registry is process-global).
 
 Session 4da **changed the ledger**: 99 done / 15 partial / 3,768 missing
 tracked modules and 99 done / 15 partial / 989 missing production modules —
-**3.30%** tracked and **11.60%** production strict completion — regenerated
+**3.32%** tracked and **11.69%** production strict completion — regenerated
 against the pinned `b9aa928` worktree (commands above), with
-`cargo build --workspace` and the serialized workspace run green at 1,566
+`cargo build --workspace` and the serialized workspace run green at 1,571
 tests / 6 ignored (the 6th is skill_provenance's intentional `ignore` doc
 example).
 
@@ -288,11 +297,16 @@ example).
 ## Current conversion ledger
 
 99 done / 15 partial / 3,768 missing tracked (**2.55%** strict completion);
-128 done / 21 partial / 954 missing production (**11.60%**). Regenerated via
+129 done / 21 partial / 953 missing production (**11.69%**). Regenerated via
 `tools/inventory.sh` (pinned worktree) + `python3 tools/conversion_ledger.py`.
 
 ## Fidelity notes
 
+- Session 4da (batch 25): the ws-ticket store is process-global — tests
+  serialize behind a mutex (parallel resets were clearing each other's
+  tickets). `expires_at < now` (not <=) means a ticket is valid AT its
+  exact TTL second. The internal credential's constant-time compare keeps
+  length/prefix leakage off mismatch errors.
 - Session 4da (batch 24): authenticate_token's stack contract: unrecognised
   tokens are Ok(None) (fall through), ProviderError is remembered and
   only surfaces as 503 when NO provider accepts; empty token
@@ -452,9 +466,9 @@ example).
 
 - `/home/mustbearnold/.cargo/bin/cargo build --workspace` — green.
 - `cargo test -p hermes-gateway -p hermes-cli -p hermes-tools -p
-  hermes-agent` — 241 new tests green.
+  hermes-agent` — 246 new tests green.
 - Serialized `/home/mustbearnold/.cargo/bin/cargo test --workspace --
-  --test-threads=1` — 1,566 passed, 0 failed, 6 intentional ignores.
+  --test-threads=1` — 1,571 passed, 0 failed, 6 intentional ignores.
 - `cargo clippy -p hermes-gateway -p hermes-cli --all-targets` — clean on
   all new code.
 - `rustfmt --edition 2021 --check` — clean on all changed files.

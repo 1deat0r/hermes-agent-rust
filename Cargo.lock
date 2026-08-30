@@ -617,6 +617,7 @@ name = "hermes-cli"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "base64",
  "chrono",
  "fancy-regex",
  "futures",
@@ -626,6 +627,7 @@ dependencies = [
  "log",
  "once_cell",
  "parking_lot",
+ "rand",
  "regex",
  "rusqlite",
  "serde_json",

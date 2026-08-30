@@ -1,7 +1,7 @@
 # Hermes Agent → Hermes Agent Rust Conversion Ledger
 
-**Current strict completion: 2.70% of all tracked upstream modules (128/4740).**
-Production-only strict completion: **10.41%** (128/1229 production modules).
+**Current strict completion: 2.72% of all tracked upstream modules (129/4740).**
+Production-only strict completion: **10.50%** (129/1229 production modules).
 
 > This file is generated from `tools/inventory.json`; update the source ledger in `tools/port_status.json`, regenerate the inventory, then run `python3 tools/conversion_ledger.py`. Only `done` counts toward the percentage. `partial` is intentionally zero credit until its stated parity seams are closed.
 
@@ -9,10 +9,10 @@ Production-only strict completion: **10.41%** (128/1229 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 128 | 21 | 4591 | 2.70% | 44,555/1,910,919 done LOC |
-| Production modules | 128 | 21 | 1080 | 10.41% | 44,555/993,168 done LOC |
+| All tracked modules | 129 | 21 | 4590 | 2.72% | 44,716/1,910,919 done LOC |
+| Production modules | 129 | 21 | 1079 | 10.50% | 44,716/993,168 done LOC |
 
-Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-31T10:57:31`.
+Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-31T11:03:33`.
 
 ## Definition of 100.00%
 
@@ -510,7 +510,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `hermes_cli.dashboard_auth.registry` | production | P3 | 167 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `hermes_cli.dashboard_auth.routes` | production | P3 | 1,097 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `hermes_cli.dashboard_auth.token_auth` | production | P3 | 194 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
-| `hermes_cli.dashboard_auth.ws_tickets` | production | P3 | 161 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `hermes_cli.dashboard_auth.ws_tickets` | production | P3 | 161 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `hermes_cli.dashboard_procs` | production | P3 | 1,085 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `hermes_cli.dashboard_register` | production | P3 | 427 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `hermes_cli.debug` | production | P3 | 1,052 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
