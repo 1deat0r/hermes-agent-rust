@@ -92,6 +92,9 @@
  "agent.verify.recipes": {
   "status": "done"
  },
+ "agent.verify.runner": {
+  "status": "done"
+ },
  "agent.verify_hooks": {
   "status": "done"
  },

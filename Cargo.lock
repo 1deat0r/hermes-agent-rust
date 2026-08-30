@@ -560,6 +560,7 @@ dependencies = [
  "hermes-logging",
  "hermes-providers",
  "hermes-utils",
+ "libc",
  "log",
  "once_cell",
  "parking_lot",

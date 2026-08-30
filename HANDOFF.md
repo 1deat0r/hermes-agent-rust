@@ -28,7 +28,7 @@ this documentation checkpoint. Previous: `d138528` (4d9's
 
 ## What landed this session (4da)
 
-Thirty-three units across four crates, all red-first, 208 new parity tests:
+Thirty-four units across four crates, all red-first, 217 new parity tests:
 
 - `hermes_cli/main.py` `_read_packed_ref` + `_read_git_revision_fingerprint`
   → `hermes-cli::git_revision` (8 tests, source-derived — no dedicated
@@ -220,6 +220,14 @@ Test-oracle notes: `.PHONY` DOES match the make-target grammar (dots in
 the character class); pnpm/yarn script runners omit `run`
 (`pnpm dev`, `yarn dev`) while npm/bun keep it.
 
+Batch 21: `agent/verify/runner.py` → `verify::runner` done (9
+source-derived tests, gap noted). `shell=True` → `sh -c`; readiness
+probing is a raw HTTP/1.0 GET over TcpStream where ANY response (even
+404) proves up — the urllib HTTPError arm; the child spawns with
+`process_group(0)` at spawn time and teardown SIGTERMs then SIGKILLs the
+group (10s/5s deadlines). Start-phase tests use distinct loopback ports —
+parallel tests sharing a port cross-talk via the other's server.
+
 `hermes-gateway` also gains `hermes-cli`, `hermes-constants`, `hermes-time`,
 `serde_json`, `libc` — all still below the agent/tools layers.
 `tools.close_terminal_tool` was skipped: blocked on the 2,937-LOC
@@ -229,9 +237,9 @@ the character class); pnpm/yarn script runners omit `run`
 
 Session 4da **changed the ledger**: 99 done / 15 partial / 3,768 missing
 tracked modules and 99 done / 15 partial / 989 missing production modules —
-**3.14%** tracked and **11.06%** production strict completion — regenerated
+**3.17%** tracked and **11.15%** production strict completion — regenerated
 against the pinned `b9aa928` worktree (commands above), with
-`cargo build --workspace` and the serialized workspace run green at 1,533
+`cargo build --workspace` and the serialized workspace run green at 1,542
 tests / 6 ignored (the 6th is skill_provenance's intentional `ignore` doc
 example).
 
@@ -250,11 +258,17 @@ example).
 ## Current conversion ledger
 
 99 done / 15 partial / 3,768 missing tracked (**2.55%** strict completion);
-122 done / 19 partial / 962 missing production (**11.06%**). Regenerated via
+123 done / 19 partial / 961 missing production (**11.15%**). Regenerated via
 `tools/inventory.sh` (pinned worktree) + `python3 tools/conversion_ledger.py`.
 
 ## Fidelity notes
 
+- Session 4da (batch 21): the verify runner's most important find: a
+  post-spawn `setpgid` loses the race against the child's exec, and the
+  subsequent `killpg` then signals the RUNNER's own group. Rust's
+  `Command::process_group(0)` performs the setsid at spawn — the only
+  correct analog of `start_new_session=True`. Start-phase tests must use
+  distinct loopback ports when running in parallel.
 - Session 4da (batch 20): verify recipes were red-checked against the
   Python oracle twice — `.PHONY: build` matches `_MAKE_TARGET_RE` (dots
   are in the class) and `_script_runner` gives pnpm/yarn bare `pnpm dev`/
@@ -386,9 +400,9 @@ example).
 
 - `/home/mustbearnold/.cargo/bin/cargo build --workspace` — green.
 - `cargo test -p hermes-gateway -p hermes-cli -p hermes-tools -p
-  hermes-agent` — 208 new tests green.
+  hermes-agent` — 217 new tests green.
 - Serialized `/home/mustbearnold/.cargo/bin/cargo test --workspace --
-  --test-threads=1` — 1,533 passed, 0 failed, 6 intentional ignores.
+  --test-threads=1` — 1,542 passed, 0 failed, 6 intentional ignores.
 - `cargo clippy -p hermes-gateway -p hermes-cli --all-targets` — clean on
   all new code.
 - `rustfmt --edition 2021 --check` — clean on all changed files.
