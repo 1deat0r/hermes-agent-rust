@@ -83,6 +83,15 @@
  "agent.turn_retry_state": {
   "status": "done"
  },
+ "agent.verify": {
+  "status": "partial"
+ },
+ "agent.verify.environment": {
+  "status": "done"
+ },
+ "agent.verify.recipes": {
+  "status": "done"
+ },
  "agent.verify_hooks": {
   "status": "done"
  },

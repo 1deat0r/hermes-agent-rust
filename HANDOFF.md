@@ -28,7 +28,7 @@ this documentation checkpoint. Previous: `d138528` (4d9's
 
 ## What landed this session (4da)
 
-Thirty-one units across four crates, all red-first, 200 new parity tests:
+Thirty-three units across four crates, all red-first, 208 new parity tests:
 
 - `hermes_cli/main.py` `_read_packed_ref` + `_read_git_revision_fingerprint`
   → `hermes-cli::git_revision` (8 tests, source-derived — no dedicated
@@ -209,6 +209,17 @@ intent so a match is safe to upgrade in place; `_normalize_soul` unifies
 CRLF/CR, strips a leading BOM, and trims; any deviation (even edits inside
 the comment) defeats the match.
 
+Batch 20: `agent/verify/` package opened — `recipes.py` (Recipe
+to_dict/from_dict with grok alias tolerance, lockfile package-manager
+priority, Node framework+script+port inference, Python/Go/Rust/Java/
+Make/compose fallbacks in grok's order) and `environment.py`
+(manifest save/load with corrupt-file degradation; manifest wins over
+detection) — 8 source-derived tests, gap noted. PENDING:
+`verify/runner.py` (smoke-test runner) and the `__init__` re-exports.
+Test-oracle notes: `.PHONY` DOES match the make-target grammar (dots in
+the character class); pnpm/yarn script runners omit `run`
+(`pnpm dev`, `yarn dev`) while npm/bun keep it.
+
 `hermes-gateway` also gains `hermes-cli`, `hermes-constants`, `hermes-time`,
 `serde_json`, `libc` — all still below the agent/tools layers.
 `tools.close_terminal_tool` was skipped: blocked on the 2,937-LOC
@@ -218,9 +229,9 @@ the comment) defeats the match.
 
 Session 4da **changed the ledger**: 99 done / 15 partial / 3,768 missing
 tracked modules and 99 done / 15 partial / 989 missing production modules —
-**3.09%** tracked and **10.88%** production strict completion — regenerated
+**3.14%** tracked and **11.06%** production strict completion — regenerated
 against the pinned `b9aa928` worktree (commands above), with
-`cargo build --workspace` and the serialized workspace run green at 1,525
+`cargo build --workspace` and the serialized workspace run green at 1,533
 tests / 6 ignored (the 6th is skill_provenance's intentional `ignore` doc
 example).
 
@@ -239,11 +250,17 @@ example).
 ## Current conversion ledger
 
 99 done / 15 partial / 3,768 missing tracked (**2.55%** strict completion);
-120 done / 19 partial / 964 missing production (**10.88%**). Regenerated via
+122 done / 19 partial / 962 missing production (**11.06%**). Regenerated via
 `tools/inventory.sh` (pinned worktree) + `python3 tools/conversion_ledger.py`.
 
 ## Fidelity notes
 
+- Session 4da (batch 20): verify recipes were red-checked against the
+  Python oracle twice — `.PHONY: build` matches `_MAKE_TARGET_RE` (dots
+  are in the class) and `_script_runner` gives pnpm/yarn bare `pnpm dev`/
+  `yarn dev` while npm/bun use `run`. `Recipe::from_dict` keeps upstream's
+  tolerant normalization: grok aliases, blank-entry dropping, 0<port<65536
+  with numeric-string coercion, readiness path must start with "/".
 - Session 4da (batch 19): default_soul's match is exact-equality over
   normalized text (not substring), so a scaffold with an extra sentence —
   even more comment text — is user content. Tests live in-crate this once
@@ -369,9 +386,9 @@ example).
 
 - `/home/mustbearnold/.cargo/bin/cargo build --workspace` — green.
 - `cargo test -p hermes-gateway -p hermes-cli -p hermes-tools -p
-  hermes-agent` — 200 new tests green.
+  hermes-agent` — 208 new tests green.
 - Serialized `/home/mustbearnold/.cargo/bin/cargo test --workspace --
-  --test-threads=1` — 1,525 passed, 0 failed, 6 intentional ignores.
+  --test-threads=1` — 1,533 passed, 0 failed, 6 intentional ignores.
 - `cargo clippy -p hermes-gateway -p hermes-cli --all-targets` — clean on
   all new code.
 - `rustfmt --edition 2021 --check` — clean on all changed files.

@@ -18,5 +18,6 @@ pub mod reactions;
 pub mod reasoning_summaries;
 pub mod tool_result_classification;
 pub mod trajectory;
+pub mod verify;
 pub mod turn_retry_state;
 pub mod verify_hooks;
