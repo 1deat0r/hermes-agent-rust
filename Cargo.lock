@@ -581,6 +581,7 @@ dependencies = [
  "fancy-regex",
  "hermes-constants",
  "hermes-utils",
+ "libc",
  "log",
  "parking_lot",
  "regex",

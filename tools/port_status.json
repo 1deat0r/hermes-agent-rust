@@ -125,6 +125,9 @@
  "hermes_cli.build_info": {
   "status": "done"
  },
+ "hermes_cli.cli_output": {
+  "status": "done"
+ },
  "hermes_cli.colors": {
   "status": "done"
  },
@@ -141,6 +144,9 @@
   "status": "done"
  },
  "hermes_cli.model_search": {
+  "status": "done"
+ },
+ "hermes_cli.secret_prompt": {
   "status": "done"
  },
  "hermes_cli.setup_hidden_env": {

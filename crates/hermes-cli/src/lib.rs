@@ -5,11 +5,13 @@
 //! it upstream.
 
 pub mod build_info;
+pub mod cli_output;
 pub mod colors;
 pub mod git_revision;
 pub mod input_sanitize;
 pub mod lifecycle;
 pub mod model_search;
+pub mod secret_prompt;
 pub mod setup_hidden_env;
 pub mod sqlite_util;
 pub mod timefmt;

@@ -28,7 +28,7 @@ this documentation checkpoint. Previous: `d138528` (4d9's
 
 ## What landed this session (4da)
 
-Twenty-eight units across four crates, all red-first, 184 new parity tests:
+Thirty units across four crates, all red-first, 196 new parity tests:
 
 - `hermes_cli/main.py` `_read_packed_ref` + `_read_git_revision_fingerprint`
   → `hermes-cli::git_revision` (8 tests, source-derived — no dedicated
@@ -191,6 +191,17 @@ caught my test passing a bare type. `write_txn` becomes a closure form
 (BEGIN IMMEDIATE → body → COMMIT; guarded ROLLBACK that never shadows
 the original error). The crate gains `rusqlite` (bundled).
 
+Batch 18: `hermes_cli/secret_prompt.py` → `hermes-cli::secret_prompt`
+done (7 source-derived tests, gap noted; `_collect_masked_input` is pure
+over injected read/write closures — enter commits, Ctrl-C interrupts,
+Ctrl-D/Z are EOF, backspace erases only non-empty, bare ESC ignored,
+`if mask:` arm; POSIX raw-mode termios session with TCSADRAIN restore is
+the runtime form; the msvcrt Windows arm is cfg'd out) and
+`hermes_cli/cli_output.py` → `hermes-cli::cli_output` done (4 tests; the
+print_* helpers route through colors; `prompt`/`prompt_yes_no` take an
+injected line reader as the input() seam — EOF returns "" not the
+default, matching upstream's except arm).
+
 `hermes-gateway` also gains `hermes-cli`, `hermes-constants`, `hermes-time`,
 `serde_json`, `libc` — all still below the agent/tools layers.
 `tools.close_terminal_tool` was skipped: blocked on the 2,937-LOC
@@ -200,9 +211,9 @@ the original error). The crate gains `rusqlite` (bundled).
 
 Session 4da **changed the ledger**: 99 done / 15 partial / 3,768 missing
 tracked modules and 99 done / 15 partial / 989 missing production modules —
-**3.01%** tracked and **10.61%** production strict completion — regenerated
+**3.07%** tracked and **10.79%** production strict completion — regenerated
 against the pinned `b9aa928` worktree (commands above), with
-`cargo build --workspace` and the serialized workspace run green at 1,511
+`cargo build --workspace` and the serialized workspace run green at 1,521
 tests / 6 ignored (the 6th is skill_provenance's intentional `ignore` doc
 example).
 
@@ -221,11 +232,17 @@ example).
 ## Current conversion ledger
 
 99 done / 15 partial / 3,768 missing tracked (**2.55%** strict completion);
-117 done / 19 partial / 967 missing production (**10.61%**). Regenerated via
+119 done / 19 partial / 965 missing production (**10.79%**). Regenerated via
 `tools/inventory.sh` (pinned worktree) + `python3 tools/conversion_ledger.py`.
 
 ## Fidelity notes
 
+- Session 4da (batch 18): secret_prompt's `\b \b` erase sequence is
+  written per real erase (Python writes the same three bytes); the
+  getpass fallback in non-TTY environments reads plainly (no /dev/tty
+  redirect — documented divergence). cli_output's prompt returns "" on
+  EOF, NOT the default (upstream's except arm is a bare `return ""`,
+  distinct from the empty-input arm that takes the default).
 - Session 4da (batch 17): sqlite_util's duplicate-column swallow is
   string-matched on "duplicate column name" (case-insensitive) per the
   upstream `str(exc).lower()` check; every other OperationalError
@@ -340,9 +357,9 @@ example).
 
 - `/home/mustbearnold/.cargo/bin/cargo build --workspace` — green.
 - `cargo test -p hermes-gateway -p hermes-cli -p hermes-tools -p
-  hermes-agent` — 184 new tests green.
+  hermes-agent` — 196 new tests green.
 - Serialized `/home/mustbearnold/.cargo/bin/cargo test --workspace --
-  --test-threads=1` — 1,511 passed, 0 failed, 6 intentional ignores.
+  --test-threads=1` — 1,521 passed, 0 failed, 6 intentional ignores.
 - `cargo clippy -p hermes-gateway -p hermes-cli --all-targets` — clean on
   all new code.
 - `rustfmt --edition 2021 --check` — clean on all changed files.

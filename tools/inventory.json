@@ -1,20 +1,20 @@
 {
  "generated_from": "/run/media/mustbearnold/Projects/Research/hermes-agent-repo",
- "generated_at": "2026-08-31T09:48:40",
+ "generated_at": "2026-08-31T09:57:04",
  "summary": {
   "modules": 4740,
   "total_lines": 1910919,
   "production_modules": 1229,
   "production_lines": 993168,
   "status_counts": {
-   "done": 117,
+   "done": 119,
    "partial": 19,
-   "missing": 4604
+   "missing": 4602
   },
   "prod_status_counts": {
-   "done": 117,
+   "done": 119,
    "partial": 19,
-   "missing": 1093
+   "missing": 1091
   },
   "packages": {
    "gateway": {
@@ -44,9 +44,9 @@
     "lines": 253446,
     "modules": 296,
     "status": {
-     "missing": 283,
+     "missing": 281,
      "partial": 2,
-     "done": 11
+     "done": 13
     }
    },
    "tui_gateway": {
@@ -22439,7 +22439,7 @@
   "hermes_cli.secret_prompt": {
    "lines": 126,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "hermes_cli.subcommands.mcp": {
@@ -23999,7 +23999,7 @@
   "hermes_cli.cli_output": {
    "lines": 111,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "scripts.docker_config_migrate": {

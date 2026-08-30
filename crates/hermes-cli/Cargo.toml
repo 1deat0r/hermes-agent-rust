@@ -8,6 +8,7 @@ rust-version.workspace = true
 
 [dependencies]
 chrono.workspace = true
+libc = { version = "0.2", default-features = false }
 rusqlite = { version = "0.37", features = ["bundled"] }
 fancy-regex = "0.14"
 hermes-constants = { path = "../hermes-constants" }
