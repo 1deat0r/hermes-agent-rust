@@ -155,6 +155,9 @@
  "hermes_cli.dashboard_auth.base": {
   "status": "done"
  },
+ "hermes_cli.dashboard_auth.cookies": {
+  "status": "done"
+ },
  "hermes_cli.dashboard_auth.prefix": {
   "status": "partial"
  },

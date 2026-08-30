@@ -28,7 +28,7 @@ this documentation checkpoint. Previous: `d138528` (4d9's
 
 ## What landed this session (4da)
 
-Forty-one units across four crates, all red-first, 246 new parity tests:
+Forty-two units across four crates, all red-first, 256 new parity tests:
 
 - `hermes_cli/main.py` `_read_packed_ref` + `_read_git_revision_fingerprint`
   → `hermes-cli::git_revision` (8 tests, source-derived — no dedicated
@@ -267,6 +267,16 @@ constant-time compare, rejected before first mint). Explicit-clock
 `*_at` forms are the `time.time` patch seam. Tests serialize over the
 process-global store.
 
+Batch 22: `hermes_cli/dashboard_auth/cookies.py` →
+`dashboard_auth::cookies` done (10 source-derived tests, gap noted).
+`resolved_name` three-prefix rules, SameSite=Lax/HttpOnly/
+Secure-only-over-HTTPS, provider-reported AT TTL, 30-day RT upper bound
+with empty-RT degradation to access-token-only, Max-Age=0 deletions across
+all name variants, most-strict-first read fallback, PKCE + SSO
+loop-guard marker cookies. The FastAPI Response/Request seams are a
+SetCookie directive list + cookie-lookup closure; `detect_https` takes
+the request scheme (honours X-Forwarded-Proto upstream of the seam).
+
 `hermes-gateway` also gains `hermes-cli`, `hermes-constants`, `hermes-time`,
 `serde_json`, `libc` — all still below the agent/tools layers.
 `tools.close_terminal_tool` was skipped: blocked on the 2,937-LOC
@@ -276,9 +286,9 @@ process-global store.
 
 Session 4da **changed the ledger**: 99 done / 15 partial / 3,768 missing
 tracked modules and 99 done / 15 partial / 989 missing production modules —
-**3.32%** tracked and **11.69%** production strict completion — regenerated
+**3.35%** tracked and **11.79%** production strict completion — regenerated
 against the pinned `b9aa928` worktree (commands above), with
-`cargo build --workspace` and the serialized workspace run green at 1,571
+`cargo build --workspace` and the serialized workspace run green at 1,581
 tests / 6 ignored (the 6th is skill_provenance's intentional `ignore` doc
 example).
 
@@ -297,11 +307,16 @@ example).
 ## Current conversion ledger
 
 99 done / 15 partial / 3,768 missing tracked (**2.55%** strict completion);
-129 done / 21 partial / 953 missing production (**11.69%**). Regenerated via
+130 done / 21 partial / 952 missing production (**11.79%**). Regenerated via
 `tools/inventory.sh` (pinned worktree) + `python3 tools/conversion_ledger.py`.
 
 ## Fidelity notes
 
+- Session 4da (batch 22-cookies): the reader tries every name variant
+  (most-strict first) because the reading request may not share the
+  setting request's shape; deletions emit Max-Age=0 for every variant
+  under the active Path. The transparent AT-rotation flow
+  (`middleware._attempt_refresh`) remains PENDING with middleware.py.
 - Session 4da (batch 25): the ws-ticket store is process-global — tests
   serialize behind a mutex (parallel resets were clearing each other's
   tickets). `expires_at < now` (not <=) means a ticket is valid AT its
@@ -466,9 +481,9 @@ example).
 
 - `/home/mustbearnold/.cargo/bin/cargo build --workspace` — green.
 - `cargo test -p hermes-gateway -p hermes-cli -p hermes-tools -p
-  hermes-agent` — 246 new tests green.
+  hermes-agent` — 256 new tests green.
 - Serialized `/home/mustbearnold/.cargo/bin/cargo test --workspace --
-  --test-threads=1` — 1,571 passed, 0 failed, 6 intentional ignores.
+  --test-threads=1` — 1,581 passed, 0 failed, 6 intentional ignores.
 - `cargo clippy -p hermes-gateway -p hermes-cli --all-targets` — clean on
   all new code.
 - `rustfmt --edition 2021 --check` — clean on all changed files.
