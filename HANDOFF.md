@@ -28,7 +28,7 @@ this documentation checkpoint. Previous: `d138528` (4d9's
 
 ## What landed this session (4da)
 
-Forty-six units across four crates, all red-first, 285 new parity tests:
+Forty-seven units across four crates, all red-first, 292 new parity tests:
 
 - `hermes_cli/main.py` `_read_packed_ref` + `_read_git_revision_fingerprint`
   → `hermes-cli::git_revision` (8 tests, source-derived — no dedicated
@@ -315,6 +315,15 @@ task_id defaults to "default"; responder errors pass through verbatim;
 registry entry in the browser-cdp toolset. The CDP supervisor itself
 (1,518 LOC) stays PENDING.
 
+Batch 31: `tools/close_terminal_tool.py` ->
+`hermes-tools::close_terminal_tool` done (7 source-derived tests, gap
+noted) — previously flagged as blocked on process_registry, now ported
+via the seam pattern: the registry's `on_close` sink injects as a settable
+closure and the `request_close_terminal` contract (desktop-only error
+dict, error-string passthrough, ok + closed + note) is implemented
+locally. The registry mega-module is still PENDING for the remaining
+surface (spawn/poll/read/kill), whose close_stdin etc. wait the same way.
+
 `hermes-gateway` also gains `hermes-cli`, `hermes-constants`, `hermes-time`,
 `serde_json`, `libc` — all still below the agent/tools layers.
 `tools.close_terminal_tool` was skipped: blocked on the 2,937-LOC
@@ -324,9 +333,9 @@ registry entry in the browser-cdp toolset. The CDP supervisor itself
 
 Session 4da **changed the ledger**: 99 done / 15 partial / 3,768 missing
 tracked modules and 99 done / 15 partial / 989 missing production modules —
-**3.45%** tracked and **12.15%** production strict completion — regenerated
+**3.48%** tracked and **12.24%** production strict completion — regenerated
 against the pinned `b9aa928` worktree (commands above), with
-`cargo build --workspace` and the serialized workspace run green at 1,611
+`cargo build --workspace` and the serialized workspace run green at 1,618
 tests / 6 ignored (the 6th is skill_provenance's intentional `ignore` doc
 example).
 
@@ -345,11 +354,16 @@ example).
 ## Current conversion ledger
 
 99 done / 15 partial / 3,768 missing tracked (**2.55%** strict completion);
-134 done / 21 partial / 948 missing production (**12.15%**). Regenerated via
+135 done / 21 partial / 947 missing production (**12.24%**). Regenerated via
 `tools/inventory.sh` (pinned worktree) + `python3 tools/conversion_ledger.py`.
 
 ## Fidelity notes
 
+- Session 4da (batch 31): close_terminal's seam drops the ProcessSession
+  argument the upstream sink receives (the desktop handler keys off the
+  session id); the required-process_id error fires before the sink
+  lookup so CLI callers get the argument error; sink panics are caught
+  and surfaced as the error string (the upstream except arm).
 - Session 4da (batch 30): browser_dialog_tool completes with a seam rather
   than the full supervisor: set_supervisor_lookup injects the registry
   lookup; the missing-supervisor arm yields the desktop-only error object
@@ -541,9 +555,9 @@ example).
 
 - `/home/mustbearnold/.cargo/bin/cargo build --workspace` — green.
 - `cargo test -p hermes-gateway -p hermes-cli -p hermes-tools -p
-  hermes-agent` — 285 new tests green.
+  hermes-agent` — 292 new tests green.
 - Serialized `/home/mustbearnold/.cargo/bin/cargo test --workspace --
-  --test-threads=1` — 1,611 passed, 0 failed, 6 intentional ignores.
+  --test-threads=1` — 1,618 passed, 0 failed, 6 intentional ignores.
 - `cargo clippy -p hermes-gateway -p hermes-cli --all-targets` — clean on
   all new code.
 - `rustfmt --edition 2021 --check` — clean on all changed files.

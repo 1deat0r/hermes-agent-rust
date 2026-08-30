@@ -365,6 +365,9 @@
  "tools.clarify_tool": {
   "status": "done"
  },
+ "tools.close_terminal_tool": {
+  "status": "done"
+ },
  "tools.computer_use.schema": {
   "status": "done"
  },

@@ -640,7 +640,7 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 ## 7. Session log
 
-- 2026-08-31 (session 4da): Forty-six units across four crates, all red-first:
+- 2026-08-31 (session 4da): Forty-seven units across four crates, all red-first:
   batch 1 — the `hermes_cli/main.py` private git-fingerprint helpers
   (`_read_packed_ref`, `_read_git_revision_fingerprint`) into
   `hermes-cli::git_revision` (8 tests), then `gateway/code_skew.py` (10
@@ -3020,7 +3020,16 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   no-supervisor desktop-only error object, and prompt_text/dialog_id
   forwarding; the CDP supervisor itself stays PENDING - the lookup seam
   is a settable closure returning a DialogResponder trait object whose
-  result dict carries ok/dialog/error exactly as the supervisor method).an
+  result dict carries ok/dialog/error exactly as the supervisor method). Batch 31 -
+  `tools/close_terminal_tool.py` done (7 tests, source-derived - gap
+  noted): the tool body plus the `request_close_terminal` contract
+  extracted as a seam - the desktop `on_close` sink is a settable closure
+  (session_id only; the ProcessSession argument is dropped until
+  process_registry ports), no-sink yields the desktop-only error dict,
+  the empty-process_id required-error fires before the sink lookup, sink
+  errors/panics become the error field verbatim, and success carries
+  closed + the reassurance note. Registry entry in the desktop_ui
+  toolset; the 2,937-LOC process_registry remains PENDING.an
 
 Target: https://github.com/NousResearch/hermes-agent @ `b9aa928` (local clone:
 `/home/mustbearn/Projects/Research/hermes-agent-repo`)
@@ -3662,7 +3671,7 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 ## 7. Session log
 
-- 2026-08-31 (session 4da): Forty-six units across four crates, all red-first:
+- 2026-08-31 (session 4da): Forty-seven units across four crates, all red-first:
   batch 1 — the `hermes_cli/main.py` private git-fingerprint helpers
   (`_read_packed_ref`, `_read_git_revision_fingerprint`) into
   `hermes-cli::git_revision` (8 tests), then `gateway/code_skew.py` (10

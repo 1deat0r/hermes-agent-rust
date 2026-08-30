@@ -1,7 +1,7 @@
 # Hermes Agent → Hermes Agent Rust Conversion Ledger
 
-**Current strict completion: 2.83% of all tracked upstream modules (134/4740).**
-Production-only strict completion: **10.90%** (134/1229 production modules).
+**Current strict completion: 2.85% of all tracked upstream modules (135/4740).**
+Production-only strict completion: **10.98%** (135/1229 production modules).
 
 > This file is generated from `tools/inventory.json`; update the source ledger in `tools/port_status.json`, regenerate the inventory, then run `python3 tools/conversion_ledger.py`. Only `done` counts toward the percentage. `partial` is intentionally zero credit until its stated parity seams are closed.
 
@@ -9,10 +9,10 @@ Production-only strict completion: **10.90%** (134/1229 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 134 | 21 | 4585 | 2.83% | 45,834/1,910,919 done LOC |
-| Production modules | 134 | 21 | 1074 | 10.90% | 45,834/993,168 done LOC |
+| All tracked modules | 135 | 21 | 4584 | 2.85% | 45,896/1,910,919 done LOC |
+| Production modules | 135 | 21 | 1073 | 10.98% | 45,896/993,168 done LOC |
 
-Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-31T11:46:05`.
+Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-31T11:50:11`.
 
 ## Definition of 100.00%
 
@@ -4668,7 +4668,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `tools.clarify_gateway` | production | P2 | 605 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.clarify_tool` | production | P2 | 515 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `tools.close_preview_tool` | production | P2 | 59 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `tools.close_terminal_tool` | production | P2 | 62 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `tools.close_terminal_tool` | production | P2 | 62 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `tools.code_execution_tool` | production | P2 | 2,486 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.code_kernel` | production | P2 | 846 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.code_kernel_remote` | production | P2 | 498 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |

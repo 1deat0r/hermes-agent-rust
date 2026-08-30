@@ -67,6 +67,7 @@ pub fn session_search_check_expr() -> bool {
     true
 }
 pub mod clarify;
+pub mod close_terminal_tool;
 pub mod registry;
 pub mod schema_sanitizer;
 pub mod session_search;
