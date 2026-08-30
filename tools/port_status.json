@@ -1,309 +1,317 @@
 {
-  "agent.file_safety": {
-    "status": "done"
-  },
- "agent.redact": {
-   "status": "done"
- },
  "agent.auxiliary_client": {
-    "status": "partial"
-  },
- "agent.credential_pool": {
-    "status": "partial"
-  },
- "agent.errors": {
-    "status": "done"
-  },
- "agent.interrupt_compat": {
-    "status": "partial"
-  },
- "agent.kanban_stop": {
-    "status": "done"
-  },
- "agent.lmstudio_reasoning": {
-    "status": "done"
-  },
- "agent.manual_compression_feedback": {
-    "status": "done"
-  },
- "agent.message_content": {
-    "status": "done"
-  },
- "agent.portal_tags": {
-    "status": "partial"
-  },
- "agent.reasoning_summaries": {
-    "status": "done"
-  },
- "agent.tool_result_classification": {
-    "status": "done"
-  },
- "agent.turn_retry_state": {
-    "status": "done"
-  },
- "agent.verify_hooks": {
-    "status": "done"
-  },
- "agent.session_activity": {
-    "status": "done"
-  },
- "agent.ssl_verify": {
-    "status": "done"
-  },
-
-  "hermes_cli.__init__": {
-    "status": "partial"
-  },
-  "hermes_cli.build_info": {
-    "status": "done"
-  },
-  "hermes_cli.input_sanitize": {
-    "status": "done"
-  },
-  "hermes_cli.managed_scope": {
-    "status": "done"
-  },
-  "hermes_cli.model_search": {
-    "status": "done"
-  },
-  "hermes_cli.timeouts": {
-    "status": "done"
-  },
-  "hermes_constants": {
-    "status": "partial"
-  },
-  "hermes_logging": {
-    "status": "done"
-  },
-  "hermes_state": {
-    "status": "done"
-  },
-  "hermes_state_common": {
-    "status": "done"
-  },
-  "hermes_state_portability": {
-    "status": "done"
-  },
-  "hermes_state_schema": {
-    "status": "done"
-  },
-  "hermes_state_search": {
-    "status": "done"
-  },
-  "hermes_time": {
-    "status": "done"
-  },
-  "model_tools": {
-    "status": "done"
-  },
-  "providers.base": {
-    "status": "partial"
-  },
-  "providers.__init__": {
-    "status": "partial"
-  },
-  "plugins.model-providers.alibaba.__init__": {
-    "status": "done"
-  },
-  "plugins.model-providers.alibaba-coding-plan.__init__": {
-    "status": "done"
-  },
-  "plugins.model-providers.actual.__init__": {
-    "status": "done"
-  },
-  "plugins.model-providers.anthropic.__init__": {
-    "status": "done"
-  },
-  "plugins.model-providers.ai-gateway.__init__": {
-    "status": "done"
-  },
-  "plugins.model-providers.arcee.__init__": {
-    "status": "done"
-  },
-  "plugins.model-providers.azure-foundry.__init__": {
-    "status": "done"
-  },
-  "plugins.model-providers.bedrock.__init__": {
-    "status": "done"
-  },
-  "plugins.model-providers.copilot-acp.__init__": {
-    "status": "done"
-  },
- "plugins.model-providers.copilot.__init__": {
-   "status": "done"
+  "status": "partial"
  },
-  "plugins.model-providers.custom.__init__": {
-    "status": "done"
-  },
+ "agent.credential_pool": {
+  "status": "partial"
+ },
+ "agent.errors": {
+  "status": "done"
+ },
+ "agent.file_safety": {
+  "status": "done"
+ },
+ "agent.interrupt_compat": {
+  "status": "partial"
+ },
+ "agent.kanban_stop": {
+  "status": "done"
+ },
+ "agent.lmstudio_reasoning": {
+  "status": "done"
+ },
+ "agent.manual_compression_feedback": {
+  "status": "done"
+ },
+ "agent.message_content": {
+  "status": "done"
+ },
+ "agent.portal_tags": {
+  "status": "partial"
+ },
+ "agent.reasoning_summaries": {
+  "status": "done"
+ },
+ "agent.redact": {
+  "status": "done"
+ },
+ "agent.session_activity": {
+  "status": "done"
+ },
+ "agent.ssl_verify": {
+  "status": "done"
+ },
+ "agent.tool_result_classification": {
+  "status": "done"
+ },
+ "agent.turn_retry_state": {
+  "status": "done"
+ },
+ "agent.verify_hooks": {
+  "status": "done"
+ },
+ "hermes_cli.__init__": {
+  "status": "partial"
+ },
+ "hermes_cli.build_info": {
+  "status": "done"
+ },
+ "hermes_cli.input_sanitize": {
+  "status": "done"
+ },
+ "hermes_cli.lifecycle": {
+  "status": "done"
+ },
+ "hermes_cli.managed_scope": {
+  "status": "done"
+ },
+ "hermes_cli.model_search": {
+  "status": "done"
+ },
+ "hermes_cli.setup_hidden_env": {
+  "status": "done"
+ },
+ "hermes_cli.timeouts": {
+  "status": "done"
+ },
+ "hermes_cli.toolset_validation": {
+  "status": "done"
+ },
+ "hermes_constants": {
+  "status": "partial"
+ },
+ "hermes_logging": {
+  "status": "done"
+ },
+ "hermes_state": {
+  "status": "done"
+ },
+ "hermes_state_common": {
+  "status": "done"
+ },
+ "hermes_state_portability": {
+  "status": "done"
+ },
+ "hermes_state_schema": {
+  "status": "done"
+ },
+ "hermes_state_search": {
+  "status": "done"
+ },
+ "hermes_time": {
+  "status": "done"
+ },
+ "model_tools": {
+  "status": "done"
+ },
+ "plugins.model-providers.actual.__init__": {
+  "status": "done"
+ },
+ "plugins.model-providers.ai-gateway.__init__": {
+  "status": "done"
+ },
+ "plugins.model-providers.alibaba-coding-plan.__init__": {
+  "status": "done"
+ },
+ "plugins.model-providers.alibaba.__init__": {
+  "status": "done"
+ },
+ "plugins.model-providers.anthropic.__init__": {
+  "status": "done"
+ },
+ "plugins.model-providers.arcee.__init__": {
+  "status": "done"
+ },
+ "plugins.model-providers.azure-foundry.__init__": {
+  "status": "done"
+ },
+ "plugins.model-providers.bedrock.__init__": {
+  "status": "done"
+ },
+ "plugins.model-providers.copilot-acp.__init__": {
+  "status": "done"
+ },
+ "plugins.model-providers.copilot.__init__": {
+  "status": "done"
+ },
+ "plugins.model-providers.custom.__init__": {
+  "status": "done"
+ },
  "plugins.model-providers.deepinfra.__init__": {
-    "status": "done"
-  },
-  "plugins.model-providers.deepseek.__init__": {
-    "status": "done"
-  },
-  "plugins.model-providers.fireworks.__init__": {
-    "status": "done"
-  },
-  "plugins.model-providers.gemini.__init__": {
-    "status": "done"
-  },
-  "plugins.model-providers.gmi.__init__": {
-    "status": "done"
-  },
-  "plugins.model-providers.kilocode.__init__": {
-    "status": "done"
-  },
-  "plugins.model-providers.kimi-coding.__init__": {
-    "status": "done"
-  },
-  "plugins.model-providers.minimax.__init__": {
-    "status": "done"
-  },
-  "plugins.model-providers.novita.__init__": {
-    "status": "done"
-  },
-  "plugins.model-providers.nvidia.__init__": {
-    "status": "done"
-  },
-  "plugins.model-providers.ollama-cloud.__init__": {
-    "status": "done"
-  },
-  "plugins.model-providers.nous.__init__": {
-    "status": "done"
-  },
-  "plugins.model-providers.stepfun.__init__": {
-    "status": "done"
-  },
-  "plugins.model-providers.vertex.__init__": {
-    "status": "done"
-  },
-  "plugins.model-providers.openai-codex.__init__": {
-    "status": "done"
-  },
-  "plugins.model-providers.qwen-oauth.__init__": {
-    "status": "done"
-  },
-  "plugins.model-providers.upstage.__init__": {
-    "status": "done"
-  },
-  "plugins.model-providers.xiaomi.__init__": {
-    "status": "done"
-  },
-  "plugins.model-providers.xai.__init__": {
-    "status": "done"
-  },
-  "plugins.model-providers.zai.__init__": {
-    "status": "done"
-  },
-  "plugins.model-providers.huggingface.__init__": {
-    "status": "done"
-  },
-  "tools.ansi_strip": {
-    "status": "done"
-  },
-  "tools.audio_container": {
-    "status": "done"
-  },
-  "tools.binary_extensions": {
-    "status": "done"
-  },
-  "tools.budget_config": {
-    "status": "done"
-  },
-  "tools.clarify_tool": {
-    "status": "done"
-  },
-  "tools.computer_use.schema": {
-    "status": "done"
-  },
-  "tools.credential_files": {
-    "status": "partial"
-  },
-  "tools.daemon_pool": {
-    "status": "done"
-  },
-  "tools.debug_helpers": {
-    "status": "done"
-  },
-  "tools.delegation_output_schema": {
-    "status": "partial"
-  },
-  "tools.desktop_ui": {
-    "status": "done"
-  },
-  "tools.env_probe": {
-    "status": "done"
-  },
-  "tools.fal_common": {
-    "status": "done"
-  },
-  "tools.file_state": {
-    "status": "done"
-  },
-  "tools.interrupt": {
-    "status": "done"
-  },
-  "tools.mcp_schema_cache": {
-    "status": "done"
-  },
-  "tools.path_security": {
-    "status": "done"
-  },
-  "tools.read_extract": {
-    "status": "done"
-  },
-  "tools.read_preview_tool": {
-    "status": "done"
-  },
-  "tools.read_terminal_tool": {
-    "status": "done"
-  },
-  "tools.registry": {
-    "status": "done"
-  },
-  "tools.schema_sanitizer": {
-    "status": "done"
-  },
-  "tools.session_search_tool": {
-    "status": "done"
-  },
-  "tools.tool_result_storage": {
-    "status": "done"
-  },
-  "tools.tts_text_normalize": {
-    "status": "done"
-  },
-  "tools.slash_confirm": {
-    "status": "done"
-  },
-  "tools.terminal_hints": {
-    "status": "done"
-  },
-  "tools.thread_context": {
-    "status": "done"
-  },
-  "tools.threat_patterns": {
-    "status": "partial"
-  },
-  "tools.todo_tool": {
-    "status": "partial"
-  },
-  "tools.tool_backend_helpers": {
-    "status": "partial"
-  },
-  "tools.tool_output_limits": {
-    "status": "partial"
-  },
-  "tools.working_diff": {
-    "status": "done"
-  },
-  "toolset_distributions": {
-    "status": "done"
-  },
-  "toolsets": {
-    "status": "done"
-  },
-  "utils": {
-    "status": "done"
-  }
+  "status": "done"
+ },
+ "plugins.model-providers.deepseek.__init__": {
+  "status": "done"
+ },
+ "plugins.model-providers.fireworks.__init__": {
+  "status": "done"
+ },
+ "plugins.model-providers.gemini.__init__": {
+  "status": "done"
+ },
+ "plugins.model-providers.gmi.__init__": {
+  "status": "done"
+ },
+ "plugins.model-providers.huggingface.__init__": {
+  "status": "done"
+ },
+ "plugins.model-providers.kilocode.__init__": {
+  "status": "done"
+ },
+ "plugins.model-providers.kimi-coding.__init__": {
+  "status": "done"
+ },
+ "plugins.model-providers.minimax.__init__": {
+  "status": "done"
+ },
+ "plugins.model-providers.nous.__init__": {
+  "status": "done"
+ },
+ "plugins.model-providers.novita.__init__": {
+  "status": "done"
+ },
+ "plugins.model-providers.nvidia.__init__": {
+  "status": "done"
+ },
+ "plugins.model-providers.ollama-cloud.__init__": {
+  "status": "done"
+ },
+ "plugins.model-providers.openai-codex.__init__": {
+  "status": "done"
+ },
+ "plugins.model-providers.qwen-oauth.__init__": {
+  "status": "done"
+ },
+ "plugins.model-providers.stepfun.__init__": {
+  "status": "done"
+ },
+ "plugins.model-providers.upstage.__init__": {
+  "status": "done"
+ },
+ "plugins.model-providers.vertex.__init__": {
+  "status": "done"
+ },
+ "plugins.model-providers.xai.__init__": {
+  "status": "done"
+ },
+ "plugins.model-providers.xiaomi.__init__": {
+  "status": "done"
+ },
+ "plugins.model-providers.zai.__init__": {
+  "status": "done"
+ },
+ "providers.__init__": {
+  "status": "partial"
+ },
+ "providers.base": {
+  "status": "partial"
+ },
+ "tools.ansi_strip": {
+  "status": "done"
+ },
+ "tools.audio_container": {
+  "status": "done"
+ },
+ "tools.binary_extensions": {
+  "status": "done"
+ },
+ "tools.budget_config": {
+  "status": "done"
+ },
+ "tools.clarify_tool": {
+  "status": "done"
+ },
+ "tools.computer_use.schema": {
+  "status": "done"
+ },
+ "tools.credential_files": {
+  "status": "partial"
+ },
+ "tools.daemon_pool": {
+  "status": "done"
+ },
+ "tools.debug_helpers": {
+  "status": "done"
+ },
+ "tools.delegation_output_schema": {
+  "status": "partial"
+ },
+ "tools.desktop_ui": {
+  "status": "done"
+ },
+ "tools.env_probe": {
+  "status": "done"
+ },
+ "tools.fal_common": {
+  "status": "done"
+ },
+ "tools.file_state": {
+  "status": "done"
+ },
+ "tools.interrupt": {
+  "status": "done"
+ },
+ "tools.mcp_schema_cache": {
+  "status": "done"
+ },
+ "tools.path_security": {
+  "status": "done"
+ },
+ "tools.read_extract": {
+  "status": "done"
+ },
+ "tools.read_preview_tool": {
+  "status": "done"
+ },
+ "tools.read_terminal_tool": {
+  "status": "done"
+ },
+ "tools.registry": {
+  "status": "done"
+ },
+ "tools.schema_sanitizer": {
+  "status": "done"
+ },
+ "tools.session_search_tool": {
+  "status": "done"
+ },
+ "tools.slash_confirm": {
+  "status": "done"
+ },
+ "tools.terminal_hints": {
+  "status": "done"
+ },
+ "tools.thread_context": {
+  "status": "done"
+ },
+ "tools.threat_patterns": {
+  "status": "partial"
+ },
+ "tools.todo_tool": {
+  "status": "partial"
+ },
+ "tools.tool_backend_helpers": {
+  "status": "partial"
+ },
+ "tools.tool_output_limits": {
+  "status": "partial"
+ },
+ "tools.tool_result_storage": {
+  "status": "done"
+ },
+ "tools.tts_text_normalize": {
+  "status": "done"
+ },
+ "tools.working_diff": {
+  "status": "done"
+ },
+ "toolset_distributions": {
+  "status": "done"
+ },
+ "toolsets": {
+  "status": "done"
+ },
+ "utils": {
+  "status": "done"
+ }
 }

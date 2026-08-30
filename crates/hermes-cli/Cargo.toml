@@ -11,6 +11,8 @@ fancy-regex = "0.14"
 hermes-constants = { path = "../hermes-constants" }
 hermes-utils = { path = "../hermes-utils" }
 serde_json = { workspace = true }
+log.workspace = true
+parking_lot = "0.12"
 
 [dev-dependencies]
 hermes-utils = { path = "../hermes-utils" }

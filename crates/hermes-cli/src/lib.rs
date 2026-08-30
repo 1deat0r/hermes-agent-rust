@@ -6,8 +6,11 @@
 
 pub mod build_info;
 pub mod input_sanitize;
+pub mod lifecycle;
 pub mod model_search;
+pub mod setup_hidden_env;
 pub mod timeouts;
+pub mod toolset_validation;
 
 /// PARITY: `hermes_cli.__version__` (upstream `hermes_cli/__init__.py` line 17),
 /// the single string `scripts/release.py` regex-bumps at release time.

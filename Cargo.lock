@@ -513,6 +513,8 @@ dependencies = [
  "fancy-regex",
  "hermes-constants",
  "hermes-utils",
+ "log",
+ "parking_lot",
  "serde_json",
  "tempfile",
 ]

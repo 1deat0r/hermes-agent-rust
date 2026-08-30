@@ -1,6 +1,6 @@
 # Hermes Agent Rust — Next-session handoff
 
-Date: 2026-08-28 (Pacific/Auckland), session 4d7.
+Date: 2026-08-30 (Pacific/Auckland), session 4d8.
 
 ## Resume point
 
@@ -8,18 +8,30 @@ Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
 
 Pinned upstream commit: `b9aa928`. The AGENTS file names `/home/mustbearn/Projects/Research/hermes-agent-repo`, but that path is absent on this machine. The checkout actually used and validated is `/run/media/mustbearnold/Projects/Research/hermes-agent-repo`. Set `HERMES_UPSTREAM` to that path when regenerating inventory data.
 
-Current branch/HEAD: `main` carries the two additional `hermes_cli` leaves
-(`timeouts`, `model_search`) committed with this documentation checkpoint.
-Published history before it: `2468dc7` (+ `aedb1f2` handoff),
-`2747f77` (+ `2b28e63` handoff), `fee2b4f`
-(+ `27c1329` handoff), `91b472e` (+ `c63f3a3`), `8a9e8f3` (+ `0aea517`),
-`448a4f6` (+ `a284322`). Confirm with
+Current branch/HEAD: `main` carries the three additional `hermes_cli` leaves
+(`lifecycle`, `toolset_validation`, `setup_hidden_env`) committed with this
+documentation checkpoint. Published history before it: `a06d8fb`
+(4d7's `timeouts`/`model_search` unit, pushed), `aedb1f2` (+ `2468dc7`),
+`2b28e63` (+ `2747f77`), `27c1329` (+ `fee2b4f`), `c63f3a3` (+ `91b472e`),
+`0aea517` (+ `8a9e8f3`), `a284322` (+ `448a4f6`). Confirm with
 `git ls-remote origin refs/heads/main` after the push.
 
-Latest synchronized source unit: `hermes_cli.timeouts` and
+Latest synchronized source unit: `hermes_cli.lifecycle`,
+`hermes_cli.toolset_validation`, and `hermes_cli.setup_hidden_env` ported
+`done` — 23 more red-first parity tests (12 + 7 + 4), `cargo clippy -p
+hermes-cli --all-targets` still clean, workspace at 1,308 tests / 5 ignored
+and **8.25%** production strict completion (91 done). The crate gains the
+`log` facade and `parking_lot`; both sit below the Hermes layer so the
+dependency-free-leaf discipline holds. Lifecycle's three call-time imports
+(`observability`, `plugins`, `agent.relay_runtime`) are installable seams:
+upstream puts the imports inside its `try` blocks, so an uninstalled slot
+reproduces the `ImportError` arm (same warning, fail-open) instead of
+skipping silently, and `current_profile_key` is fallible because the source
+evaluates it inside the same `try` as `finalize_conversation`.
+Previous synchronized source unit: `hermes_cli.timeouts` and
 `hermes_cli.model_search` ported `done` into the new crate — 9 more red-first
-parity tests, `cargo clippy -p hermes-cli --all-targets` still clean, workspace
-at 1,285 tests / 5 ignored and **7.98%** production strict completion.
+parity tests, workspace at 1,285 tests / 5 ignored and **7.98%** production
+strict completion (published as `a06d8fb` this session).
 Previous synchronized source unit: the `hermes-cli` crate opened as a
 dependency-free leaf with `hermes_cli/__init__.py` (version + release date,
 `_ensure_utf8` pending), `hermes_cli/build_info.py` (done), and
@@ -248,6 +260,31 @@ GitHub `11245d8` (`plugins.model-providers.arcee.__init__`), local `ec9db5aa`
 recorded above with the config/Z.AI source commit and its verified tree.
 
 ## What landed this session
+
+Session 4d8 published 4d7's tree (`a06d8fb`) and then took three more
+oracle-backed leaves in the same dependency-free crate, all `done`:
+`hermes_cli/lifecycle.py` (the observability→plugins dispatch order, the
+core-before-export finalize order, and every fail-open arm, with the three
+call-time imports as installable seams — uninstalled slots model the source's
+`ImportError` arms because upstream wraps its imports in the same `try`
+blocks), `hermes_cli/toolset_validation.py` (the #38798 corruption oracle
+with byte-exact warnings, injected `is_valid_toolset` predicate, and the
+skipped-names-still-count-against-validity subtlety), and
+`hermes_cli/setup_hidden_env.py` (the 13-suffix presentation hide, suffix
+matching so unenumerated plugin platforms get it for free).
+
+Two fidelity details that changed the code rather than the tests: the
+lifecycle seams warn-and-fail-open when a slot is uninstalled (the
+`ImportError` arm), never silently skip; and `session_id_of` reproduces
+`str(kwargs.get("session_id") or "")` — Python `or`-falsiness for
+missing/`""`/`0`/`False`/empty containers, `str()` for the survivors
+(`5` → `"5"`), with container-repr formatting documented as unreachable.
+
+The crate gained `log` (facade only; the sink stays with `hermes-logging`)
+and `parking_lot` for the seam slots — both below the Hermes layer, so the
+leaf discipline holds. `serde_json`'s workspace `preserve_order` feature
+turns out to match Python dict iteration, which toolset_validation's warning
+order relies on.
 
 Session 4d7 stayed inside the crate opened by 4d6 and took its next two
 oracle-backed leaves: `hermes_cli/timeouts.py` (three call forms — process path,

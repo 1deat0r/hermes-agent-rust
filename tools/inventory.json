@@ -1,20 +1,20 @@
 {
  "generated_from": "/run/media/mustbearnold/Projects/Research/hermes-agent-repo",
- "generated_at": "2026-08-30T12:24:38",
+ "generated_at": "2026-08-30T12:47:30",
  "summary": {
   "modules": 3882,
   "total_lines": 1510733,
   "production_modules": 1103,
   "production_lines": 843792,
   "status_counts": {
-   "done": 88,
+   "done": 91,
    "partial": 14,
-   "missing": 3780
+   "missing": 3777
   },
   "prod_status_counts": {
-   "done": 88,
+   "done": 91,
    "partial": 14,
-   "missing": 1001
+   "missing": 998
   },
   "packages": {
    "gateway": {
@@ -35,8 +35,8 @@
     "lines": 207724,
     "modules": 266,
     "status": {
-     "missing": 260,
-     "done": 5,
+     "missing": 257,
+     "done": 8,
      "partial": 1
     }
    },
@@ -22531,7 +22531,7 @@
   "hermes_cli.toolset_validation": {
    "lines": 74,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "gateway.platforms.qqbot.constants": {
@@ -23653,7 +23653,7 @@
   "hermes_cli.lifecycle": {
    "lines": 63,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "hermes_cli.subcommands.gui": {
@@ -24397,7 +24397,7 @@
   "hermes_cli.setup_hidden_env": {
    "lines": 56,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "optional-skills.mcp.fastmcp.scripts.scaffold_fastmcp": {

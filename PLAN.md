@@ -473,6 +473,9 @@ The crate opened as a dependency-free leaf so upstream's own layering is honoure
 | `hermes_cli/input_sanitize.py` (70 LOC) | ✅ | `hermes_cli::input_sanitize`; 7 parity tests (`unit`) mirror `tests/hermes_cli/test_input_sanitize.py` in full (plain text, embedded `literal[200~tag`, the #62557 CJK corruption tail, preserved trailing punctuation, the combined sanitizer) plus the source-derived canonical/ESC/caret wrapper forms, the boundary-only degraded strip, the `min_repeats` threshold, and the dangling-`[` trim. The four patterns keep their `(?=$\|[…])` lookaheads, so this crate depends on `fancy-regex` exactly as `hermes-tools` does, and the run collapses markers on code points rather than bytes |
 | `hermes_cli/timeouts.py` (82 LOC) | ✅ | `hermes_cli::timeouts`; 6 parity tests (`unit`/`mock`) assert the same precedence the upstream oracle exercises through `AIAgent._resolved_api_call_timeout` — per-model `timeout_seconds` wins, then the provider `request_timeout_seconds`, with the stale getter using `stale_timeout_seconds` at both levels as the source does — plus `float()` coercion accept/reject shapes (`"45.5"` yes, `"abc"`/mapping no, `True` → `1.0` because Python floats bools), non-positive rejection, non-mapping provider entries aborting to `None`, and a missing or malformed config file failing open. PENDING ORACLE: the upstream test's `build_anthropic_client(timeout=…)` arm and its `AIAgent` reload cases land with `agent.anthropic_adapter` and `run_agent` |
 | `hermes_cli/model_search.py` (50 LOC) | ✅ | `hermes_cli::model_search`; 3 parity tests (`unit`) mirror `tests/hermes_cli/test_model_search.py` for the alias surface (ordinary ids unchanged, `k3` → `k3 kimi-k3 kimi` with case-insensitive lookup and preserved wire spelling, canonical slug = first alias lowercased, identity-and-lowercase otherwise, blank passthrough). The `_filter_indices` half of that oracle belongs to the unported `hermes_cli.curses_ui`. The table also records the upstream cross-language sync duty with `ui-tui`/`web` `model-search-text.ts`, which is UI-parity scope |
+| `hermes_cli/lifecycle.py` (63 LOC) | ✅ | `hermes_cli::lifecycle`; 12 parity tests (`unit`/`mock`) mirror `tests/hermes_cli/test_lifecycle.py` (builtin→plugin notify order; finalize closes core before the plugin export, with `profile_key` from the injected coordinator) and the fail-open arms: observer failure, inspection failure, relay failure, and the missing/empty/`0`/`False` session ids — `str(kwargs.get("session_id") or "")` reproduces Python `or`-falsiness, and truthy non-strings stringify (`str(5)` → `"5"`). The three call-time imports (`observability`, `plugins`, `agent.relay_runtime`) are installable seams: upstream puts the imports *inside* its `try` blocks, so an uninstalled slot reproduces the `ImportError` arm (same warning, fail-open) instead of skipping silently, and `current_profile_key` is fallible because upstream evaluates it inside the same `try` as `finalize_conversation` — one shared "Core Relay session finalization failed" channel. `plugins.invoke_hook` propagates errors because upstream guards nothing there; the `hermes_cli.plugins` registry itself is PENDING for the plugin-registry crate |
+| `hermes_cli/toolset_validation.py` (75 LOC) | ✅ | `hermes_cli::toolset_validation`; 7 parity tests (`unit`) mirror `tests/hermes_cli/test_toolset_validation.py` in full (the #38798 `cli: ["hermes"]` corruption warns, suggests `hermes-cli`, and trips the zero-valid-toolsets safety net; mixed valid/invalid flags only the invalid) plus byte-exact warning strings (U+2014 em dashes), the scalar entry form (`raw if isinstance(raw, list) else [raw]`), non-mapping/empty inputs yielding nothing, non-string/empty names skipped but still counting against validity, and the no-suggestion arm when `hermes-<platform>` is also unknown. The `is_valid_toolset` predicate is injected exactly as the source's decoupled-helper pattern; warnings follow config insertion order via serde_json `preserve_order` |
+| `hermes_cli/setup_hidden_env.py` (57 LOC) | ✅ | `hermes_cli::setup_hidden_env`; 4 parity tests (`unit`) mirror `tests/hermes_cli/test_setup_hidden_env.py`'s predicate oracle — the parametrized knob list and the IRC/SimpleX/ntfy/LINE suffix sweep — plus credentials/allowlists staying visible, leading-underscore suffix boundaries, and every suffix hiding a canonical example. The 13-entry `SETUP_HIDDEN_ENV_SUFFIXES` table is exported in upstream order. The card/wizard/gateway halves of the oracle drive `web_server`, the setup wizard, and the gateway env reader — PENDING until those surfaces port |
 ### hermes-providers base (Phase 2, upstream @ b9aa928)
 
 | Module / upstream surface | Status | Rust home, oracle, and evidence tier |
@@ -618,6 +621,36 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 + the exact command, e.g. `cargo test -p hermes-time (unit)`.
 
 ## 7. Session log
+
+- 2026-08-30 (session 4d8): Published 4d7's tree first (`a06d8fb`), then took
+  the next three oracle-backed `hermes_cli` leaves in the same
+  dependency-free crate: `hermes_cli/lifecycle.py`,
+  `hermes_cli/toolset_validation.py`, and `hermes_cli/setup_hidden_env.py`,
+  all `done`, 23 new red-first parity tests (12 + 7 + 4). Production strict
+  completion moves 7.98% → 8.25% (91 done). The crate gains `log` (the
+  facade; the sink stays with `hermes-logging`) and `parking_lot` for the
+  seam slots — both below the Hermes layer, so the leaf discipline holds.
+  Fidelity points worth keeping visible: upstream's lifecycle wraps the
+  *imports* in its `try` blocks, so an uninstalled seam slot reproduces the
+  `ImportError` arm (same warning, fail-open) rather than skipping silently,
+  and `current_profile_key` is fallible because the source evaluates it
+  inside the same `try` as `finalize_conversation` — one shared warning
+  channel; `str(kwargs.get("session_id") or "")` reproduces Python
+  `or`-falsiness (missing/`""`/`0`/`False` close no conversation; `5`
+  stringifies); toolset_validation asserts the warning strings byte-exact
+  including the U+2014 em dashes, and skipped non-string/empty names still
+  count against validity so an all-unusable mapping trips the zero-toolsets
+  safety net; warnings follow config insertion order (serde_json
+  `preserve_order` = Python dict iteration).
+  Evidence: `cargo test -p hermes-cli` → 44 tests green (21 before);
+  `cargo clippy -p hermes-cli --all-targets` clean; `rustfmt --edition 2021`
+  clean on all changed files; the serialized
+  `/home/mustbearnold/.cargo/bin/cargo test --workspace -- --test-threads=1`
+  passed 1,308 tests with 5 intentional ignores; `git diff --check` clean.
+  Ledger: 91 done / 14 partial / 3,777 tracked (**2.34%**) and 91 done /
+  14 partial / 998 production (**8.25%**). Next in the same shape:
+  `tools.browser_camofox_state`, `tools.focus_pane_tool`,
+  `gateway.cwd_placeholder`, and the remaining small `hermes_cli` leaves.
 
 - 2026-08-28 (session 4d7): Kept going in the same crate with two more
   `hermes_cli` leaves: `hermes_cli/timeouts.py` and
