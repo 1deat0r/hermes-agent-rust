@@ -28,7 +28,7 @@ this documentation checkpoint. Previous: `d138528` (4d9's
 
 ## What landed this session (4da)
 
-Thirty-four units across four crates, all red-first, 217 new parity tests:
+Thirty-six units across four crates, all red-first, 222 new parity tests:
 
 - `hermes_cli/main.py` `_read_packed_ref` + `_read_git_revision_fingerprint`
   → `hermes-cli::git_revision` (8 tests, source-derived — no dedicated
@@ -228,6 +228,18 @@ probing is a raw HTTP/1.0 GET over TcpStream where ANY response (even
 group (10s/5s deadlines). Start-phase tests use distinct loopback ports —
 parallel tests sharing a port cross-talk via the other's server.
 
+Batch 22: `hermes_cli/dashboard_auth/` package opened — `base.py`
+(`DashboardAuthProvider` trait with capability flags and loud unimplemented
+defaults; Session/TokenPrincipal/LoginStart; ProviderError→503,
+InvalidCodeError→400, InvalidCredentialsError→401-generic,
+RefreshExpiredError semantics; assert_protocol_compliance pins
+non-empty name/display_name) and `registry.py` (registration order,
+duplicate rejection, token/session capability subsets, fail-closed token
+plane, clear_providers) — 5 source-derived tests, gap noted. The crate
+gains `async-trait` + `futures`(executor). PENDING: middleware, cookies,
+routes, login_page, native_flow, token_auth, ws_tickets, prefix, audit
+(web-server surface).
+
 `hermes-gateway` also gains `hermes-cli`, `hermes-constants`, `hermes-time`,
 `serde_json`, `libc` — all still below the agent/tools layers.
 `tools.close_terminal_tool` was skipped: blocked on the 2,937-LOC
@@ -237,9 +249,9 @@ parallel tests sharing a port cross-talk via the other's server.
 
 Session 4da **changed the ledger**: 99 done / 15 partial / 3,768 missing
 tracked modules and 99 done / 15 partial / 989 missing production modules —
-**3.17%** tracked and **11.15%** production strict completion — regenerated
+**3.25%** tracked and **11.42%** production strict completion — regenerated
 against the pinned `b9aa928` worktree (commands above), with
-`cargo build --workspace` and the serialized workspace run green at 1,542
+`cargo build --workspace` and the serialized workspace run green at 1,547
 tests / 6 ignored (the 6th is skill_provenance's intentional `ignore` doc
 example).
 
@@ -258,11 +270,19 @@ example).
 ## Current conversion ledger
 
 99 done / 15 partial / 3,768 missing tracked (**2.55%** strict completion);
-123 done / 19 partial / 961 missing production (**11.15%**). Regenerated via
+126 done / 19 partial / 958 missing production (**11.42%**). Regenerated via
 `tools/inventory.sh` (pinned worktree) + `python3 tools/conversion_ledger.py`.
 
 ## Fidelity notes
 
+- Session 4da (batch 22): the auth trait's default
+  `complete_password_login`/`verify_token` arms keep upstream's fail-loud
+  contract (NotImplementedError, never silent acceptance); unrecognised
+  tokens are Ok(None) — never errors — so the seam falls through providers
+  in registration order; the registry's token plane fails closed (401)
+  when no token provider is registered. `assert_protocol_compliance` can
+  only dynamically pin the name/display_name attributes (Rust traits
+  enforce the method set at compile time).
 - Session 4da (batch 21): the verify runner's most important find: a
   post-spawn `setpgid` loses the race against the child's exec, and the
   subsequent `killpg` then signals the RUNNER's own group. Rust's
@@ -400,9 +420,9 @@ example).
 
 - `/home/mustbearnold/.cargo/bin/cargo build --workspace` — green.
 - `cargo test -p hermes-gateway -p hermes-cli -p hermes-tools -p
-  hermes-agent` — 217 new tests green.
+  hermes-agent` — 222 new tests green.
 - Serialized `/home/mustbearnold/.cargo/bin/cargo test --workspace --
-  --test-threads=1` — 1,542 passed, 0 failed, 6 intentional ignores.
+  --test-threads=1` — 1,547 passed, 0 failed, 6 intentional ignores.
 - `cargo clippy -p hermes-gateway -p hermes-cli --all-targets` — clean on
   all new code.
 - `rustfmt --edition 2021 --check` — clean on all changed files.

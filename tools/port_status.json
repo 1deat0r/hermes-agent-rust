@@ -143,6 +143,18 @@
  "hermes_cli.colors": {
   "status": "done"
  },
+ "hermes_cli.dashboard_auth": {
+  "status": "partial"
+ },
+ "hermes_cli.dashboard_auth.__init__": {
+  "status": "done"
+ },
+ "hermes_cli.dashboard_auth.base": {
+  "status": "done"
+ },
+ "hermes_cli.dashboard_auth.registry": {
+  "status": "done"
+ },
  "hermes_cli.default_soul": {
   "status": "done"
  },
