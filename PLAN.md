@@ -640,7 +640,7 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 ## 7. Session log
 
-- 2026-08-31 (session 4da): Thirty-six units across four crates, all red-first:
+- 2026-08-31 (session 4da): Thirty-eight units across four crates, all red-first:
   batch 1 — the `hermes_cli/main.py` private git-fingerprint helpers
   (`_read_packed_ref`, `_read_git_revision_fingerprint`) into
   `hermes-cli::git_revision` (8 tests), then `gateway/code_skew.py` (10
@@ -715,14 +715,14 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   (the stale `/home/mustbearn` default in `tools/inventory.sh`/AGENTS.md
   was corrected to the current checkout path).
   Evidence: `cargo test -p hermes-gateway -p hermes-cli -p hermes-tools -p
-  hermes-agent` → 222 new tests green; `cargo clippy -p hermes-gateway -p hermes-cli -p
+  hermes-agent` → 230 new tests green; `cargo clippy -p hermes-gateway -p hermes-cli -p
   hermes-tools --all-targets` clean on all new code; `rustfmt --edition
   2021` clean on all changed files; serialized
   `/home/mustbearnold/.cargo/bin/cargo test --workspace -- --test-threads=1`
-  passed 1,547 tests with 6 intentional ignores (the new one is
+  passed 1,555 tests with 6 intentional ignores (the new one is
   skill_provenance's `ignore` doc example); `git diff --check` clean.
-  Ledger: 126 done / 19 partial / 3,737 tracked (**3.25%**) and 126 done /
-  19 partial / 958 production (**11.42%**). Next: more small `tools/`/
+  Ledger: 127 done / 20 partial / 3,735 tracked (**3.27%**) and 127 done /
+  20 partial / 956 production (**11.51%**). Next: more small `tools/`/
   `gateway/` leaves (e.g. `gateway.readiness`, `gateway.rich_sent_store`
   neighbors `gateway.code_skew` consumers, `tools.open_preview_tool`), the
   `tools.process_registry` mega-module (unblocks

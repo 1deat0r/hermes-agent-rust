@@ -624,6 +624,7 @@ dependencies = [
  "hermes-utils",
  "libc",
  "log",
+ "once_cell",
  "parking_lot",
  "regex",
  "rusqlite",

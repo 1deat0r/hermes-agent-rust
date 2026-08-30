@@ -1,20 +1,20 @@
 {
  "generated_from": "/run/media/mustbearnold/Projects/Research/hermes-agent-repo",
- "generated_at": "2026-08-31T10:43:11",
+ "generated_at": "2026-08-31T10:49:01",
  "summary": {
   "modules": 4740,
   "total_lines": 1910919,
   "production_modules": 1229,
   "production_lines": 993168,
   "status_counts": {
-   "done": 126,
-   "partial": 19,
-   "missing": 4595
+   "done": 127,
+   "partial": 20,
+   "missing": 4593
   },
   "prod_status_counts": {
-   "done": 126,
-   "partial": 19,
-   "missing": 1084
+   "done": 127,
+   "partial": 20,
+   "missing": 1082
   },
   "packages": {
    "gateway": {
@@ -44,9 +44,9 @@
     "lines": 253446,
     "modules": 296,
     "status": {
-     "missing": 277,
-     "partial": 2,
-     "done": 17
+     "missing": 275,
+     "partial": 3,
+     "done": 18
     }
    },
    "tui_gateway": {
@@ -14538,7 +14538,7 @@
   "hermes_cli.dashboard_auth.prefix": {
    "lines": 232,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "partial",
    "is_test": false
   },
   "tui_gateway.synthetic_turn": {
@@ -29937,7 +29937,7 @@
   "hermes_cli.dashboard_auth.public_paths": {
    "lines": 60,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "scripts.observability.otel_capture_collector": {

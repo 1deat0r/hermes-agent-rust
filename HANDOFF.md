@@ -28,7 +28,7 @@ this documentation checkpoint. Previous: `d138528` (4d9's
 
 ## What landed this session (4da)
 
-Thirty-six units across four crates, all red-first, 222 new parity tests:
+Thirty-eight units across four crates, all red-first, 230 new parity tests:
 
 - `hermes_cli/main.py` `_read_packed_ref` + `_read_git_revision_fingerprint`
   → `hermes-cli::git_revision` (8 tests, source-derived — no dedicated
@@ -240,6 +240,14 @@ gains `async-trait` + `futures`(executor). PENDING: middleware, cookies,
 routes, login_page, native_flow, token_auth, ws_tickets, prefix, audit
 (web-server surface).
 
+Batch 23: `hermes_cli/dashboard_auth/public_paths.py` → done (the shared
+allowlist both auth middlewares import — the drift fix for the portal's
+wildcard liveness probe; minimal by contract: uptime-probe/SPA/curl safe)
+and `prefix.py` → **partial** (X-Forwarded-Prefix normalisation with the
+256-char budget and `..`/`//`/quote/whitespace rejection; public_url
+resolution env→config with malformed fall-through; env-only resolution
+until the hermes_cli.config seam ports — the config leg is parameterised).
+
 `hermes-gateway` also gains `hermes-cli`, `hermes-constants`, `hermes-time`,
 `serde_json`, `libc` — all still below the agent/tools layers.
 `tools.close_terminal_tool` was skipped: blocked on the 2,937-LOC
@@ -249,9 +257,9 @@ routes, login_page, native_flow, token_auth, ws_tickets, prefix, audit
 
 Session 4da **changed the ledger**: 99 done / 15 partial / 3,768 missing
 tracked modules and 99 done / 15 partial / 989 missing production modules —
-**3.25%** tracked and **11.42%** production strict completion — regenerated
+**3.27%** tracked and **11.51%** production strict completion — regenerated
 against the pinned `b9aa928` worktree (commands above), with
-`cargo build --workspace` and the serialized workspace run green at 1,547
+`cargo build --workspace` and the serialized workspace run green at 1,555
 tests / 6 ignored (the 6th is skill_provenance's intentional `ignore` doc
 example).
 
@@ -270,11 +278,18 @@ example).
 ## Current conversion ledger
 
 99 done / 15 partial / 3,768 missing tracked (**2.55%** strict completion);
-126 done / 19 partial / 958 missing production (**11.42%**). Regenerated via
+127 done / 20 partial / 956 missing production (**11.51%**). Regenerated via
 `tools/inventory.sh` (pinned worktree) + `python3 tools/conversion_ledger.py`.
 
 ## Fidelity notes
 
+- Session 4da (batch 23): prefix normalisation strips ALL trailing
+  slashes (Python `.rstrip("/"))` and rejects `..`/`//`/quote/whitespace
+  before the length budget; public_url uses a hard "no" on hostile
+  characters rather than a soft parse — the caller must treat "" as
+  "reconstruct from request", never "explicitly no public URL". The
+  once-per-(source,value) warning dedup is preserved (resolve runs per
+  request).
 - Session 4da (batch 22): the auth trait's default
   `complete_password_login`/`verify_token` arms keep upstream's fail-loud
   contract (NotImplementedError, never silent acceptance); unrecognised
@@ -420,9 +435,9 @@ example).
 
 - `/home/mustbearnold/.cargo/bin/cargo build --workspace` — green.
 - `cargo test -p hermes-gateway -p hermes-cli -p hermes-tools -p
-  hermes-agent` — 222 new tests green.
+  hermes-agent` — 230 new tests green.
 - Serialized `/home/mustbearnold/.cargo/bin/cargo test --workspace --
-  --test-threads=1` — 1,547 passed, 0 failed, 6 intentional ignores.
+  --test-threads=1` — 1,555 passed, 0 failed, 6 intentional ignores.
 - `cargo clippy -p hermes-gateway -p hermes-cli --all-targets` — clean on
   all new code.
 - `rustfmt --edition 2021 --check` — clean on all changed files.

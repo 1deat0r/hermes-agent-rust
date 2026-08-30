@@ -152,6 +152,12 @@
  "hermes_cli.dashboard_auth.base": {
   "status": "done"
  },
+ "hermes_cli.dashboard_auth.prefix": {
+  "status": "partial"
+ },
+ "hermes_cli.dashboard_auth.public_paths": {
+  "status": "done"
+ },
  "hermes_cli.dashboard_auth.registry": {
   "status": "done"
  },
