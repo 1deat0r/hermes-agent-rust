@@ -541,7 +541,9 @@ dependencies = [
  "hermes-state",
  "hermes-time",
  "libc",
+ "rusqlite",
  "serde_json",
+ "serde_yaml",
  "tempfile",
 ]
 

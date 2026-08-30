@@ -59,6 +59,9 @@
  "gateway.cwd_placeholder": {
   "status": "done"
  },
+ "gateway.readiness": {
+  "status": "done"
+ },
  "gateway.rich_sent_store": {
   "status": "done"
  },

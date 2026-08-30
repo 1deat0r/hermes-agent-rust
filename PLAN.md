@@ -491,6 +491,7 @@ The gateway crate opened ahead of Phase 4 as a dependency-free leaf, the same pr
 | `hermes_cli/main.py` `_read_packed_ref` + `_read_git_revision_fingerprint` (main.py marked partial) | ✅ | `hermes_cli::git_revision`; 8 parity tests (`unit`, source-derived — no dedicated upstream test file; gap noted). Real `.git` fixtures: detached HEAD `git:HEAD:<sha>`, loose refs in worktree gitdir, packed-refs (comments/peel lines skipped), the `unresolved` marker, worktree `.git`-file indirection with `commondir` resolution, and OSError fail-open to `None`. Upstream keeps the two helpers private inside `main.py`; public here because `gateway/code_skew.py` imports one across the package boundary |
 | tools/skill_provenance.py (79 LOC) | ✅ | `hermes-tools::skill_provenance` (stub filled); 5 parity tests (`unit`) mirror `tests/tools/test_skill_provenance.py` — set/get round-trip, the `origin or "foreground"` set-boundary coercion, nested set/reset restore order, and context isolation (a scoped thread stands in for `contextvars.copy_context().run`); the reset token carries the full prior value like `ContextVar.reset(token)`. `run_agent`'s set sites stay PENDING with that module |
 | gateway/session_stall.py (121 LOC) | ✅ | `hermes-gateway::session_stall`; 8 parity tests (`unit`) mirror the direct policy cases in `tests/gateway/test_session_stall_watchdog.py` — emit requires timeout>0 + pending inbound + not-already-notified + known idle ≥ timeout; clear fires on pending-gone or resumed activity, holds the latch on unknown idle; the #72016 copy with floor-divide minutes (min 1); and idle resolution from the shared #72039 snapshot only — `seconds_since_activity` preferred (numeric strings accepted, non-finite/negative handled), `last_activity_at`/`last_activity_ts` fallback, no turn-start/pending-inbound clocks. The `GatewayRunner._check_session_stalls` notify-once loop stays PENDING with `gateway.run` |
+| gateway/readiness.py (138 LOC) | ✅ | `hermes-gateway::readiness` (gains `rusqlite`, `serde_yaml`); 9 parity tests (`unit`) mirror both cases in `tests/gateway/test_readiness.py` — the healthy local runtime (overall `ok`, queue counters) and the degraded config/stopped-gateway path (file left byte-identical, no destructive repair) — plus source-derived probes: uninitialized home keeps `not initialized`/`using defaults` detail arms and touches no disk, a corrupt `state.db` degrades via the read-only URI probe without repair, empty config documents count as defaults (Python `None`), non-mapping top level degrades, `draining` is an ok gateway state, connected-platform counting honors the `state or status` `or`-chain case-insensitively with non-dict values skipped, blank models degrade, and negative queue counters clamp via `max(0, int(...))`. Probe notes preserved: read-only state-db schema query (never competes with writers; the fd-leak bug class is structurally impossible with rusqlite's RAII), `shutil.disk_usage` semantics (`free` = `f_bavail`, 90.0% degraded threshold), and exception *type labels* only in details, never messages |
 
 ### hermes-providers base (Phase 2, upstream @ b9aa928)
 
@@ -638,7 +639,7 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 ## 7. Session log
 
-- 2026-08-31 (session 4da): Six units across three crates, all red-first:
+- 2026-08-31 (session 4da): Seven units across three crates, all red-first:
   batch 1 — the `hermes_cli/main.py` private git-fingerprint helpers
   (`_read_packed_ref`, `_read_git_revision_fingerprint`) into
   `hermes-cli::git_revision` (8 tests), then `gateway/code_skew.py` (10
@@ -666,19 +667,24 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   guards/fail-open arms mirror Python falsiness exactly; session_stall's
   idle resolution accepts numeric strings (Python `float()`), falls through
   on non-finite/non-numeric `seconds_since_activity`, and clamps negative
-  idle to 0.0. Process note: upstream HEAD has advanced far past the pin,
+  idle to 0.0. Batch 3 — `gateway/readiness.py` (9 tests): read-only URI
+  state-db probe with a 1s busy timeout, empty YAML documents count as
+  defaults (`safe_load` → None), `shutil.disk_usage` reproduced over
+  `statvfs` (`free` = `f_bavail`), and error details carry short type
+  labels only, never messages, per the module's security contract. The
+  crate gains `rusqlite` and `serde_yaml` for the probes. Process note: upstream HEAD has advanced far past the pin,
   so the inventory was regenerated against a pinned `b9aa928` git worktree
   (the stale `/home/mustbearn` default in `tools/inventory.sh`/AGENTS.md
   was corrected to the current checkout path).
   Evidence: `cargo test -p hermes-gateway -p hermes-cli -p hermes-tools` →
-  47 new tests green; `cargo clippy -p hermes-gateway -p hermes-cli -p
+  56 new tests green; `cargo clippy -p hermes-gateway -p hermes-cli -p
   hermes-tools --all-targets` clean on all new code; `rustfmt --edition
   2021` clean on all changed files; serialized
   `/home/mustbearnold/.cargo/bin/cargo test --workspace -- --test-threads=1`
-  passed 1,374 tests with 6 intentional ignores (the new one is
+  passed 1,383 tests with 6 intentional ignores (the new one is
   skill_provenance's `ignore` doc example); `git diff --check` clean.
-  Ledger: 99 done / 15 partial / 3,768 tracked (**2.55%**) and 99 done /
-  15 partial / 989 production (**8.98%**). Next: more small `tools/`/
+  Ledger: 100 done / 15 partial / 3,767 tracked (**2.58%**) and 100 done /
+  15 partial / 988 production (**9.07%**). Next: more small `tools/`/
   `gateway/` leaves (e.g. `gateway.readiness`, `gateway.rich_sent_store`
   neighbors `gateway.code_skew` consumers, `tools.open_preview_tool`), the
   `tools.process_registry` mega-module (unblocks

@@ -28,7 +28,7 @@ this documentation checkpoint. Previous: `d138528` (4d9's
 
 ## What landed this session (4da)
 
-Six units across three crates, all red-first, 47 new parity tests:
+Seven units across three crates, all red-first, 56 new parity tests:
 
 - `hermes_cli/main.py` `_read_packed_ref` + `_read_git_revision_fingerprint`
   → `hermes-cli::git_revision` (8 tests, source-derived — no dedicated
@@ -59,26 +59,34 @@ the prior value like `ContextVar.reset`) and `gateway/session_stall.py` →
 non-finite fall-through, negative-idle clamp; the `GatewayRunner`
 notify-once loop stays PENDING with `gateway.run`).
 
-`hermes-gateway` gains `hermes-cli`, `hermes-constants`, `hermes-time`,
-`serde_json`, `libc`, and `hermes-state` (dev) — all still below the
-agent/tools layers. `tools.close_terminal_tool` was skipped: blocked on the
-2,937-LOC `tools.process_registry`.
+Batch 3: `gateway/readiness.py` → `hermes-gateway::readiness` (9 tests
+mirroring both cases in `tests/gateway/test_readiness.py` plus
+source-derived probe cases: corrupt db degrades without repair, empty YAML
+= defaults, draining-is-ok gateway states, `state or status` connected
+counting, negative-counter clamps). The crate gains `rusqlite` and
+`serde_yaml` for the probes; `hermes-state` remains dev-only.
+
+`hermes-gateway` also gains `hermes-cli`, `hermes-constants`, `hermes-time`,
+`serde_json`, `libc` — all still below the agent/tools layers.
+`tools.close_terminal_tool` was skipped: blocked on the 2,937-LOC
+`tools.process_registry`.
 
 ## Exact working-tree state
 
 Session 4da **changed the ledger**: 99 done / 15 partial / 3,768 missing
 tracked modules and 99 done / 15 partial / 989 missing production modules —
-**2.55%** tracked and **8.98%** production strict completion — regenerated
+**2.58%** tracked and **9.07%** production strict completion — regenerated
 against the pinned `b9aa928` worktree (commands above), with
-`cargo build --workspace` and the serialized workspace run green at 1,374
+`cargo build --workspace` and the serialized workspace run green at 1,383
 tests / 6 ignored (the 6th is skill_provenance's intentional `ignore` doc
 example).
 
 ## Next actions, in order
 
 1. Keep taking the small-module batch. Same-shape candidates:
-   `gateway.readiness` (138 LOC, yaml+sqlite probes), and the remaining
-   small oracle-backed `tools/`/`gateway/`/`hermes_cli` leaves. The big
+   `tools.open_preview_tool` (92 LOC), `tools.close_terminal_tool`'s
+   remaining siblings, and the remaining small oracle-backed
+   `tools/`/`gateway/`/`hermes_cli` leaves. The big
    `tools.process_registry` (2,937 LOC) unblocks `tools.close_terminal_tool`
    and `tools.read_terminal_tool` callers when taken.
 2. Continue the remaining `agent.auxiliary_client` request/response lifecycle
@@ -89,11 +97,16 @@ example).
 ## Current conversion ledger
 
 99 done / 15 partial / 3,768 missing tracked (**2.55%** strict completion);
-99 done / 15 partial / 989 missing production (**8.98%**). Regenerated via
+100 done / 15 partial / 988 missing production (**9.07%**). Regenerated via
 `tools/inventory.sh` (pinned worktree) + `python3 tools/conversion_ledger.py`.
 
 ## Fidelity notes
 
+- Session 4da (batch 3): `readiness` opens the state db read-only via URI
+  with a 1s busy timeout so probes never compete with writers; empty YAML
+  documents count as defaults (`safe_load` → None); `disk_usage` reproduces
+  `shutil.disk_usage` (`free` = `f_bavail`); error details carry short type
+  labels only, never messages.
 - Session 4da (batch 2): `session_stall` idle resolution mirrors Python
   `float()` semantics — numeric strings parse, non-numeric/non-finite
   `seconds_since_activity` falls through to `last_activity_at`/`_ts`,
@@ -117,10 +130,10 @@ example).
 ## Verification evidence
 
 - `/home/mustbearnold/.cargo/bin/cargo build --workspace` — green.
-- `cargo test -p hermes-gateway -p hermes-cli -p hermes-tools` — 47 new
+- `cargo test -p hermes-gateway -p hermes-cli -p hermes-tools` — 56 new
   tests green.
 - Serialized `/home/mustbearnold/.cargo/bin/cargo test --workspace --
-  --test-threads=1` — 1,374 passed, 0 failed, 6 intentional ignores.
+  --test-threads=1` — 1,383 passed, 0 failed, 6 intentional ignores.
 - `cargo clippy -p hermes-gateway -p hermes-cli --all-targets` — clean on
   all new code.
 - `rustfmt --edition 2021 --check` — clean on all changed files.

@@ -1,7 +1,7 @@
 # Hermes Agent → Hermes Agent Rust Conversion Ledger
 
-**Current strict completion: 2.09% of all tracked upstream modules (99/4740).**
-Production-only strict completion: **8.06%** (99/1229 production modules).
+**Current strict completion: 2.11% of all tracked upstream modules (100/4740).**
+Production-only strict completion: **8.14%** (100/1229 production modules).
 
 > This file is generated from `tools/inventory.json`; update the source ledger in `tools/port_status.json`, regenerate the inventory, then run `python3 tools/conversion_ledger.py`. Only `done` counts toward the percentage. `partial` is intentionally zero credit until its stated parity seams are closed.
 
@@ -9,10 +9,10 @@ Production-only strict completion: **8.06%** (99/1229 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 99 | 15 | 4626 | 2.09% | 40,877/1,910,919 done LOC |
-| Production modules | 99 | 15 | 1115 | 8.06% | 40,877/993,168 done LOC |
+| All tracked modules | 100 | 15 | 4625 | 2.11% | 41,015/1,910,919 done LOC |
+| Production modules | 100 | 15 | 1114 | 8.14% | 41,015/993,168 done LOC |
 
-Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-31T08:11:16`.
+Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-31T08:22:17`.
 
 ## Definition of 100.00%
 
@@ -403,7 +403,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `gateway.platforms.yuanbao_proto` | production | P4 | 1,418 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `gateway.platforms.yuanbao_sticker` | production | P4 | 558 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `gateway.profile_routing` | production | P4 | 170 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `gateway.readiness` | production | P4 | 138 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `gateway.readiness` | production | P4 | 138 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `gateway.relay.__init__` | production | P4 | 967 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `gateway.relay.adapter` | production | P4 | 3,443 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `gateway.relay.auth` | production | P4 | 168 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |

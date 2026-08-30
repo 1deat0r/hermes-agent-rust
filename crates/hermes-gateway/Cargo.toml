@@ -11,6 +11,8 @@ hermes-cli = { path = "../hermes-cli" }
 hermes-constants = { path = "../hermes-constants" }
 hermes-time = { path = "../hermes-time" }
 libc = { version = "0.2", default-features = false }
+serde_yaml.workspace = true
+rusqlite = { version = "0.37", features = ["bundled"] }
 serde_json.workspace = true
 
 [dev-dependencies]
