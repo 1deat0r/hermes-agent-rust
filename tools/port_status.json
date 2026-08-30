@@ -44,6 +44,9 @@
  "agent.monitoring.events": {
   "status": "done"
  },
+ "agent.monitoring.gateway_health": {
+  "status": "done"
+ },
  "agent.monitoring.redaction": {
   "status": "done"
  },

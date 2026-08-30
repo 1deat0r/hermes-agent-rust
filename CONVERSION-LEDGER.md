@@ -1,7 +1,7 @@
 # Hermes Agent → Hermes Agent Rust Conversion Ledger
 
-**Current strict completion: 2.41% of all tracked upstream modules (114/4740).**
-Production-only strict completion: **9.28%** (114/1229 production modules).
+**Current strict completion: 2.43% of all tracked upstream modules (115/4740).**
+Production-only strict completion: **9.36%** (115/1229 production modules).
 
 > This file is generated from `tools/inventory.json`; update the source ledger in `tools/port_status.json`, regenerate the inventory, then run `python3 tools/conversion_ledger.py`. Only `done` counts toward the percentage. `partial` is intentionally zero credit until its stated parity seams are closed.
 
@@ -9,10 +9,10 @@ Production-only strict completion: **9.28%** (114/1229 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 114 | 16 | 4610 | 2.41% | 42,135/1,910,919 done LOC |
-| Production modules | 114 | 16 | 1099 | 9.28% | 42,135/993,168 done LOC |
+| All tracked modules | 115 | 16 | 4609 | 2.43% | 42,604/1,910,919 done LOC |
+| Production modules | 115 | 16 | 1098 | 9.36% | 42,604/993,168 done LOC |
 
-Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-31T09:15:10`.
+Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-31T09:23:09`.
 
 ## Definition of 100.00%
 
@@ -192,7 +192,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `agent.monitoring.cron_health` | production | P2 | 203 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
 | `agent.monitoring.emitter` | production | P2 | 211 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.monitoring.events` | production | P2 | 86 | ✅ done | Maintain parity evidence; no remaining task in this row. |
-| `agent.monitoring.gateway_health` | production | P2 | 469 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `agent.monitoring.gateway_health` | production | P2 | 469 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.monitoring.gateway_health_export` | production | P2 | 643 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.monitoring.otlp_exporter` | production | P2 | 270 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.monitoring.policy` | production | P2 | 57 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |

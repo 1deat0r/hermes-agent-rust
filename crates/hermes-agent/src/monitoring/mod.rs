@@ -18,6 +18,7 @@
 pub mod cron_health;
 pub mod emitter;
 pub mod events;
+pub mod gateway_health;
 pub mod redaction;
 
 pub use emitter::{emit, get_emitter};

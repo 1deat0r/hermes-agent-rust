@@ -28,7 +28,7 @@ this documentation checkpoint. Previous: `d138528` (4d9's
 
 ## What landed this session (4da)
 
-Twenty-two units across four crates, all red-first, 131 new parity tests:
+Twenty-three units across four crates, all red-first, 142 new parity tests:
 
 - `hermes_cli/main.py` `_read_packed_ref` + `_read_git_revision_fingerprint`
   → `hermes-cli::git_revision` (8 tests, source-derived — no dedicated
@@ -134,6 +134,13 @@ projections ported: classify/job-key/duration/projection/terminal-emit;
 `build_cron_health_snapshot`/`_is_overdue` PENDING with
 `cron.jobs`/`cron.scheduler`/`GatewayMetric`).
 
+Batch 12: `agent/monitoring/gateway_health.py` →
+`monitoring::gateway_health` done (11 source-derived tests, gap noted).
+`GatewayMetric`/`GatewayHealthSnapshot` now exist, unblocking the
+cron_health snapshot builder. The singleton-touching tests serialize
+behind a mutex — parallel tests closing the shared emitter race each
+other's dispatch.
+
 `hermes-gateway` also gains `hermes-cli`, `hermes-constants`, `hermes-time`,
 `serde_json`, `libc` — all still below the agent/tools layers.
 `tools.close_terminal_tool` was skipped: blocked on the 2,937-LOC
@@ -143,9 +150,9 @@ projections ported: classify/job-key/duration/projection/terminal-emit;
 
 Session 4da **changed the ledger**: 99 done / 15 partial / 3,768 missing
 tracked modules and 99 done / 15 partial / 989 missing production modules —
-**2.94%** tracked and **10.34%** production strict completion — regenerated
+**2.96%** tracked and **10.43%** production strict completion — regenerated
 against the pinned `b9aa928` worktree (commands above), with
-`cargo build --workspace` and the serialized workspace run green at 1,458
+`cargo build --workspace` and the serialized workspace run green at 1,469
 tests / 6 ignored (the 6th is skill_provenance's intentional `ignore` doc
 example).
 
@@ -164,11 +171,19 @@ example).
 ## Current conversion ledger
 
 99 done / 15 partial / 3,768 missing tracked (**2.55%** strict completion);
-114 done / 16 partial / 973 missing production (**10.34%**). Regenerated via
+115 done / 16 partial / 972 missing production (**10.43%**). Regenerated via
 `tools/inventory.sh` (pinned worktree) + `python3 tools/conversion_ledger.py`.
 
 ## Fidelity notes
 
+- Session 4da (batch 12): upstream's `gateway.status` try/except fallbacks
+  are the ported code paths (no gateway.status module exists yet);
+  `_safe_profile` falls back to "default" and `_safe_version` to
+  `hermes_cli::VERSION`; `_base_attrs` never exports the profile, so the
+  parameter is dropped. `GatewayDiagnosticLogHandler` becomes the
+  per-record `diagnostic_event_for_log` function. Transition tests taught
+  the singleton-mutex lesson (parallel tests closing the shared emitter
+  race dispatch).
 - Session 4da (batch 11): redaction is defense-in-depth stacking — the
   hermes-logging force-redactor masks tokens FIRST (possibly to partial
   masks the shape regexes then pass through), so the egress contract is
@@ -244,9 +259,9 @@ example).
 
 - `/home/mustbearnold/.cargo/bin/cargo build --workspace` — green.
 - `cargo test -p hermes-gateway -p hermes-cli -p hermes-tools -p
-  hermes-agent` — 131 new tests green.
+  hermes-agent` — 142 new tests green.
 - Serialized `/home/mustbearnold/.cargo/bin/cargo test --workspace --
-  --test-threads=1` — 1,458 passed, 0 failed, 6 intentional ignores.
+  --test-threads=1` — 1,469 passed, 0 failed, 6 intentional ignores.
 - `cargo clippy -p hermes-gateway -p hermes-cli --all-targets` — clean on
   all new code.
 - `rustfmt --edition 2021 --check` — clean on all changed files.
