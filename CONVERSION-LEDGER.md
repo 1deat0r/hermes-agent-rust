@@ -1,7 +1,7 @@
 # Hermes Agent → Hermes Agent Rust Conversion Ledger
 
-**Current strict completion: 2.13% of all tracked upstream modules (101/4740).**
-Production-only strict completion: **8.22%** (101/1229 production modules).
+**Current strict completion: 2.17% of all tracked upstream modules (103/4740).**
+Production-only strict completion: **8.38%** (103/1229 production modules).
 
 > This file is generated from `tools/inventory.json`; update the source ledger in `tools/port_status.json`, regenerate the inventory, then run `python3 tools/conversion_ledger.py`. Only `done` counts toward the percentage. `partial` is intentionally zero credit until its stated parity seams are closed.
 
@@ -9,10 +9,10 @@ Production-only strict completion: **8.22%** (101/1229 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 101 | 15 | 4624 | 2.13% | 41,103/1,910,919 done LOC |
-| Production modules | 101 | 15 | 1113 | 8.22% | 41,103/993,168 done LOC |
+| All tracked modules | 103 | 15 | 4622 | 2.17% | 41,195/1,910,919 done LOC |
+| Production modules | 103 | 15 | 1111 | 8.38% | 41,195/993,168 done LOC |
 
-Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-31T08:28:03`.
+Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-31T08:33:20`.
 
 ## Definition of 100.00%
 
@@ -157,7 +157,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `agent.image_routing` | production | P2 | 929 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.insights` | production | P2 | 1,212 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.interrupt_compat` | production | P2 | 64 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
-| `agent.iteration_budget` | production | P2 | 62 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `agent.iteration_budget` | production | P2 | 62 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.jiter_preload` | production | P2 | 39 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.kanban_stop` | production | P2 | 108 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.learn_prompt` | production | P2 | 237 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
@@ -703,7 +703,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `hermes_cli.suggestions_cmd` | production | P3 | 158 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `hermes_cli.telegram_managed_bot` | production | P3 | 358 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `hermes_cli.terminal_breadcrumbs` | production | P3 | 185 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `hermes_cli.timefmt` | production | P3 | 30 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `hermes_cli.timefmt` | production | P3 | 30 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `hermes_cli.timeouts` | production | P3 | 82 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `hermes_cli.tips` | production | P3 | 512 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `hermes_cli.tools_config` | production | P3 | 6,244 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |

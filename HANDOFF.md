@@ -28,7 +28,7 @@ this documentation checkpoint. Previous: `d138528` (4d9's
 
 ## What landed this session (4da)
 
-Eight units across three crates, all red-first, 63 new parity tests:
+Ten units across four crates, all red-first, 74 new parity tests:
 
 - `hermes_cli/main.py` `_read_packed_ref` + `_read_git_revision_fingerprint`
   → `hermes-cli::git_revision` (8 tests, source-derived — no dedicated
@@ -73,6 +73,15 @@ except-arm reproduction, no-emitter desktop-only arm, and the
 with re.I and `[::1]`, sub-2-char TLDs bare, path/scheme/`file:`/`~`
 pass-through, backtick/whitespace stripping).
 
+Batch 5: `hermes_cli/timefmt.py` → `hermes-cli::timefmt` (6 source-derived
+tests, gap noted; falsy-ts → "?", truncating minute/hour/day divisions,
+24–48h "yesterday" band, future timestamps read "just now", local
+`%Y-%m-%d` past a week; `chrono` added to the crate) and
+`agent/iteration_budget.py` → `hermes-agent::iteration_budget` (6
+source-derived tests, gap noted; consume/refund contract, remaining clamp
+under a shrunk public `max_total`, independent per-agent budgets, 8-thread
+race stays exactly at the cap).
+
 `hermes-gateway` also gains `hermes-cli`, `hermes-constants`, `hermes-time`,
 `serde_json`, `libc` — all still below the agent/tools layers.
 `tools.close_terminal_tool` was skipped: blocked on the 2,937-LOC
@@ -82,9 +91,9 @@ pass-through, backtick/whitespace stripping).
 
 Session 4da **changed the ledger**: 99 done / 15 partial / 3,768 missing
 tracked modules and 99 done / 15 partial / 989 missing production modules —
-**2.60%** tracked and **9.16%** production strict completion — regenerated
+**2.65%** tracked and **9.34%** production strict completion — regenerated
 against the pinned `b9aa928` worktree (commands above), with
-`cargo build --workspace` and the serialized workspace run green at 1,390
+`cargo build --workspace` and the serialized workspace run green at 1,401
 tests / 6 ignored (the 6th is skill_provenance's intentional `ignore` doc
 example).
 
@@ -103,11 +112,17 @@ example).
 ## Current conversion ledger
 
 99 done / 15 partial / 3,768 missing tracked (**2.55%** strict completion);
-101 done / 15 partial / 987 missing production (**9.16%**). Regenerated via
+103 done / 15 partial / 985 missing production (**9.34%**). Regenerated via
 `tools/inventory.sh` (pinned worktree) + `python3 tools/conversion_ledger.py`.
 
 ## Fidelity notes
 
+- Session 4da (batch 5): `timefmt.relative_time` reproduces Python falsiness
+  (`None`/`0.0` → "?"), truncating `int(delta/x)` divisions, the
+  `delta < 60` arm that makes future timestamps read "just now", and the
+  local-zone `%Y-%m-%d` date branch. `IterationBudget.max_total` stays a
+  plain public field (upstream mutates it), so `remaining`'s
+  `max(0, ...)` clamp is observable.
 - Session 4da (batch 4): `open_preview_tool`'s `_normalize_target` pins both
   upstream regexes verbatim (LazyLock) — re.I matters (LOCALHOST:3000 gains
   http://), `\w` stays unicode-aware, and the strip order is
@@ -142,10 +157,10 @@ example).
 ## Verification evidence
 
 - `/home/mustbearnold/.cargo/bin/cargo build --workspace` — green.
-- `cargo test -p hermes-gateway -p hermes-cli -p hermes-tools` — 63 new
-  tests green.
+- `cargo test -p hermes-gateway -p hermes-cli -p hermes-tools -p
+  hermes-agent` — 74 new tests green.
 - Serialized `/home/mustbearnold/.cargo/bin/cargo test --workspace --
-  --test-threads=1` — 1,390 passed, 0 failed, 6 intentional ignores.
+  --test-threads=1` — 1,401 passed, 0 failed, 6 intentional ignores.
 - `cargo clippy -p hermes-gateway -p hermes-cli --all-targets` — clean on
   all new code.
 - `rustfmt --edition 2021 --check` — clean on all changed files.

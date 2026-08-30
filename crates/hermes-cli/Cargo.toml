@@ -7,13 +7,16 @@ license.workspace = true
 rust-version.workspace = true
 
 [dependencies]
+chrono.workspace = true
 fancy-regex = "0.14"
 hermes-constants = { path = "../hermes-constants" }
 hermes-utils = { path = "../hermes-utils" }
+regex = "1"
 serde_json = { workspace = true }
 log.workspace = true
 parking_lot = "0.12"
 
 [dev-dependencies]
 hermes-utils = { path = "../hermes-utils" }
+regex = "1"
 tempfile = "3"

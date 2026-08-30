@@ -640,7 +640,7 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 ## 7. Session log
 
-- 2026-08-31 (session 4da): Eight units across three crates, all red-first:
+- 2026-08-31 (session 4da): Ten units across four crates, all red-first:
   batch 1 — the `hermes_cli/main.py` private git-fingerprint helpers
   (`_read_packed_ref`, `_read_git_revision_fingerprint`) into
   `hermes-cli::git_revision` (8 tests), then `gateway/code_skew.py` (10
@@ -679,19 +679,27 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   reproduction of the except arm, the no-emitter desktop-only arm, and the
   `_normalize_target` grammar pinned case-by-case (re.I, `[::1]`, 2-char
   TLD minimum, backtick/whitespace stripping, pass-through for paths and
-  explicit schemes). Process note: upstream HEAD has advanced far past the pin,
+  explicit schemes). Batch 5 —
+  `hermes_cli/timefmt.py` (6 tests, source-derived; gap noted — relative
+  time grammar with falsy-`ts` → "?", truncating divisions, the
+  24–48h "yesterday" band, future-timestamps-are-"just now", local-time
+  `%Y-%m-%d` beyond a week) and `agent/iteration_budget.py` (6 tests,
+  source-derived; gap noted — cap/exhaustion, refund no-ops and never
+  negative, the `max(0, ...)` remaining clamp under a shrunk public
+  `max_total`, independent per-agent budgets, and an 8-thread consume
+  race staying exactly at the cap). Process note: upstream HEAD has advanced far past the pin,
   so the inventory was regenerated against a pinned `b9aa928` git worktree
   (the stale `/home/mustbearn` default in `tools/inventory.sh`/AGENTS.md
   was corrected to the current checkout path).
-  Evidence: `cargo test -p hermes-gateway -p hermes-cli -p hermes-tools` →
-  63 new tests green; `cargo clippy -p hermes-gateway -p hermes-cli -p
+  Evidence: `cargo test -p hermes-gateway -p hermes-cli -p hermes-tools -p
+  hermes-agent` → 74 new tests green; `cargo clippy -p hermes-gateway -p hermes-cli -p
   hermes-tools --all-targets` clean on all new code; `rustfmt --edition
   2021` clean on all changed files; serialized
   `/home/mustbearnold/.cargo/bin/cargo test --workspace -- --test-threads=1`
-  passed 1,390 tests with 6 intentional ignores (the new one is
+  passed 1,401 tests with 6 intentional ignores (the new one is
   skill_provenance's `ignore` doc example); `git diff --check` clean.
-  Ledger: 101 done / 15 partial / 3,766 tracked (**2.60%**) and 101 done /
-  15 partial / 987 production (**9.16%**). Next: more small `tools/`/
+  Ledger: 103 done / 15 partial / 3,764 tracked (**2.65%**) and 103 done /
+  15 partial / 985 production (**9.34%**). Next: more small `tools/`/
   `gateway/` leaves (e.g. `gateway.readiness`, `gateway.rich_sent_store`
   neighbors `gateway.code_skew` consumers, `tools.open_preview_tool`), the
   `tools.process_registry` mega-module (unblocks

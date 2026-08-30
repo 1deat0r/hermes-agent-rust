@@ -1,20 +1,20 @@
 {
  "generated_from": "/run/media/mustbearnold/Projects/Research/hermes-agent-repo",
- "generated_at": "2026-08-31T08:28:03",
+ "generated_at": "2026-08-31T08:33:20",
  "summary": {
   "modules": 4740,
   "total_lines": 1910919,
   "production_modules": 1229,
   "production_lines": 993168,
   "status_counts": {
-   "done": 101,
+   "done": 103,
    "partial": 15,
-   "missing": 4624
+   "missing": 4622
   },
   "prod_status_counts": {
-   "done": 101,
+   "done": 103,
    "partial": 15,
-   "missing": 1113
+   "missing": 1111
   },
   "packages": {
    "gateway": {
@@ -43,9 +43,9 @@
     "lines": 253446,
     "modules": 296,
     "status": {
-     "missing": 286,
+     "missing": 285,
      "partial": 2,
-     "done": 8
+     "done": 9
     }
    },
    "tui_gateway": {
@@ -67,9 +67,9 @@
     "lines": 157608,
     "modules": 209,
     "status": {
-     "missing": 192,
+     "missing": 191,
      "partial": 4,
-     "done": 13
+     "done": 14
     }
    },
    "plugins": {
@@ -29668,7 +29668,7 @@
   "agent.iteration_budget": {
    "lines": 62,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "hermes_cli.subcommands.security": {
@@ -32403,7 +32403,7 @@
   "hermes_cli.timefmt": {
    "lines": 30,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "hermes_cli.subcommands.skin": {

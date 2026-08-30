@@ -10,6 +10,7 @@ pub mod input_sanitize;
 pub mod lifecycle;
 pub mod model_search;
 pub mod setup_hidden_env;
+pub mod timefmt;
 pub mod timeouts;
 pub mod toolset_validation;
 

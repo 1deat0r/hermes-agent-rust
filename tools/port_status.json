@@ -14,6 +14,9 @@
  "agent.interrupt_compat": {
   "status": "partial"
  },
+ "agent.iteration_budget": {
+  "status": "done"
+ },
  "agent.kanban_stop": {
   "status": "done"
  },
@@ -90,6 +93,9 @@
   "status": "done"
  },
  "hermes_cli.setup_hidden_env": {
+  "status": "done"
+ },
+ "hermes_cli.timefmt": {
   "status": "done"
  },
  "hermes_cli.timeouts": {

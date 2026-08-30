@@ -510,11 +510,13 @@ dependencies = [
 name = "hermes-cli"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "fancy-regex",
  "hermes-constants",
  "hermes-utils",
  "log",
  "parking_lot",
+ "regex",
  "serde_json",
  "tempfile",
 ]
