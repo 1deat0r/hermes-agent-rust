@@ -745,8 +745,8 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   `/home/mustbearnold/.cargo/bin/cargo test --workspace -- --test-threads=1`
   passed 1,581 tests with 6 intentional ignores (the new one is
   skill_provenance's `ignore` doc example); `git diff --check` clean.
-  Ledger: 142 done / 21 partial / 3,719 tracked (**3.66%**) and 142 done /
-  21 partial / 939 production (**12.87%**). Next: more small `tools/`/
+  Ledger: 143 done / 21 partial / 3,718 tracked (**3.68%**) and 143 done /
+  21 partial / 938 production (**12.97%**). Next: more small `tools/`/
   `gateway/` leaves (e.g. `gateway.readiness`, `gateway.rich_sent_store`
   neighbors `gateway.code_skew` consumers, `tools.open_preview_tool`), the
   `tools.process_registry` mega-module (unblocks
@@ -803,7 +803,12 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   whitespace-placeholder no-value, dotenv map parsing, live /bin/sh
   helper runs with HERMES_SECRET_KEY-as-data, timeout/group-kill,
   output-cap, and the CommandSource fetch contract with remediation
-  hints). Batch 37 -
+  hints). Batch 39 -
+  `agent/secret_sources/_cache.py` done (11 tests, source-derived - gap
+  noted: freshness with the ttl<=0 disabled rule, key-mismatch and
+  corrupt/non-dict misses, non-string secret coercion, cache dir 0700 +
+  file 0600 permissions, atomic write with staging-file cleanup, idempotent
+  clear, and the explicit-clock read_at/write_at seams). Batch 37 -
   `agent/secret_sources/registry.py` done (6 tests, source-derived - gap
   noted: registration gates (lowercase [a-z0-9_] names, API-version
   match, mapped/bulk shape, scheme collision across names, duplicate

@@ -28,7 +28,7 @@ this documentation checkpoint. Previous: `d138528` (4d9's
 
 ## What landed this session (4da)
 
-Forty-nine units across four crates, all red-first, 313 new parity tests:
+Fifty-four units across four crates, all red-first, 351 new parity tests:
 
 - `hermes_cli/main.py` `_read_packed_ref` + `_read_git_revision_fingerprint`
   → `hermes-cli::git_revision` (8 tests, source-derived — no dedicated
@@ -384,7 +384,7 @@ available_width. The crate gains `unicode-width`.
 Batch 35: `agent/verify/__init__.py` re-export surface done — the
 package's parent entry flips to done (recipes/environment/runner all
 ported; the mod.rs re-export list matches the upstream __init__ names,
-pinned by a surface test). 139 done / 943 missing.
+pinned by a surface test). Verify package complete (parent done).
 
 Batch 36: `agent/secret_sources/base.py` ->
 `hermes-agent::secret_sources::base` done (9 source-derived tests, gap
@@ -420,6 +420,32 @@ base64-padding and cross-key misroute guards; CommandSource adapter with
 NOT_CONFIGURED/Internal remediation hints. POSIX-only (Windows degrades
 to an empty result with a warning).
 
+Batch 39: `agent/secret_sources/_cache.py` ->
+`hermes-agent::secret_sources::cache` done (11 source-derived tests, gap
+noted). DiskCache: `<hermes_home>/cache/<basename>` JSON with
+serialized-key matching, str-to-str coercion, atomic
+staging-file + chmod-0600 + rename writes, cache-dir chmod 0700,
+ttl<=0 disabling both cache layers symmetrically, idempotent clear;
+explicit-clock read_at/write_at seams. rand + base64 already in the
+crate's tree.
+
+Batches 37-39 (session-log entries for 29-36 are in PLAN.md §7):
+
+- Batch 37: `agent/secret_sources/registry.py` ->
+`secret_sources::registry` done (6 tests). Registration gates, mapped-
+beats-bulk precedence, first-claim-wins with conflict warnings,
+preserve/override ladder, per-source wall-clock timeout, profile
+aliasing (FOO_<PROFILE> -> FOO).
+- Batch 38: `agent/secret_sources/command.py` ->
+`secret_sources::command` done (14 tests). /bin/sh helper with
+HERMES_SECRET_KEY-as-data, group-kill timeout, 1MiB cap, stderr
+discarded with structured fields only; parse cascade with base64 and
+cross-key misroute guards.
+- Batch 39: `agent/secret_sources/_cache.py` ->
+`secret_sources::cache` done (11 tests). Atomic 0600 staging writes,
+cache-dir 0700, ttl<=0 disables both layers, key matching with
+str-str coercion, explicit-clock read_at/write_at seams.
+
 `hermes-gateway` also gains `hermes-cli`, `hermes-constants`, `hermes-time`,
 `serde_json`, `libc` — all still below the agent/tools layers.
 `tools.close_terminal_tool` was skipped: blocked on the 2,937-LOC
@@ -429,7 +455,7 @@ to an empty result with a warning).
 
 Session 4da **changed the ledger**: 99 done / 15 partial / 3,768 missing
 tracked modules and 99 done / 15 partial / 989 missing production modules —
-**3.63%** tracked and **12.78%** production strict completion — regenerated
+**3.68%** tracked and **12.97%** production strict completion — regenerated
 against the pinned `b9aa928` worktree (commands above), with
 `cargo build --workspace` and the serialized workspace run green at 1,666
 tests / 6 ignored (the 6th is skill_provenance's intentional `ignore` doc
@@ -455,6 +481,10 @@ example).
 
 ## Fidelity notes
 
+- Session 4da (batch 39): the cache's is_fresh keeps upstream's strict
+  `<` (a fetched_at exactly TTL old is stale) and ttl<=0 disables both
+  layers. Explicit-clock read_at/write_at forms are the time.time patch
+  seam; rand+base64 supply the mkstemp random staging suffix.
 - Session 4da (batch 38): command source tests exercise real /bin/sh
   children (env-key-as-data proven by interpolating HERMES_SECRET_KEY in
   the helper). The unquote requires length >= 2 (a lone quote survives);
