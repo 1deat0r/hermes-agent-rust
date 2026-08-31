@@ -26,7 +26,7 @@ use std::time::Instant;
 use serde_json::{json, Value};
 
 use super::base::{
-    get_source_env_var, reset_source_environment, set_source_environment, ErrorKind, FetchResult,
+    reset_source_environment, set_source_environment, ErrorKind, FetchResult,
     SecretSource, SECRET_SOURCE_API_VERSION,
 };
 

@@ -745,8 +745,8 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   `/home/mustbearnold/.cargo/bin/cargo test --workspace -- --test-threads=1`
   passed 1,581 tests with 6 intentional ignores (the new one is
   skill_provenance's `ignore` doc example); `git diff --check` clean.
-  Ledger: 141 done / 21 partial / 3,720 tracked (**3.63%**) and 141 done /
-  21 partial / 940 production (**12.78%**). Next: more small `tools/`/
+  Ledger: 142 done / 21 partial / 3,719 tracked (**3.66%**) and 142 done /
+  21 partial / 939 production (**12.87%**). Next: more small `tools/`/
   `gateway/` leaves (e.g. `gateway.readiness`, `gateway.rich_sent_store`
   neighbors `gateway.code_skew` consumers, `tools.open_preview_tool`), the
   `tools.process_registry` mega-module (unblocks
@@ -795,7 +795,15 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   coercion, the remediation kind-to-hint mapping, and run_secret_cli's
   allowlisted env / NO_COLOR / ANSI-scrubbed stderr / timeout error; the
   registry orchestrator and bitwarden/onepassword/command backends stay
-  PENDING). Batch 37 -
+  PENDING).
+  Batch 38 - `agent/secret_sources/command.py` done (14 tests,
+  source-derived - gap noted: unquote grammar incl. lone-quote
+  preservation, exact-dotenv-match precedence, multi-key-dump and
+  cross-key misroute rejection with the base64-padding disambiguation,
+  whitespace-placeholder no-value, dotenv map parsing, live /bin/sh
+  helper runs with HERMES_SECRET_KEY-as-data, timeout/group-kill,
+  output-cap, and the CommandSource fetch contract with remediation
+  hints). Batch 37 -
   `agent/secret_sources/registry.py` done (6 tests, source-derived - gap
   noted: registration gates (lowercase [a-z0-9_] names, API-version
   match, mapped/bulk shape, scheme collision across names, duplicate

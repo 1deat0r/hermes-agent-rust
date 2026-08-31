@@ -408,6 +408,18 @@ reporting TIMEOUT and continuing startup; profile aliasing
 exemption). Bundled backends (bitwarden/onepassword/command) remain
 PENDING, so the lazy builtin registration is a no-op.
 
+Batch 38: `agent/secret_sources/command.py` ->
+`hermes-agent::secret_sources::command` done (14 source-derived tests,
+gap noted). Security model preserved line-for-line: the helper runs via
+/bin/sh -c (user's own config trust level); the key travels ONLY as
+HERMES_SECRET_KEY env data (never interpolated); 3s hard timeout with
+whole-group SIGKILL; 1MiB output cap; stderr captured and DISCARDED with
+structured fields only (code/signal) in any log; parse_secret_output's
+exact-dotenv-match > multi-key-dump-None > bare-value cascade with the
+base64-padding and cross-key misroute guards; CommandSource adapter with
+NOT_CONFIGURED/Internal remediation hints. POSIX-only (Windows degrades
+to an empty result with a warning).
+
 `hermes-gateway` also gains `hermes-cli`, `hermes-constants`, `hermes-time`,
 `serde_json`, `libc` — all still below the agent/tools layers.
 `tools.close_terminal_tool` was skipped: blocked on the 2,937-LOC
@@ -443,6 +455,12 @@ example).
 
 ## Fidelity notes
 
+- Session 4da (batch 38): command source tests exercise real /bin/sh
+  children (env-key-as-data proven by interpolating HERMES_SECRET_KEY in
+  the helper). The unquote requires length >= 2 (a lone quote survives);
+  whitespace-only quoted values are 'no value' (would 401 an
+  Authorization header). PENDING siblings: bitwarden.py (1,048),
+  onepassword.py (682), _cache.py (215).
 - Session 4da (batch 37): the apply chain order is invalid-name ->
   protected -> claimed(conflict warning) -> preserve_existing ->
   env-without-override -> apply; profile aliasing additionally requires

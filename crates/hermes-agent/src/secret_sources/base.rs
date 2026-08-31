@@ -15,7 +15,6 @@
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
 
 use once_cell::sync::Lazy;
 use regex::Regex;
