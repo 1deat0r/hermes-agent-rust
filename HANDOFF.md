@@ -28,7 +28,7 @@ this documentation checkpoint. Previous: `d138528` (4d9's
 
 ## What landed this session (4da)
 
-Fifty-five units across four crates, all red-first, 351 new parity tests:
+Fifty-five units across four crates, all red-first, 358 new parity tests:
 
 - `hermes_cli/main.py` `_read_packed_ref` + `_read_git_revision_fingerprint`
   → `hermes-cli::git_revision` (8 tests, source-derived — no dedicated
@@ -456,6 +456,18 @@ refs-fingerprint misses, per-reference failure warnings, op error
 taxonomy, mapped adapter with override_existing default true and the
 token env protected). PENDING siblings: bitwarden.py (1,048 LOC).
 
+Batch 41: `agent/secret_sources/bitwarden.py` ->
+`secret_sources::bitwarden` **partial** (7 source-derived tests, gap
+noted). Ported: the color-eyre stderr summarizer (Location/Backtrace
+cutoff, numbered-cause stripping, stripped-raw fallback), the bws error
+taxonomy (incl. invalid_client/invalid_grant/400-bad-request ->
+AUTH_FAILED), pipe-joined cache-key serialization, sha256 token
+fingerprints, and the BitwardenSource adapter (bulk, scheme bws,
+override_existing default TRUE, BWS_ACCESS_TOKEN protected,
+NOT_CONFIGURED pre-flight arms). PENDING: find_bws/install_bws
+(checksum-verified download + zip extraction), _run_bws_list +
+fetch orchestration, and the HKDF+AESGCM encrypted last-good cache.
+
 `hermes-gateway` also gains `hermes-cli`, `hermes-constants`, `hermes-time`,
 `serde_json`, `libc` — all still below the agent/tools layers.
 `tools.close_terminal_tool` was skipped: blocked on the 2,937-LOC
@@ -465,7 +477,7 @@ token env protected). PENDING siblings: bitwarden.py (1,048 LOC).
 
 Session 4da **changed the ledger**: 99 done / 15 partial / 3,768 missing
 tracked modules and 99 done / 15 partial / 989 missing production modules —
-**3.71%** tracked and **13.05%** production strict completion — regenerated
+**3.71%** tracked and **13.06%** production strict completion — regenerated
 against the pinned `b9aa928` worktree (commands above), with
 `cargo build --workspace` and the serialized workspace run green at 1,666
 tests / 6 ignored (the 6th is skill_provenance's intentional `ignore` doc
@@ -486,7 +498,7 @@ example).
 ## Current conversion ledger
 
 99 done / 15 partial / 3,768 missing tracked (**2.55%** strict completion);
-144 done / 21 partial / 937 missing production (**13.05%**). Regenerated via
+144 done / 22 partial / 936 missing production (**13.06%**). Regenerated via
 `tools/inventory.sh` (pinned worktree) + `python3 tools/conversion_ledger.py`.
 
 ## Fidelity notes
@@ -507,6 +519,11 @@ example).
   the alias not be supplied directly by any source and a credential-shaped
   suffix; per-source timeout uses a worker thread (TIMEOUT result,
   partials discarded).
+- Session 4da (batch 41): the summarize rule strips ANSI FIRST (so a
+  colorized 'Error:' line is not recognized as the skip-marker - faithful
+  to upstream's replace-then-parse order); cause lines are numbered
+  '0: ...' with the index stripped per line. Redaction-failure subtlety:
+  the test fixture was corrected to the non-ANSI oracle input.
 - Session 4da (batches 39-40): the onepassword disk key omits home_path
   (the file already lives under <home>/cache/), L1 keys fold it in; only
   complete error-free pulls are cached (a transient auth failure isn't
@@ -746,7 +763,7 @@ example).
 
 - `/home/mustbearnold/.cargo/bin/cargo build --workspace` — green.
 - `cargo test -p hermes-gateway -p hermes-cli -p hermes-tools -p
-  hermes-agent` — 351 new tests green.
+  hermes-agent` — 358 new tests green.
 - Serialized `/home/mustbearnold/.cargo/bin/cargo test --workspace --
   --test-threads=1` — 1,666 passed, 0 failed, 6 intentional ignores.
 - `cargo clippy -p hermes-gateway -p hermes-cli --all-targets` — clean on

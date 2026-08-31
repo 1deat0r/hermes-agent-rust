@@ -83,6 +83,9 @@
  "agent.secret_sources.base": {
   "status": "done"
  },
+ "agent.secret_sources.bitwarden": {
+  "status": "partial"
+ },
  "agent.secret_sources.command": {
   "status": "done"
  },

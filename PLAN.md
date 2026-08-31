@@ -745,8 +745,8 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   `/home/mustbearnold/.cargo/bin/cargo test --workspace -- --test-threads=1`
   passed 1,581 tests with 6 intentional ignores (the new one is
   skill_provenance's `ignore` doc example); `git diff --check` clean.
-  Ledger: 144 done / 21 partial / 3,717 tracked (**3.71%**) and 144 done /
-  21 partial / 937 production (**13.05%**). Next: more small `tools/`/
+  Ledger: 144 done / 22 partial / 3,716 tracked (**3.71%**) and 144 done /
+  22 partial / 936 production (**13.06%**). Next: more small `tools/`/
   `gateway/` leaves (e.g. `gateway.readiness`, `gateway.rich_sent_store`
   neighbors `gateway.code_skew` consumers, `tools.open_preview_tool`), the
   `tools.process_registry` mega-module (unblocks
@@ -806,7 +806,16 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   discovery semantics, live fake-op fetch with L1/L2 caching and
   refs-fingerprint misses, per-reference failure warnings, op error
   taxonomy mapping, mapped adapter contract with override_existing
-  default true and the token env protected).
+  default true and the token env protected). Batch 41 -
+  `agent/secret_sources/bitwarden.py` **partial** (7 tests,
+  source-derived - gap noted: the color-eyre stderr summarizer with
+  Location/Backtrace cutoff and numbered-cause stripping, the bws error
+  taxonomy incl. the invalid_client OAuth-style AUTH_FAILED arm, the
+  pipe-joined cache-key serialization, sha256 token fingerprints, and
+  the BitwardenSource adapter contract - bulk shape, bws scheme,
+  override_existing default TRUE, BWS_ACCESS_TOKEN protected;
+  find_bws/installer, encrypted HKDF+AESGCM cache, and _run_bws_list
+  fetch orchestration stay PENDING).
   Batch 38 - `agent/secret_sources/command.py` done (14 tests,
   source-derived - gap noted: unquote grammar incl. lone-quote
   preservation, exact-dotenv-match precedence, multi-key-dump and

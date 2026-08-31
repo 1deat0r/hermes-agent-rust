@@ -9,10 +9,10 @@ Production-only strict completion: **11.72%** (144/1229 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 144 | 21 | 4575 | 3.04% | 49,085/1,910,919 done LOC |
-| Production modules | 144 | 21 | 1064 | 11.72% | 49,085/993,168 done LOC |
+| All tracked modules | 144 | 22 | 4574 | 3.04% | 49,085/1,910,919 done LOC |
+| Production modules | 144 | 22 | 1063 | 11.72% | 49,085/993,168 done LOC |
 
-Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-31T14:22:57`.
+Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-31T14:52:04`.
 
 ## Definition of 100.00%
 
@@ -36,6 +36,7 @@ The conversion is complete only when all of these are true:
 | `agent.monitoring.gateway_health_export` | P2 | 643 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `agent.monitoring.otlp_exporter` | P2 | 270 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `agent.portal_tags` | P2 | 144 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
+| `agent.secret_sources.bitwarden` | P2 | 1,055 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `gateway.platforms.qqbot.keyboards` | P4 | 461 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `hermes_cli.__init__` | P3 | 92 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `hermes_cli.dashboard_auth.prefix` | P3 | 232 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
@@ -249,7 +250,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `agent.secret_sources.__init__` | production | P2 | 41 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.secret_sources._cache` | production | P2 | 215 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.secret_sources.base` | production | P2 | 336 | ✅ done | Maintain parity evidence; no remaining task in this row. |
-| `agent.secret_sources.bitwarden` | production | P2 | 1,055 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `agent.secret_sources.bitwarden` | production | P2 | 1,055 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
 | `agent.secret_sources.command` | production | P2 | 501 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.secret_sources.onepassword` | production | P2 | 682 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.secret_sources.registry` | production | P2 | 564 | ✅ done | Maintain parity evidence; no remaining task in this row. |
