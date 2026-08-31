@@ -2,6 +2,9 @@
  "agent.auxiliary_client": {
   "status": "partial"
  },
+ "agent.billing_links": {
+  "status": "done"
+ },
  "agent.bounded_response": {
   "status": "done"
  },

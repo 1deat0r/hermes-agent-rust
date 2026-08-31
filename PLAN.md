@@ -824,7 +824,11 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   per-fetch view + BWS_ACCESS_TOKEN + NO_COLOR + BWS_SERVER_URL;
   find_bws checks the managed bin dir then PATH (installer PENDING); the
   encrypted-cache tier is PENDING (with it enabled the stale plaintext
-  fallback is not consulted, matching upstream's only-encrypted rule). Encrypted-cache follow-up (same batch): `_derive_encrypted_cache_key`
+  fallback is not consulted, matching upstream's only-encrypted rule).  Batch 45 -
+  `agent/billing_links.py` (6 tests, source-derived - gap noted: the 14
+  provider billing-link table, two-pass slug-then-host resolution, Nous
+  in-app routing bit with the portal fallback URL, unknown-provider
+  readable-label degradation without an invented URL, and to_dict). Encrypted-cache follow-up (same batch): `_derive_encrypted_cache_key`
   (HKDF-SHA256, info hermes-bws-encrypted-cache-v1, 32-byte key),
   `write_encrypted_disk_cache` (random 16B salt + 12B nonce, AES-256-GCM
   over compact JSON with the serialized key as AAD, 0600 staging +

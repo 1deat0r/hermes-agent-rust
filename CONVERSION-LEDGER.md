@@ -1,7 +1,7 @@
 # Hermes Agent → Hermes Agent Rust Conversion Ledger
 
-**Current strict completion: 3.04% of all tracked upstream modules (144/4740).**
-Production-only strict completion: **11.72%** (144/1229 production modules).
+**Current strict completion: 3.06% of all tracked upstream modules (145/4740).**
+Production-only strict completion: **11.80%** (145/1229 production modules).
 
 > This file is generated from `tools/inventory.json`; update the source ledger in `tools/port_status.json`, regenerate the inventory, then run `python3 tools/conversion_ledger.py`. Only `done` counts toward the percentage. `partial` is intentionally zero credit until its stated parity seams are closed.
 
@@ -9,10 +9,10 @@ Production-only strict completion: **11.72%** (144/1229 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 144 | 22 | 4574 | 3.04% | 49,085/1,910,919 done LOC |
-| Production modules | 144 | 22 | 1063 | 11.72% | 49,085/993,168 done LOC |
+| All tracked modules | 145 | 22 | 4573 | 3.06% | 49,209/1,910,919 done LOC |
+| Production modules | 145 | 22 | 1062 | 11.80% | 49,209/993,168 done LOC |
 
-Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-31T16:04:45`.
+Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-31T16:16:16`.
 
 ## Definition of 100.00%
 
@@ -122,7 +122,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `agent.background_review` | production | P2 | 1,829 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.battery` | production | P2 | 131 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.bedrock_adapter` | production | P2 | 1,948 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `agent.billing_links` | production | P2 | 124 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `agent.billing_links` | production | P2 | 124 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.billing_usage` | production | P2 | 323 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.billing_view` | production | P2 | 511 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.bounded_response` | production | P2 | 148 | ✅ done | Maintain parity evidence; no remaining task in this row. |

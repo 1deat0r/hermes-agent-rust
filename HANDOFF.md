@@ -490,6 +490,14 @@ crate gains `zip`.
 
 Bitwarden encrypted-cache follow-up (same partial): `_derive_encrypted_cache_key` (HKDF-SHA256, info `hermes-bws-encrypted-cache-v1`, 32-byte AES-256 key from the bootstrap token), `write_encrypted_disk_cache` (random 16B salt + 12B nonce, AES-256-GCM over compact JSON with the serialized cache key as AAD, 0600 staging + atomic rename, legacy plaintext file removed on success), and `read_encrypted_disk_cache` (version/key gates, str-str coercion, 0<=age<=max_stale window). 5 more tests. The crate gains `hkdf` + `aes-gcm`.
 
+Batch 45: `agent/billing_links.py` -> `hermes-agent::billing_links` done
+(6 source-derived tests, gap noted). The 14-provider billing-link table,
+two-pass resolution (slug dict first, then base_url host), Nous in-app
+routing bit with the portal fallback URL, unknown-provider
+readable-label degradation without an invented URL, and to_dict.
+`_nous_billing_url`'s hermes_cli import is PENDING with that surface
+(falls back to the same constant).
+
 `hermes-gateway` also gains `hermes-cli`, `hermes-constants`, `hermes-time`,
 `serde_json`, `libc` — all still below the agent/tools layers.
 `tools.close_terminal_tool` was skipped: blocked on the 2,937-LOC

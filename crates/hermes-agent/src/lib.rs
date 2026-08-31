@@ -1,6 +1,7 @@
 //! Agent-layer parity surfaces from `agent/`.
 
 pub mod auxiliary_client;
+pub mod billing_links;
 pub mod bounded_response;
 pub mod config;
 pub mod credential_pool;
