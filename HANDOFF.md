@@ -28,7 +28,7 @@ this documentation checkpoint. Previous: `d138528` (4d9's
 
 ## What landed this session (4da)
 
-Fifty-five units across four crates, all red-first, 358 new parity tests:
+Fifty-five units across four crates, all red-first, 366 new parity tests:
 
 - `hermes_cli/main.py` `_read_packed_ref` + `_read_git_revision_fingerprint`
   → `hermes-cli::git_revision` (8 tests, source-derived — no dedicated
@@ -467,6 +467,16 @@ override_existing default TRUE, BWS_ACCESS_TOKEN protected,
 NOT_CONFIGURED pre-flight arms). PENDING: find_bws/install_bws
 (checksum-verified download + zip extraction), _run_bws_list +
 fetch orchestration, and the HKDF+AESGCM encrypted last-good cache.
+
+Bitwarden runtime follow-up (same partial): `_run_bws_list` +
+`fetch_bitwarden_secrets` + `find_bws`/`hermes_bin_dir`/
+`_platform_binary_name` ported with 8 more tests against a fake bws
+binary. Live-fetch failure falls back to the STALE plaintext disk cache
+only for NETWORK/TIMEOUT classifications (never AUTH/INTERNAL);
+encrypted-cache tier PENDING. Cross-test L1 cache state was a real test
+bug: the network test now uses its own token. The installer
+(checksum-verified download + zip-slip-safe extraction) remains the
+main PENDING piece.
 
 `hermes-gateway` also gains `hermes-cli`, `hermes-constants`, `hermes-time`,
 `serde_json`, `libc` — all still below the agent/tools layers.

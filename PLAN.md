@@ -815,7 +815,16 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   the BitwardenSource adapter contract - bulk shape, bws scheme,
   override_existing default TRUE, BWS_ACCESS_TOKEN protected;
   find_bws/installer, encrypted HKDF+AESGCM cache, and _run_bws_list
-  fetch orchestration stay PENDING).
+  fetch orchestration stay PENDING). Runtime follow-up (same batch): `_run_bws_list` +
+  `fetch_bitwarden_secrets` + `find_bws`/`hermes_bin_dir`/`_platform_binary_name`
+  ported (8 runtime tests against a fake bws binary - JSON entry parsing
+  with invalid-name warnings, empty-project warning, non-JSON fatal,
+  network-failure stale plaintext fallback with age warning,
+  auth-failure no-fallback, fatal pre-checks). The bws child env uses the
+  per-fetch view + BWS_ACCESS_TOKEN + NO_COLOR + BWS_SERVER_URL;
+  find_bws checks the managed bin dir then PATH (installer PENDING); the
+  encrypted-cache tier is PENDING (with it enabled the stale plaintext
+  fallback is not consulted, matching upstream's only-encrypted rule).
   Batch 38 - `agent/secret_sources/command.py` done (14 tests,
   source-derived - gap noted: unquote grammar incl. lone-quote
   preservation, exact-dotenv-match precedence, multi-key-dump and
