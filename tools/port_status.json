@@ -2,6 +2,9 @@
  "agent.auxiliary_client": {
   "status": "partial"
  },
+ "agent.bounded_response": {
+  "status": "done"
+ },
  "agent.credential_pool": {
   "status": "partial"
  },

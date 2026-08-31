@@ -494,6 +494,30 @@ The gateway crate opened ahead of Phase 4 as a dependency-free leaf, the same pr
 | gateway/readiness.py (138 LOC) | ✅ | `hermes-gateway::readiness` (gains `rusqlite`, `serde_yaml`); 9 parity tests (`unit`) mirror both cases in `tests/gateway/test_readiness.py` — the healthy local runtime (overall `ok`, queue counters) and the degraded config/stopped-gateway path (file left byte-identical, no destructive repair) — plus source-derived probes: uninitialized home keeps `not initialized`/`using defaults` detail arms and touches no disk, a corrupt `state.db` degrades via the read-only URI probe without repair, empty config documents count as defaults (Python `None`), non-mapping top level degrades, `draining` is an ok gateway state, connected-platform counting honors the `state or status` `or`-chain case-insensitively with non-dict values skipped, blank models degrade, and negative queue counters clamp via `max(0, int(...))`. Probe notes preserved: read-only state-db schema query (never competes with writers; the fd-leak bug class is structurally impossible with rusqlite's RAII), `shutil.disk_usage` semantics (`free` = `f_bavail`, 90.0% degraded threshold), and exception *type labels* only in details, never messages |
 | tools/open_preview_tool.py (92 LOC) | ✅ | `hermes-tools::open_preview_tool`; 7 parity tests (`unit`) mirror `tests/tools/test_open_preview_tool.py` (registry entry lives in the `desktop_ui` toolset with no check_fn so it reaches desktop clients on any backend; an emitter panic reproduces the except arm with the panic message in the error, matching `read_preview_tool`) plus source-derived `_normalize_target` grammar cases — bare domains gain `https://`, localhost/loopback hosts (incl. `[::1]` and re.I case-insensitivity) gain `http://`, sub-2-letter TLDs stay bare, paths/schemes/`file:`/`~` pass through, backtick fences and whitespace strip, and empty targets hit the required-url error. Both regexes are `LazyLock` pins of the upstream patterns; the `if not ok` arm covers the no-emitter desktop-only case |
 
+### Session 4da leaves (batches 16-33, upstream @ b9aa928)
+
+| Module / upstream surface | Status | Rust home, oracle, and evidence tier |
+|---|---|---|
+| hermes_cli/colors.py (38 LOC) | ✅ | `hermes-cli::colors`; 6 parity tests (`unit`, source-derived, gap noted) — NO_COLOR-any-value / TERM=dumb / non-TTY disable arms, ANSI constant table, codes-join + reset-suffix grammar with verbatim pass-through |
+| hermes_cli/sqlite_util.py (49 LOC) | ✅ | `hermes-cli::sqlite_util`; 6 parity tests (`unit`, source-derived, gap noted) — idempotent column-add (duplicate swallow #21708), IMMEDIATE write_txn with guarded rollback + live two-connection serialization |
+| hermes_cli/secret_prompt.py (126) + cli_output.py (111) | ✅ | `hermes-cli::secret_prompt` / `cli_output`; 11 parity tests (`unit`, source-derived, gap noted) — masked-input state machine (enter/Ctrl-C/Ctrl-D/backspace/ESC arms), POSIX raw-mode session, print grammar, prompt strip/default/EOF "" semantics, Y-n hint |
+| hermes_cli/default_soul.py (112 LOC) | ✅ | `hermes-cli::default_soul`; 4 parity tests (`unit`, source-derived, gap noted) — legacy scaffold templates, CRLF/BOM/whitespace normalization, any-deviation-defeats safety |
+| agent/iteration_budget.py (62) + reactions.py (56) + trajectory.py (56) | ✅ | `hermes-agent::iteration_budget` / `reactions` / `trajectory`; 19 parity tests (`unit`; thread-safety race, vibe lexicon incl. RFC-verified boundaries, scratchpad→think + JSONL append) |
+| agent/ssl_guard.py (95 LOC) | ✅ | `hermes-agent::ssl_guard`; 7 parity tests (`unit`) mirroring `tests/agent/test_ssl_ca_guard.py` — env-var chain, exists→is-file→substantial→loads ladder, repair hint, skip short-circuit |
+| agent/bounded_response.py (148 LOC) | ✅ | `hermes-agent::bounded_response`; 8 parity tests (`unit`, source-derived, gap noted) — byte cap, many-chunk accumulation, hard wall-clock deadline with partial retention, UTF-8 replace, None-on-empty |
+| agent/monitoring/ (events 86 + emitter 211 + __init__ 29) | ✅ | `hermes-agent::monitoring`; 10 parity tests (`unit`, source-derived, gap noted) — typed content-free events, drop-oldest bounded queue, fail-isolated subscribers, opt-in singleton |
+| agent/monitoring/redaction.py (71) | ✅ | `monitoring::redaction`; 4 parity tests (`unit`) — force-redactor + shape regexes, PII classification, fail-closed |
+| agent/monitoring/gateway_health.py (469) | ✅ | `monitoring::gateway_health`; 11 parity tests (`unit`, source-derived, gap noted) — metric/event assembly from runtime status, platform fatal diagnostics, sha256 instance ids, transition events, diagnostic-log bridge |
+| agent/monitoring/cron_health.py (201) | 🟡 | `monitoring::cron_health` partial; 6 parity tests (`unit`) for classify/job-key/duration/projection/terminal-emit; `build_cron_health_snapshot` PENDING with cron.jobs/scheduler + GatewayMetric (now available) |
+| agent/monitoring/otlp_exporter.py (272) | 🟡 | `monitoring::otlp_exporter` partial; 8 parity tests (`unit`) for config probe, enabled gate, env-resolved headers, span-attr keep lists, fail-isolated batch export over a SpanSink seam; OTel SDK transport + _resource_attributes PENDING |
+| agent/monitoring/gateway_health_export.py (643) | 🟡 | `monitoring::gateway_health_export` partial; 9 parity tests (`unit`) for resource/diagnostic allowlists, config gates, endpoint derivation, severity mapping, plane filter; runtime/streamer orchestration PENDING |
+| hermes_cli/dashboard_auth/ base 306 + registry 81 + __init__ 48 | ✅ | `hermes-cli::dashboard_auth::{base,registry}`; 5 parity tests (`unit`, source-derived, gap noted) — provider protocol + capability flags + loud defaults, ordered registry with duplicate rejection and fail-closed token plane |
+| hermes_cli/dashboard_auth/ public_paths 60 + prefix 232 | ✅/🟡 | `public_paths` done (8-entry allowlist); `prefix` partial (7 tests; X-Forwarded-Prefix grammar, public_url precedence; config.yaml leg parameterised, PENDING hermes_cli.config) |
+| hermes_cli/dashboard_auth/ audit 95 + token_auth 194 | ✅/🟡 | `audit` done (3 tests; REDACTED_FIELDS strip, fail-open writes); `token_auth` partial (8 tests; route registry, bearer extraction, stacked (principal, unreachable) outcome; FastAPI middleware PENDING) |
+| hermes_cli/dashboard_auth/ws_tickets.py (161) + native_flow.py (297) | ✅ | `ws_tickets` (5 tests: single-use tickets, TTL boundaries, internal credential) and `native_flow` (6 tests: RFC 7636 S256 sample, brokered flow, pop-before-PKCE, TTLs, caps); `unit`, source-derived, gap noted |
+| tools/mcp_dashboard_oauth.py (145 LOC) | ✅ | `hermes-tools::mcp_dashboard_oauth`; 11 parity tests (`unit`, source-derived, gap noted) — OAuth callback bridge state machine, condvar waits, constant-time state validation |
+| tools/browser_dialog_tool.py (148) + close_terminal_tool.py (62) | ✅ | `browser_dialog_tool` (6 tests; browser-cdp toolset, DialogResponder seam) and `close_terminal_tool` (7 tests; on_close sink seam, request_close_terminal contract); process_registry/CDP supervisor themselves PENDING |
+
 ### hermes-providers base (Phase 2, upstream @ b9aa928)
 
 | Module / upstream surface | Status | Rust home, oracle, and evidence tier |
@@ -640,7 +664,7 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 ## 7. Session log
 
-- 2026-08-31 (session 4da): Forty-eight units across four crates, all red-first (batches 29-32 detail the four most recent):
+- 2026-08-31 (session 4da): Forty-eight units across four crates, all red-first:
   batch 1 — the `hermes_cli/main.py` private git-fingerprint helpers
   (`_read_packed_ref`, `_read_git_revision_fingerprint`) into
   `hermes-cli::git_revision` (8 tests), then `gateway/code_skew.py` (10
@@ -715,37 +739,44 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   (the stale `/home/mustbearn` default in `tools/inventory.sh`/AGENTS.md
   was corrected to the current checkout path).
   Evidence: `cargo test -p hermes-gateway -p hermes-cli -p hermes-tools -p
-  hermes-agent` → 305 new tests green; `cargo clippy -p hermes-gateway -p hermes-cli -p
+  hermes-agent` → 256 new tests green; `cargo clippy -p hermes-gateway -p hermes-cli -p
   hermes-tools --all-targets` clean on all new code; `rustfmt --edition
   2021` clean on all changed files; serialized
   `/home/mustbearnold/.cargo/bin/cargo test --workspace -- --test-threads=1`
-  passed 1,631 tests with 6 intentional ignores (the new one is
+  passed 1,581 tests with 6 intentional ignores (the new one is
   skill_provenance's `ignore` doc example); `git diff --check` clean.
-  Ledger: 136 done / 21 partial / 3,725 tracked (**3.50%**) and 136 done /
-  21 partial / 946 production (**12.33%**). Next: more small `tools/`/
+  Ledger: 137 done / 21 partial / 3,724 tracked (**3.53%**) and 137 done /
+  21 partial / 945 production (**12.42%**). Next: more small `tools/`/
   `gateway/` leaves (e.g. `gateway.readiness`, `gateway.rich_sent_store`
   neighbors `gateway.code_skew` consumers, `tools.open_preview_tool`), the
-  `tools.process_registry` mega-module (its remaining spawn/poll/read/kill
-  surface), the dashboard_auth middleware/routes/login_page web-server
-  modules, or the deferred higher-layer seams. Batches 29-32 detail:
-  Batch 29 - `tools/mcp_dashboard_oauth.py` (11 tests, source-derived -
-  gap noted: the OAuth callback bridge flow state machine with condvar
-  waits, constant-time state validation, duplicate-callback rejection,
-  mark_error waking waiters and no-op after approval, and the ContextVar
-  current-flow as a thread-local slot with restore-on-drop guard).
-  Batch 30 - `tools/browser_dialog_tool.py` (6 tests; SUPERVISOR_REGISTRY
-  lookup injected as a settable closure returning a DialogResponder trait
-  object; task_id defaults to "default"; the CDP supervisor itself stays
-  PENDING). Batch 31 - `tools/close_terminal_tool.py` (7 tests; the
-  registry `on_close` sink injects as a settable closure, the
+  `tools.process_registry` mega-module (unblocks
+  `tools.close_terminal_tool`), or the deferred higher-layer seams
+  (desktop/gateway emitter wiring, plugin registry).
+
+  Batches 29-33 detail (all source-derived, gaps noted): Batch 29 -
+  `tools/mcp_dashboard_oauth.py` (11 tests; OAuth callback bridge flow
+  state machine, condvar waits, constant-time state validation,
+  duplicate-callback rejection, mark_error wakes waiters and no-ops after
+  approval, ContextVar current-flow as thread-local slot with
+  restore-on-drop guard). Batch 30 - `tools/browser_dialog_tool.py` (6
+  tests; SUPERVISOR_REGISTRY lookup injected as a settable closure
+  returning a DialogResponder trait object; task_id defaults to "default";
+  CDP supervisor itself PENDING). Batch 31 - `tools/close_terminal_tool.py`
+  (7 tests; the registry `on_close` sink injects as a settable closure,
   request_close_terminal contract implemented locally, required-error
   fires before the sink lookup; process_registry still PENDING).
-  Batch 32 - `agent/think_scrubber.py` (13 tests, source-derived - gap
-  noted: the MiniMax split-delta scenario, closed-pair suppression
-  without boundary gating, mid-line prose mentions preserved, boundary
-  rules, partial-tag hold-back across deltas, verbatim flush of held-back
-  non-tags, unterminated-block discard, boundary-flag reset for retries,
-  case-insensitive variants, orphan-close stripping, reset-between-turns).
+  Batch 32 - `agent/think_scrubber.py` (13 tests; the MiniMax split-delta
+  scenario, closed-pair suppression without boundary gating, mid-line
+  prose mentions preserved, boundary rules, partial-tag hold-back across
+  deltas, verbatim flush of held-back non-tags, unterminated-block
+  discard, boundary-flag reset for retries, case-insensitive variants,
+  orphan-close stripping, reset-between-turns). Batch 33 -
+  `agent/bounded_response.py` (8 tests; byte-cap truncation, many-chunk
+  accumulation, hard wall-clock deadline abandoning a stalling body while
+  keeping partial bytes, invalid-UTF-8 replacement, None-on-empty
+  or_default variant; httpx response abstracted as a blocking chunk
+  iterator owned by the drain worker - daemon-thread + hard deadline
+  structure preserved).
 
 - 2026-08-30 (session 4d9): Three more oracle-backed leaves across two
   crates: `tools/browser_camofox_state.py` and `tools/focus_pane_tool.py`

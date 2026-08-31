@@ -11,7 +11,7 @@
 //! x509 parsing is left to the TLS stack at client-construction time; this
 //! guard's contract is catching missing/empty/truncated bundles early.
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use crate::errors::SSLConfigurationError;
 

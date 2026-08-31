@@ -28,7 +28,7 @@ this documentation checkpoint. Previous: `d138528` (4d9's
 
 ## What landed this session (4da)
 
-Forty-eight units across four crates, all red-first, 305 new parity tests:
+Forty-nine units across four crates, all red-first, 313 new parity tests:
 
 - `hermes_cli/main.py` `_read_packed_ref` + `_read_git_revision_fingerprint`
   → `hermes-cli::git_revision` (8 tests, source-derived — no dedicated
@@ -345,6 +345,15 @@ corruption (duplicated session-log copies from a scripted splice,
 introduced in batch 31's commit) was found and repaired by restoring the
 last clean copy (7efd75b) and consolidating the batch 29-32 entries.
 
+Batch 33: `agent/bounded_response.py` ->
+`hermes-agent::bounded_response` done (8 source-derived tests, gap
+noted). The httpx response abstracts as a blocking chunk iterator owned
+by the drain worker; the caller waits with the hard wall-clock deadline
+(Condvar) and on timeout abandons the worker (mem::forget = upstream's
+daemon thread), keeping partial bytes. Byte cap truncates mid-chunk;
+invalid UTF-8 replaces; `read_error_body_or_default` returns None on
+empty. Constants: 64KiB cap / 10s deadline.
+
 `hermes-gateway` also gains `hermes-cli`, `hermes-constants`, `hermes-time`,
 `serde_json`, `libc` — all still below the agent/tools layers.
 `tools.close_terminal_tool` was skipped: blocked on the 2,937-LOC
@@ -354,9 +363,9 @@ last clean copy (7efd75b) and consolidating the batch 29-32 entries.
 
 Session 4da **changed the ledger**: 99 done / 15 partial / 3,768 missing
 tracked modules and 99 done / 15 partial / 989 missing production modules —
-**3.50%** tracked and **12.33%** production strict completion — regenerated
+**3.53%** tracked and **12.42%** production strict completion — regenerated
 against the pinned `b9aa928` worktree (commands above), with
-`cargo build --workspace` and the serialized workspace run green at 1,631
+`cargo build --workspace` and the serialized workspace run green at 1,639
 tests / 6 ignored (the 6th is skill_provenance's intentional `ignore` doc
 example).
 
@@ -375,11 +384,16 @@ example).
 ## Current conversion ledger
 
 99 done / 15 partial / 3,768 missing tracked (**2.55%** strict completion);
-136 done / 21 partial / 946 missing production (**12.33%**). Regenerated via
+137 done / 21 partial / 945 missing production (**12.42%**). Regenerated via
 `tools/inventory.sh` (pinned worktree) + `python3 tools/conversion_ledger.py`.
 
 ## Fidelity notes
 
+- Session 4da (batch 33): the bounded read's deadline cannot be enforced
+  between chunks (a stall mid-chunk never yields control), so the drain
+  runs on a worker the caller abandons on timeout (mem::forget stands in
+  for the upstream daemon thread). Callers own response close; the
+  iterator's error path is panic-isolated like the upstream `except`.
 - Session 4da (batch 32): the scrubber's byte-slicing is char-boundary
   guarded (max_partial_suffix skips non-boundary splits, feed re-checks
   before slicing) so multi-byte content cannot panic mid-tag-hold-back.
@@ -588,9 +602,9 @@ example).
 
 - `/home/mustbearnold/.cargo/bin/cargo build --workspace` — green.
 - `cargo test -p hermes-gateway -p hermes-cli -p hermes-tools -p
-  hermes-agent` — 305 new tests green.
+  hermes-agent` — 313 new tests green.
 - Serialized `/home/mustbearnold/.cargo/bin/cargo test --workspace --
-  --test-threads=1` — 1,631 passed, 0 failed, 6 intentional ignores.
+  --test-threads=1` — 1,639 passed, 0 failed, 6 intentional ignores.
 - `cargo clippy -p hermes-gateway -p hermes-cli --all-targets` — clean on
   all new code.
 - `rustfmt --edition 2021 --check` — clean on all changed files.
