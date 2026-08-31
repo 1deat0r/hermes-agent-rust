@@ -23,9 +23,10 @@ reqwest.workspace = true
 serde_json.workspace = true
 sha2 = "0.10"
 unicode-width = "0.2"
+tempfile = "3"
+zip = { version = "2", default-features = false, features = ["deflate"] }
 thiserror.workspace = true
 url = "2"
 
 [dev-dependencies]
 parking_lot = "0.12"
-tempfile = "3"

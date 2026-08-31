@@ -478,6 +478,16 @@ bug: the network test now uses its own token. The installer
 (checksum-verified download + zip-slip-safe extraction) remains the
 main PENDING piece.
 
+Bitwarden installer follow-up (same partial): `platform_asset_name`
+(target-triple grammar, Linux musl probe via ldd), `expected_sha256`
+(sha256sum format), `sha256_file`, `pick_zip_member` (shortest path),
+`safe_extract_member` (zip-slip refusal), `install_urls`, and
+`install_bws_at` — checksum-verified staged install (chmod 0755 + atomic
+rename) with the HTTPS layer abstracted behind an injectable
+`Downloader` seam; existing-target short-circuits without download;
+checksum mismatch aborts without installing. 7 installer tests. The
+crate gains `zip`.
+
 `hermes-gateway` also gains `hermes-cli`, `hermes-constants`, `hermes-time`,
 `serde_json`, `libc` — all still below the agent/tools layers.
 `tools.close_terminal_tool` was skipped: blocked on the 2,937-LOC

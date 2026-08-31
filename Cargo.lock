@@ -576,6 +576,7 @@ dependencies = [
  "thiserror",
  "unicode-width",
  "url",
+ "zip",
 ]
 
 [[package]]

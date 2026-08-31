@@ -824,7 +824,13 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   per-fetch view + BWS_ACCESS_TOKEN + NO_COLOR + BWS_SERVER_URL;
   find_bws checks the managed bin dir then PATH (installer PENDING); the
   encrypted-cache tier is PENDING (with it enabled the stale plaintext
-  fallback is not consulted, matching upstream's only-encrypted rule).
+  fallback is not consulted, matching upstream's only-encrypted rule). Installer follow-up: `platform_asset_name`, `expected_sha256`,
+  `sha256_file`, `pick_zip_member` (shortest-path),
+  `safe_extract_member` (realpath containment zip-slip guard),
+  `install_urls`, and `install_bws_at` (checksum-verified staged chmod
+  0755 + atomic rename; network abstracted behind an injectable
+  `Downloader` seam; existing-target short-circuit; mismatch aborts) —
+  7 installer tests. The real HTTPS transport remains caller-supplied.
   Batch 38 - `agent/secret_sources/command.py` done (14 tests,
   source-derived - gap noted: unquote grammar incl. lone-quote
   preservation, exact-dotenv-match precedence, multi-key-dump and

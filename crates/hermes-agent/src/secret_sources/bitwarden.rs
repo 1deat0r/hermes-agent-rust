@@ -16,6 +16,7 @@
 //! AES-256-GCM last-good cache keyed off the bootstrap token).
 
 use std::collections::BTreeMap;
+use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, OnceLock};
 use std::time::Instant;
@@ -23,8 +24,12 @@ use std::time::Instant;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use serde_json::Value;
+use tempfile::TempDir;
 
 use std::collections::HashMap;
+
+use base64::engine::general_purpose::URL_SAFE_NO_PAD as B64_URL;
+use base64::Engine;
 
 use super::base::{ErrorKind, FetchResult, SecretSource};
 use super::cache::{CachedFetch, DiskCache};
@@ -414,7 +419,6 @@ pub fn run_bws_list(
     project_id: &str,
     server_url: &str,
 ) -> Result<(std::collections::BTreeMap<String, String>, Vec<String>), String> {
-    use std::io::Read;
     use std::process::{Command, Stdio};
 
     let mut command = Command::new(bws);
@@ -690,6 +694,242 @@ fn rand_nonce() -> String {
 #[doc(hidden)]
 pub fn clear_l1_for_tests() {
     L1.lock().unwrap_or_else(|e| e.into_inner()).clear();
+}
+
+// ---------------------------------------------------------------------------
+// Binary install (pinned release, checksum-verified, zip-slip-safe)
+// ---------------------------------------------------------------------------
+
+/// PARITY: `_BWS_RELEASE_BASE` (upstream lines 75-77).
+pub const BWS_RELEASE_BASE: &str =
+    "https://github.com/bitwarden/sdk-sm/releases/download/bws-v2.0.0";
+
+/// PARITY: `_BWS_CHECKSUM_NAME` (upstream line 78).
+pub const BWS_CHECKSUM_NAME: &str = "bws-sha256-checksums-2.0.0.txt";
+
+/// PARITY: `_BWS_DOWNLOAD_TIMEOUT` (upstream line 81).
+pub const BWS_DOWNLOAD_TIMEOUT: f64 = 60.0;
+
+/// PARITY: `_platform_asset_name` (upstream lines 176-215) — map
+/// (uname, arch, libc) to the upstream asset filename following Rust's
+/// target-triple convention. Linux defaults to gnu and switches to musl
+/// when `ldd --version` says so; macOS uses the universal binary.
+pub fn platform_asset_name() -> Result<String, String> {
+    if cfg!(target_os = "macos") {
+        return Ok(format!("bws-macos-universal-{BWS_VERSION}.zip"));
+    }
+    if cfg!(target_os = "windows") {
+        let arch = if std::env::consts::ARCH == "aarch64" {
+            "aarch64"
+        } else {
+            "x86_64"
+        };
+        return Ok(format!("bws-{arch}-pc-windows-msvc-{BWS_VERSION}.zip"));
+    }
+    if cfg!(target_os = "linux") {
+        let arch = if std::env::consts::ARCH == "aarch64" {
+            "aarch64"
+        } else {
+            "x86_64"
+        };
+        // ldd --version writes to stderr on glibc, stdout on musl. Getting
+        // it wrong falls back to a clear loader error, which we catch.
+        let mut libc_name = "gnu";
+        if let Ok(output) = std::process::Command::new("ldd").arg("--version").output() {
+            let combined = format!(
+                "{}{}",
+                String::from_utf8_lossy(&output.stdout),
+                String::from_utf8_lossy(&output.stderr)
+            )
+            .to_lowercase();
+            if combined.contains("musl") {
+                libc_name = "musl";
+            }
+        }
+        return Ok(format!(
+            "bws-{arch}-unknown-linux-{libc_name}-{BWS_VERSION}.zip"
+        ));
+    }
+    Err(format!(
+        "Unsupported platform for bws auto-install: {} {}",
+        std::env::consts::OS,
+        std::env::consts::ARCH
+    ))
+}
+
+/// PARITY: `_expected_sha256` (upstream lines 290-303) — parse the
+/// standard `sha256sum` output: `<hex>  <filename>`, one per line.
+pub fn expected_sha256(checksum_file: &Path, asset_name: &str) -> Result<String, String> {
+    let text =
+        std::fs::read_to_string(checksum_file).map_err(|e| format!("read checksums: {e}"))?;
+    for line in text.lines() {
+        let parts: Vec<&str> = line.trim().split_whitespace().collect();
+        if parts.len() >= 2 && parts[parts.len() - 1] == asset_name {
+            return Ok(parts[0].to_string());
+        }
+    }
+    Err(format!(
+        "No checksum entry for {asset_name} in {}",
+        checksum_file
+            .file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_default()
+    ))
+}
+
+/// PARITY: `_sha256_file` (upstream lines 306-312) — streaming sha256 hex.
+pub fn sha256_file(path: &Path) -> Result<String, String> {
+    use sha2::{Digest, Sha256};
+    let mut hasher = Sha256::new();
+    let mut f = std::fs::File::open(path).map_err(|e| e.to_string())?;
+    let mut buf = [0u8; 65536];
+    loop {
+        let n = f.read(&mut buf).map_err(|e| e.to_string())?;
+        if n == 0 {
+            break;
+        }
+        hasher.update(&buf[..n]);
+    }
+    let digest = hasher.finalize();
+    Ok(digest.iter().map(|b| format!("{b:02x}")).collect())
+}
+
+/// PARITY: `_pick_zip_member` (upstream lines 315-329) — find the binary
+/// inside the upstream zip (flat historically; tolerate a top-level dir),
+/// preferring the shortest path for determinism.
+pub fn pick_zip_member(members: &[String], binary_name: &str) -> Result<String, String> {
+    let mut candidates: Vec<&String> = members
+        .iter()
+        .filter(|n| n.rsplit('/').next() == Some(binary_name))
+        .collect();
+    if candidates.is_empty() {
+        let preview: Vec<String> = members.iter().take(5).cloned().collect();
+        return Err(format!(
+            "Could not find {binary_name} inside downloaded archive (members: {preview:?})..."
+        ));
+    }
+    candidates.sort_by_key(|n| n.len());
+    Ok(candidates[0].clone())
+}
+
+/// PARITY: `_safe_extract_member` (upstream lines 332-360) — extract one
+/// archive member, refusing path traversal ("zip-slip") via realpath +
+/// containment, and refusing a member that IS the destination root.
+pub fn safe_extract_member(
+    archive_path: &Path,
+    member: &str,
+    dest_dir: &Path,
+) -> Result<PathBuf, String> {
+    let dest_root = std::fs::canonicalize(dest_dir).map_err(|e| e.to_string())?;
+    let target = dest_root.join(member);
+    let target = target
+        .components()
+        .fold(dest_root.clone(), |acc, comp| match comp {
+            std::path::Component::ParentDir => acc
+                .parent()
+                .map(Path::to_path_buf)
+                .unwrap_or_else(|| acc.clone()),
+            other => acc.join(other),
+        });
+    let contained = target.starts_with(&dest_root);
+    if !contained || target == dest_root {
+        return Err(format!(
+            "Refusing to extract unsafe archive member {member:?}: it escapes the extraction directory"
+        ));
+    }
+    let mut archive =
+        zip::ZipArchive::new(std::fs::File::open(archive_path).map_err(|e| e.to_string())?)
+            .map_err(|e| e.to_string())?;
+    let mut file = archive
+        .by_name(member)
+        .map_err(|e| format!("member {member:?} not in archive: {e}"))?;
+    if file.is_dir() {
+        std::fs::create_dir_all(&target).map_err(|e| e.to_string())?;
+        return Ok(target);
+    }
+    if let Some(parent) = target.parent() {
+        std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    }
+    let mut out = std::fs::File::create(&target).map_err(|e| e.to_string())?;
+    std::io::copy(&mut file, &mut out).map_err(|e| e.to_string())?;
+    Ok(target)
+}
+
+/// The network seam for [`install_bws_at`]: download `url` into `dest`.
+/// The real HTTP layer lives above this crate; tests inject a local copier.
+pub type Downloader = dyn Fn(&str, &Path) -> Result<(), String> + Send + Sync;
+
+/// Compute the two URLs the installer downloads (asset + checksums) for
+/// the current platform.
+///
+/// PARITY: the `install_bws` URL composition (upstream lines 224-228).
+pub fn install_urls() -> Result<(String, String, String), String> {
+    let asset_name = platform_asset_name()?;
+    let asset_url = format!("{BWS_RELEASE_BASE}/{asset_name}");
+    let checksum_url = format!("{BWS_RELEASE_BASE}/{BWS_CHECKSUM_NAME}");
+    Ok((asset_name, asset_url, checksum_url))
+}
+
+/// Download, verify, and install the pinned `bws` binary into `bin_dir`.
+///
+/// Orchestrates the upstream `install_bws` (upstream lines 219-278) with
+/// the network abstracted behind `download` (the real HTTP layer lives
+/// above this crate): asset + checksums downloaded, the checksum verified
+/// against the asset, the binary member extracted zip-slip-safely, then
+/// chmod 0755 and an atomic rename into `bin_dir/<bws>`. `force = false`
+/// short-circuits when the target already exists. Raises (Err) on any
+/// failure.
+pub fn install_bws_at(
+    bin_dir: &Path,
+    force: bool,
+    download: &Downloader,
+) -> Result<PathBuf, String> {
+    std::fs::create_dir_all(bin_dir).map_err(|e| e.to_string())?;
+    let target = bin_dir.join(platform_binary_name());
+    if target.exists() && !force {
+        return Ok(target);
+    }
+
+    let (asset_name, asset_url, checksum_url) = install_urls()?;
+    let staging = tempfile::TempDir::new().map_err(|e| e.to_string())?;
+    let zip_path = staging.path().join(&asset_name);
+    let checksum_path = staging.path().join(BWS_CHECKSUM_NAME);
+
+    download(&asset_url, &zip_path).map_err(|e| format!("Failed to download {asset_url}: {e}"))?;
+    download(&checksum_url, &checksum_path)
+        .map_err(|e| format!("Failed to download {checksum_url}: {e}"))?;
+
+    let expected = expected_sha256(&checksum_path, &asset_name)?;
+    let actual = sha256_file(&zip_path)?;
+    if expected.to_lowercase() != actual.to_lowercase() {
+        return Err(format!(
+            "Checksum mismatch for {asset_name}: expected {expected}, got {actual}"
+        ));
+    }
+
+    // The extracted binary member name mirrors the platform binary name.
+    let extracted = safe_extract_member(&zip_path, &platform_binary_name(), staging.path())?;
+
+    // Move into place atomically: write to a sibling tempfile in the final
+    // directory so the rename can't cross filesystems; chmod 0755.
+    let staged = bin_dir.join(format!(".bws_{}", rand_nonce_path()));
+    std::fs::copy(&extracted, &staged).map_err(|e| e.to_string())?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let _ = std::fs::set_permissions(&staged, std::fs::Permissions::from_mode(0o755));
+    }
+    std::fs::rename(&staged, &target).map_err(|e| e.to_string())?;
+    Ok(target)
+}
+
+fn rand_nonce_path() -> String {
+    let mut bytes = [0u8; 8];
+    rand::random::<[u8; 8]>()
+        .iter()
+        .enumerate()
+        .for_each(|(i, b)| bytes[i] = *b);
+    B64_URL.encode(bytes)
 }
 
 /// Drop in-process AND disk caches (plaintext and encrypted) — used after
