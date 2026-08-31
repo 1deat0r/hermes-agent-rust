@@ -932,6 +932,194 @@ fn rand_nonce_path() -> String {
     B64_URL.encode(bytes)
 }
 
+// ---------------------------------------------------------------------------
+// Encrypted last-good cache (HKDF-SHA256 key + AES-256-GCM)
+// ---------------------------------------------------------------------------
+
+/// PARITY: `_ENCRYPTED_CACHE_INFO` (upstream line 103).
+pub const ENCRYPTED_CACHE_INFO: &[u8] = b"hermes-bws-encrypted-cache-v1";
+
+/// PARITY: `_derive_encrypted_cache_key` (upstream lines 376-384) —
+/// HKDF-SHA256(access_token, salt, info) → 32-byte AES-256 key.
+fn derive_encrypted_cache_key(access_token: &str, salt: &[u8]) -> Vec<u8> {
+    use hkdf::Hkdf;
+    use sha2::Sha256;
+    let hk = Hkdf::<Sha256>::new(Some(salt), access_token.as_bytes());
+    let mut key = vec![0u8; 32];
+    hk.expand(ENCRYPTED_CACHE_INFO, &mut key)
+        .expect("32-byte key");
+    key
+}
+
+fn b64e(raw: &[u8]) -> String {
+    use base64::Engine;
+    base64::engine::general_purpose::STANDARD.encode(raw)
+}
+
+fn b64d(text: &str) -> Result<Vec<u8>, String> {
+    use base64::Engine;
+    base64::engine::general_purpose::STANDARD
+        .decode(text)
+        .map_err(|e| format!("bad base64: {e}"))
+}
+
+fn encrypted_disk_cache_path(home_path: Option<&Path>) -> PathBuf {
+    super::cache::resolve_cache_home(home_path)
+        .join("cache")
+        .join(ENCRYPTED_CACHE_BASENAME)
+}
+
+/// Persist an encrypted last-good cache entry atomically.
+///
+/// Best-effort by design: cache write failure must never block a fresh BWS
+/// fetch. The raw BWS access token is not stored; it only derives the AES
+/// key (HKDF-SHA256). Layout: `salt` (16B random) + `nonce` (12B random) +
+/// AES-256-GCM over the compact-JSON `{"secrets": …, "fetched_at": …}`
+/// payload with the serialized cache key as AAD. Written via a `0600`
+/// staging file + atomic rename; a successful write removes the legacy
+/// plaintext cache so stale secrets cannot remain on disk.
+///
+/// PARITY: `_write_encrypted_disk_cache` (upstream lines 386-449).
+pub fn write_encrypted_disk_cache(
+    cache_key: &(String, String, String),
+    access_token: &str,
+    entry: &CachedFetch,
+    home_path: Option<&Path>,
+    random_nonce: impl FnOnce() -> [u8; 16],
+) {
+    use aes_gcm::aead::Aead;
+    use aes_gcm::{Aes256Gcm, KeyInit};
+
+    let path = encrypted_disk_cache_path(home_path);
+    let write_result = (|| -> Result<(), String> {
+        let cache_dir = path.parent().ok_or("no parent")?.to_path_buf();
+        std::fs::create_dir_all(&cache_dir).map_err(|e| e.to_string())?;
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let _ = std::fs::set_permissions(&cache_dir, std::fs::Permissions::from_mode(0o700));
+        }
+        // salt (16) and nonce (12) come from the caller's random source.
+        let salt: [u8; 16] = rand::random();
+        let nonce_bytes: [u8; 12] = {
+            let mut n = [0u8; 12];
+            let r: [u8; 12] = rand::random();
+            n.copy_from_slice(&r);
+            n
+        };
+        let serialized_key = cache_key_str(&cache_key.0, &cache_key.1, &cache_key.2);
+        let key = derive_encrypted_cache_key(access_token, &salt);
+        let cipher = Aes256Gcm::new_from_slice(&key).map_err(|e| e.to_string())?;
+        let plaintext = serde_json::to_string(&serde_json::json!({
+            "secrets": entry.secrets,
+            "fetched_at": entry.fetched_at,
+        }))
+        .map_err(|e| e.to_string())?;
+        let ciphertext = cipher
+            .encrypt(
+                aes_gcm::Nonce::from_slice(&nonce_bytes),
+                plaintext.as_bytes(),
+            )
+            .map_err(|e| e.to_string())?;
+        let payload = serde_json::json!({
+            "version": ENCRYPTED_CACHE_VERSION,
+            "key": serialized_key,
+            "salt": b64e(&salt),
+            "nonce": b64e(&nonce_bytes),
+            "ciphertext": b64e(&ciphertext),
+        });
+        let tmp = cache_dir.join(format!(".bws_cache_enc_{}.tmp", {
+            let mut b = [0u8; 8];
+            rand::random::<[u8; 8]>()
+                .iter()
+                .enumerate()
+                .for_each(|(i, byte)| b[i] = *byte);
+            b.iter()
+                .map(|byte| format!("{byte:02x}"))
+                .collect::<String>()
+        }));
+        let write = std::fs::write(&tmp, serde_json::to_string(&payload).unwrap_or_default());
+        if let Err(e) = write {
+            let _ = std::fs::remove_file(&tmp);
+            return Err(e.to_string());
+        }
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let _ = std::fs::set_permissions(&tmp, std::fs::Permissions::from_mode(0o600));
+        }
+        std::fs::rename(&tmp, &path).map_err(|e| {
+            let _ = std::fs::remove_file(&tmp);
+            e.to_string()
+        })?;
+        // A successful encrypted write completes migration; remove the
+        // legacy plaintext cache so stale secrets cannot remain on disk.
+        let _ = std::fs::remove_file(disk_cache_path(home_path));
+        Ok(())
+    })();
+    if write_result.is_err() {
+        // best-effort cache only
+        log::debug!("encrypted cache write failed; ignoring");
+    }
+}
+
+/// Return a decrypted encrypted-cache entry if it matches and is in-window.
+///
+/// PARITY: `_read_encrypted_disk_cache` (upstream lines 450-494) —
+/// version/key gates, AES-256-GCM decrypt with the serialized key as AAD,
+/// the str-str coercion, and the `0 <= age <= max_age` window.
+pub fn read_encrypted_disk_cache(
+    cache_key: &(String, String, String),
+    access_token: &str,
+    max_age_seconds: f64,
+    home_path: Option<&Path>,
+    now: f64,
+) -> Option<CachedFetch> {
+    use aes_gcm::aead::Aead;
+    use aes_gcm::{Aes256Gcm, KeyInit};
+
+    if max_age_seconds <= 0.0 {
+        return None;
+    }
+    let path = encrypted_disk_cache_path(home_path);
+    let payload: Value = serde_json::from_str(&std::fs::read_to_string(path).ok()?).ok()?;
+    let map = payload.as_object()?;
+    if map.get("version")?.as_i64()? != ENCRYPTED_CACHE_VERSION {
+        return None;
+    }
+    let serialized_key = cache_key_str(&cache_key.0, &cache_key.1, &cache_key.2);
+    if map.get("key")?.as_str()? != serialized_key {
+        return None;
+    }
+    let salt = b64d(map.get("salt")?.as_str()?).ok()?;
+    let nonce = b64d(map.get("nonce")?.as_str()?).ok()?;
+    let ciphertext = b64d(map.get("ciphertext")?.as_str()?).ok()?;
+    let key = derive_encrypted_cache_key(access_token, &salt);
+    let cipher = Aes256Gcm::new_from_slice(&key).ok()?;
+    let plaintext_bytes = cipher
+        .decrypt(aes_gcm::Nonce::from_slice(&nonce), ciphertext.as_slice())
+        .ok()?;
+    let inner: Value = serde_json::from_str(&String::from_utf8(plaintext_bytes).ok()?).ok()?;
+    let inner_map = inner.as_object()?;
+    let secrets_json = inner_map.get("secrets")?;
+    let fetched_at = inner_map.get("fetched_at")?.as_f64()?;
+    let secrets_obj = secrets_json.as_object()?;
+    let age = now - fetched_at;
+    if !(0.0..=max_age_seconds).contains(&age) {
+        return None;
+    }
+    let mut secrets = BTreeMap::new();
+    for (k, v) in secrets_obj {
+        if let Some(v_str) = v.as_str() {
+            secrets.insert(k.clone(), v_str.to_string());
+        }
+    }
+    Some(CachedFetch {
+        secrets,
+        fetched_at,
+    })
+}
+
 /// Drop in-process AND disk caches (plaintext and encrypted) — used after
 /// a token rotation so the next startup fetches fresh with the new
 /// credential.

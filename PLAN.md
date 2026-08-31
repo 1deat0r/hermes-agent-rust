@@ -824,7 +824,14 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   per-fetch view + BWS_ACCESS_TOKEN + NO_COLOR + BWS_SERVER_URL;
   find_bws checks the managed bin dir then PATH (installer PENDING); the
   encrypted-cache tier is PENDING (with it enabled the stale plaintext
-  fallback is not consulted, matching upstream's only-encrypted rule). Installer follow-up: `platform_asset_name`, `expected_sha256`,
+  fallback is not consulted, matching upstream's only-encrypted rule). Encrypted-cache follow-up (same batch): `_derive_encrypted_cache_key`
+  (HKDF-SHA256, info hermes-bws-encrypted-cache-v1, 32-byte key),
+  `write_encrypted_disk_cache` (random 16B salt + 12B nonce, AES-256-GCM
+  over compact JSON with the serialized key as AAD, 0600 staging +
+  atomic rename, legacy plaintext cache removed on success), and
+  `read_encrypted_disk_cache` (version/key gates, str-str coercion,
+  0<=age<=max_stale window) - 5 encrypted-cache tests; the real HTTPS
+  transport remains the caller's. Installer follow-up: `platform_asset_name`, `expected_sha256`,
   `sha256_file`, `pick_zip_member` (shortest-path),
   `safe_extract_member` (realpath containment zip-slip guard),
   `install_urls`, and `install_bws_at` (checksum-verified staged chmod

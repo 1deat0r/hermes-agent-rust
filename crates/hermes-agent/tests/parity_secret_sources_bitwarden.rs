@@ -116,3 +116,161 @@ fn fetch_reports_missing_token_and_project_as_not_configured() {
     // only pin the project arm through a set token env name if present.)
     let _ = 0;
 }
+
+// ── encrypted last-good cache (HKDF + AES-256-GCM) ───────────────────────
+
+#[test]
+fn encrypted_cache_write_then_read_round_trip() {
+    let td = tempfile::TempDir::new().unwrap();
+    let home = td.path();
+    let key = ("fp1".to_string(), "proj".to_string(), String::new());
+    let entry = hermes_agent::secret_sources::cache::CachedFetch {
+        secrets: [("K".to_string(), "v".to_string())].into_iter().collect(),
+        fetched_at: 1_000.0,
+    };
+    let nonce = [7u8; 12];
+    hermes_agent::secret_sources::bitwarden::write_encrypted_disk_cache(
+        &key,
+        "access-token",
+        &entry,
+        Some(home),
+        || [9u8; 16],
+    );
+    // The encrypted file exists (0600) and the plaintext legacy file does not.
+    let enc_path = hermes_agent::secret_sources::bitwarden::ENCRYPTED_CACHE_BASENAME;
+    let path = home.join("cache").join(enc_path);
+    assert!(path.exists());
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mode = std::fs::metadata(&path).unwrap().permissions().mode();
+        assert_eq!(mode & 0o777, 0o600, "encrypted cache must be 0600");
+    }
+    let raw = std::fs::read_to_string(&path).unwrap();
+    assert!(!raw.contains("v\""), "plaintext value must not leak: {raw}");
+
+    // In-window read decrypts back.
+    let loaded = hermes_agent::secret_sources::bitwarden::read_encrypted_disk_cache(
+        &key,
+        "access-token",
+        3600.0,
+        Some(home),
+        1_500.0,
+    )
+    .unwrap();
+    assert_eq!(loaded.secrets.get("K").map(String::as_str), Some("v"));
+    assert_eq!(loaded.fetched_at, 1_000.0);
+}
+
+#[test]
+fn encrypted_cache_rejects_wrong_token_and_out_of_window() {
+    let td = tempfile::TempDir::new().unwrap();
+    let home = td.path();
+    let key = ("fp2".to_string(), "proj".to_string(), String::new());
+    let nonce = [9u8; 12];
+    hermes_agent::secret_sources::bitwarden::write_encrypted_disk_cache(
+        &key,
+        "correct-token",
+        &entry(&[("K", "v")], 1_000.0),
+        Some(home),
+        || [9u8; 16],
+    );
+    // Wrong token derives a different key -> decrypt fails -> None.
+    assert!(
+        hermes_agent::secret_sources::bitwarden::read_encrypted_disk_cache(
+            &key,
+            "wrong-token",
+            3600.0,
+            Some(home),
+            1_500.0
+        )
+        .is_none()
+    );
+    // Out of the max_stale window -> None.
+    assert!(
+        hermes_agent::secret_sources::bitwarden::read_encrypted_disk_cache(
+            &key,
+            "correct-token",
+            500.0,
+            Some(home),
+            1_000.0 + 600.0
+        )
+        .is_none()
+    );
+    // max_age <= 0 disables the read entirely.
+    assert!(
+        hermes_agent::secret_sources::bitwarden::read_encrypted_disk_cache(
+            &key,
+            "correct-token",
+            0.0,
+            Some(home),
+            1_500.0
+        )
+        .is_none()
+    );
+}
+
+#[test]
+fn encrypted_cache_write_is_atomic_and_leaves_no_staging_files() {
+    let td = tempfile::TempDir::new().unwrap();
+    let home = td.path();
+    let key = ("fp3".to_string(), "proj".to_string(), String::new());
+    hermes_agent::secret_sources::bitwarden::write_encrypted_disk_cache(
+        &key,
+        "tok",
+        &entry(&[("K", "v")], 1_000.0),
+        Some(home),
+        || [1u8; 16],
+    );
+    let leftovers: Vec<_> = std::fs::read_dir(home.join("cache"))
+        .unwrap()
+        .filter_map(Result::ok)
+        .filter(|e| e.file_name().to_string_lossy().contains(".tmp"))
+        .collect();
+    assert!(leftovers.is_empty(), "no staging file remains");
+}
+
+#[test]
+fn encrypted_cache_write_with_different_token_rotates_the_key() {
+    let td = tempfile::TempDir::new().unwrap();
+    let home = td.path();
+    let key = ("fp4".to_string(), "proj".to_string(), String::new());
+    // Write under token A, then write again under token B: same file path,
+    // different salt -> different key material; the read under B succeeds.
+    hermes_agent::secret_sources::bitwarden::write_encrypted_disk_cache(
+        &key,
+        "token-a",
+        &entry(&[("K", "a")], 1.0),
+        Some(home),
+        || [1u8; 16],
+    );
+    hermes_agent::secret_sources::bitwarden::write_encrypted_disk_cache(
+        &key,
+        "token-b",
+        &entry(&[("K", "b")], 2.0),
+        Some(home),
+        || [2u8; 16],
+    );
+    let loaded = hermes_agent::secret_sources::bitwarden::read_encrypted_disk_cache(
+        &key,
+        "token-b",
+        3600.0,
+        Some(home),
+        3.0,
+    )
+    .unwrap();
+    assert_eq!(loaded.secrets.get("K").map(String::as_str), Some("b"));
+}
+
+fn entry(
+    secrets: &[(&str, &str)],
+    fetched_at: f64,
+) -> hermes_agent::secret_sources::cache::CachedFetch {
+    hermes_agent::secret_sources::cache::CachedFetch {
+        secrets: secrets
+            .iter()
+            .map(|(k, v)| (k.to_string(), v.to_string()))
+            .collect(),
+        fetched_at,
+    }
+}

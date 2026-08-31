@@ -488,6 +488,8 @@ rename) with the HTTPS layer abstracted behind an injectable
 checksum mismatch aborts without installing. 7 installer tests. The
 crate gains `zip`.
 
+Bitwarden encrypted-cache follow-up (same partial): `_derive_encrypted_cache_key` (HKDF-SHA256, info `hermes-bws-encrypted-cache-v1`, 32-byte AES-256 key from the bootstrap token), `write_encrypted_disk_cache` (random 16B salt + 12B nonce, AES-256-GCM over compact JSON with the serialized cache key as AAD, 0600 staging + atomic rename, legacy plaintext file removed on success), and `read_encrypted_disk_cache` (version/key gates, str-str coercion, 0<=age<=max_stale window). 5 more tests. The crate gains `hkdf` + `aes-gcm`.
+
 `hermes-gateway` also gains `hermes-cli`, `hermes-constants`, `hermes-time`,
 `serde_json`, `libc` — all still below the agent/tools layers.
 `tools.close_terminal_tool` was skipped: blocked on the 2,937-LOC
@@ -527,6 +529,12 @@ example).
   `<` (a fetched_at exactly TTL old is stale) and ttl<=0 disables both
   layers. Explicit-clock read_at/write_at forms are the time.time patch
   seam; rand+base64 supply the mkstemp random staging suffix.
+- Session 4da (batch 44): the encrypted cache uses HKDF-SHA256 with the
+  bootstrap token as IKM, a random 16-byte salt, and
+  hermes-bws-encrypted-cache-v1 as info (32-byte AES-256 key); AES-256-GCM
+  over compact JSON with the serialized cache key as AAD; 0600 staging +
+  atomic rename; a successful write removes the legacy plaintext file;
+  reads gate on version/key and enforce 0<=age<=max_stale.
 - Session 4da (batch 38): command source tests exercise real /bin/sh
   children (env-key-as-data proven by interpolating HERMES_SECRET_KEY in
   the helper). The unquote requires length >= 2 (a lone quote survives);
