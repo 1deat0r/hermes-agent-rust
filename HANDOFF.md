@@ -28,7 +28,7 @@ this documentation checkpoint. Previous: `d138528` (4d9's
 
 ## What landed this session (4da)
 
-Forty-seven units across four crates, all red-first, 292 new parity tests:
+Forty-eight units across four crates, all red-first, 305 new parity tests:
 
 - `hermes_cli/main.py` `_read_packed_ref` + `_read_git_revision_fingerprint`
   → `hermes-cli::git_revision` (8 tests, source-derived — no dedicated
@@ -324,6 +324,27 @@ dict, error-string passthrough, ok + closed + note) is implemented
 locally. The registry mega-module is still PENDING for the remaining
 surface (spawn/poll/read/kill), whose close_stdin etc. wait the same way.
 
+Batch 32: `agent/think_scrubber.py` ->
+`hermes-agent::think_scrubber` done (13 source-derived tests, gap noted).
+The streaming tag-suppression state machine: in_block/buf/
+last_emitted_ended_newline, closed-pair priority over boundary-gated
+opens, partial-tag hold-back with char-boundary-safe byte slicing,
+orphan-close stripping with trailing whitespace, flush discarding
+unterminated blocks and resetting the boundary flag for intra-turn
+retries. All five tag variants (think/thinking/reasoning/thought/
+REASONING_SCRATCHPAD) case-insensitive.
+
+Batch 32: `agent/think_scrubber.py` ->
+`hermes-agent::think_scrubber` done (13 source-derived tests, gap noted).
+The streaming tag-suppression state machine: closed-pair priority over
+boundary-gated opens, partial-tag hold-back with char-boundary-safe byte
+slicing, orphan-close stripping with trailing whitespace, flush
+discarding unterminated blocks and resetting the boundary flag for
+intra-turn retries. All five tag variants case-insensitive. PLAN.md
+corruption (duplicated session-log copies from a scripted splice,
+introduced in batch 31's commit) was found and repaired by restoring the
+last clean copy (7efd75b) and consolidating the batch 29-32 entries.
+
 `hermes-gateway` also gains `hermes-cli`, `hermes-constants`, `hermes-time`,
 `serde_json`, `libc` — all still below the agent/tools layers.
 `tools.close_terminal_tool` was skipped: blocked on the 2,937-LOC
@@ -333,9 +354,9 @@ surface (spawn/poll/read/kill), whose close_stdin etc. wait the same way.
 
 Session 4da **changed the ledger**: 99 done / 15 partial / 3,768 missing
 tracked modules and 99 done / 15 partial / 989 missing production modules —
-**3.48%** tracked and **12.24%** production strict completion — regenerated
+**3.50%** tracked and **12.33%** production strict completion — regenerated
 against the pinned `b9aa928` worktree (commands above), with
-`cargo build --workspace` and the serialized workspace run green at 1,618
+`cargo build --workspace` and the serialized workspace run green at 1,631
 tests / 6 ignored (the 6th is skill_provenance's intentional `ignore` doc
 example).
 
@@ -354,11 +375,23 @@ example).
 ## Current conversion ledger
 
 99 done / 15 partial / 3,768 missing tracked (**2.55%** strict completion);
-135 done / 21 partial / 947 missing production (**12.24%**). Regenerated via
+136 done / 21 partial / 946 missing production (**12.33%**). Regenerated via
 `tools/inventory.sh` (pinned worktree) + `python3 tools/conversion_ledger.py`.
 
 ## Fidelity notes
 
+- Session 4da (batch 32): the scrubber's byte-slicing is char-boundary
+  guarded (max_partial_suffix skips non-boundary splits, feed re-checks
+  before slicing) so multi-byte content cannot panic mid-tag-hold-back.
+  Priority semantics preserved: a closed pair at or before a boundary-open
+  index wins; the earliest boundary-legal open per tag variant is enough.
+- Session 4da (batch 32): think_scrubber's byte-slicing is char-boundary
+  guarded (max_partial_suffix skips non-boundary splits; feed re-checks
+  before slicing) so multi-byte content cannot panic mid-hold-back.
+  Priority semantics: a closed pair at or before a boundary-open index
+  wins; the earliest boundary-legal open per tag variant suffices.
+  PLAN.md duplication lesson: scripted splices must assert match counts
+  before writing.
 - Session 4da (batch 31): close_terminal's seam drops the ProcessSession
   argument the upstream sink receives (the desktop handler keys off the
   session id); the required-process_id error fires before the sink
@@ -555,9 +588,9 @@ example).
 
 - `/home/mustbearnold/.cargo/bin/cargo build --workspace` — green.
 - `cargo test -p hermes-gateway -p hermes-cli -p hermes-tools -p
-  hermes-agent` — 292 new tests green.
+  hermes-agent` — 305 new tests green.
 - Serialized `/home/mustbearnold/.cargo/bin/cargo test --workspace --
-  --test-threads=1` — 1,618 passed, 0 failed, 6 intentional ignores.
+  --test-threads=1` — 1,631 passed, 0 failed, 6 intentional ignores.
 - `cargo clippy -p hermes-gateway -p hermes-cli --all-targets` — clean on
   all new code.
 - `rustfmt --edition 2021 --check` — clean on all changed files.

@@ -17,6 +17,7 @@ pub mod portal_tags;
 pub mod reactions;
 pub mod reasoning_summaries;
 pub mod ssl_guard;
+pub mod think_scrubber;
 pub mod tool_result_classification;
 pub mod trajectory;
 pub mod verify;

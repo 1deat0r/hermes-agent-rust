@@ -1,7 +1,7 @@
 # Hermes Agent → Hermes Agent Rust Conversion Ledger
 
-**Current strict completion: 2.85% of all tracked upstream modules (135/4740).**
-Production-only strict completion: **10.98%** (135/1229 production modules).
+**Current strict completion: 2.87% of all tracked upstream modules (136/4740).**
+Production-only strict completion: **11.07%** (136/1229 production modules).
 
 > This file is generated from `tools/inventory.json`; update the source ledger in `tools/port_status.json`, regenerate the inventory, then run `python3 tools/conversion_ledger.py`. Only `done` counts toward the percentage. `partial` is intentionally zero credit until its stated parity seams are closed.
 
@@ -9,10 +9,10 @@ Production-only strict completion: **10.98%** (135/1229 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 135 | 21 | 4584 | 2.85% | 45,896/1,910,919 done LOC |
-| Production modules | 135 | 21 | 1073 | 10.98% | 45,896/993,168 done LOC |
+| All tracked modules | 136 | 21 | 4583 | 2.87% | 46,292/1,910,919 done LOC |
+| Production modules | 136 | 21 | 1072 | 11.07% | 46,292/993,168 done LOC |
 
-Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-31T11:50:11`.
+Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-31T12:04:46`.
 
 ## Definition of 100.00%
 
@@ -270,7 +270,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `agent.system_prompt` | production | P2 | 1,123 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.terminal_env_provider` | production | P2 | 222 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.terminal_env_registry` | production | P2 | 221 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `agent.think_scrubber` | production | P2 | 396 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `agent.think_scrubber` | production | P2 | 396 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.thinking_timeout_guidance` | production | P2 | 136 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.thread_scoped_output` | production | P2 | 165 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.title_generator` | production | P2 | 762 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
