@@ -396,6 +396,18 @@ OSC arm that ansi_strip lacks), and `run_secret_cli` (allowlisted env +
 NO_COLOR + stdin null + timeout error). PENDING: registry.py
 orchestrator, bitwarden/onepassword/command backends, _cache.
 
+Batch 37: `agent/secret_sources/registry.py` ->
+`hermes-agent::secret_sources::registry` done (6 source-derived tests,
+gap noted). Registration gates (invalid lowercase names, API-version
+mismatch, shape, scheme collision across names, duplicate unless
+replace); secrets.sources ordering with unknown-name warnings;
+mapped-beats-bulk precedence; first-claim-wins with conflict warnings;
+preserve_existing > env > override ladder; per-source wall-clock timeout
+reporting TIMEOUT and continuing startup; profile aliasing
+(FOO_<PROFILE> -> FOO, credential-suffix guard, supplied-directly
+exemption). Bundled backends (bitwarden/onepassword/command) remain
+PENDING, so the lazy builtin registration is a no-op.
+
 `hermes-gateway` also gains `hermes-cli`, `hermes-constants`, `hermes-time`,
 `serde_json`, `libc` — all still below the agent/tools layers.
 `tools.close_terminal_tool` was skipped: blocked on the 2,937-LOC
@@ -405,9 +417,9 @@ orchestrator, bitwarden/onepassword/command backends, _cache.
 
 Session 4da **changed the ledger**: 99 done / 15 partial / 3,768 missing
 tracked modules and 99 done / 15 partial / 989 missing production modules —
-**3.61%** tracked and **12.69%** production strict completion — regenerated
+**3.63%** tracked and **12.78%** production strict completion — regenerated
 against the pinned `b9aa928` worktree (commands above), with
-`cargo build --workspace` and the serialized workspace run green at 1,660
+`cargo build --workspace` and the serialized workspace run green at 1,666
 tests / 6 ignored (the 6th is skill_provenance's intentional `ignore` doc
 example).
 
@@ -426,11 +438,17 @@ example).
 ## Current conversion ledger
 
 99 done / 15 partial / 3,768 missing tracked (**2.55%** strict completion);
-140 done / 21 partial / 942 missing production (**12.69%**). Regenerated via
+141 done / 21 partial / 940 missing production (**12.78%**). Regenerated via
 `tools/inventory.sh` (pinned worktree) + `python3 tools/conversion_ledger.py`.
 
 ## Fidelity notes
 
+- Session 4da (batch 37): the apply chain order is invalid-name ->
+  protected -> claimed(conflict warning) -> preserve_existing ->
+  env-without-override -> apply; profile aliasing additionally requires
+  the alias not be supplied directly by any source and a credential-shaped
+  suffix; per-source timeout uses a worker thread (TIMEOUT result,
+  partials discarded).
 - Session 4da (batch 36): run_secret_cli's env allowlist keeps only the
   named basics + allow_env + extra_env (never the full post-dotenv
   environ); timeout kill discards partial output and raises the
@@ -664,9 +682,9 @@ example).
 
 - `/home/mustbearnold/.cargo/bin/cargo build --workspace` — green.
 - `cargo test -p hermes-gateway -p hermes-cli -p hermes-tools -p
-  hermes-agent` — 326 new tests green.
+  hermes-agent` — 335 new tests green.
 - Serialized `/home/mustbearnold/.cargo/bin/cargo test --workspace --
-  --test-threads=1` — 1,660 passed, 0 failed, 6 intentional ignores.
+  --test-threads=1` — 1,666 passed, 0 failed, 6 intentional ignores.
 - `cargo clippy -p hermes-gateway -p hermes-cli --all-targets` — clean on
   all new code.
 - `rustfmt --edition 2021 --check` — clean on all changed files.

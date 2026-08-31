@@ -80,6 +80,9 @@
  "agent.secret_sources.base": {
   "status": "done"
  },
+ "agent.secret_sources.registry": {
+  "status": "done"
+ },
  "agent.session_activity": {
   "status": "done"
  },
