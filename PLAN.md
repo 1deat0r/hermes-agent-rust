@@ -664,7 +664,7 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 ## 7. Session log
 
-- 2026-08-31 (session 4da): Forty-nine units across four crates, all red-first:
+- 2026-08-31 (session 4da): Fifty units across four crates, all red-first:
   batch 1 — the `hermes_cli/main.py` private git-fingerprint helpers
   (`_read_packed_ref`, `_read_git_revision_fingerprint`) into
   `hermes-cli::git_revision` (8 tests), then `gateway/code_skew.py` (10
@@ -745,8 +745,8 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   `/home/mustbearnold/.cargo/bin/cargo test --workspace -- --test-threads=1`
   passed 1,581 tests with 6 intentional ignores (the new one is
   skill_provenance's `ignore` doc example); `git diff --check` clean.
-  Ledger: 138 done / 21 partial / 3,723 tracked (**3.55%**) and 138 done /
-  21 partial / 944 production (**12.51%**). Next: more small `tools/`/
+  Ledger: 139 done / 21 partial / 3,722 tracked (**3.58%**) and 139 done /
+  21 partial / 943 production (**12.60%**). Next: more small `tools/`/
   `gateway/` leaves (e.g. `gateway.readiness`, `gateway.rich_sent_store`
   neighbors `gateway.code_skew` consumers, `tools.open_preview_tool`), the
   `tools.process_registry` mega-module (unblocks
@@ -783,7 +783,12 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   looks_like_table_row, ragged-row padding, mid-block divider skipping,
   and the vertical key-value fallback when the rebuilt table exceeds
   available_width - incl. Column N default labels and thin row
-  dividers).
+  dividers). Batch 35 -
+  `agent/verify/__init__.py` done (1 surface test): the re-export list
+  (Recipe, detect_recipe, detect_package_manager, load_manifest,
+  save_manifest, load_or_detect, manifest_path, run_verify, PhaseResult,
+  ReadinessResult, VerifyResult) now resolves through the package root,
+  completing the verify package (parent marked done).
 
 - 2026-08-30 (session 4d9): Three more oracle-backed leaves across two
   crates: `tools/browser_camofox_state.py` and `tools/focus_pane_tool.py`

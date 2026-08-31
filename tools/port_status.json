@@ -96,7 +96,10 @@
   "status": "done"
  },
  "agent.verify": {
-  "status": "partial"
+  "status": "done"
+ },
+ "agent.verify.__init__": {
+  "status": "done"
  },
  "agent.verify.environment": {
   "status": "done"

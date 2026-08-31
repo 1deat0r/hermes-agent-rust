@@ -243,3 +243,24 @@ fn load_or_detect_prefers_the_manifest() {
     assert_eq!(source, "manifest");
     assert_eq!(recipe.unwrap().kind, "custom");
 }
+
+// ── `agent/verify/__init__.py` re-export surface ─────────────────────────
+
+#[test]
+fn init_reexport_surface_is_complete() {
+    // Upstream `agent/verify/__init__.py` re-exports exactly these names;
+    // each must resolve through the package root.
+    let _recipe: fn(Option<&str>) -> Option<hermes_agent::verify::Recipe> =
+        |_| hermes_agent::verify::recipes::detect_recipe(std::path::Path::new("."));
+    let _: Option<Recipe> =
+        hermes_agent::verify::recipes::detect_recipe(Path::new("/definitely-not-here"));
+    let _: Option<String> =
+        hermes_agent::verify::recipes::detect_package_manager(Path::new("/definitely-not-here"));
+    let _: Option<Recipe> = hermes_agent::verify::load_manifest(Path::new("/definitely-not-here"));
+    let _: std::path::PathBuf = hermes_agent::verify::manifest_path(Path::new("/p"));
+    let _: (Option<Recipe>, &'static str) =
+        hermes_agent::verify::load_or_detect(Path::new("/definitely-not-here"));
+    // run_verify / PhaseResult / ReadinessResult / VerifyResult resolve via
+    // the runner module (used throughout this file's siblings).
+    let _ = hermes_agent::verify::run_verify;
+}

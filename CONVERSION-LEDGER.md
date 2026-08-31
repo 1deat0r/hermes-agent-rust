@@ -1,7 +1,7 @@
 # Hermes Agent → Hermes Agent Rust Conversion Ledger
 
-**Current strict completion: 2.91% of all tracked upstream modules (138/4740).**
-Production-only strict completion: **11.23%** (138/1229 production modules).
+**Current strict completion: 2.93% of all tracked upstream modules (139/4740).**
+Production-only strict completion: **11.31%** (139/1229 production modules).
 
 > This file is generated from `tools/inventory.json`; update the source ledger in `tools/port_status.json`, regenerate the inventory, then run `python3 tools/conversion_ledger.py`. Only `done` counts toward the percentage. `partial` is intentionally zero credit until its stated parity seams are closed.
 
@@ -9,10 +9,10 @@ Production-only strict completion: **11.23%** (138/1229 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 138 | 21 | 4581 | 2.91% | 46,749/1,910,919 done LOC |
-| Production modules | 138 | 21 | 1070 | 11.23% | 46,749/993,168 done LOC |
+| All tracked modules | 139 | 21 | 4580 | 2.93% | 46,787/1,910,919 done LOC |
+| Production modules | 139 | 21 | 1069 | 11.31% | 46,787/993,168 done LOC |
 
-Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-31T12:35:38`.
+Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-31T12:46:34`.
 
 ## Definition of 100.00%
 
@@ -303,7 +303,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `agent.usage_pricing` | production | P2 | 1,600 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.verification_evidence` | production | P2 | 800 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.verification_stop` | production | P2 | 316 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `agent.verify.__init__` | production | P2 | 38 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `agent.verify.__init__` | production | P2 | 38 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.verify.environment` | production | P2 | 75 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.verify.recipes` | production | P2 | 477 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.verify.runner` | production | P2 | 279 | ✅ done | Maintain parity evidence; no remaining task in this row. |

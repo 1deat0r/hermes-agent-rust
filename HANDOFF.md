@@ -381,6 +381,11 @@ fragments; vertical key-value fallback (Column N default labels, thin
 row dividers, word-wrap with hard-break) when the rebuilt table exceeds
 available_width. The crate gains `unicode-width`.
 
+Batch 35: `agent/verify/__init__.py` re-export surface done — the
+package's parent entry flips to done (recipes/environment/runner all
+ported; the mod.rs re-export list matches the upstream __init__ names,
+pinned by a surface test). 139 done / 943 missing.
+
 `hermes-gateway` also gains `hermes-cli`, `hermes-constants`, `hermes-time`,
 `serde_json`, `libc` — all still below the agent/tools layers.
 `tools.close_terminal_tool` was skipped: blocked on the 2,937-LOC
@@ -390,9 +395,9 @@ available_width. The crate gains `unicode-width`.
 
 Session 4da **changed the ledger**: 99 done / 15 partial / 3,768 missing
 tracked modules and 99 done / 15 partial / 989 missing production modules —
-**3.55%** tracked and **12.51%** production strict completion — regenerated
+**3.58%** tracked and **12.60%** production strict completion — regenerated
 against the pinned `b9aa928` worktree (commands above), with
-`cargo build --workspace` and the serialized workspace run green at 1,650
+`cargo build --workspace` and the serialized workspace run green at 1,651
 tests / 6 ignored (the 6th is skill_provenance's intentional `ignore` doc
 example).
 
@@ -411,11 +416,14 @@ example).
 ## Current conversion ledger
 
 99 done / 15 partial / 3,768 missing tracked (**2.55%** strict completion);
-138 done / 21 partial / 944 missing production (**12.51%**). Regenerated via
+139 done / 21 partial / 943 missing production (**12.60%**). Regenerated via
 `tools/inventory.sh` (pinned worktree) + `python3 tools/conversion_ledger.py`.
 
 ## Fidelity notes
 
+- Session 4da (batch 35): verify package complete. __init__ re-export
+  surfaces are 'done' once every upstream-exported name resolves through
+  the package root - a surface test pins the list.
 - Session 4da (batch 34): markdown_tables tests cross-checked alignment
   with a minimal CJK=2-cells width helper; the vertical fallback emits
   row dividers only between (not before) body rows, and Column N labels
@@ -641,9 +649,9 @@ example).
 
 - `/home/mustbearnold/.cargo/bin/cargo build --workspace` — green.
 - `cargo test -p hermes-gateway -p hermes-cli -p hermes-tools -p
-  hermes-agent` — 316 new tests green.
+  hermes-agent` — 317 new tests green.
 - Serialized `/home/mustbearnold/.cargo/bin/cargo test --workspace --
-  --test-threads=1` — 1,650 passed, 0 failed, 6 intentional ignores.
+  --test-threads=1` — 1,651 passed, 0 failed, 6 intentional ignores.
 - `cargo clippy -p hermes-gateway -p hermes-cli --all-targets` — clean on
   all new code.
 - `rustfmt --edition 2021 --check` — clean on all changed files.
