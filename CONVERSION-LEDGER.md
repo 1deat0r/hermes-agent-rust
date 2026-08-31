@@ -1,7 +1,7 @@
 # Hermes Agent → Hermes Agent Rust Conversion Ledger
 
-**Current strict completion: 2.93% of all tracked upstream modules (139/4740).**
-Production-only strict completion: **11.31%** (139/1229 production modules).
+**Current strict completion: 2.95% of all tracked upstream modules (140/4740).**
+Production-only strict completion: **11.39%** (140/1229 production modules).
 
 > This file is generated from `tools/inventory.json`; update the source ledger in `tools/port_status.json`, regenerate the inventory, then run `python3 tools/conversion_ledger.py`. Only `done` counts toward the percentage. `partial` is intentionally zero credit until its stated parity seams are closed.
 
@@ -9,10 +9,10 @@ Production-only strict completion: **11.31%** (139/1229 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 139 | 21 | 4580 | 2.93% | 46,787/1,910,919 done LOC |
-| Production modules | 139 | 21 | 1069 | 11.31% | 46,787/993,168 done LOC |
+| All tracked modules | 140 | 21 | 4579 | 2.95% | 47,123/1,910,919 done LOC |
+| Production modules | 140 | 21 | 1068 | 11.39% | 47,123/993,168 done LOC |
 
-Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-31T12:46:34`.
+Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-31T13:02:12`.
 
 ## Definition of 100.00%
 
@@ -248,7 +248,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `agent.secret_scope` | production | P2 | 310 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.secret_sources.__init__` | production | P2 | 41 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.secret_sources._cache` | production | P2 | 215 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `agent.secret_sources.base` | production | P2 | 336 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `agent.secret_sources.base` | production | P2 | 336 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.secret_sources.bitwarden` | production | P2 | 1,055 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.secret_sources.command` | production | P2 | 501 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.secret_sources.onepassword` | production | P2 | 682 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |

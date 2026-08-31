@@ -74,6 +74,12 @@
  "agent.redact": {
   "status": "done"
  },
+ "agent.secret_sources": {
+  "status": "partial"
+ },
+ "agent.secret_sources.base": {
+  "status": "done"
+ },
  "agent.session_activity": {
   "status": "done"
  },

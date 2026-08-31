@@ -745,8 +745,8 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   `/home/mustbearnold/.cargo/bin/cargo test --workspace -- --test-threads=1`
   passed 1,581 tests with 6 intentional ignores (the new one is
   skill_provenance's `ignore` doc example); `git diff --check` clean.
-  Ledger: 139 done / 21 partial / 3,722 tracked (**3.58%**) and 139 done /
-  21 partial / 943 production (**12.60%**). Next: more small `tools/`/
+  Ledger: 140 done / 21 partial / 3,721 tracked (**3.61%**) and 140 done /
+  21 partial / 942 production (**12.69%**). Next: more small `tools/`/
   `gateway/` leaves (e.g. `gateway.readiness`, `gateway.rich_sent_store`
   neighbors `gateway.code_skew` consumers, `tools.open_preview_tool`), the
   `tools.process_registry` mega-module (unblocks
@@ -789,6 +789,13 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   save_manifest, load_or_detect, manifest_path, run_verify, PhaseResult,
   ReadinessResult, VerifyResult) now resolves through the package root,
   completing the verify package (parent marked done).
+  Batch 36 - `agent/secret_sources/base.py` (9 tests, source-derived -
+  gap noted: env-name validation, ANSI scrubbing incl. unterminated OSC,
+  the per-fetch environment view with token reset, fetch-timeout
+  coercion, the remediation kind-to-hint mapping, and run_secret_cli's
+  allowlisted env / NO_COLOR / ANSI-scrubbed stderr / timeout error; the
+  registry orchestrator and bitwarden/onepassword/command backends stay
+  PENDING).
 
 - 2026-08-30 (session 4d9): Three more oracle-backed leaves across two
   crates: `tools/browser_camofox_state.py` and `tools/focus_pane_tool.py`

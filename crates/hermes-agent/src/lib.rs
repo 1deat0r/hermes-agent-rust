@@ -18,6 +18,7 @@ pub mod portal_tags;
 pub mod markdown_tables;
 pub mod reactions;
 pub mod reasoning_summaries;
+pub mod secret_sources;
 pub mod ssl_guard;
 pub mod think_scrubber;
 pub mod tool_result_classification;
