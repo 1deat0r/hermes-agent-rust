@@ -745,8 +745,8 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   `/home/mustbearnold/.cargo/bin/cargo test --workspace -- --test-threads=1`
   passed 1,581 tests with 6 intentional ignores (the new one is
   skill_provenance's `ignore` doc example); `git diff --check` clean.
-  Ledger: 143 done / 21 partial / 3,718 tracked (**3.68%**) and 143 done /
-  21 partial / 938 production (**12.97%**). Next: more small `tools/`/
+  Ledger: 144 done / 21 partial / 3,717 tracked (**3.71%**) and 144 done /
+  21 partial / 937 production (**13.05%**). Next: more small `tools/`/
   `gateway/` leaves (e.g. `gateway.readiness`, `gateway.rich_sent_store`
   neighbors `gateway.code_skew` consumers, `tools.open_preview_tool`), the
   `tools.process_registry` mega-module (unblocks
@@ -796,6 +796,17 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   allowlisted env / NO_COLOR / ANSI-scrubbed stderr / timeout error; the
   registry orchestrator and bitwarden/onepassword/command backends stay
   PENDING).
+  Batch 39 - `agent/secret_sources/_cache.py` done (11 tests,
+  source-derived - gap noted: freshness with the ttl<=0 disabled rule,
+  key-mismatch and corrupt/non-dict misses, non-string secret coercion,
+  cache dir 0700 + file 0600 permissions, atomic write with staging-file
+  cleanup, idempotent clear, and the explicit-clock read_at/write_at
+  seams). Batch 40 - `agent/secret_sources/onepassword.py` done (9
+  tests, source-derived - gap noted: reference validation, pinned-binary
+  discovery semantics, live fake-op fetch with L1/L2 caching and
+  refs-fingerprint misses, per-reference failure warnings, op error
+  taxonomy mapping, mapped adapter contract with override_existing
+  default true and the token env protected).
   Batch 38 - `agent/secret_sources/command.py` done (14 tests,
   source-derived - gap noted: unquote grammar incl. lone-quote
   preservation, exact-dotenv-match precedence, multi-key-dump and

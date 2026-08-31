@@ -86,6 +86,9 @@
  "agent.secret_sources.command": {
   "status": "done"
  },
+ "agent.secret_sources.onepassword": {
+  "status": "done"
+ },
  "agent.secret_sources.registry": {
   "status": "done"
  },

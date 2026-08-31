@@ -28,7 +28,7 @@ this documentation checkpoint. Previous: `d138528` (4d9's
 
 ## What landed this session (4da)
 
-Fifty-four units across four crates, all red-first, 351 new parity tests:
+Fifty-five units across four crates, all red-first, 351 new parity tests:
 
 - `hermes_cli/main.py` `_read_packed_ref` + `_read_git_revision_fingerprint`
   → `hermes-cli::git_revision` (8 tests, source-derived — no dedicated
@@ -446,6 +446,16 @@ cross-key misroute guards.
 cache-dir 0700, ttl<=0 disables both layers, key matching with
 str-str coercion, explicit-clock read_at/write_at seams.
 
+Batches 39-40 (completing the _cache substrate and the 1Password
+backend): `_cache` -> `secret_sources::cache` done (11 tests: atomic
+0600 staging writes, cache-dir 0700, ttl<=0 disables both layers,
+explicit-clock seams) and `onepassword.py` ->
+`secret_sources::onepassword` done (9 tests: reference validation,
+pinned-binary discovery, live fake-op fetch with L1/L2 caching and
+refs-fingerprint misses, per-reference failure warnings, op error
+taxonomy, mapped adapter with override_existing default true and the
+token env protected). PENDING siblings: bitwarden.py (1,048 LOC).
+
 `hermes-gateway` also gains `hermes-cli`, `hermes-constants`, `hermes-time`,
 `serde_json`, `libc` — all still below the agent/tools layers.
 `tools.close_terminal_tool` was skipped: blocked on the 2,937-LOC
@@ -455,7 +465,7 @@ str-str coercion, explicit-clock read_at/write_at seams.
 
 Session 4da **changed the ledger**: 99 done / 15 partial / 3,768 missing
 tracked modules and 99 done / 15 partial / 989 missing production modules —
-**3.68%** tracked and **12.97%** production strict completion — regenerated
+**3.71%** tracked and **13.05%** production strict completion — regenerated
 against the pinned `b9aa928` worktree (commands above), with
 `cargo build --workspace` and the serialized workspace run green at 1,666
 tests / 6 ignored (the 6th is skill_provenance's intentional `ignore` doc
@@ -476,7 +486,7 @@ example).
 ## Current conversion ledger
 
 99 done / 15 partial / 3,768 missing tracked (**2.55%** strict completion);
-141 done / 21 partial / 940 missing production (**12.78%**). Regenerated via
+144 done / 21 partial / 937 missing production (**13.05%**). Regenerated via
 `tools/inventory.sh` (pinned worktree) + `python3 tools/conversion_ledger.py`.
 
 ## Fidelity notes
@@ -497,6 +507,12 @@ example).
   the alias not be supplied directly by any source and a credential-shaped
   suffix; per-source timeout uses a worker thread (TIMEOUT result,
   partials discarded).
+- Session 4da (batches 39-40): the onepassword disk key omits home_path
+  (the file already lives under <home>/cache/), L1 keys fold it in; only
+  complete error-free pulls are cached (a transient auth failure isn't
+  frozen for the TTL); op_child_env is a 15-var allowlist + OP_SESSION_*
+  + normalized OP_SERVICE_ACCOUNT_TOKEN + NO_COLOR; `--` terminates op
+  option parsing before the reference.
 - Session 4da (batch 36): run_secret_cli's env allowlist keeps only the
   named basics + allow_env + extra_env (never the full post-dotenv
   environ); timeout kill discards partial output and raises the
@@ -730,7 +746,7 @@ example).
 
 - `/home/mustbearnold/.cargo/bin/cargo build --workspace` — green.
 - `cargo test -p hermes-gateway -p hermes-cli -p hermes-tools -p
-  hermes-agent` — 335 new tests green.
+  hermes-agent` — 351 new tests green.
 - Serialized `/home/mustbearnold/.cargo/bin/cargo test --workspace --
   --test-threads=1` — 1,666 passed, 0 failed, 6 intentional ignores.
 - `cargo clippy -p hermes-gateway -p hermes-cli --all-targets` — clean on

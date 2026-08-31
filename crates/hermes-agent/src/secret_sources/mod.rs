@@ -11,6 +11,7 @@
 //! PluginContext.register_secret_source().
 
 pub mod base;
+pub mod onepassword;
 pub mod cache;
 pub mod command;
 pub mod registry;

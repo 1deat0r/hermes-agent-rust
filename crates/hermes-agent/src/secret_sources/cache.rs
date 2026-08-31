@@ -160,7 +160,7 @@ impl DiskCache {
         ttl_seconds: f64,
         home_path: Option<&Path>,
     ) {
-        self.write_at(key, entry, ttl_seconds, home_path, rand_nonce);
+        self.write_at(key, entry, ttl_seconds, home_path, &rand_nonce);
     }
 
     /// Explicit form of [`DiskCache::write`] with an injectable temp-nonce
@@ -171,7 +171,7 @@ impl DiskCache {
         entry: &CachedFetch,
         ttl_seconds: f64,
         home_path: Option<&Path>,
-        nonce: fn() -> String,
+        nonce: &dyn Fn() -> String,
     ) {
         if ttl_seconds <= 0.0 {
             return;

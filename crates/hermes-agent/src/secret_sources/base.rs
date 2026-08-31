@@ -56,6 +56,16 @@ pub struct SourceEnvToken {
     previous: Option<HashMap<String, String>>,
 }
 
+/// Snapshot the active per-fetch environment (or the process environment
+/// when no view is installed).
+pub fn get_source_environment_snapshot() -> HashMap<String, String> {
+    SOURCE_ENVIRONMENT.with(|slot| {
+        slot.borrow()
+            .clone()
+            .unwrap_or_else(|| std::env::vars().collect())
+    })
+}
+
 /// Look up one variable through the active per-fetch environment, or the
 /// process environment when no view is installed.
 ///
