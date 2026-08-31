@@ -1,7 +1,7 @@
 # Hermes Agent → Hermes Agent Rust Conversion Ledger
 
-**Current strict completion: 2.89% of all tracked upstream modules (137/4740).**
-Production-only strict completion: **11.15%** (137/1229 production modules).
+**Current strict completion: 2.91% of all tracked upstream modules (138/4740).**
+Production-only strict completion: **11.23%** (138/1229 production modules).
 
 > This file is generated from `tools/inventory.json`; update the source ledger in `tools/port_status.json`, regenerate the inventory, then run `python3 tools/conversion_ledger.py`. Only `done` counts toward the percentage. `partial` is intentionally zero credit until its stated parity seams are closed.
 
@@ -9,10 +9,10 @@ Production-only strict completion: **11.15%** (137/1229 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 137 | 21 | 4582 | 2.89% | 46,440/1,910,919 done LOC |
-| Production modules | 137 | 21 | 1071 | 11.15% | 46,440/993,168 done LOC |
+| All tracked modules | 138 | 21 | 4581 | 2.91% | 46,749/1,910,919 done LOC |
+| Production modules | 138 | 21 | 1070 | 11.23% | 46,749/993,168 done LOC |
 
-Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-31T12:17:59`.
+Inventory source: `/run/media/mustbearnold/Projects/Research/hermes-agent-repo` at `2026-08-31T12:35:38`.
 
 ## Definition of 100.00%
 
@@ -183,7 +183,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `agent.lsp.servers` | production | P2 | 1,187 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.lsp.workspace` | production | P2 | 223 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.manual_compression_feedback` | production | P2 | 138 | ✅ done | Maintain parity evidence; no remaining task in this row. |
-| `agent.markdown_tables` | production | P2 | 309 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `agent.markdown_tables` | production | P2 | 309 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.memory_manager` | production | P2 | 1,393 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.memory_provider` | production | P2 | 416 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.message_content` | production | P2 | 50 | ✅ done | Maintain parity evidence; no remaining task in this row. |

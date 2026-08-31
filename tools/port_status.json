@@ -29,6 +29,9 @@
  "agent.manual_compression_feedback": {
   "status": "done"
  },
+ "agent.markdown_tables": {
+  "status": "done"
+ },
  "agent.message_content": {
   "status": "done"
  },

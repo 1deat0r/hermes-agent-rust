@@ -354,6 +354,33 @@ daemon thread), keeping partial bytes. Byte cap truncates mid-chunk;
 invalid UTF-8 replaces; `read_error_body_or_default` returns None on
 empty. Constants: 64KiB cap / 10s deadline.
 
+Batch 34: `agent/markdown_tables.py` ->
+`hermes-agent::markdown_tables` done (11 source-derived tests, gap
+noted). CJK/wide-char table re-alignment via the `unicode-width` crate
+(wcswidth analog, clamped non-negative); divider grammar with the 3-dash
+minimum; conservative pass-through for non-tables and mid-stream
+fragments; vertical key-value fallback (Column N default labels, thin
+row dividers, word-wrap with hard-break) when the rebuilt table exceeds
+available_width. The crate gains `unicode-width`.
+
+Batch 34: `agent/markdown_tables.py` ->
+`hermes-agent::markdown_tables` done (11 source-derived tests, gap
+noted). CJK/wide-char table re-alignment via the `unicode-width` crate
+(wcswidth analog, clamped non-negative); divider grammar with the 3-dash
+minimum; conservative pass-through for non-tables and mid-stream
+fragments; vertical key-value fallback (Column N default labels, thin
+row dividers, word-wrap with hard-break) when the rebuilt table exceeds
+available_width. The crate gains `unicode-width`.
+
+Batch 34: `agent/markdown_tables.py` ->
+`hermes-agent::markdown_tables` done (11 source-derived tests, gap
+noted). CJK/wide-char table re-alignment via the `unicode-width` crate
+(wcswidth analog, clamped non-negative); divider grammar with the 3-dash
+minimum; conservative pass-through for non-tables and mid-stream
+fragments; vertical key-value fallback (Column N default labels, thin
+row dividers, word-wrap with hard-break) when the rebuilt table exceeds
+available_width. The crate gains `unicode-width`.
+
 `hermes-gateway` also gains `hermes-cli`, `hermes-constants`, `hermes-time`,
 `serde_json`, `libc` — all still below the agent/tools layers.
 `tools.close_terminal_tool` was skipped: blocked on the 2,937-LOC
@@ -363,9 +390,9 @@ empty. Constants: 64KiB cap / 10s deadline.
 
 Session 4da **changed the ledger**: 99 done / 15 partial / 3,768 missing
 tracked modules and 99 done / 15 partial / 989 missing production modules —
-**3.53%** tracked and **12.42%** production strict completion — regenerated
+**3.55%** tracked and **12.51%** production strict completion — regenerated
 against the pinned `b9aa928` worktree (commands above), with
-`cargo build --workspace` and the serialized workspace run green at 1,639
+`cargo build --workspace` and the serialized workspace run green at 1,650
 tests / 6 ignored (the 6th is skill_provenance's intentional `ignore` doc
 example).
 
@@ -384,16 +411,28 @@ example).
 ## Current conversion ledger
 
 99 done / 15 partial / 3,768 missing tracked (**2.55%** strict completion);
-137 done / 21 partial / 945 missing production (**12.42%**). Regenerated via
+138 done / 21 partial / 944 missing production (**12.51%**). Regenerated via
 `tools/inventory.sh` (pinned worktree) + `python3 tools/conversion_ledger.py`.
 
 ## Fidelity notes
 
+- Session 4da (batch 34): markdown_tables tests cross-checked alignment
+  with a minimal CJK=2-cells width helper; the vertical fallback emits
+  row dividers only between (not before) body rows, and Column N labels
+  apply only to empty HEADER cells (empty body values render as 'h2:').
 - Session 4da (batch 33): the bounded read's deadline cannot be enforced
   between chunks (a stall mid-chunk never yields control), so the drain
   runs on a worker the caller abandons on timeout (mem::forget stands in
   for the upstream daemon thread). Callers own response close; the
   iterator's error path is panic-isolated like the upstream `except`.
+- Session 4da (batch 34): markdown_tables tests cross-checked the
+  alignment assertions with a minimal CJK=2-cells width helper; the
+  vertical fallback only emits row dividers between (not before) body
+  rows, and Column N labels apply only to empty HEADER cells.
+- Session 4da (batch 34): markdown_tables tests cross-checked alignment
+  with a minimal CJK=2-cells width helper; vertical fallback emits row
+  dividers only between (not before) body rows, and Column N labels apply
+  only to empty HEADER cells (empty body values render as 'h2:').
 - Session 4da (batch 32): the scrubber's byte-slicing is char-boundary
   guarded (max_partial_suffix skips non-boundary splits, feed re-checks
   before slicing) so multi-byte content cannot panic mid-tag-hold-back.
@@ -602,9 +641,9 @@ example).
 
 - `/home/mustbearnold/.cargo/bin/cargo build --workspace` — green.
 - `cargo test -p hermes-gateway -p hermes-cli -p hermes-tools -p
-  hermes-agent` — 313 new tests green.
+  hermes-agent` — 316 new tests green.
 - Serialized `/home/mustbearnold/.cargo/bin/cargo test --workspace --
-  --test-threads=1` — 1,639 passed, 0 failed, 6 intentional ignores.
+  --test-threads=1` — 1,650 passed, 0 failed, 6 intentional ignores.
 - `cargo clippy -p hermes-gateway -p hermes-cli --all-targets` — clean on
   all new code.
 - `rustfmt --edition 2021 --check` — clean on all changed files.

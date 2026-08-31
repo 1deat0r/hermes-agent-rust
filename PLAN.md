@@ -664,7 +664,7 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 ## 7. Session log
 
-- 2026-08-31 (session 4da): Forty-eight units across four crates, all red-first:
+- 2026-08-31 (session 4da): Forty-nine units across four crates, all red-first:
   batch 1 — the `hermes_cli/main.py` private git-fingerprint helpers
   (`_read_packed_ref`, `_read_git_revision_fingerprint`) into
   `hermes-cli::git_revision` (8 tests), then `gateway/code_skew.py` (10
@@ -745,8 +745,8 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   `/home/mustbearnold/.cargo/bin/cargo test --workspace -- --test-threads=1`
   passed 1,581 tests with 6 intentional ignores (the new one is
   skill_provenance's `ignore` doc example); `git diff --check` clean.
-  Ledger: 137 done / 21 partial / 3,724 tracked (**3.53%**) and 137 done /
-  21 partial / 945 production (**12.42%**). Next: more small `tools/`/
+  Ledger: 138 done / 21 partial / 3,723 tracked (**3.55%**) and 138 done /
+  21 partial / 944 production (**12.51%**). Next: more small `tools/`/
   `gateway/` leaves (e.g. `gateway.readiness`, `gateway.rich_sent_store`
   neighbors `gateway.code_skew` consumers, `tools.open_preview_tool`), the
   `tools.process_registry` mega-module (unblocks
@@ -776,7 +776,14 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   keeping partial bytes, invalid-UTF-8 replacement, None-on-empty
   or_default variant; httpx response abstracted as a blocking chunk
   iterator owned by the drain worker - daemon-thread + hard deadline
-  structure preserved).
+  structure preserved). Batch 34 -
+  `agent/markdown_tables.py` (11 tests, source-derived - gap noted:
+  CJK/wide-char display-width re-padding via the unicode-width crate
+  (wcswidth analog), divider grammar with the 3-dash minimum, permissive
+  looks_like_table_row, ragged-row padding, mid-block divider skipping,
+  and the vertical key-value fallback when the rebuilt table exceeds
+  available_width - incl. Column N default labels and thin row
+  dividers).
 
 - 2026-08-30 (session 4d9): Three more oracle-backed leaves across two
   crates: `tools/browser_camofox_state.py` and `tools/focus_pane_tool.py`

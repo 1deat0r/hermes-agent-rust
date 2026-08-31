@@ -22,6 +22,7 @@ rand = "0.10"
 reqwest.workspace = true
 serde_json.workspace = true
 sha2 = "0.10"
+unicode-width = "0.2"
 thiserror.workspace = true
 url = "2"
 

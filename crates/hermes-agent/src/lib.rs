@@ -15,6 +15,7 @@ pub mod manual_compression_feedback;
 pub mod message_content;
 pub mod monitoring;
 pub mod portal_tags;
+pub mod markdown_tables;
 pub mod reactions;
 pub mod reasoning_summaries;
 pub mod ssl_guard;
