@@ -609,16 +609,36 @@ fn entitlement_disambiguator_prefers_refresh() {
         Value::String("out of available resources".to_string()),
     )]);
     assert!(!is_entitlement_failure(Some(&half), Some(403)));
+    // List bodies render with Python `repr()` separators: a phrase split
+    // across elements must NOT fuse into a match (executed oracle vector).
+    let split = body_map(&[
+        ("message", json!(["out of available", "resources"])),
+        ("reason", Value::String("grok".to_string())),
+    ]);
+    assert!(!is_entitlement_failure(Some(&split), Some(403)));
+    // ...but the joined phrase in one element still matches.
+    let joined = body_map(&[(
+        "message",
+        Value::String("out of available resources for grok".to_string()),
+    )]);
+    assert!(is_entitlement_failure(Some(&joined), Some(403)));
 }
 
 #[test]
 fn xai_decorate_appends_hint_once() {
-    // Source-derived: no upstream case pins the hint text.
+    // Partial mirror of oracle Fix B (`test_codex_xai_oauth_recovery.py`):
+    // the pinned substrings below plus original-text survival; the
+    // non-accusatory-tone constraints are prose, not asserts.
     let detail = "The caller does not have permission for grok-4.3";
     let decorated = decorate_xai_entitlement_error(detail);
     assert!(decorated.starts_with(detail));
     assert!(decorated.contains("X Premium+ does NOT include"));
+    assert!(decorated.contains("standalone SuperGrok subscribers"));
+    assert!(decorated.contains("no Grok subscription"));
+    assert!(decorated.contains("tier doesn't include this model"));
+    assert!(decorated.contains("quota is exhausted"));
     assert!(decorated.contains("https://grok.com/?_s=usage"));
+    assert!(decorated.contains("`/model`"));
     assert_eq!(decorate_xai_entitlement_error(&decorated), decorated);
     assert_eq!(decorate_xai_entitlement_error(""), "");
     assert_eq!(
@@ -648,15 +668,20 @@ fn coerce_detail_prefers_message_then_recurses() {
     assert_eq!(coerce_api_error_detail(&json!(3.0)), "3.0");
     assert_eq!(
         coerce_api_error_detail(&json!({"b": 1, "a": {"y": 2}})),
-        "{\"a\":{\"y\":2},\"b\":1}"
+        "{\"a\": {\"y\": 2}, \"b\": 1}"
+    );
+    assert_eq!(
+        coerce_api_error_detail(&json!({"f": 1e28})),
+        "{\"f\": 1e+28}"
     );
 }
 
 #[test]
 fn mask_api_key_keeps_head_and_tail() {
-    // tests/run_agent/test_run_agent.py::TestMaskApiKey (intent — the
-    // pin's literal key is redacted to 13 chars and contradicts its own
-    // startswith assert, so a realistic key of the same shape is used).
+    // `TestMaskApiKey` intent for the long-key shape (the pin's literal
+    // key is redacted to 13 chars and contradicts its own startswith
+    // assert); thresholds and the exact string below are
+    // implementation-derived from the source arms.
     assert_eq!(mask_api_key_for_logs(None), None);
     assert_eq!(mask_api_key_for_logs(Some("")), None);
     assert_eq!(
@@ -676,7 +701,9 @@ fn mask_api_key_keeps_head_and_tail() {
 
 #[test]
 fn clean_error_message_collapses_and_caps() {
-    // Source-derived: no upstream case pins the cleanup.
+    // HTML-collapse behavior overlaps `_summarize_api_error`'s no-raw-HTML
+    // rule; the exact notice string, 150-cap, and whitespace table are
+    // implementation-derived from the source arms.
     assert_eq!(clean_error_message(""), "Unknown error");
     assert_eq!(
         clean_error_message("<!DOCTYPE html><html>oops</html>"),

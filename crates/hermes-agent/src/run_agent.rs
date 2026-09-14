@@ -4,7 +4,11 @@
 //! filename sanitizer, RouterMint UA; pool-recovery predicate;
 //! ~373-411: stream error event; provider/URL predicates, max-tokens
 //! and output-cap helpers (explicit-argument forms of methods in
-//! ~1334-1680; self-reading no-arg forms belong to the loop slice).
+//! ~1334-1680; self-reading no-arg forms belong to the loop slice);
+//! ~2364-2634: entitlement classifier, xAI hint decorator, detail
+//! coercer, key masker, message cleaner (`_summarize_api_error` and
+//! `_flatten_exception_chain` deferred to section 5: exception-shape
+//! design).
 //! stdlib logic plus same-crate pool types; higher-layer seams stay out:
 //! - `_routermint_headers` reads `hermes_cli.__version__` lazily upstream;
 //!   `hermes-agent` must not depend on the higher-layer `hermes-cli`
@@ -541,28 +545,65 @@ pub fn is_entitlement_failure(
     false
 }
 
+/// CPython `repr()` for floats: shortest round-trip digits with Python
+/// spelling (`3.0`, `100.0`, `1e+28`, `1e-05` — signed, ≥2-digit
+/// exponents). Digits come from serde's shortest formatter (ryu);
+/// only the exponent layout is normalized. Non-finite inputs are
+/// unreachable from JSON (`Number::from_f64` rejects them).
+fn py_float_repr(value: f64) -> String {
+    let Some(number) = serde_json::Number::from_f64(value) else {
+        return format!("{value:?}");
+    };
+    let raw = number.to_string();
+    let Some((mantissa, exp_text)) = raw.split_once(['e', 'E']) else {
+        return raw;
+    };
+    let exp: i32 = exp_text.parse().unwrap_or(0);
+    format!("{mantissa}e{exp:+03}")
+}
+
+/// CPython `repr()` for JSON values: `None`/`True`/`False`, single
+/// quotes, `', '`/`': '` separators, insertion order. Used for haystack
+/// text where upstream formats containers with `str()` (= `repr()`).
+fn py_repr(value: &Value) -> String {
+    match value {
+        Value::Null => "None".to_string(),
+        Value::Bool(true) => "True".to_string(),
+        Value::Bool(false) => "False".to_string(),
+        Value::Number(n) => n
+            .as_i64()
+            .map(|i| i.to_string())
+            .unwrap_or_else(|| n.as_f64().map(py_float_repr).unwrap_or_default()),
+        Value::String(s) => py_repr_str(s),
+        Value::Array(items) => {
+            let parts: Vec<String> = items.iter().map(py_repr).collect();
+            format!("[{}]", parts.join(", "))
+        }
+        Value::Object(map) => {
+            let parts: Vec<String> = map
+                .iter()
+                .map(|(key, item)| format!("{}: {}", py_repr_str(key), py_repr(item)))
+                .collect();
+            format!("{{{}}}", parts.join(", "))
+        }
+    }
+}
+
 /// `str(value or "")` for haystack building: missing/`None` read as
-/// empty, bools use Python spellings, containers serialize compact.
+/// empty; containers render with [`py_repr`] exactly as upstream's
+/// `str()` (quotes and `', '` separators intact, so multi-element
+/// phrases do NOT fuse across element boundaries).
 fn haystack_text(value: Option<&Value>) -> String {
     match value {
         None | Some(Value::Null) => String::new(),
         Some(Value::String(s)) => s.to_lowercase(),
         Some(Value::Bool(true)) => "true".to_string(),
         Some(Value::Bool(false)) => "false".to_string(),
-        Some(Value::Number(n)) => n.to_string().to_lowercase(),
-        Some(Value::Array(items)) => items
-            .iter()
-            .map(|item| haystack_text(Some(item)))
-            .collect::<Vec<_>>()
-            .join(" ")
-            .to_lowercase(),
-        Some(Value::Object(map)) => {
-            // Python `str(dict)` repr; compact JSON keeps the same words
-            // in play for keyword matching (quotes differ, phrases don't).
-            serde_json::to_string(map)
-                .unwrap_or_default()
-                .to_lowercase()
-        }
+        Some(Value::Number(n)) => n
+            .as_i64()
+            .map(|i| i.to_string())
+            .unwrap_or_else(|| n.as_f64().map(py_float_repr).unwrap_or_default()),
+        Some(value @ (Value::Array(_) | Value::Object(_))) => py_repr(value).to_lowercase(),
     }
 }
 
@@ -635,8 +676,8 @@ pub fn coerce_api_error_detail(value: &Value) -> String {
 }
 
 /// Compact JSON with recursively sorted keys, mirroring
-/// `json.dumps(value, ensure_ascii=False, sort_keys=True)` (serde keeps
-/// UTF-8 raw, matching `ensure_ascii=False`).
+/// `json.dumps(value, ensure_ascii=False, sort_keys=True)` (default
+/// `', '`/`': '` separators, UTF-8 raw, floats in `repr()` spelling).
 fn sorted_json(value: &Value) -> String {
     match value {
         Value::Object(map) => {
@@ -646,18 +687,22 @@ fn sorted_json(value: &Value) -> String {
                 .iter()
                 .map(|key| {
                     format!(
-                        "{}:{}",
+                        "{}: {}",
                         serde_json::to_string(key).unwrap_or_default(),
                         sorted_json(&map[*key])
                     )
                 })
                 .collect();
-            format!("{{{}}}", parts.join(","))
+            format!("{{{}}}", parts.join(", "))
         }
         Value::Array(items) => {
             let parts: Vec<String> = items.iter().map(sorted_json).collect();
-            format!("[{}]", parts.join(","))
+            format!("[{}]", parts.join(", "))
         }
+        Value::Number(n) => n
+            .as_i64()
+            .map(|i| i.to_string())
+            .unwrap_or_else(|| n.as_f64().map(py_float_repr).unwrap_or_default()),
         _ => serde_json::to_string(value).unwrap_or_default(),
     }
 }

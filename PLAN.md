@@ -525,6 +525,10 @@ entitlement parametrize + status-gate test, `TestMaskApiKey` intent
 clean source-derived. `_summarize_api_error` deferred (needs
 exception-shape design).
 
+Section-4 board closures: dumps separators (`, `/`: ` live-verified),
+haystack containers via Python `repr()` (kills list-join over-match),
+extended decorate pins, honest labels.
+
 Board closures: explicit-empty gateway context masks env (verified
 `get_session_env` masking semantics — was leaking stale env); Some
 ctor arms, `TERMINAL_ENV` edge arms, null/blank masking tests;

@@ -980,3 +980,14 @@ key masker, message cleaner. Oracles: Fix-D parametrize + status gate,
 mask-key intent (pin key redacted — substituted same-shape key, noted).
 `_summarize_api_error` deferred to section 5 (exception-shape design).
 Next: `_summarize_api_error` + `_flatten_exception_chain` slice.
+
+## R7 checkpoint (2026-09-14) — section-4 board + closures
+
+5-seat R1 on fe17b1b: S1/S2 CONDITIONAL, S3 CONDITIONAL, S4
+CONDITIONAL, S5 REJECT. Adjudicated CONFIRMED + fixed: dumps
+separators (`, `/`: ` live-verified), haystack list-join over-match
+(now Python-repr containers via py_repr/py_float_repr), extended
+decorate pins, honest labels, module-doc §4 range. Refuted or filed:
+call-site audits (zero callers — standing), inf-saturation
+(unreachable), u16 precedent, fallback-gate wiring (loop slice).
+Operator-verified R2 = green suite + oracle recomputation.
