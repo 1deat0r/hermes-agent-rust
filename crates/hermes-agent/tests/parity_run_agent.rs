@@ -24,8 +24,8 @@ use hermes_agent::run_agent::{
     pool_may_recover_from_rate_limit, provider_model_requires_responses_api, qwen_platform_tokens,
     qwen_portal_headers, qwen_portal_headers_for, requested_output_cap_from_api_kwargs,
     routermint_headers, safe_session_filename_component, session_source_for_agent,
-    StreamErrorEvent, DB_PERSISTED_MARKER, EPHEMERAL_SCAFFOLDING_FLAGS, MAX_TOOL_WORKERS,
-    QWEN_CODE_VERSION,
+    summarize_api_error, ApiErrorShape, StreamErrorEvent, DB_PERSISTED_MARKER,
+    EPHEMERAL_SCAFFOLDING_FLAGS, MAX_TOOL_WORKERS, QWEN_CODE_VERSION,
 };
 use serde_json::{json, Map, Value};
 
@@ -719,6 +719,122 @@ fn clean_error_message_collapses_and_caps() {
     assert_eq!(capped.len(), 153);
     assert!(capped.ends_with("..."));
     assert_eq!(clean_error_message("fine"), "fine");
+}
+
+// ── _summarize_api_error ─────────────────────────────────────────────
+
+fn error_shape<'a>(
+    message: &'a str,
+    status_code: Option<i64>,
+    response_text: Option<&'a str>,
+) -> ApiErrorShape<'a> {
+    ApiErrorShape {
+        message,
+        is_value_error: false,
+        body: None,
+        response_text,
+        status_code,
+        type_name: "Exception",
+    }
+}
+
+#[test]
+fn empty_body_falls_back_to_response_json() {
+    // tests/run_agent/test_summarize_api_error.py: empty SDK body +
+    // httpx response.text with error.message surfaces both.
+    let summary = summarize_api_error(&error_shape(
+        "",
+        Some(400),
+        Some("{\"error\": {\"message\": \"model `foo` does not exist\", \"type\": \"invalid_request_error\"}}"),
+    ));
+    assert!(summary.contains("HTTP 400"), "{summary}");
+    assert!(summary.contains("model `foo` does not exist"), "{summary}");
+}
+
+#[test]
+fn unreadable_response_falls_back_to_message() {
+    // tests/run_agent/test_summarize_api_error.py: raising response.text
+    // maps to None (upstream swallows read failures).
+    let summary = summarize_api_error(&error_shape(
+        "Gemini HTTP 429: quota exceeded",
+        Some(429),
+        None,
+    ));
+    assert!(summary.contains("HTTP 429"), "{summary}");
+    assert!(
+        summary.contains("Gemini HTTP 429: quota exceeded"),
+        "{summary}"
+    );
+}
+
+#[test]
+fn cloudflare_challenge_collapses_to_one_liner() {
+    // tests/run_agent/test_nonretryable_error_html_summary.py: title-less
+    // challenge page → status + placeholder, short, HTML-free.
+    let html = "<!DOCTYPE html>\n<html>\n  <head>\n    <meta http-equiv=\"refresh\" content=\"360\"></head>\n  <body>challenge</body>\n</html>\n";
+    let summary = summarize_api_error(&error_shape(html, Some(403), None));
+    assert!(!summary.to_lowercase().contains("<html"), "{summary}");
+    assert!(!summary.to_lowercase().contains("<!doctype"), "{summary}");
+    assert!(summary.contains("403"), "{summary}");
+    assert!(
+        summary.contains("HTML error page (title not found)"),
+        "{summary}"
+    );
+    assert!(summary.len() < 200, "{summary}");
+}
+
+#[test]
+fn html_title_and_ray_id_survive() {
+    // Source-derived: title + Ray ID grammar from the source arms.
+    let html = "<html><head><title>Example Domain</title></head><body>Cloudflare Ray ID: <strong>abc123</strong></body></html>";
+    let summary = summarize_api_error(&error_shape(html, Some(503), None));
+    assert_eq!(summary, "HTTP 503 — Example Domain — Ray abc123");
+}
+
+#[test]
+fn value_error_and_gemini_arms() {
+    // Source-derived: no upstream case pins these arms directly.
+    let shape = ApiErrorShape {
+        message: "expected ident at line 1 column 5",
+        is_value_error: true,
+        body: None,
+        response_text: None,
+        status_code: None,
+        type_name: "ValueError",
+    };
+    let summary = summarize_api_error(&shape);
+    assert!(
+        summary.starts_with("Malformed provider streaming response: "),
+        "{summary}"
+    );
+    let gemini = ApiErrorShape {
+        message: "quota exceeded",
+        type_name: "GeminiAPIError",
+        ..shape
+    };
+    // Pre-composed message survives (redact passes secret-free text through).
+    assert_eq!(summarize_api_error(&gemini), "quota exceeded");
+}
+
+#[test]
+fn body_dict_arm_coerces_and_decorates() {
+    // Source-derived: SDK body extraction + coerce + xAI decoration.
+    let body = body_map(&[(
+        "error",
+        json!({"message": "do not have an active Grok subscription"}),
+    )]);
+    let shape = ApiErrorShape {
+        message: "ignored",
+        body: Some(&body),
+        status_code: Some(401),
+        ..error_shape("", None, None)
+    };
+    let summary = summarize_api_error(&shape);
+    assert!(
+        summary.starts_with("HTTP 401: do not have an active Grok subscription"),
+        "{summary}"
+    );
+    assert!(summary.contains("X Premium+ does NOT include"), "{summary}");
 }
 
 // ── _pool_may_recover_from_rate_limit ─────────────────────────────────

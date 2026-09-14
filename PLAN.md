@@ -473,8 +473,8 @@ convention; oracles `test_gemini_fast_fallback` +
 source-derived).
 Oracle: `test_dropped_tool_call_recovery`, `test_run_agent`
 (traversal cases), `test_verification_stop_caching`,
-`test_gemini_fast_fallback`, `test_provider_fallback` @ b9aa928; 40
-parity tests (sections 1–4); `run_agent` marked `partial` (first of ~8,206 LOC).
+`test_gemini_fast_fallback`, `test_provider_fallback` @ b9aa928; 46
+parity tests (sections 1–5); `run_agent` marked `partial` (first of ~8,206 LOC).
 
 Board R1 (S1 CONDITIONAL / S2 BUILD / S3 CONDITIONAL / S4 BUILD / S5
 REJECT) + closures: char class calibrated to `[\p{L}\p{N}_]`
@@ -524,6 +524,16 @@ entitlement parametrize + status-gate test, `TestMaskApiKey` intent
 (pin key redacted — realistic same-shape key used); decorate/coerce/
 clean source-derived. `_summarize_api_error` deferred (needs
 exception-shape design).
+
+Section 5: `_summarize_api_error` landed via `ApiErrorShape`
+(settled `is_value_error`, pre-read `response.text`, status,
+type-name): ValueError arm, HTML title/Ray collapse, Gemini
+passthrough, body-dict coerce+decorate, #36109 response-text path
+(redacted), decorated fallback. Oracles:
+`test_summarize_api_error` (empty-body JSON, unreadable response),
+`test_nonretryable_error_html_summary` (challenge collapse);
+ValueError/Gemini/body arms source-derived. `_flatten_exception_chain`
+is a forwarder to unported `agent.stream_diag` — different unit.
 
 Section-4 board closures: dumps separators (`, `/`: ` live-verified),
 haystack containers via Python `repr()` (kills list-join over-match),
@@ -3229,8 +3239,8 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 - 2026-09-14 (session 5a): `run_agent` section 1 landed —
   `crates/hermes-agent/src/run_agent.rs` (module-level pure helpers, pin
-  ~234-371) + `tests/parity_run_agent.rs` (40 parity tests after
-  sections 1–4; traversal digests byte-verified). Recon note: recon
+  ~234-371) + `tests/parity_run_agent.rs` (46 parity tests after
+  sections 1–5; traversal digests byte-verified). Recon note: recon
   against upstream HEAD maps the wrong file (1,555-line decomposed
   `run_agent.py`); the pin oracle is the 8,206-line monolith — always
   read via `git show b9aa928:<path>`. Evidence: `cargo test -p

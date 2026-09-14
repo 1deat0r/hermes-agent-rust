@@ -6,9 +6,9 @@
 //! and output-cap helpers (explicit-argument forms of methods in
 //! ~1334-1680; self-reading no-arg forms belong to the loop slice);
 //! ~2364-2634: entitlement classifier, xAI hint decorator, detail
-//! coercer, key masker, message cleaner (`_summarize_api_error` and
-//! `_flatten_exception_chain` deferred to section 5: exception-shape
-//! design).
+//! coercer, key masker, message cleaner, error summarizer
+//! (`ApiErrorShape` carries the settled exception verdicts; loop
+//! callers populate it at the raise site).
 //! stdlib logic plus same-crate pool types; higher-layer seams stay out:
 //! - `_routermint_headers` reads `hermes_cli.__version__` lazily upstream;
 //!   `hermes-agent` must not depend on the higher-layer `hermes-cli`
@@ -27,7 +27,8 @@
 //! `hermes_cli/models.py::_should_use_copilot_responses_api` (rule body),
 //! `tests/run_agent/test_codex_xai_oauth_recovery.py` Fix D (entitlement),
 //! `tests/run_agent/test_run_agent.py::TestMaskApiKey` (intent — pin key
-//! redacted) @ b9aa928);
+//! redacted), `tests/run_agent/test_summarize_api_error.py`,
+//! `tests/run_agent/test_nonretryable_error_html_summary.py` @ b9aa928);
 //! `unit/source-derived` where no upstream case pins the behavior
 //! (header platform mapping, falsy-flag matrix, truncation bounds,
 //! single-entry pool).
@@ -36,6 +37,7 @@ use super::credential_pool::CredentialPool;
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
+use hermes_logging::redact_sensitive_text;
 use hermes_utils::urls::{
     base_url_host_matches, base_url_hostname, model_forces_max_completion_tokens,
 };
@@ -707,7 +709,170 @@ fn sorted_json(value: &Value) -> String {
     }
 }
 
-/// PARITY: `AIAgent._mask_api_key_for_logs` (pin). Falsy keys read as
+/// Exception shape consumed by [`summarize_api_error`]. Upstream reads
+/// everything off a live exception object (`str()`, `isinstance`,
+/// `.body`/`.response`/`.status_code`, `type().__name__`); the future
+/// loop caller populates this struct at the raise site, which also
+/// settles the `ValueError`-subclass exclusion upstream performs inline
+/// (`UnicodeEncodeError`/`JSONDecodeError` never set `is_value_error`)
+/// and pre-reads `response.text` (upstream swallows read failures, so
+/// `None` covers absent-or-unreadable uniformly).
+pub struct ApiErrorShape<'a> {
+    /// `str(error)`.
+    pub message: &'a str,
+    /// Settled `isinstance(error, ValueError)` verdict (see above).
+    pub is_value_error: bool,
+    /// Parsed SDK `body` when it is a mapping.
+    pub body: Option<&'a Map<String, Value>>,
+    /// Underlying HTTP `response.text`, pre-read (`None` = absent or
+    /// unreadable).
+    pub response_text: Option<&'a str>,
+    /// `error.status_code` when present.
+    pub status_code: Option<i64>,
+    /// `type(error).__name__` (only `GeminiAPIError` is consulted).
+    pub type_name: &'a str,
+}
+
+/// `"HTTP {code}: "` when a nonzero status is present, else `""`.
+fn status_prefix(status_code: Option<i64>) -> String {
+    match status_code {
+        Some(code) if code != 0 => format!("HTTP {code}: "),
+        _ => String::new(),
+    }
+}
+
+fn truncate_chars(text: &str, limit: usize) -> String {
+    text.chars().take(limit).collect()
+}
+
+/// `str()` for non-string message values in the response-text path
+/// (upstream `str(err['message'])`): strings verbatim, everything else
+/// in `repr()` spelling via [`py_repr`].
+fn render_msg_value(value: &Value) -> String {
+    match value {
+        Value::String(s) => s.clone(),
+        _ => py_repr(value),
+    }
+}
+
+fn summarize_title_re() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| Regex::new(r"(?i)<title[^>]*>([^<]+)</title>").expect("html title pattern"))
+}
+
+fn summarize_ray_re() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| {
+        Regex::new(r"Cloudflare Ray ID:\s*<strong[^>]*>([^<]+)</strong>").expect("ray id pattern")
+    })
+}
+
+/// PARITY: `AIAgent._summarize_api_error` (pin, staticmethod). One-liner
+/// for API failures: malformed-stream `ValueError`s, Cloudflare/proxy
+/// HTML pages (title + Ray ID, never raw HTML), pre-composed
+/// `GeminiAPIError` messages (redacted), SDK body dicts (coerced and
+/// xAI-decorated), `response.text` payloads when the body is empty
+/// (#36109, redacted), else the decorated raw string. Truncation
+/// precedes redaction exactly as upstream orders the calls.
+pub fn summarize_api_error(shape: &ApiErrorShape<'_>) -> String {
+    let raw = shape.message;
+    if shape.is_value_error && raw.to_lowercase().contains("expected ident at line") {
+        return format!(
+            "Malformed provider streaming response: {}",
+            truncate_chars(raw, 300)
+        );
+    }
+    if raw.contains("<!DOCTYPE") || raw.contains("<html") {
+        let title = summarize_title_re()
+            .captures(raw)
+            .and_then(|captured| captured.get(1))
+            .map(|title| title.as_str().trim().to_string())
+            .filter(|title| !title.is_empty())
+            .unwrap_or_else(|| "HTML error page (title not found)".to_string());
+        let ray_id = summarize_ray_re()
+            .captures(raw)
+            .and_then(|captured| captured.get(1))
+            .map(|ray| ray.as_str().trim().to_string())
+            .filter(|ray| !ray.is_empty());
+        let mut parts = Vec::new();
+        if let Some(code) = shape.status_code {
+            if code != 0 {
+                parts.push(format!("HTTP {code}"));
+            }
+        }
+        parts.push(title);
+        if let Some(ray_id) = ray_id {
+            parts.push(format!("Ray {ray_id}"));
+        }
+        return parts.join(" — ");
+    }
+    if shape.type_name == "GeminiAPIError" {
+        return redact_sensitive_text(&truncate_chars(raw, 1000), false, false, false, false);
+    }
+    if let Some(body) = shape.body {
+        let msg = match body.get("error") {
+            Some(Value::Object(_)) => body.get("error").and_then(|error| error.get("message")),
+            _ => body.get("message"),
+        };
+        if let Some(msg) = msg.filter(|msg| json_truthy(msg)) {
+            let coerced = coerce_api_error_detail(msg);
+            return decorate_xai_entitlement_error(&format!(
+                "{}{}",
+                status_prefix(shape.status_code),
+                truncate_chars(&coerced, 300)
+            ));
+        }
+    }
+    if let Some(snippet) = shape
+        .response_text
+        .map(str::trim)
+        .filter(|snippet| !snippet.is_empty())
+    {
+        let prefix = status_prefix(shape.status_code);
+        if let Some(Value::Object(payload)) = serde_json::from_str(snippet).ok().as_ref() {
+            if let Some(Value::Object(err)) = payload.get("error") {
+                if let Some(message) = err.get("message").filter(|msg| json_truthy(msg)) {
+                    return redact_sensitive_text(
+                        &format!(
+                            "{prefix}{}",
+                            truncate_chars(&render_msg_value(message), 300)
+                        ),
+                        false,
+                        false,
+                        false,
+                        false,
+                    );
+                }
+            }
+            if let Some(message) = payload.get("message").filter(|msg| json_truthy(msg)) {
+                return redact_sensitive_text(
+                    &format!(
+                        "{prefix}{}",
+                        truncate_chars(&render_msg_value(message), 300)
+                    ),
+                    false,
+                    false,
+                    false,
+                    false,
+                );
+            }
+        }
+        return redact_sensitive_text(
+            &format!("{prefix}{}", truncate_chars(snippet, 300)),
+            false,
+            false,
+            false,
+            false,
+        );
+    }
+    decorate_xai_entitlement_error(&format!(
+        "{}{}",
+        status_prefix(shape.status_code),
+        truncate_chars(raw, 500)
+    ))
+}
+
+/// PARITY: `_mask_api_key_for_logs` (pin). Falsy keys read as
 /// `None`; 12 chars or fewer collapse to `"***"`; longer keys show
 /// first-8/last-4 (`len` counts Unicode scalars as upstream counts code
 /// points). The Azure-callable arm (`<entra-id-bearer>`) is

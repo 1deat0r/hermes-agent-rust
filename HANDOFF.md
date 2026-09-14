@@ -896,7 +896,7 @@ each phase. Next: TBD from pin map.
 
 ## Session 5a — run_agent section 1 (2026-09-14)
 
-`hermes-agent::run_agent` opened (TDD, now 40 parity tests green):
+`hermes-agent::run_agent` opened (TDD, now 46 parity tests green):
 scaffolding flags/table, truthiness filter, worker/marker/version
 consts, Qwen + RouterMint header builders, traversal-safe session
 filename with oracle-exact digests, pool-recovery predicate.
@@ -991,3 +991,13 @@ decorate pins, honest labels, module-doc §4 range. Refuted or filed:
 call-site audits (zero callers — standing), inf-saturation
 (unreachable), u16 precedent, fallback-gate wiring (loop slice).
 Operator-verified R2 = green suite + oracle recomputation.
+
+## Session 5e — run_agent section 5 (2026-09-14)
+
+`_summarize_api_error` via `ApiErrorShape` (settled verdicts at raise
+site): ValueError/HTML/Gemini/body/response-text/fallback arms, redact
+wired with upstream defaults. Oracles: summarize-empty-body (2),
+challenge collapse; rest source-derived. `_flatten_exception_chain` is
+an `agent.stream_diag` forwarder — different unit, not this slice.
+Next: TBD from pin map (stream-diagnostic/self-state methods need the
+agent struct decision).
