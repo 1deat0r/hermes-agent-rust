@@ -121,6 +121,20 @@ def main() -> int:
                 "cannot refresh inventory/ledger because the pinned upstream checkout "
                 "is unavailable; set HERMES_UPSTREAM or git config hermes.upstream"
             )
+        pin = subprocess.run(
+            ["git", "-C", str(upstream), "rev-parse", "HEAD"],
+            cwd=ROOT,
+            check=False,
+            text=True,
+            stdout=subprocess.PIPE,
+        ).stdout.strip()
+        if pin != "b9aa9289a8083f2e9d248ad6837b2938f5ee92d7":
+            return fail(
+                "upstream checkout is not at the pinned b9aa928 (got "
+                f"{pin or 'unknown'}); refusing to refresh against a moved HEAD — "
+                "recreate the pinned worktree per HANDOFF.md and set "
+                "HERMES_UPSTREAM or git config hermes.upstream"
+            )
         subprocess.run(
             [sys.executable, "tools/refresh_docs.py", "--upstream", str(upstream)],
             cwd=ROOT,

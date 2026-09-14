@@ -7,7 +7,7 @@
 
 ## 1. Fixed reference points (do not rediscover)
 
-- Upstream: pinned `b9aa928` worktree at `/tmp/hermes-upstream-b9aa928` (cut from `/run/media/its1deat0r/Projects/Research/hermes-agent-repo`, whose HEAD has moved far past the pin — always regenerate the inventory against the pinned worktree, never HEAD; see HANDOFF.md recipe). Also recorded as local git config `hermes.upstream`.
+- Upstream: pinned `b9aa928` worktree at `/tmp/hermes-upstream-b9aa928` (cut from `/run/media/its1deat0r/Projects/Research/hermes-agent-repo`, whose HEAD has moved far past the pin — always regenerate the inventory against the pinned worktree, never HEAD; see HANDOFF.md recipe). The pre-commit hook refuses to refresh the ledger against any checkout not at the pin.
 - Master plan + parity matrix: `PLAN.md`
 - Machine-readable ledger: `tools/inventory.json` (regenerate: `tools/inventory.sh`)
 - Rust workspace root: this directory. Crates under `crates/`.

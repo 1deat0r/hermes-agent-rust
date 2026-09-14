@@ -111,7 +111,13 @@ Hermes-Agent-Rust/
   upstream/                # vendored upstream fixtures (golden oracles)
 ```
 
-Dependency direction is bottom-up; a crate never depends on a higher layer.
+Dependency direction is bottom-up; a crate never depends on a higher layer,
+with one recorded exception: `hermes-gateway` → `hermes-cli` mirrors the
+upstream `gateway.code_skew` lazy import of `hermes_cli.main` (upstream
+`gateway/code_skew.py:23` @ b9aa928). The `hermes-batch`,
+`hermes-platforms`, `hermes-cron`, `hermes-tui`, and `hermes-acp` crates
+are P4/P5-deferred — designed above, not yet created; their modules read
+`missing` in the inventory until their phase opens.
 
 ## 4. Phases
 

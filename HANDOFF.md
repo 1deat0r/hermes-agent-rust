@@ -860,3 +860,25 @@ sync. Note: local `git config hermes.upstream` points at the pinned
 worktree (removed after commit) — recreate per the recipe above before
 the next source commit, or GATES G4 fails loud. Pinned worktree
 removed.
+
+## R2 checkpoint (2026-09-14) — board re-verification + closures
+
+R2 rule: verify-by-quote; new blockers only for revision defects.
+S2 CONDITIONAL (items settled PASS, no new blockers; `crates/` untouched
+by the revision). S3 REJECT sustained (4/4 FAILs quoted — no loop, no
+transport, no executor, no provider entrypoint; ledger numbers PASS:
+145/3882 = 3.74%, 145/1103 = 13.15%). S4: all 7 R1 items PASS
+(conceded the count inversion with live numbers) + 1 NEW blocker,
+independently confirmed by S5: dead `hermes.upstream` made GATES G4
+unexecutable. S1 R2 output noise twice running ("8784") —
+operator-adjudicated CONDITIONAL: exception note, deferred-crate note,
+pkg drift all absent (FAIL), build/tests PASS (run by operator).
+S5 REJECT (4 FAILs quoted, item 5 PASS conceded with clean
+`## main...origin/main`).
+
+Closures landed below this checkpoint: PLAN §3 gateway→cli exception +
+P4/P5-deferred crate note; hermes-tools/toolsets workspace package
+keys (redundant libc dev-dep dropped — watchdog suite 9/9 green);
+pre-commit pin guard (refuses refresh off-pin); GATES G4 self-ensuring
+pinned worktree + SHA assert (executed: recreated worktree, refreshed,
+timestamp-only diff as designed); dead `hermes.upstream` config unset.
