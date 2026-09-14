@@ -882,3 +882,14 @@ keys (redundant libc dev-dep dropped — watchdog suite 9/9 green);
 pre-commit pin guard (refuses refresh off-pin); GATES G4 self-ensuring
 pinned worktree + SHA assert (executed: recreated worktree, refreshed,
 timestamp-only diff as designed); dead `hermes.upstream` config unset.
+## Session 5a — run_agent section 1 (2026-09-14)
+
+`hermes-agent::run_agent` opened (TDD, 11 parity tests green):
+scaffolding flags/table, truthiness filter, worker/marker/version
+consts, Qwen + RouterMint header builders, traversal-safe session
+filename with oracle-exact digests. Deferred to next slice:
+`_pool_may_recover_from_rate_limit` (pool cooldown semantics).
+Validation: `cargo build --workspace` + `cargo test -p hermes-agent
+--test parity_run_agent` green; full serial clean-env suite re-run
+before commit. Next slice: provider/model predicate pure functions
+(pin ~1334-1613) — dependency-free and heavily oracle-covered.

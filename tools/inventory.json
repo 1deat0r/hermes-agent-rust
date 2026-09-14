@@ -1,6 +1,6 @@
 {
  "generated_from": "/tmp/hermes-upstream-b9aa928",
- "generated_at": "2026-09-14T13:30:01",
+ "generated_at": "2026-09-14T13:40:18",
  "summary": {
   "modules": 3882,
   "total_lines": 1510733,
@@ -8,13 +8,13 @@
   "production_lines": 843792,
   "status_counts": {
    "done": 145,
-   "partial": 22,
-   "missing": 3715
+   "partial": 23,
+   "missing": 3714
   },
   "prod_status_counts": {
    "done": 145,
-   "partial": 22,
-   "missing": 936
+   "partial": 23,
+   "missing": 935
   },
   "packages": {
    "gateway": {
@@ -85,7 +85,8 @@
     "lines": 8206,
     "modules": 1,
     "status": {
-     "missing": 1
+     "missing": 0,
+     "partial": 1
     }
    },
    "tools": {
@@ -2092,7 +2093,7 @@
     "toolsets",
     "utils"
    ],
-   "port_status": "missing",
+   "port_status": "partial",
    "is_test": false
   },
   "hermes_cli.gateway": {

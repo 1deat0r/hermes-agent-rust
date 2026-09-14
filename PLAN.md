@@ -455,6 +455,23 @@ quarantine remain deferred rather than silently guessed.
 | `hermes_cli/managed_scope.py` (214 LOC) | ✅ | `hermes-agent::managed_scope`; 12 parity tests (`unit`/`mock`) in `crates/hermes-agent/tests/parity_managed_scope.rs` cover the `HERMES_MANAGED_DIR`-then-`/etc/hermes` resolver tiers (including the non-existent and whitespace-only cases), the `(mtime_ns, size)` managed-file cache and its invalidation hook, single-file fail-open config loading for absent/malformed/non-mapping/empty documents, the documented `.env` subset (comment, blank, no-`=`, first-`=` partition, quote stripping), dotted leaf-key flattening with empty mappings as leaves, `is_key_managed`/`is_env_managed`, and `apply_managed_overlay` precedence including the bare-string `model` promotion. Upstream logs the same warnings through its own logger configuration; the Rust port uses the `log` facade without `exc_info` |
 | `agent/auxiliary_client.py` client-header and Portal `extra_body` sections (lines 807-911, 2369-2386, 2479-2515, 5654-5687, 6044-6066, 6926-6932, 8068-8086) | 🟡 | `hermes-agent::auxiliary_client` plus `hermes-agent::config` (`cfg_get`, `openrouter_defaults`); 14 added parity tests (`unit`) in `crates/hermes-agent/tests/parity_auxiliary_client.rs` cover `build_or_headers` attribution/base-shape/fresh-copy behavior, Python-truthiness cache gating, `[1, 86400]` TTL bounds with the bool-is-int quirk, `HERMES_OPENROUTER_CACHE`/`_TTL` env precedence and `str.isdigit()` rejection, the two-site OpenRouter route/host gate union, the kimi → Copilot → NVIDIA → profile fallback chain with `is_vision` gating, `copilot_request_headers` defaults, NVIDIA host gating (cloud host only), the `model.default_headers`/`model.extra_headers` alias merge with null-only skipping and verbatim keys, the composite provider → OpenRouter → user ordering, `get_auxiliary_extra_body`, and the Nous-spelling `tags`/`session_id` transport fallback. Concrete client construction, transport lifecycle, xAI header routing, and URL-inferred provider fallback remain pending |
 
+### run_agent section 1 — module-level pure helpers (Phase 2, upstream @ b9aa928)
+
+`hermes-agent::run_agent` opened with the dependency-free slice (pin
+lines ~234-371): `EPHEMERAL_SCAFFOLDING_FLAGS` (7 flags, order-pinned),
+`is_ephemeral_scaffolding` (Python truthiness over flag values),
+`MAX_TOOL_WORKERS`, `DB_PERSISTED_MARKER`, `QWEN_CODE_VERSION`,
+`qwen_portal_headers` (+ injectable `_for` form; `macos`→`darwin` /
+`aarch64`→`arm64` mapping reproduces CPython spellings, source-derived),
+`routermint_headers` (version is an explicit argument — `hermes-agent`
+must not depend on higher-layer `hermes-cli`), and
+`safe_session_filename_component` (byte-exact digests verified against
+the Python oracle: `../a`→`a_61b4c98bfb92`). Deferred:
+`_pool_may_recover_from_rate_limit` (needs pool cooldown semantics).
+Oracle: `test_dropped_tool_call_recovery`, `test_run_agent`
+(traversal cases), `test_verification_stop_caching` @ b9aa928; 11
+parity tests; `run_agent` marked `partial` (first of ~8,206 LOC).
+
 ### hermes-agent utility modules (Phase 2, upstream @ b9aa928)
 
 | Module / upstream surface | Status | Rust home, oracle, and evidence tier |
@@ -3147,3 +3164,13 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   loop (30 msgs), fresh-DB optimize settle; 15 parity tests; workspace
   274 tests green; clippy clean. Evidence: `cargo test --workspace`
   (unit).
+
+- 2026-09-14 (session 5a): `run_agent` section 1 landed —
+  `crates/hermes-agent/src/run_agent.rs` (module-level pure helpers, pin
+  ~234-371) + `tests/parity_run_agent.rs` (11 parity tests; traversal
+  digests byte-verified against the Python oracle). Recon note: recon
+  against upstream HEAD maps the wrong file (1,555-line decomposed
+  `run_agent.py`); the pin oracle is the 8,206-line monolith — always
+  read via `git show b9aa928:<path>`. Evidence: `cargo test -p
+  hermes-agent --test parity_run_agent` (unit) 11 green; workspace suite
+  re-run serial clean-env (see HANDOFF). `run_agent` → `partial`.

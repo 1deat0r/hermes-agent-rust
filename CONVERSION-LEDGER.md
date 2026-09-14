@@ -9,10 +9,10 @@ Production-only strict completion: **13.15%** (145/1103 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 145 | 22 | 3715 | 3.74% | 39,740/1,510,733 done LOC |
-| Production modules | 145 | 22 | 936 | 13.15% | 39,740/843,792 done LOC |
+| All tracked modules | 145 | 23 | 3714 | 3.74% | 39,740/1,510,733 done LOC |
+| Production modules | 145 | 23 | 935 | 13.15% | 39,740/843,792 done LOC |
 
-Inventory source: `/tmp/hermes-upstream-b9aa928` at `2026-09-14T13:30:01`.
+Inventory source: `/tmp/hermes-upstream-b9aa928` at `2026-09-14T13:40:18`.
 
 ## Definition of 100.00%
 
@@ -45,6 +45,7 @@ The conversion is complete only when all of these are true:
 | `hermes_constants` | P1 | 1,481 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `providers.__init__` | P2 | 198 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `providers.base` | P2 | 238 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
+| `run_agent` | P2 | 8,206 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `tools.credential_files` | P2 | 530 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `tools.delegation_output_schema` | P2 | 151 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `tools.threat_patterns` | P2 | 284 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
@@ -58,26 +59,26 @@ Work bottom-up by phase. The list is regenerated from missing production rows, w
 
 | Order | Module | Phase | Upstream LOC | Task |
 |---:|---|---|---:|---|
-| 1 | `run_agent` | P2 | 8,206 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
-| 2 | `tools.mcp_tool` | P2 | 7,530 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
-| 3 | `agent.conversation_loop` | P2 | 7,524 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
-| 4 | `agent.context_compressor` | P2 | 7,110 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
-| 5 | `tools.browser_tool` | P2 | 5,098 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
-| 6 | `agent.chat_completion_helpers` | P2 | 4,599 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
-| 7 | `tools.approval` | P2 | 4,557 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
-| 8 | `tools.skills_hub` | P2 | 4,432 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
-| 9 | `tools.delegate_tool` | P2 | 4,342 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
-| 10 | `agent.agent_runtime_helpers` | P2 | 4,077 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
-| 11 | `agent.conversation_compression` | P2 | 4,035 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
-| 12 | `tools.tts_tool` | P2 | 3,964 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
-| 13 | `tools.terminal_tool` | P2 | 3,580 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
-| 14 | `agent.model_metadata` | P2 | 3,370 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
-| 15 | `tools.computer_use.cua_backend` | P2 | 3,295 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
-| 16 | `optional-skills.migration.openclaw-migration.scripts.openclaw_to_hermes` | P2 | 3,286 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
-| 17 | `agent.anthropic_adapter` | P2 | 3,177 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
-| 18 | `tools.transcription_tools` | P2 | 3,016 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
-| 19 | `tools.process_registry` | P2 | 2,937 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
-| 20 | `agent.agent_init` | P2 | 2,823 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
+| 1 | `tools.mcp_tool` | P2 | 7,530 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
+| 2 | `agent.conversation_loop` | P2 | 7,524 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
+| 3 | `agent.context_compressor` | P2 | 7,110 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
+| 4 | `tools.browser_tool` | P2 | 5,098 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
+| 5 | `agent.chat_completion_helpers` | P2 | 4,599 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
+| 6 | `tools.approval` | P2 | 4,557 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
+| 7 | `tools.skills_hub` | P2 | 4,432 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
+| 8 | `tools.delegate_tool` | P2 | 4,342 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
+| 9 | `agent.agent_runtime_helpers` | P2 | 4,077 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
+| 10 | `agent.conversation_compression` | P2 | 4,035 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
+| 11 | `tools.tts_tool` | P2 | 3,964 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
+| 12 | `tools.terminal_tool` | P2 | 3,580 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
+| 13 | `agent.model_metadata` | P2 | 3,370 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
+| 14 | `tools.computer_use.cua_backend` | P2 | 3,295 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
+| 15 | `optional-skills.migration.openclaw-migration.scripts.openclaw_to_hermes` | P2 | 3,286 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
+| 16 | `agent.anthropic_adapter` | P2 | 3,177 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
+| 17 | `tools.transcription_tools` | P2 | 3,016 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
+| 18 | `tools.process_registry` | P2 | 2,937 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
+| 19 | `agent.agent_init` | P2 | 2,823 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
+| 20 | `tools.file_operations` | P2 | 2,805 | TDD against upstream module/tests, implement, review, build/test, update ledger, commit. |
 
 ## Operating protocol
 
@@ -936,7 +937,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `plugins.video_gen.xai.__init__` | production | P4 | 925 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `providers.__init__` | production | P2 | 198 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
 | `providers.base` | production | P2 | 238 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
-| `run_agent` | production | P2 | 8,206 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `run_agent` | production | P2 | 8,206 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
 | `scripts.add_contributor` | production | P2 | 103 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `scripts.analyze_livetest` | production | P2 | 114 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `scripts.audit_pr_attribution` | production | P2 | 147 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |

@@ -380,6 +380,9 @@
  "providers.base": {
   "status": "partial"
  },
+ "run_agent": {
+  "status": "partial"
+ },
  "tools.ansi_strip": {
   "status": "done"
  },
