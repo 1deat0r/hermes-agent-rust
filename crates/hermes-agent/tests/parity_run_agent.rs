@@ -16,14 +16,14 @@ use std::collections::HashMap;
 
 use hermes_agent::credential_pool::{CredentialPool, PoolStrategy, PooledCredential};
 use hermes_agent::run_agent::{
-    codex_silent_hang_hint, is_azure_openai_url, is_codex_backend, is_copilot_provider,
-    is_copilot_url, is_direct_openai_url, is_ephemeral_scaffolding, is_github_copilot_url,
-    is_openrouter_url, launch_cwd_for_session, max_tokens_param, model_requires_responses_api,
-    pool_may_recover_from_rate_limit, provider_model_requires_responses_api, qwen_platform_tokens,
-    qwen_portal_headers, qwen_portal_headers_for, requested_output_cap_from_api_kwargs,
-    routermint_headers, safe_session_filename_component, session_source_for_agent,
-    StreamErrorEvent, DB_PERSISTED_MARKER, EPHEMERAL_SCAFFOLDING_FLAGS, MAX_TOOL_WORKERS,
-    QWEN_CODE_VERSION,
+    codex_silent_hang_hint, copilot_requires_responses_api, is_azure_openai_url, is_codex_backend,
+    is_copilot_provider, is_copilot_url, is_direct_openai_url, is_ephemeral_scaffolding,
+    is_github_copilot_url, is_openrouter_url, launch_cwd_for_session, max_tokens_param,
+    model_requires_responses_api, pool_may_recover_from_rate_limit,
+    provider_model_requires_responses_api, qwen_platform_tokens, qwen_portal_headers,
+    qwen_portal_headers_for, requested_output_cap_from_api_kwargs, routermint_headers,
+    safe_session_filename_component, session_source_for_agent, StreamErrorEvent,
+    DB_PERSISTED_MARKER, EPHEMERAL_SCAFFOLDING_FLAGS, MAX_TOOL_WORKERS, QWEN_CODE_VERSION,
 };
 use serde_json::{json, Map, Value};
 
@@ -283,7 +283,10 @@ fn openrouter_and_copilot_url_forms() {
 
 #[test]
 fn copilot_provider_covers_alias_spellings() {
-    // Source-derived: single-owner check for the alias set + URL fallback.
+    // Source-derived, overlapping the existing oracle
+    // tests/agent/test_turn_retry_state.py::test_copilot_provider_check_accepts_alias_spellings
+    // (aliases + URL-fallback + openrouter negative); the whitespace
+    // variant is source-consistent but oracle-unpinned.
     for alias in ["copilot", "github-copilot", "github", " Copilot "] {
         assert!(is_copilot_provider(
             Some(alias),
@@ -306,22 +309,18 @@ fn codex_backend_needs_mode_host_and_path() {
     // Source-derived: explicit-argument form of the field-reading check.
     assert!(is_codex_backend(
         "codex_responses",
-        "chatgpt.com",
         "https://chatgpt.com/backend-api/codex"
     ));
     assert!(!is_codex_backend(
         "chat_completions",
-        "chatgpt.com",
         "https://chatgpt.com/backend-api/codex"
     ));
     assert!(!is_codex_backend(
         "codex_responses",
-        "api.openai.com",
         "https://api.openai.com/v1"
     ));
     assert!(!is_codex_backend(
         "codex_responses",
-        "chatgpt.com",
         "https://chatgpt.com/backend-api/other"
     ));
 }
@@ -351,12 +350,33 @@ fn responses_api_routing_per_provider() {
         "claude-opus-4-6",
         None
     ));
-    // Copilot without the unported hermes_cli check uses the generic rule
-    // (upstream's own except-fallback).
+    // Copilot applies the ported hermes_cli rule (pure `re`, no layer
+    // violation): GPT-5+ except mini.
     assert!(provider_model_requires_responses_api(
         "gpt-5.5",
         Some("copilot")
     ));
+    assert!(!provider_model_requires_responses_api(
+        "gpt-5-mini",
+        Some("copilot")
+    ));
+    assert!(!provider_model_requires_responses_api(
+        "claude-opus-4-6",
+        Some("copilot")
+    ));
+}
+
+#[test]
+fn copilot_rule_matches_opencode_logic() {
+    // Direct oracle: hermes_cli/models.py::_should_use_copilot_responses_api.
+    // Case-sensitive `re.match` — `GPT-5` does not match.
+    assert!(copilot_requires_responses_api("gpt-5.5"));
+    assert!(copilot_requires_responses_api("gpt-5.5-codex"));
+    assert!(copilot_requires_responses_api("gpt-6"));
+    assert!(!copilot_requires_responses_api("gpt-5-mini"));
+    assert!(!copilot_requires_responses_api("claude-opus-4-6"));
+    assert!(!copilot_requires_responses_api("GPT-5.5"));
+    assert!(!copilot_requires_responses_api(""));
     assert!(model_requires_responses_api("openai/gpt-5.4"));
     assert!(!model_requires_responses_api("gpt-4.1"));
 }
@@ -367,7 +387,6 @@ fn hang_hint_fires_only_for_gpt55_on_codex() {
     let hint = codex_silent_hang_hint(
         "codex_responses",
         "openai-codex",
-        "chatgpt.com",
         "https://chatgpt.com/backend-api/codex",
         Some("gpt-5.5"),
         "gpt-5.5",
@@ -378,10 +397,20 @@ fn hang_hint_fires_only_for_gpt55_on_codex() {
     assert!(hint.contains("gpt-5.4-codex"));
     assert!(hint.contains("fallback chain"));
     assert!(hint.contains("'gpt-5.5'"));
+    // Quote-containing model that still matches renders with Python
+    // double quotes (oracle `repr()`; verified pattern fires).
+    let quoted = codex_silent_hang_hint(
+        "codex_responses",
+        "openai-codex",
+        "https://chatgpt.com/backend-api/codex",
+        Some("it's-gpt-5.5-x"),
+        "gpt-5.5",
+    )
+    .expect("quote-adjacent token still matches");
+    assert!(quoted.contains("\"it's-gpt-5.5-x\""));
     assert!(codex_silent_hang_hint(
         "codex_responses",
         "openai-codex",
-        "chatgpt.com",
         "https://chatgpt.com/backend-api/codex",
         Some("openai/gpt-5.5"),
         "gpt-5.5",
@@ -393,7 +422,6 @@ fn hang_hint_fires_only_for_gpt55_on_codex() {
         codex_silent_hang_hint(
             "chat_completions",
             "openai-codex",
-            "chatgpt.com",
             "https://chatgpt.com/backend-api/codex",
             Some("gpt-5.5"),
             "gpt-5.5",
@@ -404,7 +432,6 @@ fn hang_hint_fires_only_for_gpt55_on_codex() {
         codex_silent_hang_hint(
             "codex_responses",
             "openai-codex",
-            "chatgpt.com",
             "https://chatgpt.com/backend-api/codex",
             Some("gpt-5.4"),
             "gpt-5.4",
@@ -415,7 +442,6 @@ fn hang_hint_fires_only_for_gpt55_on_codex() {
         codex_silent_hang_hint(
             "codex_responses",
             "openai-codex",
-            "chatgpt.com",
             "https://chatgpt.com/backend-api/codex",
             Some("gpt-5.50"),
             "gpt-5.50",
@@ -425,7 +451,6 @@ fn hang_hint_fires_only_for_gpt55_on_codex() {
     assert!(codex_silent_hang_hint(
         "codex_responses",
         "openai-codex",
-        "chatgpt.com",
         "https://chatgpt.com/backend-api/codex",
         None,
         "gpt-5.5-codex",
@@ -435,7 +460,6 @@ fn hang_hint_fires_only_for_gpt55_on_codex() {
         codex_silent_hang_hint(
             "codex_responses",
             "openai",
-            "api.openai.com",
             "https://api.openai.com/v1",
             Some("gpt-5.5"),
             "gpt-5.5",
@@ -501,6 +525,10 @@ fn output_cap_reads_first_positive_kwarg() {
     assert_eq!(cap(&[("max_tokens", json!(3.7))]), Some(3));
     assert_eq!(cap(&[("max_tokens", json!(" 64 "))]), Some(64));
     assert_eq!(cap(&[("max_tokens", json!(true))]), Some(1));
+    // CPython underscore separators: single between digits only.
+    assert_eq!(cap(&[("max_tokens", json!("1_0"))]), Some(10));
+    assert_eq!(cap(&[("max_tokens", json!("_1"))]), None);
+    assert_eq!(cap(&[("max_tokens", json!("1__0"))]), None);
     assert_eq!(cap(&[]), None);
     assert_eq!(cap(&[("other", json!(9))]), None);
 }

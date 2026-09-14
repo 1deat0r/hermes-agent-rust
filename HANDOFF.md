@@ -896,7 +896,7 @@ each phase. Next: TBD from pin map.
 
 ## Session 5a — run_agent section 1 (2026-09-14)
 
-`hermes-agent::run_agent` opened (TDD, now 32 parity tests green):
+`hermes-agent::run_agent` opened (TDD, now 33 parity tests green):
 scaffolding flags/table, truthiness filter, worker/marker/version
 consts, Qwen + RouterMint header builders, traversal-safe session
 filename with oracle-exact digests, pool-recovery predicate.
@@ -959,3 +959,15 @@ codex hang hint (Python-quote interpolation), max-tokens key,
 output-cap `int()` coercion table. Oracles: direct-URL detection,
 hang-hint positives, max-tokens/routing arms; self-reading no-arg
 forms deferred to the loop slice. Next: TBD from pin map.
+
+## R6 checkpoint (2026-09-14) — section-3 board + closures
+
+5-seat R1 on 247a3e2: S1 CONDITIONAL, S2 CONDITIONAL (3), S3 BUILD,
+S4 BUILD, S5 REJECT. Adjudicated: Copilot rule fully ported from
+hermes_cli/models.py (pure re — kills S1-conditional + S5-1, no layer
+violation); hang-regex kill REFUTED by hexdump (byte-identical;
+adversarial tested a display-doubled phantom); hostname derived from
+base URL (kills split-brain); Python repr() + underscore-int parity
+added with oracle vectors; S2-1/S2-2 refuted (unreachable domain /
+would-be divergence); float-bignum documented out-of-domain.
+Operator-verified R2 = green suite + oracle recomputation.

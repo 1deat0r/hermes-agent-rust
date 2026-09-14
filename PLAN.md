@@ -473,8 +473,8 @@ convention; oracles `test_gemini_fast_fallback` +
 source-derived).
 Oracle: `test_dropped_tool_call_recovery`, `test_run_agent`
 (traversal cases), `test_verification_stop_caching`,
-`test_gemini_fast_fallback`, `test_provider_fallback` @ b9aa928; 32
-parity tests (sections 1–3); `run_agent` marked `partial` (first of ~8,206 LOC).
+`test_gemini_fast_fallback`, `test_provider_fallback` @ b9aa928; 33
+parity tests (sections 1–3 + board closures); `run_agent` marked `partial` (first of ~8,206 LOC).
 
 Board R1 (S1 CONDITIONAL / S2 BUILD / S3 CONDITIONAL / S4 BUILD / S5
 REJECT) + closures: char class calibrated to `[\p{L}\p{N}_]`
@@ -497,13 +497,17 @@ an explicit argument; oracles `test_session_source`), and
 Section 3: provider/URL predicates + token-cap helpers landed
 (explicit-argument forms of methods in pin ~1334-1680):
 `model_requires_responses_api`,
-`provider_model_requires_responses_api` (Copilot arm uses upstream's
-own except-fallback), `is_direct_openai_url`, `is_azure_openai_url`,
+`provider_model_requires_responses_api` (Copilot arm ports the pure
+`hermes_cli.models` rule — no layer violation), `is_direct_openai_url`, `is_azure_openai_url`,
 `is_github_copilot_url`, `is_openrouter_url`, `is_copilot_url`,
 `is_copilot_provider`, `is_codex_backend`,
 `codex_silent_hang_hint` (Python single-quote interpolation),
 `max_tokens_param` (key+value tuple),
 `requested_output_cap_from_api_kwargs` (`int(raw)` coercion table).
+Board closures: Copilot rule ported (kills the except-fallback gap);
+hostname derived from base URL (no split-brain args); Python `repr()`
+and underscore-`int()` parity; hang regex verified byte-identical
+(adversarial display artifact refuted by hexdump).
 Oracles: `test_direct_provider_url_detection`,
 `test_codex_silent_hang_hint` (positives; negative section empty),
 `TestMaxTokensParam`/`TestGpt5ApiModeRouting` arms; self-reading
@@ -3209,10 +3213,10 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 - 2026-09-14 (session 5a): `run_agent` section 1 landed —
   `crates/hermes-agent/src/run_agent.rs` (module-level pure helpers, pin
-  ~234-371) + `tests/parity_run_agent.rs` (32 parity tests after
-  sections 1–3; traversal digests byte-verified). Recon note: recon
+  ~234-371) + `tests/parity_run_agent.rs` (33 parity tests after
+  sections 1–3 + board closures; traversal digests byte-verified). Recon note: recon
   against upstream HEAD maps the wrong file (1,555-line decomposed
   `run_agent.py`); the pin oracle is the 8,206-line monolith — always
   read via `git show b9aa928:<path>`. Evidence: `cargo test -p
-  hermes-agent --test parity_run_agent` (unit) 11 green; workspace suite
+  hermes-agent --test parity_run_agent` (unit) 32 green (sections 1–3); workspace suite
   re-run serial clean-env (see HANDOFF). `run_agent` → `partial`.

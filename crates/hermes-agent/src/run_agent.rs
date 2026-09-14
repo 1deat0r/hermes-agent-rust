@@ -19,7 +19,8 @@
 //! `tests/run_agent/test_session_source.py`,
 //! `tests/run_agent/test_codex_xai_oauth_recovery.py`,
 //! `tests/agent/test_direct_provider_url_detection.py`,
-//! `tests/run_agent/test_codex_silent_hang_hint.py` @ b9aa928);
+//! `tests/run_agent/test_codex_silent_hang_hint.py`,
+//! `hermes_cli/models.py::_should_use_copilot_responses_api` (rule body) @ b9aa928);
 //! `unit/source-derived` where no upstream case pins the behavior
 //! (header platform mapping, falsy-flag matrix, truncation bounds,
 //! single-entry pool).
@@ -273,15 +274,38 @@ pub fn model_requires_responses_api(model: &str) -> bool {
     tail.to_lowercase().starts_with("gpt-5")
 }
 
+/// PARITY: `hermes_cli.models._should_use_copilot_responses_api`
+/// (upstream `hermes_cli/models.py:4049-4063`; opencode logic, pure
+/// `re` only — no CLI runtime needed, so it lives here rather than
+/// behind the layer boundary): GPT-5+ models use Responses, except
+/// `gpt-5-mini`; non-GPT models stay on chat completions. Case- and
+/// prefix-sensitive exactly as upstream (`re.match`, no lowercasing —
+/// `GPT-5` does not match).
+pub fn copilot_requires_responses_api(model_id: &str) -> bool {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    let pattern = RE.get_or_init(|| Regex::new(r"^gpt-(\d+)").expect("copilot responses pattern"));
+    let major: Option<u32> = pattern
+        .captures(model_id)
+        .and_then(|captured| captured.get(1))
+        .and_then(|digits| digits.as_str().parse().ok());
+    match major {
+        Some(major) => major >= 5 && !model_id.starts_with("gpt-5-mini"),
+        None => false,
+    }
+}
+
 /// PARITY: `AIAgent._provider_model_requires_responses_api` (pin).
 /// Provider/model routing: Nous and generic custom endpoints stay on
-/// chat completions. The Copilot-specific `hermes_cli.models` check is
-/// unported — upstream's own `except Exception: pass` falls back to the
-/// generic GPT-5 rule, which is exactly what this port applies.
+/// chat completions. The Copilot arm applies the ported
+/// [`copilot_requires_responses_api`] rule (pure `re` logic shared with
+/// upstream `hermes_cli.models`, so no higher-layer dependency).
 pub fn provider_model_requires_responses_api(model: &str, provider: Option<&str>) -> bool {
     let normalized = provider.unwrap_or("").trim().to_lowercase();
     if normalized == "nous" || normalized == "custom" {
         return false;
+    }
+    if normalized == "copilot" {
+        return copilot_requires_responses_api(model);
     }
     model_requires_responses_api(model)
 }
@@ -332,11 +356,12 @@ pub fn is_copilot_provider(provider: Option<&str>, base_url: &str) -> bool {
 }
 
 /// PARITY: `AIAgent._is_codex_backend` (pin), explicit-argument form.
-/// Hostname/URL are lowered here to reproduce the pre-lowered agent
-/// fields the no-arg form reads; `api_mode` compares exact.
-pub fn is_codex_backend(api_mode: &str, hostname: &str, base_url: &str) -> bool {
+/// The hostname is derived from `base_url` exactly as the agent caches
+/// `_base_url_hostname` (`_base_url_hostname = base_url_hostname(value)`,
+/// pin ~433); `api_mode` compares exact.
+pub fn is_codex_backend(api_mode: &str, base_url: &str) -> bool {
     api_mode == "codex_responses"
-        && hostname.to_lowercase() == "chatgpt.com"
+        && base_url_hostname(base_url) == "chatgpt.com"
         && base_url.to_lowercase().contains("/backend-api/codex")
 }
 
@@ -345,23 +370,39 @@ fn codex_hang_pattern() -> &'static Regex {
     RE.get_or_init(|| Regex::new(r"(?:^|[/\-_])gpt-5\.5(?:$|[\-_])").expect("codex hang pattern"))
 }
 
+/// Python `repr()` for short single-line strings (model names): single
+/// quotes unless the value contains `'` without `"`, mirroring CPython.
+/// Verified against the oracle (`it's-x` → `"it's-x"`, `a"b` → `'a"b'`).
+fn py_repr_str(value: &str) -> String {
+    if value.contains('\'') && !value.contains('"') {
+        return format!("\"{value}\"");
+    }
+    let mut quoted = String::with_capacity(value.len() + 2);
+    quoted.push('\'');
+    for ch in value.chars() {
+        if ch == '\\' || ch == '\'' {
+            quoted.push('\\');
+        }
+        quoted.push(ch);
+    }
+    quoted.push('\'');
+    quoted
+}
+
 /// PARITY: `AIAgent._codex_silent_hang_hint` (pin). Actionable hint for
 /// the known Codex silent-reject pattern (gpt-5.5 family on the ChatGPT
 /// Codex backend; hermes-agent #21444), else `None`. `model` overrides
 /// `current_model`, mirroring `model if model is not None else
-/// self.model`. The `{eff_model!r}` interpolation renders with Python
-/// single quotes.
+/// self.model`; the hostname derives from `base_url` as in
+/// [`is_codex_backend`].
 pub fn codex_silent_hang_hint(
     api_mode: &str,
     provider: &str,
-    hostname: &str,
     base_url: &str,
     model: Option<&str>,
     current_model: &str,
 ) -> Option<String> {
-    let backend = provider == "openai-codex"
-        || (hostname.to_lowercase() == "chatgpt.com"
-            && base_url.to_lowercase().contains("/backend-api/codex"));
+    let backend = provider == "openai-codex" || is_codex_backend(api_mode, base_url);
     if api_mode != "codex_responses" || !backend {
         return None;
     }
@@ -370,8 +411,9 @@ pub fn codex_silent_hang_hint(
     if !codex_hang_pattern().is_match(&lowered) {
         return None;
     }
+    let quoted = py_repr_str(&effective);
     Some(format!(
-        "Codex backend appears to be silently rejecting '{effective}' \
+        "Codex backend appears to be silently rejecting {quoted} \
          on chatgpt.com/backend-api/codex (no stream events, no error). \
          This is a known backend-side pattern that has affected ChatGPT \
          Plus accounts intermittently. \
@@ -400,16 +442,18 @@ pub fn max_tokens_param(value: i64, base_url: &str, model: &str) -> (&'static st
 /// PARITY: `AIAgent._requested_output_cap_from_api_kwargs` (pin,
 /// staticmethod). First positive int across `max_output_tokens`,
 /// `max_completion_tokens`, `max_tokens`. Coercion mirrors `int(raw)`:
-/// floats truncate toward zero, numeric strings (trimmed) parse,
-/// `True` counts as 1; non-numeric, missing, or non-positive entries
-/// fall through to the next key. (Python bignums beyond i64 are out of
-/// domain; floats saturate at the i64 bounds.)
+/// `int(raw)`: floats truncate toward zero, numeric strings (trimmed)
+/// parse, `True` counts as 1; non-numeric, missing, or non-positive
+/// entries fall through to the next key. Underscore digit separators
+/// follow CPython (`"1_0"` parses, `"_1"`/`"1__0"` do not); non-ASCII
+/// digits are out of domain. (Python bignums beyond i64 are out of
+/// domain; floats saturate at the i64 bounds, unreachable from JSON.)
 pub fn requested_output_cap_from_api_kwargs(payload: &Map<String, Value>) -> Option<i64> {
     for key in ["max_output_tokens", "max_completion_tokens", "max_tokens"] {
         let value = match payload.get(key) {
             Some(Value::Number(n)) => n.as_i64().or_else(|| n.as_f64().map(|f| f as i64)),
             Some(Value::Bool(b)) => Some(*b as i64),
-            Some(Value::String(s)) => s.trim().parse::<i64>().ok(),
+            Some(Value::String(s)) => parse_py_int(s.trim()),
             _ => None,
         };
         if let Some(positive) = value.filter(|v| *v > 0) {
@@ -417,6 +461,34 @@ pub fn requested_output_cap_from_api_kwargs(payload: &Map<String, Value>) -> Opt
         }
     }
     None
+}
+
+/// Parse an ASCII base-10 integer with CPython `int(str)` underscore
+/// rules: an optional sign, then digits with single underscores only
+/// between digits.
+fn parse_py_int(text: &str) -> Option<i64> {
+    let digits = text.strip_prefix(['+', '-']).unwrap_or(text);
+    if digits.is_empty() {
+        return None;
+    }
+    let mut chars = digits.chars();
+    let mut prev_underscore = true;
+    for ch in &mut chars {
+        if ch == '_' {
+            if prev_underscore {
+                return None;
+            }
+            prev_underscore = true;
+        } else if ch.is_ascii_digit() {
+            prev_underscore = false;
+        } else {
+            return None;
+        }
+    }
+    if prev_underscore {
+        return None;
+    }
+    text.replace('_', "").parse::<i64>().ok()
 }
 
 /// PARITY: `_routermint_headers` (pin ~303-309). The Hermes version is
