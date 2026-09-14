@@ -494,6 +494,11 @@ an explicit argument; oracles `test_session_source`), and
 `StreamErrorEvent` (SDK-shaped body; oracle body assertions from
 `test_codex_xai_oauth_recovery`, harness pending the loop).
 
+Board closures: explicit-empty gateway context masks env (verified
+`get_session_env` masking semantics — was leaking stale env); Some
+ctor arms, `TERMINAL_ENV` edge arms, null/blank masking tests;
+module-doc range/tiers; lossy-cwd + string-domain contracts.
+
 ### hermes-agent utility modules (Phase 2, upstream @ b9aa928)
 
 | Module / upstream surface | Status | Rust home, oracle, and evidence tier |

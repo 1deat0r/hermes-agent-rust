@@ -905,6 +905,19 @@ Validation: `cargo build --workspace` + `cargo test -p hermes-agent
 before commit. Next slice: TBD from the pin map (the ~1334-1613
 provider predicates are `AIAgent` self-methods — board S4 correction).
 
+## R5 checkpoint (2026-09-14) — section-2 board + closures
+
+5-seat R1 on f919372: S1 CONDITIONAL (1 real bug), S2 CONDITIONAL
+(2 test gaps), S3 BUILD, S4 CONDITIONAL (3 docs-only), S5 REJECT.
+Adjudicated CONFIRMED + fixed: explicit-empty context MUST mask env
+(`get_session_env` returns set-"" with no fallback — verified at
+`gateway/session_context.py:363-386`; was leaking stale env); Some
+ctor arms, TERMINAL_ENV ""/"   " arms, null/blank masking tests;
+module-doc range/tiers/first-section; lossy-cwd + string-domain notes.
+Accepted standing: u16 precedent, readonly-availability, fresh-now
+contract, fallback-gate wiring (loop slice). S1/S5 items closed or
+filed; S5's TOCTOU/truthiness attacks conceded by the seat itself.
+
 ## R4 checkpoint (2026-09-14) — pool-slice board + closures
 
 5-seat R1 on c100b71: S1 CONDITIONAL (arms match; 2 standing

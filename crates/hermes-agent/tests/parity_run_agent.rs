@@ -354,8 +354,14 @@ fn session_source_env_beats_platform_and_defaults_cli() {
         let _guard = EnvGuard::lock().unset("HERMES_SESSION_SOURCE");
         assert_eq!(session_source_for_agent(None, None), "cli");
         assert_eq!(session_source_for_agent(Some(""), None), "cli");
-        // Blank context counts as unset, exactly like `str(source or "")`.
+    }
+    {
+        // Explicitly cleared context masks env entirely (gateway
+        // `get_session_env` returns set-"" with no os.environ fallback),
+        // so the blank falls through to platform, not the set env var.
+        let _guard = EnvGuard::lock().set("HERMES_SESSION_SOURCE", "cron");
         assert_eq!(session_source_for_agent(Some("tui"), Some("  ")), "tui");
+        assert_eq!(session_source_for_agent(None, Some("")), "cli");
     }
 }
 
@@ -375,6 +381,16 @@ fn launch_cwd_only_for_local_cli() {
     }
     {
         let _guard = EnvGuard::lock().set("TERMINAL_ENV", " LOCAL ");
+        assert!(launch_cwd_for_session("cli").is_some());
+    }
+    {
+        // Empty and whitespace-only backend names mean "local" upstream
+        // (`(… or "local")`), so they record the cwd too.
+        let _guard = EnvGuard::lock().set("TERMINAL_ENV", "");
+        assert!(launch_cwd_for_session("cli").is_some());
+    }
+    {
+        let _guard = EnvGuard::lock().set("TERMINAL_ENV", "   ");
         assert!(launch_cwd_for_session("cli").is_some());
     }
 }
@@ -404,6 +420,14 @@ fn stream_error_event_carries_sdk_shaped_body() {
     assert_eq!(event.body["error"]["type"], serde_json::json!("error"));
     assert_eq!(event.code.as_deref(), Some("forbidden"));
     assert_eq!(event.status_code, None);
+    // Remaining constructor arms: `param: Some`, `code: None`,
+    // `status_code: Some` all propagate into fields and body.
+    let full = StreamErrorEvent::new("boom", None::<String>, Some("reasoning"), Some(429));
+    assert_eq!(full.body["error"]["code"], serde_json::Value::Null);
+    assert_eq!(full.body["error"]["param"], serde_json::json!("reasoning"));
+    assert_eq!(full.param.as_deref(), Some("reasoning"));
+    assert_eq!(full.status_code, Some(429));
+    assert_eq!(format!("{full}"), "boom");
 }
 
 // ── _routermint_headers ──────────────────────────────────────────────

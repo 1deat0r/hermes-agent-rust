@@ -1,9 +1,8 @@
-//! First ported section of `run_agent.py`: module-level pure helpers.
-//!
-//! PARITY: `run_agent.py` @ b9aa928 (pin lines ~234-371: scaffolding flags,
-//! worker/marker constants, Qwen header builders, session filename
-//! sanitizer, RouterMint UA, pool-recovery predicate, session
-//! establishment helpers, stream error event). Everything here is
+//! Ported sections of `run_agent.py`: module-level pure helpers (pin
+//! lines ~69-103: session-establishment pair; ~234-371: scaffolding
+//! flags, worker/marker constants, Qwen header builders, session
+//! filename sanitizer, RouterMint UA; pool-recovery predicate;
+//! ~373-411: stream error event). Everything here is
 //! stdlib logic plus same-crate pool types; higher-layer seams stay out:
 //! - `_routermint_headers` reads `hermes_cli.__version__` lazily upstream;
 //!   `hermes-agent` must not depend on the higher-layer `hermes-cli`
@@ -14,7 +13,9 @@
 //! `tests/run_agent/test_run_agent.py`,
 //! `tests/agent/test_verification_stop_caching.py`,
 //! `tests/agent/test_gemini_fast_fallback.py`,
-//! `tests/run_agent/test_provider_fallback.py` @ b9aa928);
+//! `tests/run_agent/test_provider_fallback.py`,
+//! `tests/run_agent/test_session_source.py`,
+//! `tests/run_agent/test_codex_xai_oauth_recovery.py` @ b9aa928);
 //! `unit/source-derived` where no upstream case pins the behavior
 //! (header platform mapping, falsy-flag matrix, truncation bounds,
 //! single-entry pool).
@@ -151,7 +152,10 @@ pub fn qwen_portal_headers_for(system: &str, machine: &str) -> HashMap<String, S
 /// stamp on a new session row, or `None`. Only local CLI sessions record
 /// a cwd; gateway/cron/remote sessions and non-`local` `TERMINAL_ENV`
 /// backends record nothing. An unlinked cwd (`OSError` upstream, any
-/// `std::io` error here) also yields `None`.
+/// `std::io` error here) also yields `None`. A non-UTF8 cwd degrades to
+/// U+FFFD replacement chars (`to_string_lossy`); upstream round-trips
+/// such paths via surrogateescape, so byte-exotic cwds are a documented
+/// edge, not a covered arm.
 pub fn launch_cwd_for_session(source: &str) -> Option<String> {
     if source != "cli" {
         return None;
@@ -176,18 +180,30 @@ pub fn launch_cwd_for_session(source: &str) -> Option<String> {
 /// `context_source` (`None` = contextvar unset); every other arm reads
 /// exactly as upstream.
 pub fn session_source_for_agent(platform: Option<&str>, context_source: Option<&str>) -> String {
-    if let Some(source) = context_source.map(|s| s.trim()).filter(|s| !s.is_empty()) {
-        return source.to_string();
+    // Gateway session-context override. An explicitly set context value
+    // masks the env layer entirely — even a blank one (`get_session_env`
+    // returns explicitly-set `""` with no `os.environ` fallback, and the
+    // blank then falls to platform); only a never-set context (`None`)
+    // falls through to env.
+    let platform_default = || {
+        platform
+            .filter(|s| !s.is_empty())
+            .unwrap_or("cli")
+            .to_string()
+    };
+    if let Some(raw) = context_source {
+        let trimmed = raw.trim();
+        if !trimmed.is_empty() {
+            return trimmed.to_string();
+        }
+        return platform_default();
     }
     let from_env = std::env::var("HERMES_SESSION_SOURCE").unwrap_or_default();
     let from_env = from_env.trim();
     if !from_env.is_empty() {
         return from_env.to_string();
     }
-    platform
-        .filter(|s| !s.is_empty())
-        .unwrap_or("cli")
-        .to_string()
+    platform_default()
 }
 
 /// PARITY: `_StreamErrorEvent` (pin ~373-411). Synthesized provider
