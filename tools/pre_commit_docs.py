@@ -66,7 +66,7 @@ def resolve_upstream() -> Path | None:
     # the actual checkout recorded in HANDOFF.md for this machine.
     candidates.extend(
         [
-            "/home/mustbearn/Projects/Research/hermes-agent-repo",
+            "/run/media/its1deat0r/Projects/Research/hermes-agent-repo",
             str(ROOT.parent.parent / "Research" / "hermes-agent-repo"),
         ]
     )

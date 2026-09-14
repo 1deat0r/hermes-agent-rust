@@ -27,17 +27,17 @@ while a lower-layer contract remains partial.
   EVIDENCE: pending
 
 - [ ] G2: the complete workspace builds and all active Rust tests pass serially
-  CHECK: /home/mustbearnold/.cargo/bin/cargo test --workspace -- --test-threads=1
+  CHECK: cargo test --workspace -- --test-threads=1
   EXPECT: test result: ok
   EVIDENCE: pending
 
 - [ ] G3: the final workspace is formatted and documentation hooks remain valid
-  CHECK: bash -n .githooks/pre-commit .githooks/post-commit tools/install_hooks.sh && PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -c "from pathlib import Path; [compile(p.read_text(encoding='utf-8'), str(p), 'exec') for p in (Path('tools/pre_commit_docs.py'), Path('tools/refresh_docs.py'), Path('tools/sync_github_metadata.py')]; print('documentation hooks passed')" && /home/mustbearnold/.cargo/bin/cargo fmt --all -- --check
+  CHECK: bash -n .githooks/pre-commit .githooks/post-commit tools/install_hooks.sh && PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -c "from pathlib import Path; [compile(p.read_text(encoding='utf-8'), str(p), 'exec') for p in (Path('tools/pre_commit_docs.py'), Path('tools/refresh_docs.py'), Path('tools/sync_github_metadata.py')]; print('documentation hooks passed')" && cargo fmt --all -- --check
   EXPECT: documentation hooks passed
   EVIDENCE: pending
 
 - [ ] G4: the generated ledger and README are refreshed from the pinned upstream checkout and contain no stale completion snapshot
-  CHECK: HERMES_UPSTREAM=/run/media/mustbearnold/Projects/Research/hermes-agent-repo /usr/bin/python3 tools/refresh_docs.py --upstream /run/media/mustbearnold/Projects/Research/hermes-agent-repo && git diff --exit-code -- tools/inventory.json CONVERSION-LEDGER.md README.md && echo documentation snapshot passed
+  CHECK: test "$(git -C "$(git config --get hermes.upstream)" rev-parse HEAD)" = b9aa9289a8083f2e9d248ad6837b2938f5ee92d7 && HERMES_UPSTREAM="$(git config --get hermes.upstream)" /usr/bin/python3 tools/refresh_docs.py --upstream "$(git config --get hermes.upstream)" && git diff --exit-code -- tools/inventory.json CONVERSION-LEDGER.md README.md && echo documentation snapshot passed
   EXPECT: documentation snapshot passed
   EVIDENCE: pending
 

@@ -1,7 +1,8 @@
 # Hermes Agent in Rust — 1:1 Port Plan
 
 Target: https://github.com/NousResearch/hermes-agent @ `b9aa928` (local clone:
-`/home/mustbearn/Projects/Research/hermes-agent-repo`)
+`/run/media/its1deat0r/Projects/Research/hermes-agent-repo`; inventory always
+regenerated against a pinned `/tmp/hermes-upstream-b9aa928` worktree, never HEAD)
 Goal: Functional **1:1 port** of Hermes Agent to idiomatic Rust — same CLI
 surface, same on-disk formats, same wire protocols, same observable behavior —
 different implementation language.

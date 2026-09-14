@@ -4,20 +4,20 @@ Date: 2026-08-31 (Pacific/Auckland), session 4da.
 
 ## Resume point
 
-Repository: `/run/media/mustbearnold/Projects/AI Agents/Hermes-Agent-Rust`
+Repository: `/run/media/its1deat0r/Projects/AI Agents/Hermes-Agent-Rust`
 
 Pinned upstream commit: `b9aa928`. The checkout actually used and validated is
-`/run/media/mustbearnold/Projects/Research/hermes-agent-repo` (AGENTS.md and
+`/run/media/its1deat0r/Projects/Research/hermes-agent-repo` (AGENTS.md and
 `tools/inventory.sh` were corrected to this path this session). **Upstream
 HEAD has advanced far past the pin** — always regenerate the inventory against
 a pinned worktree:
 
 ```bash
-git -C /run/media/mustbearnold/Projects/Research/hermes-agent-repo \
+git -C /run/media/its1deat0r/Projects/Research/hermes-agent-repo \
     worktree add --detach /tmp/hermes-upstream-b9aa928 b9aa928
 HERMES_UPSTREAM=/tmp/hermes-upstream-b9aa928 bash tools/inventory.sh
 python3 tools/conversion_ledger.py
-git -C /run/media/mustbearnold/Projects/Research/hermes-agent-repo \
+git -C /run/media/its1deat0r/Projects/Research/hermes-agent-repo \
     worktree remove /tmp/hermes-upstream-b9aa928
 ```
 
@@ -816,3 +816,41 @@ git rev-parse origin/main
 git log --oneline -5
 git ls-remote origin refs/heads/main
 ```
+
+## Review checkpoint — expert board R1 (2026-09-14, corrected after pin regen)
+
+Five-seat isolated board reviewed the working tree. Round 1: S1
+CONDITIONAL, S2 CONDITIONAL, S3 REJECT, S4 REJECT, S5 REJECT.
+Adjudication against live sources CONFIRMED the no-loop finding (no
+`run_agent`/`AIAgent`/conversation loop — P2 exit unmet), the
+`mustbearnold` path staleness, and `main` ahead 45 + untracked IDEA.md
+(since removed: 1-line content-free stub).
+
+CORRECTION to the R1 report: regenerating against the true pin
+(`HERMES_UPSTREAM=/tmp/hermes-upstream-b9aa928`) yields **3,882 tracked
+modules / 1,103 prod / 843,792 prod LOC** — exactly PLAN §1 and GATES
+G1. The 4,740/1,229 figures came from an inventory generated against
+upstream HEAD (`b51c055a`), not the pin. S4 sub-blockers on PLAN/GATES
+counts are therefore REFUTED; the true defect was the regen protocol
+(not a pinned worktree), now fixed: `git config hermes.upstream`
+points at the pinned worktree, GATES G4 asserts the pin SHA before
+refreshing, and the hook resolves via that config. Current ledger:
+**3.74% all-tracked (145/3882), 13.15% prod (145/1103)**, 22 partial.
+The 4 `port_status.json` keys absent from the inventory
+(`agent.monitoring`, `agent.secret_sources`, `agent.verify`,
+`hermes_cli.dashboard_auth`) are package-rollup keys with no direct
+`.py` counterpart — excluded from strict counts by design, not drift.
+
+Validation this session: `cargo build --workspace` green;
+`cargo test --workspace -- --test-threads=1` green (exit 0, serialized;
+must run with a clean env — `env -u HERMES_REAL_HOME -u HERMES_HOME
+-u TERMINAL_MODAL_MODE -u TERMINAL_MODAL_IMAGE` — because
+`HERMES_REAL_HOME` outranks `HOME` in `get_real_home` trust order and
+otherwise breaks the `parity_tool_backend_helpers` HOME-override tests
+with a mutex-poison cascade: 1 root failure + 14 `PoisonError`
+follow-ons); `git diff --check` clean. Pre-existing nit left open:
+`cargo fmt --check` wants `markdown_tables` module-ordering in
+`hermes-agent/src/lib.rs:13`.
+
+Next dependency-safe unit: `run_agent` (+ `AIAgent` turn loop on a
+model stub).
