@@ -883,9 +883,20 @@ pre-commit pin guard (refuses refresh off-pin); GATES G4 self-ensuring
 pinned worktree + SHA assert (executed: recreated worktree, refreshed,
 timestamp-only diff as designed); dead `hermes.upstream` config unset.
 
+## Session 5b — run_agent section 2 (2026-09-14)
+
+Session-establishment helpers + stream error type (TDD):
+`launch_cwd_for_session`, `session_source_for_agent` (gateway context
+as explicit arg — unported layer seam), `StreamErrorEvent`
+(thiserror, SDK-shaped body). Oracles: `test_session_source`
+(full mirror), `test_codex_xai_oauth_recovery` body assertions
+(harness pending loop); `_launch_cwd` source-derived. Caught live:
+rebinding an env-guard deadlocks (std Mutex non-reentrant) — scope
+each phase. Next: TBD from pin map.
+
 ## Session 5a — run_agent section 1 (2026-09-14)
 
-`hermes-agent::run_agent` opened (TDD, now 17 parity tests green):
+`hermes-agent::run_agent` opened (TDD, now 22 parity tests green):
 scaffolding flags/table, truthiness filter, worker/marker/version
 consts, Qwen + RouterMint header builders, traversal-safe session
 filename with oracle-exact digests, pool-recovery predicate.

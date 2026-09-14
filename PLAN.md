@@ -473,8 +473,8 @@ convention; oracles `test_gemini_fast_fallback` +
 source-derived).
 Oracle: `test_dropped_tool_call_recovery`, `test_run_agent`
 (traversal cases), `test_verification_stop_caching`,
-`test_gemini_fast_fallback`, `test_provider_fallback` @ b9aa928; 17
-parity tests; `run_agent` marked `partial` (first of ~8,206 LOC).
+`test_gemini_fast_fallback`, `test_provider_fallback` @ b9aa928; 22
+parity tests (sections 1–2); `run_agent` marked `partial` (first of ~8,206 LOC).
 
 Board R1 (S1 CONDITIONAL / S2 BUILD / S3 CONDITIONAL / S4 BUILD / S5
 REJECT) + closures: char class calibrated to `[\p{L}\p{N}_]`
@@ -486,6 +486,13 @@ surrogate/coercion contracts. 13 parity tests green.
 
 Section 1b: `_pool_may_recover_from_rate_limit` landed (17 tests;
 MagicMock oracles rebuilt on real pools + exhaustion path).
+
+Section 2: session-establishment helpers + `_StreamErrorEvent`
+landed: `launch_cwd_for_session` (env/cwd arms; no upstream oracle —
+source-derived), `session_source_for_agent` (gateway-context seam as
+an explicit argument; oracles `test_session_source`), and
+`StreamErrorEvent` (SDK-shaped body; oracle body assertions from
+`test_codex_xai_oauth_recovery`, harness pending the loop).
 
 ### hermes-agent utility modules (Phase 2, upstream @ b9aa928)
 
@@ -3182,8 +3189,8 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 - 2026-09-14 (session 5a): `run_agent` section 1 landed —
   `crates/hermes-agent/src/run_agent.rs` (module-level pure helpers, pin
-  ~234-371) + `tests/parity_run_agent.rs` (17 parity tests after the
-  pool slice; traversal digests byte-verified). Recon note: recon
+  ~234-371) + `tests/parity_run_agent.rs` (22 parity tests after
+  sections 1–2; traversal digests byte-verified). Recon note: recon
   against upstream HEAD maps the wrong file (1,555-line decomposed
   `run_agent.py`); the pin oracle is the 8,206-line monolith — always
   read via `git show b9aa928:<path>`. Evidence: `cargo test -p

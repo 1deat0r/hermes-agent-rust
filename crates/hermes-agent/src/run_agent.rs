@@ -2,7 +2,8 @@
 //!
 //! PARITY: `run_agent.py` @ b9aa928 (pin lines ~234-371: scaffolding flags,
 //! worker/marker constants, Qwen header builders, session filename
-//! sanitizer, RouterMint UA, pool-recovery predicate). Everything here is
+//! sanitizer, RouterMint UA, pool-recovery predicate, session
+//! establishment helpers, stream error event). Everything here is
 //! stdlib logic plus same-crate pool types; higher-layer seams stay out:
 //! - `_routermint_headers` reads `hermes_cli.__version__` lazily upstream;
 //!   `hermes-agent` must not depend on the higher-layer `hermes-cli`
@@ -25,6 +26,7 @@ use std::sync::OnceLock;
 use regex::Regex;
 use serde_json::{Map, Value};
 use sha2::{Digest, Sha256};
+use thiserror::Error;
 
 /// PARITY: `_EPHEMERAL_SCAFFOLDING_FLAGS` (pin ~234-256). Internal
 /// recovery/verification/kanban/drop-retry markers that must never be
@@ -143,6 +145,97 @@ pub fn qwen_portal_headers_for(system: &str, machine: &str) -> HashMap<String, S
         ("X-DashScope-UserAgent".to_string(), user_agent),
         ("X-DashScope-AuthType".to_string(), "qwen-oauth".to_string()),
     ])
+}
+
+/// PARITY: `_launch_cwd_for_session` (pin ~69-90). Working directory to
+/// stamp on a new session row, or `None`. Only local CLI sessions record
+/// a cwd; gateway/cron/remote sessions and non-`local` `TERMINAL_ENV`
+/// backends record nothing. An unlinked cwd (`OSError` upstream, any
+/// `std::io` error here) also yields `None`.
+pub fn launch_cwd_for_session(source: &str) -> Option<String> {
+    if source != "cli" {
+        return None;
+    }
+    let backend = std::env::var("TERMINAL_ENV")
+        .unwrap_or_default()
+        .trim()
+        .to_lowercase();
+    if !backend.is_empty() && backend != "local" {
+        return None;
+    }
+    std::env::current_dir()
+        .ok()
+        .map(|path| path.to_string_lossy().into_owned())
+}
+
+/// PARITY: `_session_source_for_agent` (pin ~93-103). Resolve the
+/// session source: gateway session-context override first, then the
+/// `HERMES_SESSION_SOURCE` env var, then `platform`, defaulting to
+/// `"cli"`. The gateway context layer (`gateway.session_context`) is
+/// unported, so the future gateway caller passes its resolved value as
+/// `context_source` (`None` = contextvar unset); every other arm reads
+/// exactly as upstream.
+pub fn session_source_for_agent(platform: Option<&str>, context_source: Option<&str>) -> String {
+    if let Some(source) = context_source.map(|s| s.trim()).filter(|s| !s.is_empty()) {
+        return source.to_string();
+    }
+    let from_env = std::env::var("HERMES_SESSION_SOURCE").unwrap_or_default();
+    let from_env = from_env.trim();
+    if !from_env.is_empty() {
+        return from_env.to_string();
+    }
+    platform
+        .filter(|s| !s.is_empty())
+        .unwrap_or("cli")
+        .to_string()
+}
+
+/// PARITY: `_StreamErrorEvent` (pin ~373-411). Synthesized provider
+/// error surfaced from a Responses `type=error` SSE frame, carrying the
+/// OpenAI SDK-shaped `.body` so the (unported) error summarizers see a
+/// familiar shape. Display is the message, matching `str(exc)`.
+#[derive(Debug, Error)]
+#[error("{message}")]
+pub struct StreamErrorEvent {
+    pub message: String,
+    pub code: Option<String>,
+    pub param: Option<String>,
+    /// HTTP-ish status; `u16` follows the crate's `AuxiliaryError` precedent.
+    pub status_code: Option<u16>,
+    pub body: Value,
+}
+
+impl StreamErrorEvent {
+    pub fn new<M, C, P>(
+        message: M,
+        code: Option<C>,
+        param: Option<P>,
+        status_code: Option<u16>,
+    ) -> Self
+    where
+        M: Into<String>,
+        C: Into<String>,
+        P: Into<String>,
+    {
+        let message = message.into();
+        let code = code.map(Into::into);
+        let param: Option<String> = param.map(Into::into);
+        let body = serde_json::json!({
+            "error": {
+                "message": message,
+                "code": code,
+                "param": param,
+                "type": "error",
+            }
+        });
+        Self {
+            message,
+            code,
+            param,
+            status_code,
+            body,
+        }
+    }
 }
 
 /// PARITY: `_routermint_headers` (pin ~303-309). The Hermes version is

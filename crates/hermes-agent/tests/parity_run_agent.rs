@@ -16,10 +16,10 @@ use std::collections::HashMap;
 
 use hermes_agent::credential_pool::{CredentialPool, PoolStrategy, PooledCredential};
 use hermes_agent::run_agent::{
-    is_ephemeral_scaffolding, pool_may_recover_from_rate_limit, qwen_platform_tokens,
-    qwen_portal_headers, qwen_portal_headers_for, routermint_headers,
-    safe_session_filename_component, DB_PERSISTED_MARKER, EPHEMERAL_SCAFFOLDING_FLAGS,
-    MAX_TOOL_WORKERS, QWEN_CODE_VERSION,
+    is_ephemeral_scaffolding, launch_cwd_for_session, pool_may_recover_from_rate_limit,
+    qwen_platform_tokens, qwen_portal_headers, qwen_portal_headers_for, routermint_headers,
+    safe_session_filename_component, session_source_for_agent, StreamErrorEvent,
+    DB_PERSISTED_MARKER, EPHEMERAL_SCAFFOLDING_FLAGS, MAX_TOOL_WORKERS, QWEN_CODE_VERSION,
 };
 use serde_json::{json, Map, Value};
 
@@ -283,6 +283,127 @@ fn single_entry_pool_has_nowhere_to_rotate() {
     let pool = fresh_pool(1);
     assert!(pool.has_available(POOL_NOW));
     assert!(!pool_may_recover_from_rate_limit(Some(&pool), POOL_NOW));
+}
+
+// ── session establishment (mirrored + source-derived) ────────────────
+
+// Env vars are process-global: serialize the env-mutating tests.
+static ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+struct EnvGuard {
+    _guard: std::sync::MutexGuard<'static, ()>,
+    saved: Vec<(&'static str, Option<String>)>,
+}
+
+impl EnvGuard {
+    fn lock() -> Self {
+        EnvGuard {
+            _guard: ENV_LOCK
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner()),
+            saved: Vec::new(),
+        }
+    }
+    fn set(mut self, key: &'static str, value: &str) -> Self {
+        self.saved.push((key, std::env::var(key).ok()));
+        std::env::set_var(key, value);
+        self
+    }
+    fn unset(mut self, key: &'static str) -> Self {
+        self.saved.push((key, std::env::var(key).ok()));
+        std::env::remove_var(key);
+        self
+    }
+}
+
+impl Drop for EnvGuard {
+    fn drop(&mut self) {
+        for (key, value) in &self.saved {
+            match value {
+                Some(v) => std::env::set_var(key, v),
+                None => std::env::remove_var(key),
+            }
+        }
+    }
+}
+
+#[test]
+fn session_source_context_overrides_platform() {
+    // tests/run_agent/test_session_source.py:15-22 — the gateway
+    // contextvar value arrives as `context_source` (gateway layer seam).
+    let _guard = EnvGuard::lock().unset("HERMES_SESSION_SOURCE");
+    assert_eq!(session_source_for_agent(Some("tui"), Some("tool")), "tool");
+}
+
+#[test]
+fn session_source_falls_back_to_platform() {
+    // tests/run_agent/test_session_source.py:25-28
+    let _guard = EnvGuard::lock().unset("HERMES_SESSION_SOURCE");
+    assert_eq!(session_source_for_agent(Some("tui"), None), "tui");
+}
+
+#[test]
+fn session_source_env_beats_platform_and_defaults_cli() {
+    // Source-derived: the env arm has no upstream case; platform/"" and
+    // None follow `platform or "cli"`.
+    {
+        let _guard = EnvGuard::lock().set("HERMES_SESSION_SOURCE", "cron");
+        assert_eq!(session_source_for_agent(Some("tui"), None), "cron");
+    }
+    {
+        let _guard = EnvGuard::lock().unset("HERMES_SESSION_SOURCE");
+        assert_eq!(session_source_for_agent(None, None), "cli");
+        assert_eq!(session_source_for_agent(Some(""), None), "cli");
+        // Blank context counts as unset, exactly like `str(source or "")`.
+        assert_eq!(session_source_for_agent(Some("tui"), Some("  ")), "tui");
+    }
+}
+
+#[test]
+fn launch_cwd_only_for_local_cli() {
+    // Source-derived: no upstream case pins `_launch_cwd_for_session`.
+    {
+        let _guard = EnvGuard::lock().unset("TERMINAL_ENV");
+        assert_eq!(launch_cwd_for_session("gateway"), None);
+        assert_eq!(launch_cwd_for_session("cron"), None);
+        let cwd = launch_cwd_for_session("cli").expect("local cli records cwd");
+        assert_eq!(cwd, std::env::current_dir().unwrap().to_string_lossy());
+    }
+    {
+        let _guard = EnvGuard::lock().set("TERMINAL_ENV", "docker");
+        assert_eq!(launch_cwd_for_session("cli"), None);
+    }
+    {
+        let _guard = EnvGuard::lock().set("TERMINAL_ENV", " LOCAL ");
+        assert!(launch_cwd_for_session("cli").is_some());
+    }
+}
+
+// ── _StreamErrorEvent ────────────────────────────────────────────────
+
+#[test]
+fn stream_error_event_carries_sdk_shaped_body() {
+    // Mirrors the oracle assertions in
+    // tests/run_agent/test_codex_xai_oauth_recovery.py:98-102 (message in
+    // the error string, provider message in body["error"]["message"]);
+    // the streaming harness itself needs the unported AIAgent loop.
+    let event = StreamErrorEvent::new(
+        "do not have an active Grok subscription",
+        Some("forbidden"),
+        None::<String>,
+        None,
+    );
+    let rendered = format!("{event}");
+    assert!(rendered.contains("do not have an active Grok subscription"));
+    assert_eq!(
+        event.body["error"]["message"],
+        serde_json::json!("do not have an active Grok subscription")
+    );
+    assert_eq!(event.body["error"]["code"], serde_json::json!("forbidden"));
+    assert_eq!(event.body["error"]["param"], serde_json::Value::Null);
+    assert_eq!(event.body["error"]["type"], serde_json::json!("error"));
+    assert_eq!(event.code.as_deref(), Some("forbidden"));
+    assert_eq!(event.status_code, None);
 }
 
 // ── _routermint_headers ──────────────────────────────────────────────
