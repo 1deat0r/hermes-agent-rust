@@ -896,7 +896,7 @@ each phase. Next: TBD from pin map.
 
 ## Session 5a — run_agent section 1 (2026-09-14)
 
-`hermes-agent::run_agent` opened (TDD, now 22 parity tests green):
+`hermes-agent::run_agent` opened (TDD, now 32 parity tests green):
 scaffolding flags/table, truthiness filter, worker/marker/version
 consts, Qwen + RouterMint header builders, traversal-safe session
 filename with oracle-exact digests, pool-recovery predicate.
@@ -949,3 +949,13 @@ Operator-verified R2 (tests green + transit-proof oracle digests).
 Transit lesson: zero-width chars (ZWNJ etc.) are eaten in tool-call
 text — never paste them literally. Use `\u{...}` escapes, verify with
 hexdump, and compute oracle digests via `chr()` construction.
+
+## Session 5c — run_agent section 3 (2026-09-14)
+
+Provider/URL predicates + token-cap helpers (TDD, explicit-argument
+forms of pin ~1334-1680 methods): responses-API routing (Copilot arm
+takes upstream's own except-fallback), 7 URL/provider predicates,
+codex hang hint (Python-quote interpolation), max-tokens key,
+output-cap `int()` coercion table. Oracles: direct-URL detection,
+hang-hint positives, max-tokens/routing arms; self-reading no-arg
+forms deferred to the loop slice. Next: TBD from pin map.

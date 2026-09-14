@@ -2,7 +2,9 @@
 //! lines ~69-103: session-establishment pair; ~234-371: scaffolding
 //! flags, worker/marker constants, Qwen header builders, session
 //! filename sanitizer, RouterMint UA; pool-recovery predicate;
-//! ~373-411: stream error event). Everything here is
+//! ~373-411: stream error event; provider/URL predicates, max-tokens
+//! and output-cap helpers (explicit-argument forms of methods in
+//! ~1334-1680; self-reading no-arg forms belong to the loop slice).
 //! stdlib logic plus same-crate pool types; higher-layer seams stay out:
 //! - `_routermint_headers` reads `hermes_cli.__version__` lazily upstream;
 //!   `hermes-agent` must not depend on the higher-layer `hermes-cli`
@@ -15,7 +17,9 @@
 //! `tests/agent/test_gemini_fast_fallback.py`,
 //! `tests/run_agent/test_provider_fallback.py`,
 //! `tests/run_agent/test_session_source.py`,
-//! `tests/run_agent/test_codex_xai_oauth_recovery.py` @ b9aa928);
+//! `tests/run_agent/test_codex_xai_oauth_recovery.py`,
+//! `tests/agent/test_direct_provider_url_detection.py`,
+//! `tests/run_agent/test_codex_silent_hang_hint.py` @ b9aa928);
 //! `unit/source-derived` where no upstream case pins the behavior
 //! (header platform mapping, falsy-flag matrix, truncation bounds,
 //! single-entry pool).
@@ -24,6 +28,9 @@ use super::credential_pool::CredentialPool;
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
+use hermes_utils::urls::{
+    base_url_host_matches, base_url_hostname, model_forces_max_completion_tokens,
+};
 use regex::Regex;
 use serde_json::{Map, Value};
 use sha2::{Digest, Sha256};
@@ -252,6 +259,164 @@ impl StreamErrorEvent {
             body,
         }
     }
+}
+
+/// PARITY: `AIAgent._model_requires_responses_api` (pin, staticmethod).
+/// True for models requiring the Responses API path (GPT-5.x rejected
+/// on `/v1/chat/completions`). Vendor prefix stripped to the tail after
+/// the last `/`.
+pub fn model_requires_responses_api(model: &str) -> bool {
+    let tail = match model.rsplit_once('/') {
+        Some((_, tail)) => tail,
+        None => model,
+    };
+    tail.to_lowercase().starts_with("gpt-5")
+}
+
+/// PARITY: `AIAgent._provider_model_requires_responses_api` (pin).
+/// Provider/model routing: Nous and generic custom endpoints stay on
+/// chat completions. The Copilot-specific `hermes_cli.models` check is
+/// unported — upstream's own `except Exception: pass` falls back to the
+/// generic GPT-5 rule, which is exactly what this port applies.
+pub fn provider_model_requires_responses_api(model: &str, provider: Option<&str>) -> bool {
+    let normalized = provider.unwrap_or("").trim().to_lowercase();
+    if normalized == "nous" || normalized == "custom" {
+        return false;
+    }
+    model_requires_responses_api(model)
+}
+
+/// PARITY: `AIAgent._is_direct_openai_url` (pin), explicit-URL form.
+/// The no-arg form reads cached agent URL fields; the loop slice owns it.
+pub fn is_direct_openai_url(base_url: &str) -> bool {
+    base_url_hostname(base_url) == "api.openai.com"
+}
+
+/// PARITY: `AIAgent._is_azure_openai_url` (pin), explicit-URL form.
+/// Substring match on the lowered URL, exactly as upstream (Azure must
+/// stay off the Responses path even though it is OpenAI-compatible).
+pub fn is_azure_openai_url(base_url: &str) -> bool {
+    base_url.to_lowercase().contains("openai.azure.com")
+}
+
+/// PARITY: `AIAgent._is_github_copilot_url` (pin), explicit-URL form.
+pub fn is_github_copilot_url(base_url: &str) -> bool {
+    let hostname = base_url_hostname(base_url);
+    if hostname.is_empty() {
+        return false;
+    }
+    hostname == "api.githubcopilot.com" || hostname.ends_with(".githubcopilot.com")
+}
+
+/// PARITY: `AIAgent._is_openrouter_url` (pin), explicit-URL form.
+pub fn is_openrouter_url(base_url: &str) -> bool {
+    base_url_host_matches(base_url, "openrouter.ai")
+}
+
+/// PARITY: `AIAgent._is_copilot_url` (pin), explicit-URL form. Upstream
+/// reads the pre-lowered `_base_url_lower` field; the input is lowered
+/// here to reproduce the no-arg behavior for any casing.
+pub fn is_copilot_url(base_url: &str) -> bool {
+    let lowered = base_url.to_lowercase();
+    lowered.contains("api.githubcopilot.com") || lowered.contains("models.github.ai")
+}
+
+/// PARITY: `AIAgent._is_copilot_provider` (pin). Single owner of the
+/// Copilot check: alias spellings first, Copilot base URL as fallback.
+pub fn is_copilot_provider(provider: Option<&str>, base_url: &str) -> bool {
+    let normalized = provider.unwrap_or("").trim().to_lowercase();
+    if matches!(normalized.as_str(), "copilot" | "github-copilot" | "github") {
+        return true;
+    }
+    is_copilot_url(base_url)
+}
+
+/// PARITY: `AIAgent._is_codex_backend` (pin), explicit-argument form.
+/// Hostname/URL are lowered here to reproduce the pre-lowered agent
+/// fields the no-arg form reads; `api_mode` compares exact.
+pub fn is_codex_backend(api_mode: &str, hostname: &str, base_url: &str) -> bool {
+    api_mode == "codex_responses"
+        && hostname.to_lowercase() == "chatgpt.com"
+        && base_url.to_lowercase().contains("/backend-api/codex")
+}
+
+fn codex_hang_pattern() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| Regex::new(r"(?:^|[/\-_])gpt-5\.5(?:$|[\-_])").expect("codex hang pattern"))
+}
+
+/// PARITY: `AIAgent._codex_silent_hang_hint` (pin). Actionable hint for
+/// the known Codex silent-reject pattern (gpt-5.5 family on the ChatGPT
+/// Codex backend; hermes-agent #21444), else `None`. `model` overrides
+/// `current_model`, mirroring `model if model is not None else
+/// self.model`. The `{eff_model!r}` interpolation renders with Python
+/// single quotes.
+pub fn codex_silent_hang_hint(
+    api_mode: &str,
+    provider: &str,
+    hostname: &str,
+    base_url: &str,
+    model: Option<&str>,
+    current_model: &str,
+) -> Option<String> {
+    let backend = provider == "openai-codex"
+        || (hostname.to_lowercase() == "chatgpt.com"
+            && base_url.to_lowercase().contains("/backend-api/codex"));
+    if api_mode != "codex_responses" || !backend {
+        return None;
+    }
+    let effective = model.unwrap_or(current_model).to_string();
+    let lowered = effective.to_lowercase();
+    if !codex_hang_pattern().is_match(&lowered) {
+        return None;
+    }
+    Some(format!(
+        "Codex backend appears to be silently rejecting '{effective}' \
+         on chatgpt.com/backend-api/codex (no stream events, no error). \
+         This is a known backend-side pattern that has affected ChatGPT \
+         Plus accounts intermittently. \
+         Workaround: try `gpt-5.4` on the same OAuth profile, or `gpt-5.3-codex`, \
+         or switch to a different model/provider in your fallback chain. \
+         Some ChatGPT Codex accounts do not support `gpt-5.4-codex`. \
+         See hermes-agent#21444 for symptom history."
+    ))
+}
+
+/// PARITY: `AIAgent._max_tokens_param` (pin). URL-first, then a
+/// model-name fallback so third-party endpoints fronting newer families
+/// are recognised. Returns the kwarg key with the value (upstream
+/// returns a single-entry dict).
+pub fn max_tokens_param(value: i64, base_url: &str, model: &str) -> (&'static str, i64) {
+    if is_direct_openai_url(base_url)
+        || is_azure_openai_url(base_url)
+        || is_github_copilot_url(base_url)
+        || model_forces_max_completion_tokens(model)
+    {
+        return ("max_completion_tokens", value);
+    }
+    ("max_tokens", value)
+}
+
+/// PARITY: `AIAgent._requested_output_cap_from_api_kwargs` (pin,
+/// staticmethod). First positive int across `max_output_tokens`,
+/// `max_completion_tokens`, `max_tokens`. Coercion mirrors `int(raw)`:
+/// floats truncate toward zero, numeric strings (trimmed) parse,
+/// `True` counts as 1; non-numeric, missing, or non-positive entries
+/// fall through to the next key. (Python bignums beyond i64 are out of
+/// domain; floats saturate at the i64 bounds.)
+pub fn requested_output_cap_from_api_kwargs(payload: &Map<String, Value>) -> Option<i64> {
+    for key in ["max_output_tokens", "max_completion_tokens", "max_tokens"] {
+        let value = match payload.get(key) {
+            Some(Value::Number(n)) => n.as_i64().or_else(|| n.as_f64().map(|f| f as i64)),
+            Some(Value::Bool(b)) => Some(*b as i64),
+            Some(Value::String(s)) => s.trim().parse::<i64>().ok(),
+            _ => None,
+        };
+        if let Some(positive) = value.filter(|v| *v > 0) {
+            return Some(positive);
+        }
+    }
+    None
 }
 
 /// PARITY: `_routermint_headers` (pin ~303-309). The Hermes version is

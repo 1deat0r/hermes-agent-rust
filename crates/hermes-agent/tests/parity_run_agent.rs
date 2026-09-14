@@ -16,10 +16,14 @@ use std::collections::HashMap;
 
 use hermes_agent::credential_pool::{CredentialPool, PoolStrategy, PooledCredential};
 use hermes_agent::run_agent::{
-    is_ephemeral_scaffolding, launch_cwd_for_session, pool_may_recover_from_rate_limit,
-    qwen_platform_tokens, qwen_portal_headers, qwen_portal_headers_for, routermint_headers,
-    safe_session_filename_component, session_source_for_agent, StreamErrorEvent,
-    DB_PERSISTED_MARKER, EPHEMERAL_SCAFFOLDING_FLAGS, MAX_TOOL_WORKERS, QWEN_CODE_VERSION,
+    codex_silent_hang_hint, is_azure_openai_url, is_codex_backend, is_copilot_provider,
+    is_copilot_url, is_direct_openai_url, is_ephemeral_scaffolding, is_github_copilot_url,
+    is_openrouter_url, launch_cwd_for_session, max_tokens_param, model_requires_responses_api,
+    pool_may_recover_from_rate_limit, provider_model_requires_responses_api, qwen_platform_tokens,
+    qwen_portal_headers, qwen_portal_headers_for, requested_output_cap_from_api_kwargs,
+    routermint_headers, safe_session_filename_component, session_source_for_agent,
+    StreamErrorEvent, DB_PERSISTED_MARKER, EPHEMERAL_SCAFFOLDING_FLAGS, MAX_TOOL_WORKERS,
+    QWEN_CODE_VERSION,
 };
 use serde_json::{json, Map, Value};
 
@@ -230,6 +234,275 @@ fn qwen_live_wrapper_reports_this_process() {
     assert!(ua.starts_with(&format!("QwenCode/{QWEN_CODE_VERSION} (")));
     assert!(ua.contains("; "));
     assert_eq!(headers.get("X-DashScope-UserAgent"), Some(ua));
+}
+
+// ── provider/URL predicates (mirrored + source-derived) ───────────────
+
+#[test]
+fn direct_openai_url_matches_native_host_only() {
+    // tests/agent/test_direct_provider_url_detection.py
+    assert!(!is_direct_openai_url("https://api.openai.com.example/v1"));
+    assert!(is_direct_openai_url("https://api.openai.com/v1"));
+}
+
+#[test]
+fn azure_url_uses_substring_detection() {
+    // tests/run_agent/test_run_agent.py::TestGpt5ApiModeRouting::test_is_azure_openai_url_detection
+    assert!(is_azure_openai_url(
+        "https://foo.openai.azure.com/openai/v1"
+    ));
+    assert!(!is_azure_openai_url("https://api.openai.com/v1"));
+    assert!(!is_azure_openai_url("https://openrouter.ai/api/v1"));
+    assert!(is_azure_openai_url(
+        "https://my-resource.openai.azure.com/openai/v1"
+    ));
+}
+
+#[test]
+fn github_copilot_url_matches_host_and_subdomains() {
+    // Source-derived: no upstream case pins this predicate.
+    assert!(is_github_copilot_url("https://api.githubcopilot.com/v1"));
+    assert!(is_github_copilot_url("https://proxy.githubcopilot.com/v1"));
+    assert!(!is_github_copilot_url(
+        "https://api.githubcopilot.com.example/v1"
+    ));
+    assert!(!is_github_copilot_url(""));
+    assert!(!is_github_copilot_url("https://api.openai.com/v1"));
+}
+
+#[test]
+fn openrouter_and_copilot_url_forms() {
+    // Source-derived: explicit-URL forms of the self-reading predicates.
+    assert!(is_openrouter_url("https://openrouter.ai/api/v1"));
+    assert!(!is_openrouter_url("https://api.openai.com/v1"));
+    assert!(is_copilot_url("https://api.githubcopilot.com/v1"));
+    assert!(is_copilot_url("https://models.github.ai/v1"));
+    assert!(is_copilot_url("HTTPS://API.GITHUBCOPILOT.COM/V1"));
+    assert!(!is_copilot_url("https://openrouter.ai/api/v1"));
+}
+
+#[test]
+fn copilot_provider_covers_alias_spellings() {
+    // Source-derived: single-owner check for the alias set + URL fallback.
+    for alias in ["copilot", "github-copilot", "github", " Copilot "] {
+        assert!(is_copilot_provider(
+            Some(alias),
+            "https://openrouter.ai/api/v1"
+        ));
+    }
+    assert!(!is_copilot_provider(
+        Some("openai"),
+        "https://openrouter.ai/api/v1"
+    ));
+    assert!(is_copilot_provider(
+        Some("openai"),
+        "https://api.githubcopilot.com/v1"
+    ));
+    assert!(is_copilot_provider(None, "https://models.github.ai/v1"));
+}
+
+#[test]
+fn codex_backend_needs_mode_host_and_path() {
+    // Source-derived: explicit-argument form of the field-reading check.
+    assert!(is_codex_backend(
+        "codex_responses",
+        "chatgpt.com",
+        "https://chatgpt.com/backend-api/codex"
+    ));
+    assert!(!is_codex_backend(
+        "chat_completions",
+        "chatgpt.com",
+        "https://chatgpt.com/backend-api/codex"
+    ));
+    assert!(!is_codex_backend(
+        "codex_responses",
+        "api.openai.com",
+        "https://api.openai.com/v1"
+    ));
+    assert!(!is_codex_backend(
+        "codex_responses",
+        "chatgpt.com",
+        "https://chatgpt.com/backend-api/other"
+    ));
+}
+
+#[test]
+fn responses_api_routing_per_provider() {
+    // tests/run_agent/test_run_agent.py::TestGpt5ApiModeRouting (nous arm):
+    // Nous serves GPT-5.x on chat completions.
+    assert!(!provider_model_requires_responses_api(
+        "openai/gpt-5.5",
+        Some("nous")
+    ));
+    // Generic GPT-5 models upgrade (the rule the routing tests rely on
+    // when the provider is not Nous/Azure).
+    assert!(provider_model_requires_responses_api(
+        "openai/gpt-5.5",
+        None
+    ));
+    assert!(provider_model_requires_responses_api("gpt-5.4-mini", None));
+    // Generic custom endpoints stay conservative; non-GPT-5 never upgrades.
+    assert!(!provider_model_requires_responses_api(
+        "openai/gpt-5.5",
+        Some("custom")
+    ));
+    assert!(!provider_model_requires_responses_api("gpt-4o", None));
+    assert!(!provider_model_requires_responses_api(
+        "claude-opus-4-6",
+        None
+    ));
+    // Copilot without the unported hermes_cli check uses the generic rule
+    // (upstream's own except-fallback).
+    assert!(provider_model_requires_responses_api(
+        "gpt-5.5",
+        Some("copilot")
+    ));
+    assert!(model_requires_responses_api("openai/gpt-5.4"));
+    assert!(!model_requires_responses_api("gpt-4.1"));
+}
+
+#[test]
+fn hang_hint_fires_only_for_gpt55_on_codex() {
+    // tests/run_agent/test_codex_silent_hang_hint.py (positives).
+    let hint = codex_silent_hang_hint(
+        "codex_responses",
+        "openai-codex",
+        "chatgpt.com",
+        "https://chatgpt.com/backend-api/codex",
+        Some("gpt-5.5"),
+        "gpt-5.5",
+    )
+    .expect("hint fires for bare gpt-5.5 on codex");
+    assert!(hint.contains("gpt-5.4"));
+    assert!(hint.contains("gpt-5.3-codex"));
+    assert!(hint.contains("gpt-5.4-codex"));
+    assert!(hint.contains("fallback chain"));
+    assert!(hint.contains("'gpt-5.5'"));
+    assert!(codex_silent_hang_hint(
+        "codex_responses",
+        "openai-codex",
+        "chatgpt.com",
+        "https://chatgpt.com/backend-api/codex",
+        Some("openai/gpt-5.5"),
+        "gpt-5.5",
+    )
+    .is_some());
+    // Source-derived negatives (the oracle's negative section is empty):
+    // wrong mode, non-5.5 model, gpt-5.50 boundary, model-fallback arm.
+    assert_eq!(
+        codex_silent_hang_hint(
+            "chat_completions",
+            "openai-codex",
+            "chatgpt.com",
+            "https://chatgpt.com/backend-api/codex",
+            Some("gpt-5.5"),
+            "gpt-5.5",
+        ),
+        None
+    );
+    assert_eq!(
+        codex_silent_hang_hint(
+            "codex_responses",
+            "openai-codex",
+            "chatgpt.com",
+            "https://chatgpt.com/backend-api/codex",
+            Some("gpt-5.4"),
+            "gpt-5.4",
+        ),
+        None
+    );
+    assert_eq!(
+        codex_silent_hang_hint(
+            "codex_responses",
+            "openai-codex",
+            "chatgpt.com",
+            "https://chatgpt.com/backend-api/codex",
+            Some("gpt-5.50"),
+            "gpt-5.50",
+        ),
+        None
+    );
+    assert!(codex_silent_hang_hint(
+        "codex_responses",
+        "openai-codex",
+        "chatgpt.com",
+        "https://chatgpt.com/backend-api/codex",
+        None,
+        "gpt-5.5-codex",
+    )
+    .is_some());
+    assert_eq!(
+        codex_silent_hang_hint(
+            "codex_responses",
+            "openai",
+            "api.openai.com",
+            "https://api.openai.com/v1",
+            Some("gpt-5.5"),
+            "gpt-5.5",
+        ),
+        None
+    );
+}
+
+#[test]
+fn max_tokens_key_prefers_new_kwarg_for_new_families() {
+    // tests/run_agent/test_run_agent.py::TestMaxTokensParam (direct arm).
+    assert_eq!(
+        max_tokens_param(4096, "https://api.openai.com/v1", "gpt-4o-mini"),
+        ("max_completion_tokens", 4096)
+    );
+    // Source-derived: azure/copilot URLs, model-name fallback, legacy.
+    assert_eq!(
+        max_tokens_param(
+            4096,
+            "https://foo.openai.azure.com/openai/v1",
+            "gpt-4o-mini"
+        ),
+        ("max_completion_tokens", 4096)
+    );
+    assert_eq!(
+        max_tokens_param(4096, "https://api.githubcopilot.com/v1", "gpt-4o-mini"),
+        ("max_completion_tokens", 4096)
+    );
+    assert_eq!(
+        max_tokens_param(4096, "https://openrouter.ai/api/v1", "openai/gpt-5.5"),
+        ("max_completion_tokens", 4096)
+    );
+    assert_eq!(
+        max_tokens_param(4096, "https://openrouter.ai/api/v1", "claude-opus-4-6"),
+        ("max_tokens", 4096)
+    );
+}
+
+#[test]
+fn output_cap_reads_first_positive_kwarg() {
+    // Source-derived: no upstream case pins this staticmethod.
+    let cap = |pairs: &[(&str, Value)]| {
+        let map: Map<String, Value> = pairs
+            .iter()
+            .map(|(k, v)| (k.to_string(), v.clone()))
+            .collect();
+        requested_output_cap_from_api_kwargs(&map)
+    };
+    assert_eq!(cap(&[("max_tokens", json!(4096))]), Some(4096));
+    assert_eq!(
+        cap(&[
+            ("max_output_tokens", json!(100)),
+            ("max_tokens", json!(4096))
+        ]),
+        Some(100)
+    );
+    assert_eq!(
+        cap(&[("max_output_tokens", json!(0)), ("max_tokens", json!(5))]),
+        Some(5)
+    );
+    assert_eq!(cap(&[("max_tokens", json!("abc"))]), None);
+    assert_eq!(cap(&[("max_tokens", json!(-3))]), None);
+    assert_eq!(cap(&[("max_tokens", json!(3.7))]), Some(3));
+    assert_eq!(cap(&[("max_tokens", json!(" 64 "))]), Some(64));
+    assert_eq!(cap(&[("max_tokens", json!(true))]), Some(1));
+    assert_eq!(cap(&[]), None);
+    assert_eq!(cap(&[("other", json!(9))]), None);
 }
 
 // ── _pool_may_recover_from_rate_limit ─────────────────────────────────
