@@ -16,14 +16,16 @@ use std::collections::HashMap;
 
 use hermes_agent::credential_pool::{CredentialPool, PoolStrategy, PooledCredential};
 use hermes_agent::run_agent::{
-    codex_silent_hang_hint, copilot_requires_responses_api, is_azure_openai_url, is_codex_backend,
-    is_copilot_provider, is_copilot_url, is_direct_openai_url, is_ephemeral_scaffolding,
-    is_github_copilot_url, is_openrouter_url, launch_cwd_for_session, max_tokens_param,
-    model_requires_responses_api, pool_may_recover_from_rate_limit,
-    provider_model_requires_responses_api, qwen_platform_tokens, qwen_portal_headers,
-    qwen_portal_headers_for, requested_output_cap_from_api_kwargs, routermint_headers,
-    safe_session_filename_component, session_source_for_agent, StreamErrorEvent,
-    DB_PERSISTED_MARKER, EPHEMERAL_SCAFFOLDING_FLAGS, MAX_TOOL_WORKERS, QWEN_CODE_VERSION,
+    clean_error_message, codex_silent_hang_hint, coerce_api_error_detail,
+    copilot_requires_responses_api, decorate_xai_entitlement_error, is_azure_openai_url,
+    is_codex_backend, is_copilot_provider, is_copilot_url, is_direct_openai_url,
+    is_entitlement_failure, is_ephemeral_scaffolding, is_github_copilot_url, is_openrouter_url,
+    launch_cwd_for_session, mask_api_key_for_logs, max_tokens_param, model_requires_responses_api,
+    pool_may_recover_from_rate_limit, provider_model_requires_responses_api, qwen_platform_tokens,
+    qwen_portal_headers, qwen_portal_headers_for, requested_output_cap_from_api_kwargs,
+    routermint_headers, safe_session_filename_component, session_source_for_agent,
+    StreamErrorEvent, DB_PERSISTED_MARKER, EPHEMERAL_SCAFFOLDING_FLAGS, MAX_TOOL_WORKERS,
+    QWEN_CODE_VERSION,
 };
 use serde_json::{json, Map, Value};
 
@@ -531,6 +533,165 @@ fn output_cap_reads_first_positive_kwarg() {
     assert_eq!(cap(&[("max_tokens", json!("1__0"))]), None);
     assert_eq!(cap(&[]), None);
     assert_eq!(cap(&[("other", json!(9))]), None);
+}
+
+// ── entitlement / error-text helpers (mirrored + source-derived) ─────
+
+fn body_map(pairs: &[(&str, Value)]) -> Map<String, Value> {
+    pairs
+        .iter()
+        .map(|(k, v)| (k.to_string(), v.clone()))
+        .collect()
+}
+
+#[test]
+fn entitlement_matches_real_xai_bodies() {
+    // tests/run_agent/test_codex_xai_oauth_recovery.py Fix D parametrize:
+    // both captured wire bodies classify True at 403.
+    for message in [
+        "You have either run out of available resources or do not have an \
+         active Grok subscription. Manage at https://grok.com",
+        "The caller does not have permission to execute the specified \
+         operation for grok-4.3",
+    ] {
+        assert!(
+            is_entitlement_failure(
+                Some(&body_map(&[
+                    ("message", Value::String(message.to_string())),
+                    ("reason", Value::String("permission_denied".to_string())),
+                ])),
+                Some(403)
+            ),
+            "{message}"
+        );
+    }
+}
+
+#[test]
+fn entitlement_rejects_other_statuses() {
+    // tests/run_agent/test_codex_xai_oauth_recovery.py:369-378
+    let body = body_map(&[(
+        "message",
+        Value::String("do not have an active Grok subscription".to_string()),
+    )]);
+    assert!(!is_entitlement_failure(Some(&body), Some(500)));
+    assert!(!is_entitlement_failure(Some(&body), Some(429)));
+    assert!(!is_entitlement_failure(Some(&body), Some(200)));
+}
+
+#[test]
+fn entitlement_disambiguator_prefers_refresh() {
+    // Source-derived from the #29344 docstring: stale-token signals
+    // route to credential refresh, never surface as entitlement.
+    let stale = body_map(&[(
+        "error",
+        Value::String(
+            "The caller does not have permission [WKE=unauthenticated:expired]".to_string(),
+        ),
+    )]);
+    assert!(!is_entitlement_failure(Some(&stale), Some(403)));
+    let stale_phrase = body_map(&[(
+        "message",
+        Value::String("OAuth2 access token could not be validated".to_string()),
+    )]);
+    assert!(!is_entitlement_failure(Some(&stale_phrase), Some(401)));
+    // Status None is allowed; empty and non-mapping bodies are not.
+    let body = body_map(&[(
+        "message",
+        Value::String("do not have an active Grok subscription".to_string()),
+    )]);
+    assert!(is_entitlement_failure(Some(&body), None));
+    assert!(!is_entitlement_failure(Some(&body_map(&[])), Some(403)));
+    assert!(!is_entitlement_failure(None, Some(403)));
+    // Conjunction arms need both halves.
+    let half = body_map(&[(
+        "message",
+        Value::String("out of available resources".to_string()),
+    )]);
+    assert!(!is_entitlement_failure(Some(&half), Some(403)));
+}
+
+#[test]
+fn xai_decorate_appends_hint_once() {
+    // Source-derived: no upstream case pins the hint text.
+    let detail = "The caller does not have permission for grok-4.3";
+    let decorated = decorate_xai_entitlement_error(detail);
+    assert!(decorated.starts_with(detail));
+    assert!(decorated.contains("X Premium+ does NOT include"));
+    assert!(decorated.contains("https://grok.com/?_s=usage"));
+    assert_eq!(decorate_xai_entitlement_error(&decorated), decorated);
+    assert_eq!(decorate_xai_entitlement_error(""), "");
+    assert_eq!(
+        decorate_xai_entitlement_error("plain 429 rate limit"),
+        "plain 429 rate limit"
+    );
+}
+
+#[test]
+fn coerce_detail_prefers_message_then_recurses() {
+    // Source-derived: no upstream case pins the coercion table.
+    assert_eq!(coerce_api_error_detail(&json!("raw text")), "raw text");
+    assert_eq!(
+        coerce_api_error_detail(&json!({"message": "  keep  ", "code": "drop"})),
+        "  keep  "
+    );
+    assert_eq!(
+        coerce_api_error_detail(&json!({"code": {"message": "nested"}})),
+        "nested"
+    );
+    assert_eq!(
+        coerce_api_error_detail(&json!(["a", "", {"message": "b"}])),
+        "a; b"
+    );
+    assert_eq!(coerce_api_error_detail(&json!(null)), "");
+    assert_eq!(coerce_api_error_detail(&json!(true)), "True");
+    assert_eq!(coerce_api_error_detail(&json!(3.0)), "3.0");
+    assert_eq!(
+        coerce_api_error_detail(&json!({"b": 1, "a": {"y": 2}})),
+        "{\"a\":{\"y\":2},\"b\":1}"
+    );
+}
+
+#[test]
+fn mask_api_key_keeps_head_and_tail() {
+    // tests/run_agent/test_run_agent.py::TestMaskApiKey (intent — the
+    // pin's literal key is redacted to 13 chars and contradicts its own
+    // startswith assert, so a realistic key of the same shape is used).
+    assert_eq!(mask_api_key_for_logs(None), None);
+    assert_eq!(mask_api_key_for_logs(Some("")), None);
+    assert_eq!(
+        mask_api_key_for_logs(Some("short-key")),
+        Some("***".to_string())
+    );
+    assert_eq!(
+        mask_api_key_for_logs(Some("123456789012")),
+        Some("***".to_string())
+    );
+    let masked = mask_api_key_for_logs(Some("sk-or-v1-abcdefghijklmnop")).unwrap();
+    assert!(masked.starts_with("sk-or-v1"));
+    assert!(masked.ends_with("mnop"));
+    assert!(masked.contains("..."));
+    assert_eq!(masked, "sk-or-v1...mnop");
+}
+
+#[test]
+fn clean_error_message_collapses_and_caps() {
+    // Source-derived: no upstream case pins the cleanup.
+    assert_eq!(clean_error_message(""), "Unknown error");
+    assert_eq!(
+        clean_error_message("<!DOCTYPE html><html>oops</html>"),
+        "Service temporarily unavailable (HTML error page returned)"
+    );
+    assert_eq!(
+        clean_error_message("  <html>proxy</html>  "),
+        "Service temporarily unavailable (HTML error page returned)"
+    );
+    assert_eq!(clean_error_message("a\n\n  b\tc"), "a b c");
+    let long = "x".repeat(200);
+    let capped = clean_error_message(&long);
+    assert_eq!(capped.len(), 153);
+    assert!(capped.ends_with("..."));
+    assert_eq!(clean_error_message("fine"), "fine");
 }
 
 // ── _pool_may_recover_from_rate_limit ─────────────────────────────────

@@ -473,8 +473,8 @@ convention; oracles `test_gemini_fast_fallback` +
 source-derived).
 Oracle: `test_dropped_tool_call_recovery`, `test_run_agent`
 (traversal cases), `test_verification_stop_caching`,
-`test_gemini_fast_fallback`, `test_provider_fallback` @ b9aa928; 33
-parity tests (sections 1–3 + board closures); `run_agent` marked `partial` (first of ~8,206 LOC).
+`test_gemini_fast_fallback`, `test_provider_fallback` @ b9aa928; 40
+parity tests (sections 1–4); `run_agent` marked `partial` (first of ~8,206 LOC).
 
 Board R1 (S1 CONDITIONAL / S2 BUILD / S3 CONDITIONAL / S4 BUILD / S5
 REJECT) + closures: char class calibrated to `[\p{L}\p{N}_]`
@@ -512,6 +512,18 @@ Oracles: `test_direct_provider_url_detection`,
 `test_codex_silent_hang_hint` (positives; negative section empty),
 `TestMaxTokensParam`/`TestGpt5ApiModeRouting` arms; self-reading
 no-arg forms belong to the loop slice.
+
+Section 4: error-text helpers landed (pin ~2364-2634):
+`is_entitlement_failure` (status gate + WKE disambiguator),
+`decorate_xai_entitlement_error` (verbatim hint, idempotent),
+`coerce_api_error_detail` (message-first, recursive, sorted-JSON
+fallback, Python bool spellings), `mask_api_key_for_logs`
+(char-counted head/tail; callable arm owned by loop slice),
+`clean_error_message` (HTML collapse, 150-char cap). Oracles: Fix D
+entitlement parametrize + status-gate test, `TestMaskApiKey` intent
+(pin key redacted — realistic same-shape key used); decorate/coerce/
+clean source-derived. `_summarize_api_error` deferred (needs
+exception-shape design).
 
 Board closures: explicit-empty gateway context masks env (verified
 `get_session_env` masking semantics — was leaking stale env); Some
@@ -3213,8 +3225,8 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 - 2026-09-14 (session 5a): `run_agent` section 1 landed —
   `crates/hermes-agent/src/run_agent.rs` (module-level pure helpers, pin
-  ~234-371) + `tests/parity_run_agent.rs` (33 parity tests after
-  sections 1–3 + board closures; traversal digests byte-verified). Recon note: recon
+  ~234-371) + `tests/parity_run_agent.rs` (40 parity tests after
+  sections 1–4; traversal digests byte-verified). Recon note: recon
   against upstream HEAD maps the wrong file (1,555-line decomposed
   `run_agent.py`); the pin oracle is the 8,206-line monolith — always
   read via `git show b9aa928:<path>`. Evidence: `cargo test -p

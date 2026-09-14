@@ -896,7 +896,7 @@ each phase. Next: TBD from pin map.
 
 ## Session 5a — run_agent section 1 (2026-09-14)
 
-`hermes-agent::run_agent` opened (TDD, now 33 parity tests green):
+`hermes-agent::run_agent` opened (TDD, now 40 parity tests green):
 scaffolding flags/table, truthiness filter, worker/marker/version
 consts, Qwen + RouterMint header builders, traversal-safe session
 filename with oracle-exact digests, pool-recovery predicate.
@@ -971,3 +971,12 @@ base URL (kills split-brain); Python repr() + underscore-int parity
 added with oracle vectors; S2-1/S2-2 refuted (unreachable domain /
 would-be divergence); float-bignum documented out-of-domain.
 Operator-verified R2 = green suite + oracle recomputation.
+
+## Session 5d — run_agent section 4 (2026-09-14)
+
+Error-text helpers (TDD): entitlement classifier + WKE disambiguator,
+xAI hint decorator, recursive detail coercer (sorted-JSON fallback),
+key masker, message cleaner. Oracles: Fix-D parametrize + status gate,
+mask-key intent (pin key redacted — substituted same-shape key, noted).
+`_summarize_api_error` deferred to section 5 (exception-shape design).
+Next: `_summarize_api_error` + `_flatten_exception_chain` slice.

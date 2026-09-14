@@ -20,7 +20,10 @@
 //! `tests/run_agent/test_codex_xai_oauth_recovery.py`,
 //! `tests/agent/test_direct_provider_url_detection.py`,
 //! `tests/run_agent/test_codex_silent_hang_hint.py`,
-//! `hermes_cli/models.py::_should_use_copilot_responses_api` (rule body) @ b9aa928);
+//! `hermes_cli/models.py::_should_use_copilot_responses_api` (rule body),
+//! `tests/run_agent/test_codex_xai_oauth_recovery.py` Fix D (entitlement),
+//! `tests/run_agent/test_run_agent.py::TestMaskApiKey` (intent — pin key
+//! redacted) @ b9aa928);
 //! `unit/source-derived` where no upstream case pins the behavior
 //! (header platform mapping, falsy-flag matrix, truncation bounds,
 //! single-entry pool).
@@ -491,6 +494,219 @@ fn parse_py_int(text: &str) -> Option<i64> {
     text.replace('_', "").parse::<i64>().ok()
 }
 
+/// PARITY: `AIAgent._is_entitlement_failure` (pin, staticmethod).
+/// Subscription/entitlement 403s masquerading as auth failures: True
+/// only when the body matches a known entitlement shape AND status is
+/// 401/403/`None`. A non-mapping context can only arrive as `None`
+/// here (upstream returns False for non-dicts).
+pub fn is_entitlement_failure(
+    error_context: Option<&Map<String, Value>>,
+    status_code: Option<i64>,
+) -> bool {
+    if !matches!(status_code, None | Some(401) | Some(403)) {
+        return false;
+    }
+    let context = match error_context {
+        Some(map) => map,
+        None => return false,
+    };
+    // Single lowercase haystack over every field shape the body might
+    // land in (`message`/`reason` normalized plus raw `code`/`error`
+    // keys, so the WKE disambiguator fires regardless of entry point).
+    let mut haystack = String::new();
+    for key in ["message", "reason", "code", "error"] {
+        haystack.push_str(&haystack_text(context.get(key)));
+        haystack.push(' ');
+    }
+    if haystack.trim().is_empty() {
+        return false;
+    }
+    // Stale-token disambiguator (#29344): explicit unauthenticated
+    // signals route through credential refresh, never surface here.
+    if haystack.contains("[wke=unauthenticated:") {
+        return false;
+    }
+    if haystack.contains("oauth2 access token could not be validated") {
+        return false;
+    }
+    if haystack.contains("do not have an active grok subscription") {
+        return true;
+    }
+    if haystack.contains("out of available resources") && haystack.contains("grok") {
+        return true;
+    }
+    if haystack.contains("does not have permission") && haystack.contains("grok") {
+        return true;
+    }
+    false
+}
+
+/// `str(value or "")` for haystack building: missing/`None` read as
+/// empty, bools use Python spellings, containers serialize compact.
+fn haystack_text(value: Option<&Value>) -> String {
+    match value {
+        None | Some(Value::Null) => String::new(),
+        Some(Value::String(s)) => s.to_lowercase(),
+        Some(Value::Bool(true)) => "true".to_string(),
+        Some(Value::Bool(false)) => "false".to_string(),
+        Some(Value::Number(n)) => n.to_string().to_lowercase(),
+        Some(Value::Array(items)) => items
+            .iter()
+            .map(|item| haystack_text(Some(item)))
+            .collect::<Vec<_>>()
+            .join(" ")
+            .to_lowercase(),
+        Some(Value::Object(map)) => {
+            // Python `str(dict)` repr; compact JSON keeps the same words
+            // in play for keyword matching (quotes differ, phrases don't).
+            serde_json::to_string(map)
+                .unwrap_or_default()
+                .to_lowercase()
+        }
+    }
+}
+
+/// PARITY: `AIAgent._decorate_xai_entitlement_error` (pin,
+/// staticmethod). Appends the SuperGrok hint to xAI permission-denied
+/// detail text; idempotent (won't double-decorate) and passthrough for
+/// empty/non-entitlement input. Hint text verbatim.
+pub fn decorate_xai_entitlement_error(detail: &str) -> String {
+    if detail.is_empty() {
+        return String::new();
+    }
+    let lower = detail.to_lowercase();
+    let is_entitlement = lower.contains("do not have an active grok subscription")
+        || (lower.contains("out of available resources") && lower.contains("grok"))
+        || (lower.contains("does not have permission") && lower.contains("grok"));
+    if !is_entitlement {
+        return detail.to_string();
+    }
+    if detail.contains("X Premium+ does NOT include") {
+        return detail.to_string();
+    }
+    format!(
+        "{detail} — xAI rejected this OAuth account. NOTE: X Premium+ does NOT \
+         include xAI API access — only standalone SuperGrok subscribers \
+         can use this provider. Other possible causes: no Grok \
+         subscription, your tier doesn't include this model, or your \
+         quota is exhausted. Check https://grok.com/?_s=usage to see \
+         which, or run `/model` to switch providers."
+    )
+}
+
+/// PARITY: `AIAgent._coerce_api_error_detail` (pin, staticmethod).
+/// Display-safe string for structured provider error fields: verbatim
+/// strings; dicts prefer the first non-blank of
+/// message/detail/error/code/type, then recurse, then fall back to
+/// sorted-key JSON; lists join non-blank items with `"; "`; `None`
+/// reads as empty; bools use Python spellings (`True`/`False`).
+pub fn coerce_api_error_detail(value: &Value) -> String {
+    match value {
+        Value::String(s) => s.clone(),
+        Value::Object(map) => {
+            for key in ["message", "detail", "error", "code", "type"] {
+                if let Some(Value::String(nested)) = map.get(key) {
+                    if !nested.trim().is_empty() {
+                        return nested.clone();
+                    }
+                }
+            }
+            for key in ["message", "detail", "error", "code", "type"] {
+                if let Some(nested) = map.get(key) {
+                    let coerced = coerce_api_error_detail(nested);
+                    if !coerced.is_empty() {
+                        return coerced;
+                    }
+                }
+            }
+            sorted_json(value)
+        }
+        Value::Array(items) => items
+            .iter()
+            .map(coerce_api_error_detail)
+            .filter(|part| !part.is_empty())
+            .collect::<Vec<_>>()
+            .join("; "),
+        Value::Null => String::new(),
+        Value::Bool(true) => "True".to_string(),
+        Value::Bool(false) => "False".to_string(),
+        Value::Number(n) => n.to_string(),
+    }
+}
+
+/// Compact JSON with recursively sorted keys, mirroring
+/// `json.dumps(value, ensure_ascii=False, sort_keys=True)` (serde keeps
+/// UTF-8 raw, matching `ensure_ascii=False`).
+fn sorted_json(value: &Value) -> String {
+    match value {
+        Value::Object(map) => {
+            let mut keys: Vec<&String> = map.keys().collect();
+            keys.sort();
+            let parts: Vec<String> = keys
+                .iter()
+                .map(|key| {
+                    format!(
+                        "{}:{}",
+                        serde_json::to_string(key).unwrap_or_default(),
+                        sorted_json(&map[*key])
+                    )
+                })
+                .collect();
+            format!("{{{}}}", parts.join(","))
+        }
+        Value::Array(items) => {
+            let parts: Vec<String> = items.iter().map(sorted_json).collect();
+            format!("[{}]", parts.join(","))
+        }
+        _ => serde_json::to_string(value).unwrap_or_default(),
+    }
+}
+
+/// PARITY: `AIAgent._mask_api_key_for_logs` (pin). Falsy keys read as
+/// `None`; 12 chars or fewer collapse to `"***"`; longer keys show
+/// first-8/last-4 (`len` counts Unicode scalars as upstream counts code
+/// points). The Azure-callable arm (`<entra-id-bearer>`) is
+/// unrepresentable on `&str` — callables only exist as provider auth
+/// surfaces at runtime; the loop slice owns that arm.
+pub fn mask_api_key_for_logs(key: Option<&str>) -> Option<String> {
+    let key = match key.filter(|k| !k.is_empty()) {
+        Some(key) => key,
+        None => return None,
+    };
+    let chars: Vec<char> = key.chars().collect();
+    if chars.len() <= 12 {
+        return Some("***".to_string());
+    }
+    let head: String = chars.iter().take(8).collect();
+    let tail: String = chars
+        .iter()
+        .rev()
+        .take(4)
+        .collect::<Vec<_>>()
+        .into_iter()
+        .rev()
+        .collect();
+    Some(format!("{head}...{tail}"))
+}
+
+/// PARITY: `AIAgent._clean_error_message` (pin). Empty reads as
+/// `"Unknown error"`; HTML pages collapse to the fixed notice;
+/// otherwise whitespace-collapsed and capped at 150 chars (Unicode
+/// scalars, as upstream slices code points) with a `"..."` suffix.
+pub fn clean_error_message(error_msg: &str) -> String {
+    if error_msg.is_empty() {
+        return "Unknown error".to_string();
+    }
+    if error_msg.trim().starts_with("<!DOCTYPE html") || error_msg.contains("<html") {
+        return "Service temporarily unavailable (HTML error page returned)".to_string();
+    }
+    let cleaned: String = error_msg.split_whitespace().collect::<Vec<_>>().join(" ");
+    let truncated: String = cleaned.chars().take(150).collect();
+    if truncated.len() < cleaned.len() {
+        return format!("{truncated}...");
+    }
+    truncated
+}
 /// PARITY: `_routermint_headers` (pin ~303-309). The Hermes version is
 /// an explicit argument (see module docs): upstream reads
 /// `hermes_cli.__version__` via a lazy in-function import.
