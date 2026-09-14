@@ -854,3 +854,9 @@ follow-ons); `git diff --check` clean. Pre-existing nit left open:
 
 Next dependency-safe unit: `run_agent` (+ `AIAgent` turn loop on a
 model stub).
+
+Commit `22228d6` pushed: `d138528..22228d6 main -> main`, mirror in
+sync. Note: local `git config hermes.upstream` points at the pinned
+worktree (removed after commit) — recreate per the recipe above before
+the next source commit, or GATES G4 fails loud. Pinned worktree
+removed.
