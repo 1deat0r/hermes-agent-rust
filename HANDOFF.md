@@ -1001,3 +1001,22 @@ challenge collapse; rest source-derived. `_flatten_exception_chain` is
 an `agent.stream_diag` forwarder — different unit, not this slice.
 Next: TBD from pin map (stream-diagnostic/self-state methods need the
 agent struct decision).
+
+## R8 checkpoint (2026-09-14) — section-5 board + closures
+
+5-seat R1 on 65242d2: S1/S2/S3/S4 CONDITIONAL, S5 REJECT. Adjudicated
+CONFIRMED + fixed: dumps separators, haystack list-join (py_repr
+containers), whitespace-title placeholder drop, NBSP Ray class,
+is_value_error doc misattribution, S3/S4 label+header fixes,
+representative challenge fixture, empty-body shape, S5's executed
+routing vectors as tests. Refuted: S2's DNS arm (no such file or
+marker at pin — 3rd HEAD-vs-pin catch), inf-saturation (unreachable),
+u16 precedent. Standing: zero-caller contracts, redact/parse
+equivalence (noted). Operator-verified R2 = green suite.
+
+Post-R8 correction: the adversarial seat's "empty error.message falls
+through to top message" vector was mis-executed — live oracle shows a
+dict `error` with falsy `message` skips the whole body arm (no second
+lookup); only a non-dict `error` routes to the top `message`. Test
+corrected to the true semantics; implementation was already faithful.
+Reviewers are fallible — live source wins, including against seats.

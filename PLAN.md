@@ -535,6 +535,13 @@ passthrough, body-dict coerce+decorate, #36109 response-text path
 ValueError/Gemini/body arms source-derived. `_flatten_exception_chain`
 is a forwarder to unported `agent.stream_diag` — different unit.
 
+Section-5 board closures: dumps separators and haystack `repr()`
+containers fixed (adversarial kills confirmed live); whitespace-title
+placeholder drop; NBSP Ray class; `is_value_error` doc misattribution
+corrected; representative challenge fixture + empty-body shape;
+adversarial empty-message vector refuted by oracle re-execution (no
+second lookup — test corrected, code was faithful).
+
 Section-4 board closures: dumps separators (`, `/`: ` live-verified),
 haystack containers via Python `repr()` (kills list-join over-match),
 extended decorate pins, honest labels.

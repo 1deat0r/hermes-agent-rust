@@ -740,13 +740,20 @@ fn error_shape<'a>(
 
 #[test]
 fn empty_body_falls_back_to_response_json() {
-    // tests/run_agent/test_summarize_api_error.py: empty SDK body +
-    // httpx response.text with error.message surfaces both.
-    let summary = summarize_api_error(&error_shape(
-        "",
-        Some(400),
-        Some("{\"error\": {\"message\": \"model `foo` does not exist\", \"type\": \"invalid_request_error\"}}"),
-    ));
+    // tests/run_agent/test_summarize_api_error.py: empty SDK body ({})
+    // + httpx response.text with error.message surfaces both. The empty
+    // dict (not `None`) is the real #36109 trigger shape.
+    let empty_body: Map<String, Value> = Map::new();
+    let shape = ApiErrorShape {
+        message: "",
+        body: Some(&empty_body),
+        status_code: Some(400),
+        response_text: Some(
+            "{\"error\": {\"message\": \"model `foo` does not exist\", \"type\": \"invalid_request_error\"}}",
+        ),
+        ..error_shape("", None, None)
+    };
+    let summary = summarize_api_error(&shape);
     assert!(summary.contains("HTTP 400"), "{summary}");
     assert!(summary.contains("model `foo` does not exist"), "{summary}");
 }
@@ -769,18 +776,26 @@ fn unreadable_response_falls_back_to_message() {
 
 #[test]
 fn cloudflare_challenge_collapses_to_one_liner() {
-    // tests/run_agent/test_nonretryable_error_html_summary.py: title-less
-    // challenge page → status + placeholder, short, HTML-free.
-    let html = "<!DOCTYPE html>\n<html>\n  <head>\n    <meta http-equiv=\"refresh\" content=\"360\"></head>\n  <body>challenge</body>\n</html>\n";
-    let summary = summarize_api_error(&error_shape(html, Some(403), None));
+    // tests/run_agent/test_nonretryable_error_html_summary.py: a padded,
+    // title-less challenge page carrying the `_cf_chl_opt` marker must
+    // collapse short with no marker leakage (the reported 31-message
+    // Discord flood). The marker text makes `len<200` meaningful.
+    let html = format!(
+        "<!DOCTYPE html>\n<html>\n  <head>\n    <meta http-equiv=\"refresh\" content=\"360\"></head>\n  <body>\n    <div><noscript>Enable JavaScript and cookies to continue</noscript><script>(function(){{window._cf_chl_opt = {{cRay: 'a0ca002c4f91769c', cZone: 'chatgpt.com', md: '{}'}};}})();</script></div>\n  </body>\n</html>\n",
+        "x".repeat(400)
+    );
+    let summary = summarize_api_error(&error_shape(&html, Some(403), None));
     assert!(!summary.to_lowercase().contains("<html"), "{summary}");
     assert!(!summary.to_lowercase().contains("<!doctype"), "{summary}");
+    assert!(!summary.contains("_cf_chl_opt"), "{summary}");
     assert!(summary.contains("403"), "{summary}");
     assert!(
         summary.contains("HTML error page (title not found)"),
         "{summary}"
     );
     assert!(summary.len() < 200, "{summary}");
+    // The loop-integration second half of that oracle file needs a live
+    // turn and stays explicitly out of scope for this unit.
 }
 
 #[test]
@@ -789,6 +804,18 @@ fn html_title_and_ray_id_survive() {
     let html = "<html><head><title>Example Domain</title></head><body>Cloudflare Ray ID: <strong>abc123</strong></body></html>";
     let summary = summarize_api_error(&error_shape(html, Some(503), None));
     assert_eq!(summary, "HTTP 503 — Example Domain — Ray abc123");
+    // Whitespace-only title stays empty (no placeholder substitution);
+    // NBSP after `Ray ID:` still matches (Python `\s` semantics).
+    let blank_title = "<html><head><title>   </title></head><body>x</body></html>";
+    assert_eq!(
+        summarize_api_error(&error_shape(blank_title, Some(500), None)),
+        "HTTP 500 — "
+    );
+    let nbsp_ray = "<html><head><title>T</title></head><body>Cloudflare Ray ID: <strong>r4y</strong></body></html>";
+    assert_eq!(
+        summarize_api_error(&error_shape(nbsp_ray, Some(500), None)),
+        "HTTP 500 — T — Ray r4y"
+    );
 }
 
 #[test]
@@ -835,6 +862,40 @@ fn body_dict_arm_coerces_and_decorates() {
         "{summary}"
     );
     assert!(summary.contains("X Premium+ does NOT include"), "{summary}");
+    // Executed oracle vectors: string `error` + top `message` routes to
+    // the top message; empty `error.message` falls through to it.
+    let routed = body_map(&[("error", json!("boom")), ("message", json!("top"))]);
+    let shape = ApiErrorShape {
+        message: "ignored",
+        body: Some(&routed),
+        ..error_shape("", None, None)
+    };
+    assert_eq!(summarize_api_error(&shape), "top");
+    let skipped = body_map(&[("error", json!({"message": ""})), ("message", json!("top"))]);
+    let shape = ApiErrorShape {
+        message: "ignored",
+        body: Some(&skipped),
+        ..error_shape("", None, None)
+    };
+    // No second lookup: a dict `error` with falsy `message` skips the
+    // whole arm (verified against the oracle) and falls to the raw
+    // fallback — unlike a non-dict `error`, which routes to the top
+    // `message` as above.
+    assert_eq!(summarize_api_error(&shape), "ignored");
+    // Zero status reads as absent, exactly like falsy upstream.
+    let shape = ApiErrorShape {
+        message: "plain failure",
+        status_code: Some(0),
+        ..error_shape("", None, None)
+    };
+    assert_eq!(summarize_api_error(&shape), "plain failure");
+    // Whitespace-only response text skips to the fallback arm.
+    let shape = ApiErrorShape {
+        message: "plain failure",
+        response_text: Some("   "),
+        ..error_shape("", None, None)
+    };
+    assert_eq!(summarize_api_error(&shape), "plain failure");
 }
 
 // ── _pool_may_recover_from_rate_limit ─────────────────────────────────

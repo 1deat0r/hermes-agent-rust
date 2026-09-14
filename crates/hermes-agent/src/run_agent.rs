@@ -8,7 +8,9 @@
 //! ~2364-2634: entitlement classifier, xAI hint decorator, detail
 //! coercer, key masker, message cleaner, error summarizer
 //! (`ApiErrorShape` carries the settled exception verdicts; loop
-//! callers populate it at the raise site).
+//! callers populate it at the raise site). `_flatten_exception_chain`
+//! is deliberately excluded: at pin it forwards to unported
+//! `agent.stream_diag` (different unit).
 //! stdlib logic plus same-crate pool types; higher-layer seams stay out:
 //! - `_routermint_headers` reads `hermes_cli.__version__` lazily upstream;
 //!   `hermes-agent` must not depend on the higher-layer `hermes-cli`
@@ -712,22 +714,26 @@ fn sorted_json(value: &Value) -> String {
 /// Exception shape consumed by [`summarize_api_error`]. Upstream reads
 /// everything off a live exception object (`str()`, `isinstance`,
 /// `.body`/`.response`/`.status_code`, `type().__name__`); the future
-/// loop caller populates this struct at the raise site, which also
-/// settles the `ValueError`-subclass exclusion upstream performs inline
-/// (`UnicodeEncodeError`/`JSONDecodeError` never set `is_value_error`)
-/// and pre-reads `response.text` (upstream swallows read failures, so
-/// `None` covers absent-or-unreadable uniformly).
+/// loop caller populates this struct at the raise site, pre-reading
+/// `response.text` (upstream swallows read failures, so `None` covers
+/// absent-or-unreadable uniformly).
 pub struct ApiErrorShape<'a> {
     /// `str(error)`.
     pub message: &'a str,
-    /// Settled `isinstance(error, ValueError)` verdict (see above).
+    /// Plain `isinstance(error, ValueError)` verdict. (The
+    /// `UnicodeEncodeError`/`JSONDecodeError` carve-out some readers
+    /// expect belongs to the separate, unported
+    /// `_is_provider_stream_parse_error` predicate — `_summarize`
+    /// itself applies no exclusion.)
     pub is_value_error: bool,
     /// Parsed SDK `body` when it is a mapping.
     pub body: Option<&'a Map<String, Value>>,
     /// Underlying HTTP `response.text`, pre-read (`None` = absent or
     /// unreadable).
     pub response_text: Option<&'a str>,
-    /// `error.status_code` when present.
+    /// `error.status_code` when present. Integer domain: upstream reads
+    /// an arbitrary attribute, but every raise site carries an int;
+    /// `Some(0)` reads as absent exactly like falsy upstream.
     pub status_code: Option<i64>,
     /// `type(error).__name__` (only `GeminiAPIError` is consulted).
     pub type_name: &'a str,
@@ -762,8 +768,11 @@ fn summarize_title_re() -> &'static Regex {
 
 fn summarize_ray_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
+    // Python `str`-pattern `\s` covers NBSP and C0 controls that Rust
+    // `\s` (`White_Space`) excludes; the union reproduces it.
     RE.get_or_init(|| {
-        Regex::new(r"Cloudflare Ray ID:\s*<strong[^>]*>([^<]+)</strong>").expect("ray id pattern")
+        Regex::new(r"Cloudflare Ray ID:[\s\x1c-\x1f ]*<strong[^>]*>([^<]+)</strong>")
+            .expect("ray id pattern")
     })
 }
 
@@ -783,11 +792,12 @@ pub fn summarize_api_error(shape: &ApiErrorShape<'_>) -> String {
         );
     }
     if raw.contains("<!DOCTYPE") || raw.contains("<html") {
+        // No empty-filter: upstream keeps a whitespace-only title as
+        // `""` (only a missing title reads as the placeholder).
         let title = summarize_title_re()
             .captures(raw)
             .and_then(|captured| captured.get(1))
             .map(|title| title.as_str().trim().to_string())
-            .filter(|title| !title.is_empty())
             .unwrap_or_else(|| "HTML error page (title not found)".to_string());
         let ray_id = summarize_ray_re()
             .captures(raw)
