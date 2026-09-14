@@ -466,10 +466,12 @@ lines ~234-371): `EPHEMERAL_SCAFFOLDING_FLAGS` (7 flags, order-pinned),
 `routermint_headers` (version is an explicit argument — `hermes-agent`
 must not depend on higher-layer `hermes-cli`), and
 `safe_session_filename_component` (byte-exact digests verified against
-the Python oracle: `../a`→`a_61b4c98bfb92`). Deferred:
-`_pool_may_recover_from_rate_limit` (needs pool cooldown semantics).
+the Python oracle: `../a`→`a_61b4c98bfb92`), and
+`pool_may_recover_from_rate_limit` (`now` explicit per the port's pool
+convention; oracles `test_gemini_fast_fallback` + `test_none_pool_
+returns_false`, single-entry arm source-derived).
 Oracle: `test_dropped_tool_call_recovery`, `test_run_agent`
-(traversal cases), `test_verification_stop_caching` @ b9aa928; 11
+(traversal cases), `test_verification_stop_caching` @ b9aa928; 17
 parity tests; `run_agent` marked `partial` (first of ~8,206 LOC).
 
 Board R1 (S1 CONDITIONAL / S2 BUILD / S3 CONDITIONAL / S4 BUILD / S5
@@ -479,6 +481,9 @@ Python-strip helper (`\x1c-\x1f`), OS-gated platform table (Linux ARM
 passthrough, Windows AMD64/ARM64, system `.lower()`), wrapper smoke
 test, null/number truthiness, flag-order source label,
 surrogate/coercion contracts. 13 parity tests green.
+
+Section 1b: `_pool_may_recover_from_rate_limit` landed (17 tests;
+MagicMock oracles rebuilt on real pools + exhaustion path).
 
 ### hermes-agent utility modules (Phase 2, upstream @ b9aa928)
 

@@ -14,10 +14,12 @@
 
 use std::collections::HashMap;
 
+use hermes_agent::credential_pool::{CredentialPool, PoolStrategy, PooledCredential};
 use hermes_agent::run_agent::{
-    is_ephemeral_scaffolding, qwen_platform_tokens, qwen_portal_headers, qwen_portal_headers_for,
-    routermint_headers, safe_session_filename_component, DB_PERSISTED_MARKER,
-    EPHEMERAL_SCAFFOLDING_FLAGS, MAX_TOOL_WORKERS, QWEN_CODE_VERSION,
+    is_ephemeral_scaffolding, pool_may_recover_from_rate_limit, qwen_platform_tokens,
+    qwen_portal_headers, qwen_portal_headers_for, routermint_headers,
+    safe_session_filename_component, DB_PERSISTED_MARKER, EPHEMERAL_SCAFFOLDING_FLAGS,
+    MAX_TOOL_WORKERS, QWEN_CODE_VERSION,
 };
 use serde_json::{json, Map, Value};
 
@@ -228,6 +230,59 @@ fn qwen_live_wrapper_reports_this_process() {
     assert!(ua.starts_with(&format!("QwenCode/{QWEN_CODE_VERSION} (")));
     assert!(ua.contains("; "));
     assert_eq!(headers.get("X-DashScope-UserAgent"), Some(ua));
+}
+
+// ── _pool_may_recover_from_rate_limit ─────────────────────────────────
+
+const POOL_NOW: f64 = 1_700_000_000.0;
+
+fn pool_entry(id: &str, key: &str, priority: i32) -> PooledCredential {
+    PooledCredential::new("openrouter", id, key, priority)
+}
+
+fn fresh_pool(size: i32) -> CredentialPool {
+    CredentialPool::new(
+        "openrouter",
+        (0..size)
+            .map(|i| pool_entry(&format!("key-{i}"), &format!("sk-test-{i}"), i))
+            .collect(),
+        PoolStrategy::LeastUsed,
+    )
+}
+
+#[test]
+fn none_pool_returns_false() {
+    // tests/run_agent/test_provider_fallback.py:247-248
+    assert!(!pool_may_recover_from_rate_limit(None, POOL_NOW));
+}
+
+#[test]
+fn multi_entry_pool_recovers() {
+    // tests/agent/test_gemini_fast_fallback.py:23-24 — the MagicMock
+    // (`has_available=True`, 3 entries) becomes a real 3-entry pool.
+    let pool = fresh_pool(3);
+    assert!(pool_may_recover_from_rate_limit(Some(&pool), POOL_NOW));
+}
+
+#[test]
+fn exhausted_pool_skips_rotation() {
+    // tests/agent/test_gemini_fast_fallback.py:29-32 — both entries
+    // benched through the real exhaustion path, so nothing is available.
+    let mut pool = fresh_pool(2);
+    for id in ["key-0", "key-1"] {
+        pool.mark_exhausted_and_rotate(Some(429), None, None, Some(id), None, POOL_NOW);
+    }
+    assert!(!pool.has_available(POOL_NOW));
+    assert!(!pool_may_recover_from_rate_limit(Some(&pool), POOL_NOW));
+}
+
+#[test]
+fn single_entry_pool_has_nowhere_to_rotate() {
+    // Source-derived: the upstream docstring demands "more than one
+    // entry to rotate to"; no upstream case pins the single-entry arm.
+    let pool = fresh_pool(1);
+    assert!(pool.has_available(POOL_NOW));
+    assert!(!pool_may_recover_from_rate_limit(Some(&pool), POOL_NOW));
 }
 
 // ── _routermint_headers ──────────────────────────────────────────────

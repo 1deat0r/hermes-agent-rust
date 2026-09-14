@@ -4,9 +4,6 @@
 //! worker/marker constants, Qwen header builders, session filename
 //! sanitizer, RouterMint UA). Everything here is dependency-free stdlib
 //! logic; higher-layer seams stay out:
-//! - `_pool_may_recover_from_rate_limit` is deferred: it needs the
-//!   credential-pool cooldown semantics (`CredentialPool::has_available`
-//!   takes an explicit `now`), studied with the pool lifecycle slice.
 //! - `_routermint_headers` reads `hermes_cli.__version__` lazily upstream;
 //!   `hermes-agent` must not depend on the higher-layer `hermes-cli`
 //!   crate, so the version arrives as an explicit argument.
@@ -14,10 +11,14 @@
 //! Evidence tiers: `unit` for cases mirroring upstream tests
 //! (`tests/run_agent/test_dropped_tool_call_recovery.py`,
 //! `tests/run_agent/test_run_agent.py`,
-//! `tests/agent/test_verification_stop_caching.py` @ b9aa928);
+//! `tests/agent/test_verification_stop_caching.py`,
+//! `tests/agent/test_gemini_fast_fallback.py`,
+//! `tests/run_agent/test_provider_fallback.py` @ b9aa928);
 //! `unit/source-derived` where no upstream case pins the behavior
-//! (header platform mapping, falsy-flag matrix, truncation bounds).
+//! (header platform mapping, falsy-flag matrix, truncation bounds,
+//! single-entry pool).
 
+use super::credential_pool::CredentialPool;
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
@@ -94,6 +95,26 @@ pub fn qwen_platform_tokens(os: &str, arch: &str) -> (String, String) {
         _ => arch.to_string(),
     };
     (system, machine)
+}
+
+/// PARITY: `_pool_may_recover_from_rate_limit` (pin ~310-333). Decide
+/// whether to wait for credential-pool rotation instead of falling back
+/// (see issues #11314 and #13636): rotation needs the pool to exist,
+/// have an entry outside exhaustion cooldown, and have more than one
+/// entry to rotate to — a single-credential pool would just re-hit the
+/// same exhausted quota. `now` is explicit, following
+/// [`CredentialPool::has_available`]; upstream reads wall-clock inside
+/// `pool.has_available()`.
+pub fn pool_may_recover_from_rate_limit(pool: Option<&CredentialPool>, now: f64) -> bool {
+    match pool {
+        None => false,
+        Some(active) => {
+            if !active.has_available(now) {
+                return false;
+            }
+            active.entries().len() > 1
+        }
+    }
 }
 
 /// PARITY: `_qwen_portal_headers` (pin ~335-345), evaluated for this

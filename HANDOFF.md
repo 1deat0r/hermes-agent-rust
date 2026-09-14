@@ -882,19 +882,17 @@ keys (redundant libc dev-dep dropped — watchdog suite 9/9 green);
 pre-commit pin guard (refuses refresh off-pin); GATES G4 self-ensuring
 pinned worktree + SHA assert (executed: recreated worktree, refreshed,
 timestamp-only diff as designed); dead `hermes.upstream` config unset.
+
 ## Session 5a — run_agent section 1 (2026-09-14)
 
-`hermes-agent::run_agent` opened (TDD, 11 parity tests green):
+`hermes-agent::run_agent` opened (TDD, now 17 parity tests green):
 scaffolding flags/table, truthiness filter, worker/marker/version
 consts, Qwen + RouterMint header builders, traversal-safe session
-filename with oracle-exact digests. Deferred to next slice:
-`_pool_may_recover_from_rate_limit` (pool cooldown semantics).
+filename with oracle-exact digests, pool-recovery predicate.
 Validation: `cargo build --workspace` + `cargo test -p hermes-agent
 --test parity_run_agent` green; full serial clean-env suite re-run
-before commit. Next slice: `_pool_may_recover_from_rate_limit`
-(requires credential-pool cooldown-semantics study; the pin ~1334-1613
-provider predicates are `AIAgent` self-methods, not module-level pure
-fns — board S4 correction).
+before commit. Next slice: TBD from the pin map (the ~1334-1613
+provider predicates are `AIAgent` self-methods — board S4 correction).
 
 ## R3 checkpoint (2026-09-14) — section-1 board + closures
 
