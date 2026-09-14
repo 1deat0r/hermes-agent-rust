@@ -896,7 +896,7 @@ each phase. Next: TBD from pin map.
 
 ## Session 5a — run_agent section 1 (2026-09-14)
 
-`hermes-agent::run_agent` opened (TDD, now 46 parity tests green):
+`hermes-agent::run_agent` opened (TDD, now 48 parity tests green):
 scaffolding flags/table, truthiness filter, worker/marker/version
 consts, Qwen + RouterMint header builders, traversal-safe session
 filename with oracle-exact digests, pool-recovery predicate.
@@ -1020,3 +1020,13 @@ dict `error` with falsy `message` skips the whole body arm (no second
 lookup); only a non-dict `error` routes to the top `message`. Test
 corrected to the true semantics; implementation was already faithful.
 Reviewers are fallible — live source wins, including against seats.
+
+## Session 5f — run_agent section 6 (2026-09-14)
+
+Response-ending heuristic + Ollama-GLM detector (TDD, both
+source-derived — no oracle files at pin): punct set transcribed
+verbatim incl backslash/CJK, gate order preserved (caught 2 of my own
+vectors wrong on re-read before running). Forwarder siblings and
+think-block consumers deferred to their owner modules. Agent-struct
+scaffold still deferred — free-function slices continue until shared
+mutable state forces it.

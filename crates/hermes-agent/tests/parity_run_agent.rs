@@ -17,15 +17,16 @@ use std::collections::HashMap;
 use hermes_agent::credential_pool::{CredentialPool, PoolStrategy, PooledCredential};
 use hermes_agent::run_agent::{
     clean_error_message, codex_silent_hang_hint, coerce_api_error_detail,
-    copilot_requires_responses_api, decorate_xai_entitlement_error, is_azure_openai_url,
-    is_codex_backend, is_copilot_provider, is_copilot_url, is_direct_openai_url,
-    is_entitlement_failure, is_ephemeral_scaffolding, is_github_copilot_url, is_openrouter_url,
-    launch_cwd_for_session, mask_api_key_for_logs, max_tokens_param, model_requires_responses_api,
-    pool_may_recover_from_rate_limit, provider_model_requires_responses_api, qwen_platform_tokens,
-    qwen_portal_headers, qwen_portal_headers_for, requested_output_cap_from_api_kwargs,
-    routermint_headers, safe_session_filename_component, session_source_for_agent,
-    summarize_api_error, ApiErrorShape, StreamErrorEvent, DB_PERSISTED_MARKER,
-    EPHEMERAL_SCAFFOLDING_FLAGS, MAX_TOOL_WORKERS, QWEN_CODE_VERSION,
+    copilot_requires_responses_api, decorate_xai_entitlement_error, has_natural_response_ending,
+    is_azure_openai_url, is_codex_backend, is_copilot_provider, is_copilot_url,
+    is_direct_openai_url, is_entitlement_failure, is_ephemeral_scaffolding, is_github_copilot_url,
+    is_ollama_glm_backend, is_openrouter_url, launch_cwd_for_session, mask_api_key_for_logs,
+    max_tokens_param, model_requires_responses_api, pool_may_recover_from_rate_limit,
+    provider_model_requires_responses_api, qwen_platform_tokens, qwen_portal_headers,
+    qwen_portal_headers_for, requested_output_cap_from_api_kwargs, routermint_headers,
+    safe_session_filename_component, session_source_for_agent, summarize_api_error, ApiErrorShape,
+    StreamErrorEvent, DB_PERSISTED_MARKER, EPHEMERAL_SCAFFOLDING_FLAGS, MAX_TOOL_WORKERS,
+    QWEN_CODE_VERSION,
 };
 use serde_json::{json, Map, Value};
 
@@ -896,6 +897,72 @@ fn body_dict_arm_coerces_and_decorates() {
         ..error_shape("", None, None)
     };
     assert_eq!(summarize_api_error(&shape), "plain failure");
+}
+
+// ── response-ending + ollama-glm (source-derived) ────────────────────
+
+#[test]
+fn natural_ending_covers_fences_carets_punct_emoji() {
+    // Source-derived: no upstream case pins the heuristic; arms follow
+    // the pin body verbatim (fence → caret → punct set → emoji floor).
+    assert!(!has_natural_response_ending(""));
+    assert!(!has_natural_response_ending("   "));
+    assert!(!has_natural_response_ending("hello"));
+    assert!(!has_natural_response_ending("count: 5"));
+    assert!(has_natural_response_ending("done."));
+    assert!(has_natural_response_ending("really?"));
+    assert!(has_natural_response_ending("done!  "));
+    assert!(has_natural_response_ending("```python\nx = 1\n```"));
+    assert!(has_natural_response_ending("thinking^"));
+    assert!(has_natural_response_ending("完成。"));
+    assert!(has_natural_response_ending("本当？"));
+    assert!(has_natural_response_ending("back\\"));
+    assert!(has_natural_response_ending("great 😀"));
+    assert!(!has_natural_response_ending("caf\u{e9}"));
+}
+
+#[test]
+fn ollama_glm_detection_stays_conservative() {
+    // Source-derived: explicit-argument form of the self-reading check;
+    // the #13971 rule (never match arbitrary local endpoints) is pinned.
+    assert!(is_ollama_glm_backend(
+        Some("zai/glm-4.5"),
+        Some("zai"),
+        "http://localhost:11434/v1"
+    ));
+    assert!(is_ollama_glm_backend(
+        Some("glm-4.5"),
+        Some("openai"),
+        "http://ollama.local:11434/v1"
+    ));
+    // The first gate rejects non-GLM/non-zai rows before any URL check —
+    // even an explicit ollama provider with a non-GLM model is False.
+    assert!(!is_ollama_glm_backend(
+        Some("qwen3"),
+        Some("ollama"),
+        "http://localhost:11434/v1"
+    ));
+    assert!(!is_ollama_glm_backend(
+        Some("glm-4.5"),
+        Some("openai"),
+        "https://api.openai.com/v1"
+    ));
+    assert!(!is_ollama_glm_backend(
+        Some("qwen3"),
+        Some("openai"),
+        "http://192.168.1.10:8000/v1"
+    ));
+    assert!(!is_ollama_glm_backend(
+        None,
+        None,
+        "http://localhost:11434/v1"
+    ));
+    assert!(!is_ollama_glm_backend(None, Some("ollama"), "http://x/v1"));
+    assert!(is_ollama_glm_backend(
+        Some("glm-4.5"),
+        Some("ollama"),
+        "https://api.openai.com/v1"
+    ));
 }
 
 // ── _pool_may_recover_from_rate_limit ─────────────────────────────────

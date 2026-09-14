@@ -33,7 +33,7 @@
 //! `tests/run_agent/test_nonretryable_error_html_summary.py` @ b9aa928);
 //! `unit/source-derived` where no upstream case pins the behavior
 //! (header platform mapping, falsy-flag matrix, truncation bounds,
-//! single-entry pool).
+//! single-entry pool, response-ending heuristic, ollama-glm matrix).
 
 use super::credential_pool::CredentialPool;
 use std::collections::HashMap;
@@ -882,6 +882,69 @@ pub fn summarize_api_error(shape: &ApiErrorShape<'_>) -> String {
     ))
 }
 
+/// PARITY: `AIAgent._has_natural_response_ending` (pin, staticmethod).
+/// Heuristic: visible assistant text looks intentionally finished —
+/// trailing fence, caret, closing punctuation (Latin + CJK sets), or an
+/// emoji-range final (`ord >= 0x1F300`).
+pub fn has_natural_response_ending(content: &str) -> bool {
+    if content.is_empty() {
+        return false;
+    }
+    let stripped = trim_end_py_spaces(content);
+    if stripped.is_empty() {
+        return false;
+    }
+    if stripped.ends_with("```") {
+        return true;
+    }
+    if stripped.ends_with('^') {
+        return true;
+    }
+    let last = stripped.chars().next_back().unwrap_or('\0');
+    if matches!(
+        last,
+        '.' | '!'
+            | '?'
+            | ':'
+            | ')'
+            | '"'
+            | '\\'
+            | ']'
+            | '}'
+            | '。'
+            | '！'
+            | '？'
+            | '：'
+            | '）'
+            | '】'
+            | '」'
+            | '』'
+            | '》'
+            | '^'
+    ) {
+        return true;
+    }
+    last as u32 >= 0x1F300
+}
+
+/// PARITY: `AIAgent._is_ollama_glm_backend` (pin), explicit-argument
+/// form. Conservative Ollama-GLM detection (port 11434, `ollama` in
+/// URL, or explicit provider): arbitrary local endpoints are
+/// deliberately NOT matched (#13971 false positives). Provider/model
+/// read lowercased-but-untrimmed exactly as upstream.
+pub fn is_ollama_glm_backend(model: Option<&str>, provider: Option<&str>, base_url: &str) -> bool {
+    let model_lower = model.unwrap_or("").to_lowercase();
+    let provider_lower = provider.unwrap_or("").to_lowercase();
+    if !model_lower.contains("glm") && provider_lower != "zai" {
+        return false;
+    }
+    let url_lower = base_url.to_lowercase();
+    if url_lower.contains("ollama") || url_lower.contains(":11434") {
+        return true;
+    }
+    provider_lower == "ollama"
+}
+
 /// PARITY: `_mask_api_key_for_logs` (pin). Falsy keys read as
 /// `None`; 12 chars or fewer collapse to `"***"`; longer keys show
 /// first-8/last-4 (`len` counts Unicode scalars as upstream counts code
@@ -951,8 +1014,16 @@ fn sanitize_filename_re() -> &'static Regex {
 /// Python `str.strip()` whitespace: Unicode `White_Space` (what Rust
 /// `char::is_whitespace` reports) plus the C0 controls `\x1c`-`\x1f`
 /// (FS/GS/RS/US), which Python strips but Rust does not.
+fn is_py_space(ch: char) -> bool {
+    ch.is_whitespace() || ('\u{1c}'..='\u{1f}').contains(&ch)
+}
+
 fn trim_py_spaces(text: &str) -> &str {
-    text.trim_matches(|c: char| c.is_whitespace() || ('\u{1c}'..='\u{1f}').contains(&c))
+    text.trim_matches(is_py_space)
+}
+
+fn trim_end_py_spaces(text: &str) -> &str {
+    text.trim_end_matches(is_py_space)
 }
 
 /// PARITY: `_safe_session_filename_component` (pin ~348-371). Collapse
