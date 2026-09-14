@@ -891,5 +891,25 @@ filename with oracle-exact digests. Deferred to next slice:
 `_pool_may_recover_from_rate_limit` (pool cooldown semantics).
 Validation: `cargo build --workspace` + `cargo test -p hermes-agent
 --test parity_run_agent` green; full serial clean-env suite re-run
-before commit. Next slice: provider/model predicate pure functions
-(pin ~1334-1613) — dependency-free and heavily oracle-covered.
+before commit. Next slice: `_pool_may_recover_from_rate_limit`
+(requires credential-pool cooldown-semantics study; the pin ~1334-1613
+provider predicates are `AIAgent` self-methods, not module-level pure
+fns — board S4 correction).
+
+## R3 checkpoint (2026-09-14) — section-1 board + closures
+
+5-seat R1 on f27acce: S1 CONDITIONAL (2 blockers), S2 BUILD, S3
+CONDITIONAL (5 items), S4 BUILD, S5 REJECT (5 kill-attempts). Zero
+noise this round. Adjudicated CONFIRMED + fixed: `\w`
+Join_Control/Mn divergence → calibrated class `[\p{L}\p{N}_]`
+(char-by-char vs live oracle); `trim` vs `strip` (`\x1c-\x1f`) →
+`trim_py_spaces`; unconditional `aarch64→arm64` → OS-gated table
+(+ Windows AMD64/ARM64, system `.lower()`); wrapper smoke test;
+null/number truthiness asserts; flag-order source label;
+surrogate/coercion contracts documented. S5's kill-verdict flips:
+implementation output byte-matches the oracle on every vector.
+Operator-verified R2 (tests green + transit-proof oracle digests).
+
+Transit lesson: zero-width chars (ZWNJ etc.) are eaten in tool-call
+text — never paste them literally. Use `\u{...}` escapes, verify with
+hexdump, and compute oracle digests via `chr()` construction.

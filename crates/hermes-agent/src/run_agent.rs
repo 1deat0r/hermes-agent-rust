@@ -72,22 +72,27 @@ pub fn is_ephemeral_scaffolding(msg: &Map<String, Value>) -> bool {
         .any(|flag| msg.get(*flag).map(json_truthy).unwrap_or(false))
 }
 
-/// Map Rust platform names to the `platform.system().lower()` /
+/// Map platform names to the `platform.system().lower()` /
 /// `platform.machine()` spellings upstream interpolates into the Qwen
-/// User-Agent. Only two pairs diverge: `macos`→`darwin` and
-/// `aarch64`→`arm64` (Apple Silicon reports `arm64` via CPython).
+/// User-Agent. Upstream passes both through verbatim; only the
+/// Rust↔CPython spelling gaps are bridged: `macos`→`darwin`, Apple
+/// Silicon `aarch64`→`arm64` on macOS only (Linux ARM reports
+/// `aarch64` upstream), and Windows `x86_64`→`AMD64` /
+/// `aarch64`→`ARM64` (CPython reports kernel arch names there).
+/// Everything else passes through byte-identical.
 /// Source-derived: no upstream test pins the UA string.
 pub fn qwen_platform_tokens(os: &str, arch: &str) -> (String, String) {
-    let system = match os {
-        "macos" => "darwin",
-        other => other,
-    }
-    .to_string();
-    let machine = match arch {
-        "aarch64" => "arm64",
-        other => other,
-    }
-    .to_string();
+    let os_lc = os.to_lowercase();
+    let system = match os_lc.as_str() {
+        "macos" => "darwin".to_string(),
+        other => other.to_string(),
+    };
+    let machine = match (os_lc.as_str(), arch) {
+        ("macos" | "darwin", "aarch64") => "arm64".to_string(),
+        ("windows", "x86_64") => "AMD64".to_string(),
+        ("windows", "aarch64") => "ARM64".to_string(),
+        _ => arch.to_string(),
+    };
     (system, machine)
 }
 
@@ -122,22 +127,35 @@ pub fn routermint_headers(hermes_version: &str) -> HashMap<String, String> {
 
 fn sanitize_filename_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
-    // `\w` is Unicode-aware here exactly as in upstream's `re` module
-    // (both sides match letters/digits/underscore across scripts; the
-    // negligible Join_Control edge is not observable in IDs).
-    RE.get_or_init(|| Regex::new(r"[^\w-]").expect("filename sanitizer regex"))
+    // Calibrated against the live Python oracle: `re` `\w` on `str` keeps
+    // exactly letters + numbers + `_` (drops all marks Mn/Mc/Me, all Pc
+    // except U+005F, Cf format controls incl. ZWNJ/ZWJ, symbols/emoji).
+    // That set is `[\p{L}\p{N}_]` — verified char-by-char (é/中/²/Ⅷ/ñ
+    // kept; ZWNJ/ZWJ/emoji/combining-acute/‿ dropped). A bare `\w` would
+    // wrongly keep Join_Control in the Rust `regex` engine.
+    RE.get_or_init(|| Regex::new(r"[^\p{L}\p{N}_-]").expect("filename sanitizer regex"))
+}
+
+/// Python `str.strip()` whitespace: Unicode `White_Space` (what Rust
+/// `char::is_whitespace` reports) plus the C0 controls `\x1c`-`\x1f`
+/// (FS/GS/RS/US), which Python strips but Rust does not.
+fn trim_py_spaces(text: &str) -> &str {
+    text.trim_matches(|c: char| c.is_whitespace() || ('\u{1c}'..='\u{1f}').contains(&c))
 }
 
 /// PARITY: `_safe_session_filename_component` (pin ~348-371). Collapse
-/// every non-`[word, -]` char to `_`, strip edge `.`/`_`, cap at 96
-/// chars (by Unicode scalar, as upstream slices code points), fall back
-/// to `"session"`, and — when sanitization changed the string — append
-/// a 12-hex-char sha256 disambiguator so distinct IDs never collide.
-/// Always returns a single traversal-free path segment. Upstream hashes
-/// with `errors="surrogatepass"`; Rust strings are valid UTF-8 by
-/// construction, so the plain encoding is equivalent.
+/// every non-letter/number/`_`/`-` char to `_`, strip edge `.`/`_`, cap
+/// at 96 chars (by Unicode scalar, as upstream slices code points), fall
+/// back to `"session"`, and — when sanitization changed the string —
+/// append a 12-hex-char sha256 disambiguator so distinct IDs never
+/// collide. Always returns a single traversal-free path segment.
+/// Upstream hashes with `errors="surrogatepass"`: the digest domain here
+/// is `&str` (valid UTF-8 by construction), so lone surrogates are
+/// unrepresentable — callers must pass decoded text, and non-`str`
+/// inputs must be coerced with `str(x or "")` before calling, exactly as
+/// the upstream signature accepts `Any`.
 pub fn safe_session_filename_component(session_id: &str) -> String {
-    let raw = session_id.trim();
+    let raw = trim_py_spaces(session_id);
     let mut sanitized: String = sanitize_filename_re()
         .replace_all(raw, "_")
         .trim_matches(['.', '_'])

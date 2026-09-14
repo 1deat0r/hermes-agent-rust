@@ -472,6 +472,14 @@ Oracle: `test_dropped_tool_call_recovery`, `test_run_agent`
 (traversal cases), `test_verification_stop_caching` @ b9aa928; 11
 parity tests; `run_agent` marked `partial` (first of ~8,206 LOC).
 
+Board R1 (S1 CONDITIONAL / S2 BUILD / S3 CONDITIONAL / S4 BUILD / S5
+REJECT) + closures: char class calibrated to `[\p{L}\p{N}_]`
+(char-by-char vs live oracle — bare `\w` keeps Join_Control/Mn),
+Python-strip helper (`\x1c-\x1f`), OS-gated platform table (Linux ARM
+passthrough, Windows AMD64/ARM64, system `.lower()`), wrapper smoke
+test, null/number truthiness, flag-order source label,
+surrogate/coercion contracts. 13 parity tests green.
+
 ### hermes-agent utility modules (Phase 2, upstream @ b9aa928)
 
 | Module / upstream surface | Status | Rust home, oracle, and evidence tier |
