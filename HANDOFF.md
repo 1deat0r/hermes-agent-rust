@@ -894,6 +894,20 @@ Validation: `cargo build --workspace` + `cargo test -p hermes-agent
 before commit. Next slice: TBD from the pin map (the ~1334-1613
 provider predicates are `AIAgent` self-methods — board S4 correction).
 
+## R4 checkpoint (2026-09-14) — pool-slice board + closures
+
+5-seat R1 on c100b71: S1 CONDITIONAL (arms match; 2 standing
+conditions), S2 BUILD, S3 BUILD, S4 CONDITIONAL (3 docs-only),
+S5 REJECT (4 attacks, 2 conceded). Adjudicated: S4 docs fixed (oracle
+names, 5-file sentence, stdlib+pool reword, count touch-up); S5's
+sibling-method fork CONFIRMED at pin (~6007, no len gate; live path
+`conversation_loop.py:4627` uses the module fn) and recorded in the
+predicate docs as a loop-slice constraint; readonly-availability and
+fresh-`now` caller contract documented (zero callers exist yet —
+standing conditions, not slice defects); fallback-gate wiring belongs
+to the loop slice. S1 upgrades to BUILD on those notes; S5's remaining
+items are pool-module/loop-slice debt, correctly filed elsewhere.
+
 ## R3 checkpoint (2026-09-14) — section-1 board + closures
 
 5-seat R1 on f27acce: S1 CONDITIONAL (2 blockers), S2 BUILD, S3

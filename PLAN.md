@@ -468,10 +468,12 @@ must not depend on higher-layer `hermes-cli`), and
 `safe_session_filename_component` (byte-exact digests verified against
 the Python oracle: `../a`→`a_61b4c98bfb92`), and
 `pool_may_recover_from_rate_limit` (`now` explicit per the port's pool
-convention; oracles `test_gemini_fast_fallback` + `test_none_pool_
-returns_false`, single-entry arm source-derived).
+convention; oracles `test_gemini_fast_fallback` +
+`test_provider_fallback::TestPoolRotationRoom`, single-entry arm
+source-derived).
 Oracle: `test_dropped_tool_call_recovery`, `test_run_agent`
-(traversal cases), `test_verification_stop_caching` @ b9aa928; 17
+(traversal cases), `test_verification_stop_caching`,
+`test_gemini_fast_fallback`, `test_provider_fallback` @ b9aa928; 17
 parity tests; `run_agent` marked `partial` (first of ~8,206 LOC).
 
 Board R1 (S1 CONDITIONAL / S2 BUILD / S3 CONDITIONAL / S4 BUILD / S5
@@ -3180,8 +3182,8 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 - 2026-09-14 (session 5a): `run_agent` section 1 landed —
   `crates/hermes-agent/src/run_agent.rs` (module-level pure helpers, pin
-  ~234-371) + `tests/parity_run_agent.rs` (11 parity tests; traversal
-  digests byte-verified against the Python oracle). Recon note: recon
+  ~234-371) + `tests/parity_run_agent.rs` (17 parity tests after the
+  pool slice; traversal digests byte-verified). Recon note: recon
   against upstream HEAD maps the wrong file (1,555-line decomposed
   `run_agent.py`); the pin oracle is the 8,206-line monolith — always
   read via `git show b9aa928:<path>`. Evidence: `cargo test -p

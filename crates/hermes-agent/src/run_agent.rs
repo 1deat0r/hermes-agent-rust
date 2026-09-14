@@ -2,8 +2,8 @@
 //!
 //! PARITY: `run_agent.py` @ b9aa928 (pin lines ~234-371: scaffolding flags,
 //! worker/marker constants, Qwen header builders, session filename
-//! sanitizer, RouterMint UA). Everything here is dependency-free stdlib
-//! logic; higher-layer seams stay out:
+//! sanitizer, RouterMint UA, pool-recovery predicate). Everything here is
+//! stdlib logic plus same-crate pool types; higher-layer seams stay out:
 //! - `_routermint_headers` reads `hermes_cli.__version__` lazily upstream;
 //!   `hermes-agent` must not depend on the higher-layer `hermes-cli`
 //!   crate, so the version arrives as an explicit argument.
@@ -105,6 +105,15 @@ pub fn qwen_platform_tokens(os: &str, arch: &str) -> (String, String) {
 /// same exhausted quota. `now` is explicit, following
 /// [`CredentialPool::has_available`]; upstream reads wall-clock inside
 /// `pool.has_available()`.
+///
+/// NOTE — sibling predicate: the pin also defines the method
+/// `AIAgent._credential_pool_may_recover_rate_limit` (pin ~6007), which
+/// checks only `pool.has_available()` with no `len > 1` gate. The live
+/// fallback path (`agent/conversation_loop.py:4627`) calls this module
+/// function; the loop slice must preserve both shapes. Availability here
+/// is evaluated read-only through the ported pool API (no disk sync);
+/// the decision clock is the caller's `now`, which must be sampled fresh
+/// at the decision point.
 pub fn pool_may_recover_from_rate_limit(pool: Option<&CredentialPool>, now: f64) -> bool {
     match pool {
         None => false,
