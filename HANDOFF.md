@@ -153,6 +153,11 @@ Flaky bitwarden assertion fixed deterministically.
 alibaba×3, ollama clamp, nvidia/vertex recerts, registry 38→41.
 **Ledger: 81/116/8698 (0.91% tracked, 2.33% prod).** Serial 1,856/0.
 
+## timefmt/budget unit done (2026-09-16)
+
+coerce_epoch + warning-ratio ports; 2 recerts; daemon flake noted.
+**Ledger: 92/105/8698 (1.03% tracked, 2.64% prod).** Serial 1,866/0.
+
 ## Anthropic pagination done (2026-09-16)
 
 Cursor loop + shared page fetcher; deepseek/upstage recerts.

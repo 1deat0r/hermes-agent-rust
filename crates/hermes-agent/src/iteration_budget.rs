@@ -1,6 +1,7 @@
 //! Per-agent iteration budget — thread-safe consume/refund counter.
 //!
-//! PARITY: `agent/iteration_budget.py` @ b9aa928 (whole module).
+//! PARITY: `agent/iteration_budget.py` @ 5d59366 (whole module, incl.
+//! `normalize_budget_warning_ratio`).
 //!
 //! Extracted from `run_agent.py`. Each `AIAgent` instance (parent or
 //! subagent) holds an [`IterationBudget`]; the parent's cap comes from
@@ -21,6 +22,36 @@
 //! [`IterationBudget::refund`] so they don't eat into the budget.
 
 use std::sync::Mutex;
+
+/// Coercible warning-ratio input. Upstream takes `Any`; `None` is Rust
+/// `None`, and every other shape maps to a variant (`datetime` has no
+/// meaning here — N/A).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum RatioInput<'a> {
+    /// Python `bool` — always disables, even `True`.
+    Bool(bool),
+    /// Numbers upstream (`float(value)`).
+    Number(f64),
+    /// Strings upstream (`float(value)`).
+    Text(&'a str),
+}
+
+// PARITY: `normalize_budget_warning_ratio` (upstream lines 14-22) — a
+/// finite ratio strictly between zero and one, or `None` (feature off).
+/// `None`/bool → `None`; unparseable → `None`; non-finite or outside
+/// `(0, 1)` → `None`.
+pub fn normalize_budget_warning_ratio(value: Option<RatioInput<'_>>) -> Option<f64> {
+    let ratio = match value? {
+        RatioInput::Bool(_) => return None,
+        RatioInput::Number(n) => n,
+        RatioInput::Text(s) => s.trim().parse::<f64>().unwrap_or(f64::NAN),
+    };
+    if ratio.is_finite() && 0.0 < ratio && ratio < 1.0 {
+        Some(ratio)
+    } else {
+        None
+    }
+}
 
 /// Thread-safe iteration counter for an agent.
 ///

@@ -1,19 +1,19 @@
 {
  "generated_from": "/tmp/hermes-upstream-5d59366",
- "generated_at": "2026-09-17T09:12:15",
+ "generated_at": "2026-09-17T09:26:15",
  "summary": {
   "modules": 8895,
   "total_lines": 2468648,
   "production_modules": 3481,
   "production_lines": 1147748,
   "status_counts": {
-   "done": 88,
-   "partial": 109,
+   "done": 92,
+   "partial": 105,
    "missing": 8698
   },
   "prod_status_counts": {
-   "done": 88,
-   "partial": 109,
+   "done": 92,
+   "partial": 105,
    "missing": 3284
   },
   "packages": {
@@ -37,8 +37,8 @@
     "modules": 283,
     "status": {
      "missing": 236,
-     "partial": 29,
-     "done": 18
+     "partial": 28,
+     "done": 19
     }
    },
    "tests.agent": {
@@ -62,8 +62,8 @@
     "modules": 502,
     "status": {
      "missing": 476,
-     "partial": 18,
-     "done": 8
+     "partial": 17,
+     "done": 9
     }
    },
    "tests.hermes_state": {
@@ -164,8 +164,8 @@
     "modules": 310,
     "status": {
      "missing": 269,
-     "partial": 34,
-     "done": 7
+     "partial": 32,
+     "done": 9
     }
    },
    "tests.conftest": {
@@ -50163,7 +50163,7 @@
   "agent.iteration_budget": {
    "lines": 59,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "ts:apps.desktop.src.store.voice-prefs": {
@@ -50355,7 +50355,7 @@
   "hermes_cli.timefmt": {
    "lines": 58,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "hermes_cli.diagnostics_upload": {
@@ -50651,7 +50651,7 @@
    "imports": [
     "hermes_constants"
    ],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "tools.daemon_pool": {
@@ -50663,7 +50663,7 @@
   "tools.audio_container": {
    "lines": 56,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "tests.tui_gateway.test_session_history_codex_sidecar": {
