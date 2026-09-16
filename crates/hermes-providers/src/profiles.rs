@@ -81,6 +81,7 @@ pub(crate) fn register_builtin_profiles() {
     register_provider(ai_gateway::profile());
     register_provider(alibaba::profile());
     register_provider(alibaba_coding_plan::profile());
+    register_provider(alibaba_coding_plan::cn_profile());
     register_provider(anthropic::profile());
     register_provider(arcee::profile());
     register_provider(azure_foundry::profile());

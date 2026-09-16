@@ -19,6 +19,7 @@ pub mod sqlite_util;
 pub mod timefmt;
 pub mod timeouts;
 pub mod toolset_validation;
+pub mod utf8;
 
 /// PARITY: `hermes_cli.__version__` (upstream `hermes_cli/__init__.py` line 17),
 /// the single string `scripts/release.py` regex-bumps at release time.

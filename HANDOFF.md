@@ -148,12 +148,21 @@ binary_extensions (opaque set) + verify.environment + timeouts.
 Flaky bitwarden assertion fixed deterministically.
 **Ledger: 70/127/8698 (0.79% tracked, 2.01% prod).** Serial 1,844/0.
 
+## Wave B unit 5 done (2026-09-16)
+
+7 smallest-DIFF partials closed: alibaba-coding-plan +CN profile, nvidia
+(4 aliases + prepare_messages strip), vertex (+vertexai), interrupt_compat
+(tool_reason gate), ssl_verify (context-cache seam), verify_hooks
+(docstring-only), hermes_cli.__init__ (new utf8 module, 5 tests). 11 new
+tests. **Ledger: 77/120/8698 (0.87% tracked, 2.21% prod).** Serial 1,855/0.
+
 ## Next actions, in order
 
-1. Wave A: trivial sweep (`__init__` 0–3 LOC, eslint configs, barrels),
-   10–15/commit under `implement` batch mode.
-2. Wave B: partials closure smallest-DIFF first (`agent.lmstudio_reasoning`,
-   `agent.reactions`, `agent.message_content`).
+1. Wave B unit 6: next smallest-DIFF partials (`agent.ssl_guard`,
+   `plugins.model-providers.alibaba.__init__` regional set,
+   `hermes_cli.dashboard_auth.__init__` remainder).
+2. Wave A: trivial sweep (`__init__` 0–3 LOC, eslint configs, barrels —
+   acp/cron-scripts/tui roots need crate-open decision first).
 3. Keep ownership disjoint; commit and publish each logical unit immediately.
 
 ## Archive: session 4da (2026-08-31, pin b9aa928 — superseded)

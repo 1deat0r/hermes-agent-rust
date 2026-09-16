@@ -1,19 +1,19 @@
 {
  "generated_from": "/tmp/hermes-upstream-5d59366",
- "generated_at": "2026-09-16T22:34:46",
+ "generated_at": "2026-09-17T00:05:11",
  "summary": {
   "modules": 8895,
   "total_lines": 2468648,
   "production_modules": 3481,
   "production_lines": 1147748,
   "status_counts": {
-   "done": 70,
-   "partial": 127,
+   "done": 77,
+   "partial": 120,
    "missing": 8698
   },
   "prod_status_counts": {
-   "done": 70,
-   "partial": 127,
+   "done": 77,
+   "partial": 120,
    "missing": 3284
   },
   "packages": {
@@ -37,8 +37,8 @@
     "modules": 283,
     "status": {
      "missing": 236,
-     "partial": 32,
-     "done": 15
+     "partial": 29,
+     "done": 18
     }
    },
    "tests.agent": {
@@ -53,8 +53,8 @@
     "modules": 219,
     "status": {
      "missing": 164,
-     "done": 37,
-     "partial": 18
+     "done": 40,
+     "partial": 15
     }
    },
    "hermes_cli": {
@@ -62,8 +62,8 @@
     "modules": 502,
     "status": {
      "missing": 476,
-     "partial": 20,
-     "done": 6
+     "partial": 19,
+     "done": 7
     }
    },
    "tests.hermes_state": {
@@ -50841,7 +50841,7 @@
    "imports": [
     "utils"
    ],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "agent.trajectory": {
@@ -50853,7 +50853,7 @@
   "agent.ssl_verify": {
    "lines": 56,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "ts:tests-js.bootstrap-installer-stage-timer.test": {
@@ -51084,7 +51084,7 @@
   "agent.interrupt_compat": {
    "lines": 55,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "ts:apps.desktop.src.store.voice-live": {
@@ -53420,7 +53420,7 @@
   "hermes_cli.__init__": {
    "lines": 45,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "hermes_cli.subcommands.hooks": {
@@ -55709,13 +55709,13 @@
   "plugins.model-providers.vertex.__init__": {
    "lines": 34,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "plugins.model-providers.nvidia.__init__": {
    "lines": 34,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "hermes_cli.subcommands.acp": {
@@ -56399,7 +56399,7 @@
   "plugins.model-providers.alibaba-coding-plan.__init__": {
    "lines": 30,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "hermes_cli.setup_hidden_env": {

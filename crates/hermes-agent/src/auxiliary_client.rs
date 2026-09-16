@@ -1011,9 +1011,17 @@ pub fn resolve_auxiliary_tls_verify(
 
 /// The resolved setting together with the warning the source would log.
 ///
-/// PARITY: `resolve_httpx_verify` (`agent/ssl_verify.py` lines 23-65) in its
+/// PARITY: `resolve_httpx_verify` (`agent/ssl_verify.py` @ 5d59366) in its
 /// pure form: insecure coercion first, then the CA bundle precedence chain and
 /// its existence check, then the default.
+///
+/// SEAM (documented, not guessed): the source memoizes one `ssl.SSLContext`
+/// per CA bundle path (`_context_for_ca_bundle`, process-wide) so httpx
+/// transport sharing keys on context identity. This port resolves to the
+/// transport-independent [`AuxiliaryTlsVerify::CaBundle`] path instead; the
+/// HTTP client that consumes it owns context construction and pooling, which
+/// is where cache identity must live. Resolution order, warning text, and
+/// fail-open behavior are identical.
 pub fn auxiliary_tls_verify_resolution(
     ca_bundle: Option<&str>,
     ssl_verify: Option<&AuxiliarySslVerifySetting>,

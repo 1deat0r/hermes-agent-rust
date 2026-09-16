@@ -901,6 +901,17 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   bitwarden `v"` assertion false-positived ~5%/run on random base64 —
   tightened to `"v"` (deterministic). Ledger: **70 done / 127 partial /
   8,698 missing (0.79%)**. Evidence: serial 1,844/0, diff clean.
+- 2026-09-16 (Wave B unit 5): 7 smallest-DIFF partials closed — provider trio
+  (`alibaba-coding-plan` +CN profile, `nvidia` 4 aliases + `prepare_messages`
+  copy-on-write strip via a `nvidia_tool_strip` base hook, `vertex` +`vertexai`
+  alias; registry 37→38 sorted), `agent.interrupt_compat` (`tool_reason` +
+  `_accepts_keyword` gate as caller-declared `accepts_tool_reason`, 2 new
+  tests), `agent.ssl_verify` (SSLContext cache recorded as transport-owner
+  seam), `agent.verify_hooks` (docstring-only drift), `hermes_cli.__init__`
+  (new `hermes-cli::utf8`: codec gate + repaired-only env nudge, 5 tests;
+  stream reconfigure is Python-runtime-only, documented). 11 new tests.
+  Ledger: **77 done / 120 partial / 8,698 missing (0.87%)**. Evidence:
+  serial 1,855/0, diff clean.
 - 2026-08-31 (session 4da): Fifty units across four crates, all red-first:
   batch 1 — the `hermes_cli/main.py` private git-fingerprint helpers
   (`_read_packed_ref`, `_read_git_revision_fingerprint`) into

@@ -1,5 +1,5 @@
 //! Source-derived parity oracle for
-//! `plugins/model-providers/vertex/__init__.py` @ b9aa928.
+//! `plugins/model-providers/vertex/__init__.py` @ 5d59366.
 //!
 //! No dedicated upstream Vertex profile test module exists, so the pinned
 //! source and its shared Gemini transport helper are the oracles. Tier: unit.
@@ -31,7 +31,7 @@ fn vertex_profile_fields_aliases_and_oauth_discovery_match_upstream() {
     assert_eq!(profile.name, "vertex");
     assert_eq!(
         profile.aliases,
-        ["google-vertex", "vertex-ai", "gcp-vertex"]
+        ["google-vertex", "vertex-ai", "gcp-vertex", "vertexai"]
     );
     assert_eq!(profile.api_mode, "chat_completions");
     assert!(profile.display_name.is_empty());
@@ -45,7 +45,7 @@ fn vertex_profile_fields_aliases_and_oauth_discovery_match_upstream() {
     assert_eq!(profile.default_aux_model, "google/gemini-3.6-flash");
     assert!(!profile.supports_model_listing);
     assert!(profile.vertex_thinking);
-    for alias in ["google-vertex", "vertex-ai", "gcp-vertex"] {
+    for alias in ["google-vertex", "vertex-ai", "gcp-vertex", "vertexai"] {
         assert_eq!(get_provider_profile(alias).unwrap().name, "vertex");
     }
 

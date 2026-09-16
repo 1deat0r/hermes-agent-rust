@@ -1,6 +1,7 @@
 //! Verification-loop helpers for the `pre_verify` round-end gate.
 //!
-//! PARITY: `agent/verify_hooks.py` @ b9aa928 (whole module, lines 1-70).
+//! PARITY: `agent/verify_hooks.py` @ 5d59366 (whole module; drift since
+//! b9aa928 is docstring-only, logic identical).
 //!
 //! When the agent has edited code and is about to verify/finish, the loop fires
 //! the `pre_verify` hook (user directives resolved by

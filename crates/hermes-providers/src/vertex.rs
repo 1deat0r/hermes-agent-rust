@@ -1,6 +1,6 @@
 //! Google Vertex AI provider profile.
 //!
-//! PARITY: `plugins/model-providers/vertex/__init__.py` @ b9aa928.
+//! PARITY: `plugins/model-providers/vertex/__init__.py` @ 5d59366.
 //! Vertex uses OAuth2 and an OpenAI-compatible endpoint with no REST catalog.
 
 use crate::base::ProviderProfile;
@@ -11,6 +11,7 @@ pub(crate) fn profile() -> ProviderProfile {
         "google-vertex".into(),
         "vertex-ai".into(),
         "gcp-vertex".into(),
+        "vertexai".into(),
     ];
     profile.api_mode = "chat_completions".into();
     profile.base_url = "https://aiplatform.googleapis.com".into();

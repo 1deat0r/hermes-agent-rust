@@ -1,143 +1,159 @@
 {
+ "agent.__init__": {
+  "retarget_note": "package surface ported 2026-09-16 (lib.rs docs + jiter_preload surface; private-alias visibility divergence documented)",
+  "status": "done"
+ },
  "agent.auxiliary_client": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (10044 -> 7673 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (10044 -> 7673 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "agent.billing_links": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (124 -> 96 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (124 -> 96 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "agent.bounded_response": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (148 -> 102 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (148 -> 102 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "agent.credential_pool": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (3147 -> 2778 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (3147 -> 2778 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "agent.errors": {
-  "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green",
+  "status": "done"
  },
  "agent.file_safety": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (693 -> 550 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (693 -> 550 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "agent.interrupt_compat": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (35 -> 55 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B unit 5): tool_reason + _accepts_keyword gate ported (InterruptTarget::accepts_tool_reason; introspection has no Rust analog, caller-declared); AIAgent-subclass + delegate_tool cases stay pending with those modules; suites green",
+  "status": "done"
  },
  "agent.iteration_budget": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (62 -> 59 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (62 -> 59 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
+ },
+ "agent.jiter_preload": {
+  "retarget_note": "ported 2026-09-16 Wave A batch 1 under mattpocock tdd+implement+code-review: review findings closed (name mirror, PARITY tags, thiserror seam wrapper, eager-call PENDING-with-entry-point)",
+  "status": "done"
  },
  "agent.kanban_stop": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (108 -> 79 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (108 -> 79 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "agent.lmstudio_reasoning": {
-  "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): drift is cosmetic restructure only (ternary folds, docstring trims); logic identical; existing suites re-run green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): drift is cosmetic restructure only (ternary folds, docstring trims); logic identical; existing suites re-run green",
+  "status": "done"
  },
  "agent.manual_compression_feedback": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (120 -> 96 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (120 -> 96 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "agent.markdown_tables": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (309 -> 187 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (309 -> 187 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "agent.message_content": {
-  "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): drift is cosmetic restructure only (ternary folds, docstring trims); logic identical; existing suites re-run green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): drift is cosmetic restructure only (ternary folds, docstring trims); logic identical; existing suites re-run green",
+  "status": "done"
  },
  "agent.monitoring.__init__": {
-  "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green",
+  "status": "done"
  },
  "agent.monitoring.cron_health": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (201 -> 193 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (201 -> 193 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "agent.monitoring.emitter": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (211 -> 176 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (211 -> 176 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "agent.monitoring.events": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (86 -> 78 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (86 -> 78 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "agent.monitoring.gateway_health": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (469 -> 352 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (469 -> 352 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "agent.monitoring.gateway_health_export": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (643 -> 344 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (643 -> 344 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "agent.monitoring.otlp_exporter": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (272 -> 283 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (272 -> 283 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "agent.monitoring.redaction": {
-  "status": "done",
-  "retarget_note": "ported 2026-09-16 Wave B redaction unit: redact_for_egress (live goldens) in hermes-logging; rewired export; redact_bounded added; 5 stale expectations updated to refactor behavior across 4 files; reviews PASS"
+  "retarget_note": "ported 2026-09-16 Wave B redaction unit: redact_for_egress (live goldens) in hermes-logging; rewired export; redact_bounded added; 5 stale expectations updated to refactor behavior across 4 files; reviews PASS",
+  "status": "done"
  },
  "agent.portal_tags": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (144 -> 99 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (144 -> 99 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
+ },
+ "agent.proxy_sources.__init__": {
+  "retarget_note": "pointer surface ported 2026-09-16; iron_proxy backend remains missing",
+  "status": "done"
  },
  "agent.reactions": {
-  "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): drift is cosmetic restructure only (ternary folds, docstring trims); logic identical; existing suites re-run green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): drift is cosmetic restructure only (ternary folds, docstring trims); logic identical; existing suites re-run green",
+  "status": "done"
  },
  "agent.reasoning_summaries": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (67 -> 65 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (67 -> 65 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "agent.redact": {
-  "status": "done",
-  "retarget_note": "extended 2026-09-16 Wave B: REDACTION_UNAVAILABLE + redact_for_egress ported"
+  "retarget_note": "extended 2026-09-16 Wave B: REDACTION_UNAVAILABLE + redact_for_egress ported",
+  "status": "done"
+ },
+ "agent.secret_sources.__init__": {
+  "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green",
+  "status": "done"
  },
  "agent.secret_sources._cache": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (215 -> 191 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (215 -> 191 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "agent.secret_sources.base": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (336 -> 255 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (336 -> 255 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "agent.secret_sources.bitwarden": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (1048 -> 639 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (1048 -> 639 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "agent.secret_sources.command": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (501 -> 383 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (501 -> 383 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "agent.secret_sources.onepassword": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (682 -> 360 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (682 -> 360 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "agent.secret_sources.registry": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (470 -> 419 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (470 -> 419 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "agent.session_activity": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (106 -> 91 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (106 -> 91 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "agent.ssl_guard": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (95 -> 78 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (95 -> 78 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "agent.ssl_verify": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (63 -> 56 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B unit 5): insecure/env-precedence/warning/default arms identical; _context_for_ca_bundle SSLContext cache recorded as transport-owner seam (auxiliary_client resolves to CaBundle path); suites green",
+  "status": "done"
  },
  "agent.think_scrubber": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (396 -> 175 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (396 -> 175 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "agent.tool_result_classification": {
   "status": "done"
@@ -146,640 +162,624 @@
   "status": "done"
  },
  "agent.turn_retry_state": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (92 -> 64 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (92 -> 64 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "agent.verify.__init__": {
-  "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green",
+  "status": "done"
  },
  "agent.verify.environment": {
-  "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): wrapped-shape support already present; 18 tests green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): wrapped-shape support already present; 18 tests green",
+  "status": "done"
  },
  "agent.verify.recipes": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (477 -> 296 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (477 -> 296 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "agent.verify.runner": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (279 -> 255 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (279 -> 255 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "agent.verify_hooks": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (69 -> 56 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B unit 5): drift is docstring-only; logic identical; existing suites green",
+  "status": "done"
+ },
+ "gateway.builtin_hooks.__init__": {
+  "retarget_note": "always-registered contract ported 2026-09-16 (no hook impls at pin)",
+  "status": "done"
  },
  "gateway.cgroup_cleanup": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (81 -> 66 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (81 -> 66 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "gateway.code_skew": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (64 -> 48 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (64 -> 48 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "gateway.cwd_placeholder": {
-  "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): deleted _truthy_env was dead code at old pin (defined line 15, zero call sites); docker-branch fold is a logic-identical conjunction merge; parity tests re-run green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): deleted _truthy_env was dead code at old pin (defined line 15, zero call sites); docker-branch fold is a logic-identical conjunction merge; parity tests re-run green",
+  "status": "done"
  },
  "gateway.platforms._http_client_limits": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (84 -> 47 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (84 -> 47 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "gateway.platforms.qqbot.constants": {
-  "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green",
+  "status": "done"
  },
  "gateway.platforms.qqbot.crypto": {
-  "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16): refactor-only drift (cosmetic restructure, behavior identical); existing parity tests re-run green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16): refactor-only drift (cosmetic restructure, behavior identical); existing parity tests re-run green",
+  "status": "done"
  },
  "gateway.platforms.qqbot.keyboards": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (461 -> 287 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (461 -> 287 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "gateway.platforms.qqbot.utils": {
-  "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): ternary-fold drift only; 10 tests green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): ternary-fold drift only; 10 tests green",
+  "status": "done"
  },
  "gateway.readiness": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (122 -> 108 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (122 -> 108 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "gateway.rich_sent_store": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (83 -> 85 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (83 -> 85 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "gateway.session_stall": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (121 -> 76 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (121 -> 76 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "hermes_cli.__init__": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (92 -> 45 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B unit 5): version literals already at 0.21.3/2026.9.14; _ensure_utf8 portable contract ported as hermes-cli::utf8 (codec gate + repaired-only env nudge; stream reconfigure/reopen is Python-runtime-only, documented); suites green",
+  "status": "done"
  },
  "hermes_cli.build_info": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (51 -> 121 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (51 -> 121 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "hermes_cli.cli_output": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (77 -> 70 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (77 -> 70 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "hermes_cli.colors": {
-  "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16): refactor-only drift (cosmetic restructure, behavior identical); existing parity tests re-run green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16): refactor-only drift (cosmetic restructure, behavior identical); existing parity tests re-run green",
+  "status": "done"
  },
  "hermes_cli.dashboard_auth.__init__": {
-  "status": "partial",
-  "retarget_note": "re-certified at 5d59366 except HTTP-layer siblings; classify_jwks_lookup_error ported w/ 5 oracle tests (2026-09-16)"
+  "retarget_note": "re-certified at 5d59366 except HTTP-layer siblings; classify_jwks_lookup_error ported w/ 5 oracle tests (2026-09-16)",
+  "status": "partial"
  },
  "hermes_cli.dashboard_auth.audit": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (95 -> 73 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (95 -> 73 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "hermes_cli.dashboard_auth.base": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (306 -> 162 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (306 -> 162 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "hermes_cli.dashboard_auth.cookies": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (338 -> 222 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (338 -> 222 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "hermes_cli.dashboard_auth.native_flow": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (297 -> 165 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (297 -> 165 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "hermes_cli.dashboard_auth.prefix": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (232 -> 130 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (232 -> 130 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "hermes_cli.dashboard_auth.public_paths": {
-  "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green",
+  "status": "done"
  },
  "hermes_cli.dashboard_auth.registry": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (81 -> 125 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (81 -> 125 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "hermes_cli.dashboard_auth.token_auth": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (194 -> 96 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (194 -> 96 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "hermes_cli.dashboard_auth.ws_tickets": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (161 -> 97 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (161 -> 97 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "hermes_cli.default_soul": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (76 -> 72 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (76 -> 72 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "hermes_cli.input_sanitize": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (70 -> 54 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (70 -> 54 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "hermes_cli.lifecycle": {
   "status": "done"
  },
  "hermes_cli.main": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (12620 -> 3520 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (12620 -> 3520 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "hermes_cli.managed_scope": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (214 -> 169 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (214 -> 169 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "hermes_cli.model_search": {
-  "status": "done",
-  "retarget_note": "ported 2026-09-16 Wave B: ox-alpha alias row added (data drift) + test; refactor-only remainder"
+  "retarget_note": "ported 2026-09-16 Wave B: ox-alpha alias row added (data drift) + test; refactor-only remainder",
+  "status": "done"
  },
  "hermes_cli.secret_prompt": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (126 -> 98 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (126 -> 98 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "hermes_cli.setup_hidden_env": {
-  "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green",
+  "status": "done"
  },
  "hermes_cli.sqlite_util": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (49 -> 113 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (49 -> 113 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "hermes_cli.timefmt": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (30 -> 58 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (30 -> 58 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "hermes_cli.timeouts": {
-  "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): _configured_timeout parameterization is logic-identical (structure differs, behavior same); 6 tests green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): _configured_timeout parameterization is logic-identical (structure differs, behavior same); 6 tests green",
+  "status": "done"
  },
  "hermes_cli.toolset_validation": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (74 -> 90 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (74 -> 90 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "hermes_constants": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (1481 -> 1293 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (1481 -> 1293 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "hermes_logging": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (800 -> 725 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (800 -> 725 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "hermes_state": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (9996 -> 1662 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (9996 -> 1662 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "hermes_state_common": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (614 -> 1218 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (614 -> 1218 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "hermes_state_portability": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (714 -> 615 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (714 -> 615 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "hermes_state_schema": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (1126 -> 1298 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (1126 -> 1298 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "hermes_state_search": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (2305 -> 1343 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (2305 -> 1343 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "hermes_time": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (135 -> 111 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (135 -> 111 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "model_tools": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (1569 -> 987 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (1569 -> 987 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
+ },
+ "plugins.__init__": {
+  "retarget_note": "package root ported 2026-09-16 (hermes-platforms crate root declares plugins/ scope; review-clean)",
+  "status": "done"
  },
  "plugins.model-providers.actual.__init__": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (89 -> 92 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (89 -> 92 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "plugins.model-providers.ai-gateway.__init__": {
-  "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): early-return restructure is logic-identical; 2 tests green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): early-return restructure is logic-identical; 2 tests green",
+  "status": "done"
  },
  "plugins.model-providers.alibaba-coding-plan.__init__": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (21 -> 30 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B unit 5): added CN profile (own key first + shared fallbacks), intl row unchanged; registry 38 (sorted); suites green",
+  "status": "done"
  },
  "plugins.model-providers.alibaba.__init__": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (13 -> 44 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (13 -> 44 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "plugins.model-providers.anthropic.__init__": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (54 -> 55 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (54 -> 55 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "plugins.model-providers.arcee.__init__": {
-  "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green",
+  "status": "done"
  },
  "plugins.model-providers.azure-foundry.__init__": {
-  "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green",
+  "status": "done"
  },
  "plugins.model-providers.bedrock.__init__": {
-  "status": "done",
-  "retarget_note": "ported 2026-09-16 Wave B: supports_model_listing rename (base flag + 3 profiles + 4 suites); polarity audited per-site after sed inversion caught by tests"
+  "retarget_note": "ported 2026-09-16 Wave B: supports_model_listing rename (base flag + 3 profiles + 4 suites); polarity audited per-site after sed inversion caught by tests",
+  "status": "done"
  },
  "plugins.model-providers.copilot-acp.__init__": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (35 -> 64 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (35 -> 64 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "plugins.model-providers.copilot.__init__": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (74 -> 51 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (74 -> 51 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "plugins.model-providers.custom.__init__": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (103 -> 73 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (103 -> 73 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "plugins.model-providers.deepinfra.__init__": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (81 -> 47 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (81 -> 47 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "plugins.model-providers.deepseek.__init__": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (102 -> 53 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (102 -> 53 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "plugins.model-providers.fireworks.__init__": {
-  "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green",
+  "status": "done"
  },
  "plugins.model-providers.gemini.__init__": {
-  "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): cosmetic-only drift; 3 tests green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): cosmetic-only drift; 3 tests green",
+  "status": "done"
  },
  "plugins.model-providers.gmi.__init__": {
-  "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green",
+  "status": "done"
  },
  "plugins.model-providers.huggingface.__init__": {
-  "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green",
+  "status": "done"
  },
  "plugins.model-providers.kilocode.__init__": {
-  "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green",
+  "status": "done"
  },
  "plugins.model-providers.kimi-coding.__init__": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (121 -> 71 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (121 -> 71 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "plugins.model-providers.minimax.__init__": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (97 -> 61 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (97 -> 61 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "plugins.model-providers.nous.__init__": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (88 -> 76 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (88 -> 76 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "plugins.model-providers.novita.__init__": {
-  "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green",
+  "status": "done"
  },
  "plugins.model-providers.nvidia.__init__": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (21 -> 34 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B unit 5): 4 aliases + NvidiaProviderProfile.prepare_messages copy-on-write strip via nvidia_tool_strip hook (identity fast-path documented as value-equality); suites green",
+  "status": "done"
  },
  "plugins.model-providers.ollama-cloud.__init__": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (89 -> 43 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (89 -> 43 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "plugins.model-providers.openai-codex.__init__": {
-  "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green",
+  "status": "done"
  },
  "plugins.model-providers.qwen-oauth.__init__": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (108 -> 72 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (108 -> 72 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "plugins.model-providers.stepfun.__init__": {
-  "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green",
+  "status": "done"
  },
  "plugins.model-providers.upstage.__init__": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (115 -> 56 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (115 -> 56 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "plugins.model-providers.vertex.__init__": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (75 -> 34 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B unit 5): +vertexai alias; build_extra_body refactor behavior-neutral (vertex_thinking flag already covered); supports_model_listing=False already ported; suites green",
+  "status": "done"
  },
  "plugins.model-providers.xai.__init__": {
-  "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green",
+  "status": "done"
  },
  "plugins.model-providers.xiaomi.__init__": {
-  "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green",
+  "status": "done"
  },
  "plugins.model-providers.zai.__init__": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (127 -> 75 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (127 -> 75 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
+ },
+ "plugins.platforms.a2a.__init__": {
+  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
+  "status": "done"
+ },
+ "plugins.platforms.buzz.__init__": {
+  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
+  "status": "done"
+ },
+ "plugins.platforms.dingtalk.__init__": {
+  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
+  "status": "done"
+ },
+ "plugins.platforms.discord.__init__": {
+  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
+  "status": "done"
+ },
+ "plugins.platforms.email.__init__": {
+  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
+  "status": "done"
+ },
+ "plugins.platforms.feishu.__init__": {
+  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
+  "status": "done"
+ },
+ "plugins.platforms.google_chat.__init__": {
+  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
+  "status": "done"
+ },
+ "plugins.platforms.homeassistant.__init__": {
+  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
+  "status": "done"
+ },
+ "plugins.platforms.irc.__init__": {
+  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
+  "status": "done"
+ },
+ "plugins.platforms.line.__init__": {
+  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
+  "status": "done"
+ },
+ "plugins.platforms.matrix.__init__": {
+  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
+  "status": "done"
+ },
+ "plugins.platforms.mattermost.__init__": {
+  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
+  "status": "done"
+ },
+ "plugins.platforms.ntfy.__init__": {
+  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
+  "status": "done"
+ },
+ "plugins.platforms.photon.__init__": {
+  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
+  "status": "done"
+ },
+ "plugins.platforms.raft.__init__": {
+  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
+  "status": "done"
+ },
+ "plugins.platforms.simplex.__init__": {
+  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
+  "status": "done"
+ },
+ "plugins.platforms.slack.__init__": {
+  "retarget_note": "entry ported 2026-09-16 under mattpocock tdd+review: PluginCtx seam + 2 tests; 13 adapter kwargs deferred to plugins.platforms.slack.adapter (missing, tracked)",
+  "status": "done"
+ },
+ "plugins.platforms.sms.__init__": {
+  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
+  "status": "done"
+ },
+ "plugins.platforms.teams.__init__": {
+  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
+  "status": "done"
+ },
+ "plugins.platforms.telegram.__init__": {
+  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
+  "status": "done"
+ },
+ "plugins.platforms.wecom.__init__": {
+  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
+  "status": "done"
+ },
+ "plugins.platforms.whatsapp.__init__": {
+  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
+  "status": "done"
  },
  "providers.__init__": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (198 -> 468 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (198 -> 468 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "providers.base": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (238 -> 344 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (238 -> 344 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "run_agent": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (8206 -> 1561 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (8206 -> 1561 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "tools.ansi_strip": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (79 -> 83 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (79 -> 83 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "tools.audio_container": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (97 -> 56 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (97 -> 56 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "tools.binary_extensions": {
-  "status": "done",
-  "retarget_note": "ported 2026-09-16 Wave B: OPAQUE_DOCUMENT_EXTENSIONS + has_extension_in + is_pdf_path (3 tests); has_->is_ rename divergence kept+documented"
+  "retarget_note": "ported 2026-09-16 Wave B: OPAQUE_DOCUMENT_EXTENSIONS + has_extension_in + is_pdf_path (3 tests); has_->is_ rename divergence kept+documented",
+  "status": "done"
  },
  "tools.browser_camofox_state": {
-  "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): constants inlined at use-site + re-exported under PLUGIN-COMPAT block that check_compat_pointers.py forbids internal use of; uuid5 digests unchanged; parity tests re-run green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): constants inlined at use-site + re-exported under PLUGIN-COMPAT block that check_compat_pointers.py forbids internal use of; uuid5 digests unchanged; parity tests re-run green",
+  "status": "done"
  },
  "tools.browser_dialog_tool": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (148 -> 132 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (148 -> 132 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "tools.budget_config": {
   "status": "done"
  },
  "tools.clarify_tool": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (266 -> 311 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (266 -> 311 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "tools.close_terminal_tool": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (62 -> 52 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (62 -> 52 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "tools.computer_use.schema": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (353 -> 208 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (353 -> 208 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "tools.credential_files": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (530 -> 366 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (530 -> 366 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "tools.daemon_pool": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (64 -> 56 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (64 -> 56 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "tools.debug_helpers": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (105 -> 56 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (105 -> 56 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "tools.delegation_output_schema": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (151 -> 124 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (151 -> 124 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "tools.desktop_ui": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (40 -> 70 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (40 -> 70 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "tools.env_probe": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (370 -> 255 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (370 -> 255 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "tools.fal_common": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (163 -> 146 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (163 -> 146 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "tools.file_state": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (332 -> 254 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (332 -> 254 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "tools.focus_pane_tool": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (64 -> 76 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (64 -> 76 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "tools.interrupt": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (113 -> 121 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (113 -> 121 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "tools.mcp_dashboard_oauth": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (145 -> 140 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (145 -> 140 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
+ },
+ "tools.mcp_death_supervisor": {
+  "retarget_note": "successor of tools.mcp_stdio_watchdog at 5d59366; prior watchdog port is the starting point, re-certify against supervisor before promoting",
+  "status": "partial"
  },
  "tools.mcp_schema_cache": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (121 -> 126 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (121 -> 126 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "tools.open_preview_tool": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (92 -> 97 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (92 -> 97 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "tools.path_security": {
-  "status": "done",
-  "retarget_note": "ported 2026-09-16 Wave B: has_traversal_component was missing \u2014 TDD-added with 2 tests; PLUGIN-COMPAT logger PENDING with tools.approval"
+  "retarget_note": "ported 2026-09-16 Wave B: has_traversal_component was missing \u2014 TDD-added with 2 tests; PLUGIN-COMPAT logger PENDING with tools.approval",
+  "status": "done"
  },
  "tools.read_extract": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (346 -> 551 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (346 -> 551 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "tools.read_preview_tool": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (94 -> 76 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (94 -> 76 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "tools.read_terminal_tool": {
   "status": "done"
  },
  "tools.registry": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (956 -> 975 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (956 -> 975 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "tools.schema_sanitizer": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (687 -> 386 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (687 -> 386 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "tools.session_search_tool": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (1161 -> 784 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (1161 -> 784 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "tools.skill_provenance": {
-  "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): docstring-only drift; 5 tests green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): docstring-only drift; 5 tests green",
+  "status": "done"
  },
  "tools.slash_confirm": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (167 -> 123 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (167 -> 123 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "tools.terminal_hints": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (170 -> 160 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (170 -> 160 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "tools.thread_context": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (120 -> 74 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (120 -> 74 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "tools.threat_patterns": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (284 -> 153 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (284 -> 153 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "tools.todo_tool": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (335 -> 284 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (335 -> 284 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "tools.tool_backend_helpers": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (311 -> 259 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (311 -> 259 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "tools.tool_output_limits": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (110 -> 64 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (110 -> 64 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "tools.tool_result_storage": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (254 -> 321 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (254 -> 321 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "tools.tts_text_normalize": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (278 -> 219 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (278 -> 219 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "tools.working_diff": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (130 -> 96 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (130 -> 96 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "toolset_distributions": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (358 -> 106 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (358 -> 106 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "toolsets": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (1029 -> 485 LOC); re-certify line-by-line before promoting"
- },
- "utils": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (666 -> 611 LOC); re-certify line-by-line before promoting"
- },
- "agent.secret_sources.__init__": {
-  "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green"
- },
- "tools.mcp_death_supervisor": {
-  "status": "partial",
-  "retarget_note": "successor of tools.mcp_stdio_watchdog at 5d59366; prior watchdog port is the starting point, re-certify against supervisor before promoting"
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (1029 -> 485 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  },
  "ts:apps.desktop.electron.active-runtime-state": {
-  "status": "done",
-  "retarget_note": "ported 2026-09-16 under mattpocock tdd+implement+code-review skills: 9 parity tests (7 oracle + 2 hardening), UTF-16 length parity, seam contracts documented; review findings closed"
+  "retarget_note": "ported 2026-09-16 under mattpocock tdd+implement+code-review skills: 9 parity tests (7 oracle + 2 hardening), UTF-16 length parity, seam contracts documented; review findings closed",
+  "status": "done"
  },
- "agent.jiter_preload": {
-  "status": "done",
-  "retarget_note": "ported 2026-09-16 Wave A batch 1 under mattpocock tdd+implement+code-review: review findings closed (name mirror, PARITY tags, thiserror seam wrapper, eager-call PENDING-with-entry-point)"
- },
- "agent.__init__": {
-  "status": "done",
-  "retarget_note": "package surface ported 2026-09-16 (lib.rs docs + jiter_preload surface; private-alias visibility divergence documented)"
- },
- "agent.proxy_sources.__init__": {
-  "status": "done",
-  "retarget_note": "pointer surface ported 2026-09-16; iron_proxy backend remains missing"
- },
- "gateway.builtin_hooks.__init__": {
-  "status": "done",
-  "retarget_note": "always-registered contract ported 2026-09-16 (no hook impls at pin)"
- },
- "plugins.__init__": {
-  "status": "done",
-  "retarget_note": "package root ported 2026-09-16 (hermes-platforms crate root declares plugins/ scope; review-clean)"
- },
- "plugins.platforms.slack.__init__": {
-  "status": "done",
-  "retarget_note": "entry ported 2026-09-16 under mattpocock tdd+review: PluginCtx seam + 2 tests; 13 adapter kwargs deferred to plugins.platforms.slack.adapter (missing, tracked)"
- },
- "plugins.platforms.a2a.__init__": {
-  "status": "done",
-  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)"
- },
- "plugins.platforms.buzz.__init__": {
-  "status": "done",
-  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)"
- },
- "plugins.platforms.dingtalk.__init__": {
-  "status": "done",
-  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)"
- },
- "plugins.platforms.discord.__init__": {
-  "status": "done",
-  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)"
- },
- "plugins.platforms.email.__init__": {
-  "status": "done",
-  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)"
- },
- "plugins.platforms.feishu.__init__": {
-  "status": "done",
-  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)"
- },
- "plugins.platforms.google_chat.__init__": {
-  "status": "done",
-  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)"
- },
- "plugins.platforms.homeassistant.__init__": {
-  "status": "done",
-  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)"
- },
- "plugins.platforms.irc.__init__": {
-  "status": "done",
-  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)"
- },
- "plugins.platforms.line.__init__": {
-  "status": "done",
-  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)"
- },
- "plugins.platforms.matrix.__init__": {
-  "status": "done",
-  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)"
- },
- "plugins.platforms.mattermost.__init__": {
-  "status": "done",
-  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)"
- },
- "plugins.platforms.ntfy.__init__": {
-  "status": "done",
-  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)"
- },
- "plugins.platforms.photon.__init__": {
-  "status": "done",
-  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)"
- },
- "plugins.platforms.raft.__init__": {
-  "status": "done",
-  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)"
- },
- "plugins.platforms.simplex.__init__": {
-  "status": "done",
-  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)"
- },
- "plugins.platforms.sms.__init__": {
-  "status": "done",
-  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)"
- },
- "plugins.platforms.teams.__init__": {
-  "status": "done",
-  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)"
- },
- "plugins.platforms.telegram.__init__": {
-  "status": "done",
-  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)"
- },
- "plugins.platforms.wecom.__init__": {
-  "status": "done",
-  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)"
- },
- "plugins.platforms.whatsapp.__init__": {
-  "status": "done",
-  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)"
+ "utils": {
+  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (666 -> 611 LOC); re-certify line-by-line before promoting",
+  "status": "partial"
  }
 }

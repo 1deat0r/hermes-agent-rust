@@ -96,6 +96,9 @@ pub struct ProviderProfile {
     pub opencode_go_reasoning: bool,
     /// Route the reasoning configuration through `extra_body.reasoning`.
     pub reasoning_passthrough: bool,
+    /// Strip `name`/`tool_name` from tool messages (NVIDIA NIM's stricter
+    /// ToolMessage schema).
+    pub nvidia_tool_strip: bool,
 }
 
 impl ProviderProfile {
@@ -139,6 +142,7 @@ impl ProviderProfile {
             copilot_reasoning: false,
             opencode_go_reasoning: false,
             reasoning_passthrough: false,
+            nvidia_tool_strip: false,
         }
     }
 
@@ -159,6 +163,9 @@ impl ProviderProfile {
     pub fn prepare_messages(&self, messages: &[Value]) -> Vec<Value> {
         if self.qwen_portal {
             return prepare_qwen_messages(messages);
+        }
+        if self.nvidia_tool_strip {
+            return prepare_nvidia_messages(messages);
         }
         messages.to_vec()
     }
@@ -842,6 +849,43 @@ fn cross_origin_safe_headers(headers: &HeaderMap) -> HeaderMap {
         safe.insert(USER_AGENT, value.clone());
     }
     safe
+}
+
+fn nvidia_message_needs_strip(message: &Value) -> bool {
+    // PARITY: `NvidiaProviderProfile._needs_strip` — a dict with
+    // `role == "tool"` carrying `name` and/or `tool_name`.
+    let Some(object) = message.as_object() else {
+        return false;
+    };
+    object.get("role").and_then(Value::as_str) == Some("tool")
+        && (object.contains_key("name") || object.contains_key("tool_name"))
+}
+
+fn prepare_nvidia_messages(messages: &[Value]) -> Vec<Value> {
+    // PARITY: `NvidiaProviderProfile.prepare_messages` — only tool messages
+    // that lose a field are rebuilt; the rest are cloned as-is (an owned Vec
+    // requires owned elements, so unlike upstream there is no zero-copy fast
+    // path — upstream returns the identical list object, `is`). Values and
+    // input immutability are the asserted contract, not identity.
+    if !messages.iter().any(nvidia_message_needs_strip) {
+        return messages.to_vec();
+    }
+    messages
+        .iter()
+        .map(|message| {
+            if !nvidia_message_needs_strip(message) {
+                return message.clone();
+            }
+            let stripped: Map<String, Value> = message
+                .as_object()
+                .expect("strip-guarded message is an object")
+                .iter()
+                .filter(|(key, _)| *key != "name" && *key != "tool_name")
+                .map(|(key, value)| (key.clone(), value.clone()))
+                .collect();
+            Value::Object(stripped)
+        })
+        .collect()
 }
 
 fn prepare_qwen_messages(messages: &[Value]) -> Vec<Value> {
