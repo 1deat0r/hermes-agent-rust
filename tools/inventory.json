@@ -1,20 +1,20 @@
 {
  "generated_from": "/tmp/hermes-upstream-5d59366",
- "generated_at": "2026-09-16T20:50:35",
+ "generated_at": "2026-09-16T21:03:26",
  "summary": {
   "modules": 8895,
   "total_lines": 2468648,
   "production_modules": 3481,
   "production_lines": 1147748,
   "status_counts": {
-   "done": 34,
+   "done": 55,
    "partial": 142,
-   "missing": 8719
+   "missing": 8698
   },
   "prod_status_counts": {
-   "done": 34,
+   "done": 55,
    "partial": 142,
-   "missing": 3305
+   "missing": 3284
   },
   "packages": {
    "tests.tui_gateway": {
@@ -52,9 +52,9 @@
     "lines": 85849,
     "modules": 219,
     "status": {
-     "missing": 185,
-     "partial": 21,
-     "done": 13
+     "missing": 164,
+     "done": 34,
+     "partial": 21
     }
    },
    "hermes_cli": {
@@ -40739,7 +40739,7 @@
   "plugins.platforms.a2a.__init__": {
    "lines": 98,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "hermes_cli.secret_prompt": {
@@ -58835,7 +58835,7 @@
   "plugins.platforms.photon.__init__": {
    "lines": 4,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "ts:apps.desktop.src.lib.onboarding-enabled": {
@@ -58859,31 +58859,31 @@
   "plugins.platforms.whatsapp.__init__": {
    "lines": 3,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "plugins.platforms.wecom.__init__": {
    "lines": 3,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "plugins.platforms.telegram.__init__": {
    "lines": 3,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "plugins.platforms.teams.__init__": {
    "lines": 3,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "plugins.platforms.sms.__init__": {
    "lines": 3,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "plugins.platforms.slack.__init__": {
@@ -58895,85 +58895,85 @@
   "plugins.platforms.simplex.__init__": {
    "lines": 3,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "plugins.platforms.raft.__init__": {
    "lines": 3,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "plugins.platforms.ntfy.__init__": {
    "lines": 3,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "plugins.platforms.mattermost.__init__": {
    "lines": 3,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "plugins.platforms.matrix.__init__": {
    "lines": 3,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "plugins.platforms.line.__init__": {
    "lines": 3,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "plugins.platforms.irc.__init__": {
    "lines": 3,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "plugins.platforms.homeassistant.__init__": {
    "lines": 3,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "plugins.platforms.google_chat.__init__": {
    "lines": 3,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "plugins.platforms.feishu.__init__": {
    "lines": 3,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "plugins.platforms.email.__init__": {
    "lines": 3,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "plugins.platforms.discord.__init__": {
    "lines": 3,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "plugins.platforms.dingtalk.__init__": {
    "lines": 3,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "plugins.platforms.buzz.__init__": {
    "lines": 3,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "agent.__init__": {

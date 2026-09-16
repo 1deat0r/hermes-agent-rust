@@ -1,7 +1,7 @@
 # Hermes Agent → Hermes Agent Rust Conversion Ledger
 
-**Current strict completion: 0.38% of all tracked upstream modules (34/8895).**
-Production-only strict completion: **0.98%** (34/3481 production modules).
+**Current strict completion: 0.62% of all tracked upstream modules (55/8895).**
+Production-only strict completion: **1.58%** (55/3481 production modules).
 
 > This file is generated from `tools/inventory.json`; update the source ledger in `tools/port_status.json`, regenerate the inventory, then run `python3 tools/conversion_ledger.py`. Only `done` counts toward the percentage. `partial` is intentionally zero credit until its stated parity seams are closed.
 
@@ -9,10 +9,10 @@ Production-only strict completion: **0.98%** (34/3481 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 34 | 142 | 8719 | 0.38% | 913/2,468,648 done LOC |
-| Production modules | 34 | 142 | 3305 | 0.98% | 913/1,147,748 done LOC |
+| All tracked modules | 55 | 142 | 8698 | 0.62% | 1,072/2,468,648 done LOC |
+| Production modules | 55 | 142 | 3284 | 1.58% | 1,072/1,147,748 done LOC |
 
-Inventory source: `/tmp/hermes-upstream-5d59366` at `2026-09-16T20:50:35`.
+Inventory source: `/tmp/hermes-upstream-5d59366` at `2026-09-16T21:03:26`.
 
 ## Definition of 100.00%
 
@@ -1609,79 +1609,79 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `plugins.model-providers.xiaomi.__init__` | production | P4 | 14 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.model-providers.zai.__init__` | production | P4 | 75 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
 | `plugins.observability.langfuse.__init__` | production | P4 | 1,026 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `plugins.platforms.a2a.__init__` | production | P4 | 98 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `plugins.platforms.a2a.__init__` | production | P4 | 98 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.platforms.a2a.adapter` | production | P4 | 852 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.platforms.a2a.protocol` | production | P4 | 514 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.platforms.a2a.security` | production | P4 | 293 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.platforms.a2a.tools` | production | P4 | 369 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `plugins.platforms.buzz.__init__` | production | P4 | 3 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `plugins.platforms.buzz.__init__` | production | P4 | 3 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.platforms.buzz.adapter` | production | P4 | 1,962 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.platforms.buzz.nostr_auth` | production | P4 | 177 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `plugins.platforms.dingtalk.__init__` | production | P4 | 3 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `plugins.platforms.dingtalk.__init__` | production | P4 | 3 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.platforms.dingtalk.adapter` | production | P4 | 774 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.platforms.dingtalk.inbound` | production | P4 | 171 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `plugins.platforms.discord.__init__` | production | P4 | 3 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `plugins.platforms.discord.__init__` | production | P4 | 3 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.platforms.discord.adapter` | production | P4 | 7,158 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.platforms.discord.adapter_media` | production | P4 | 442 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.platforms.discord.ffmpeg_utils` | production | P4 | 32 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.platforms.discord.recovery` | production | P4 | 80 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.platforms.discord.voice_mixer` | production | P4 | 224 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `plugins.platforms.email.__init__` | production | P4 | 3 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `plugins.platforms.email.__init__` | production | P4 | 3 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.platforms.email.adapter` | production | P4 | 815 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `plugins.platforms.feishu.__init__` | production | P4 | 3 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `plugins.platforms.feishu.__init__` | production | P4 | 3 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.platforms.feishu.adapter` | production | P4 | 4,316 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.platforms.feishu.feishu_comment` | production | P4 | 721 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.platforms.feishu.feishu_comment_rules` | production | P4 | 288 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.platforms.feishu.feishu_meeting_invite` | production | P4 | 141 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `plugins.platforms.google_chat.__init__` | production | P4 | 3 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `plugins.platforms.google_chat.__init__` | production | P4 | 3 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.platforms.google_chat.adapter` | production | P4 | 1,772 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.platforms.google_chat.cards` | production | P4 | 190 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.platforms.google_chat.oauth` | production | P4 | 475 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.platforms.google_chat.setup_files` | production | P4 | 162 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `plugins.platforms.homeassistant.__init__` | production | P4 | 3 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `plugins.platforms.homeassistant.__init__` | production | P4 | 3 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.platforms.homeassistant.adapter` | production | P4 | 352 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `plugins.platforms.irc.__init__` | production | P4 | 3 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `plugins.platforms.irc.__init__` | production | P4 | 3 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.platforms.irc.adapter` | production | P4 | 620 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `plugins.platforms.line.__init__` | production | P4 | 3 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `plugins.platforms.line.__init__` | production | P4 | 3 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.platforms.line.adapter` | production | P4 | 993 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `plugins.platforms.matrix.__init__` | production | P4 | 3 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `plugins.platforms.matrix.__init__` | production | P4 | 3 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.platforms.matrix.adapter` | production | P4 | 3,086 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `plugins.platforms.mattermost.__init__` | production | P4 | 3 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `plugins.platforms.mattermost.__init__` | production | P4 | 3 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.platforms.mattermost.adapter` | production | P4 | 728 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `plugins.platforms.ntfy.__init__` | production | P4 | 3 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `plugins.platforms.ntfy.__init__` | production | P4 | 3 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.platforms.ntfy.adapter` | production | P4 | 384 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `plugins.platforms.photon.__init__` | production | P4 | 4 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `plugins.platforms.photon.__init__` | production | P4 | 4 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.platforms.photon.adapter` | production | P4 | 1,578 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.platforms.photon.auth` | production | P4 | 760 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.platforms.photon.cli` | production | P4 | 368 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.platforms.photon.sidecar_paths` | production | P4 | 100 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `plugins.platforms.raft.__init__` | production | P4 | 3 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `plugins.platforms.raft.__init__` | production | P4 | 3 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.platforms.raft.adapter` | production | P4 | 585 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `plugins.platforms.simplex.__init__` | production | P4 | 3 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `plugins.platforms.simplex.__init__` | production | P4 | 3 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.platforms.simplex.adapter` | production | P4 | 678 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.platforms.slack.__init__` | production | P4 | 3 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.platforms.slack.adapter` | production | P4 | 6,660 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.platforms.slack.block_kit` | production | P4 | 602 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `plugins.platforms.sms.__init__` | production | P4 | 3 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `plugins.platforms.sms.__init__` | production | P4 | 3 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.platforms.sms.adapter` | production | P4 | 339 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `plugins.platforms.teams.__init__` | production | P4 | 3 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `plugins.platforms.teams.__init__` | production | P4 | 3 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.platforms.teams.adapter` | production | P4 | 830 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.platforms.teams.summary_writer` | production | P4 | 154 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `plugins.platforms.telegram.__init__` | production | P4 | 3 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `plugins.platforms.telegram.__init__` | production | P4 | 3 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.platforms.telegram.adapter` | production | P4 | 6,798 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.platforms.telegram.inline_picker` | production | P4 | 98 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.platforms.telegram.telegram_context` | production | P4 | 53 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.platforms.telegram.telegram_entities` | production | P4 | 68 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.platforms.telegram.telegram_ids` | production | P4 | 42 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.platforms.telegram.telegram_network` | production | P4 | 305 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `plugins.platforms.wecom.__init__` | production | P4 | 3 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `plugins.platforms.wecom.__init__` | production | P4 | 3 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.platforms.wecom.adapter` | production | P4 | 895 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.platforms.wecom.callback_adapter` | production | P4 | 301 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.platforms.wecom.media` | production | P4 | 349 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.platforms.wecom.send_queue` | production | P4 | 82 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.platforms.wecom.streaming` | production | P4 | 370 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.platforms.wecom.wecom_crypto` | production | P4 | 114 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `plugins.platforms.whatsapp.__init__` | production | P4 | 3 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `plugins.platforms.whatsapp.__init__` | production | P4 | 3 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.platforms.whatsapp.adapter` | production | P4 | 993 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.plugin_loader` | production | P4 | 172 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.plugin_storage` | production | P4 | 46 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |

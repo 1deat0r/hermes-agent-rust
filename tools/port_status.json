@@ -697,5 +697,89 @@
  "plugins.platforms.slack.__init__": {
   "status": "done",
   "retarget_note": "entry ported 2026-09-16 under mattpocock tdd+review: PluginCtx seam + 2 tests; 13 adapter kwargs deferred to plugins.platforms.slack.adapter (missing, tracked)"
+ },
+ "plugins.platforms.a2a.__init__": {
+  "status": "done",
+  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)"
+ },
+ "plugins.platforms.buzz.__init__": {
+  "status": "done",
+  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)"
+ },
+ "plugins.platforms.dingtalk.__init__": {
+  "status": "done",
+  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)"
+ },
+ "plugins.platforms.discord.__init__": {
+  "status": "done",
+  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)"
+ },
+ "plugins.platforms.email.__init__": {
+  "status": "done",
+  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)"
+ },
+ "plugins.platforms.feishu.__init__": {
+  "status": "done",
+  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)"
+ },
+ "plugins.platforms.google_chat.__init__": {
+  "status": "done",
+  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)"
+ },
+ "plugins.platforms.homeassistant.__init__": {
+  "status": "done",
+  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)"
+ },
+ "plugins.platforms.irc.__init__": {
+  "status": "done",
+  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)"
+ },
+ "plugins.platforms.line.__init__": {
+  "status": "done",
+  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)"
+ },
+ "plugins.platforms.matrix.__init__": {
+  "status": "done",
+  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)"
+ },
+ "plugins.platforms.mattermost.__init__": {
+  "status": "done",
+  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)"
+ },
+ "plugins.platforms.ntfy.__init__": {
+  "status": "done",
+  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)"
+ },
+ "plugins.platforms.photon.__init__": {
+  "status": "done",
+  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)"
+ },
+ "plugins.platforms.raft.__init__": {
+  "status": "done",
+  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)"
+ },
+ "plugins.platforms.simplex.__init__": {
+  "status": "done",
+  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)"
+ },
+ "plugins.platforms.sms.__init__": {
+  "status": "done",
+  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)"
+ },
+ "plugins.platforms.teams.__init__": {
+  "status": "done",
+  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)"
+ },
+ "plugins.platforms.telegram.__init__": {
+  "status": "done",
+  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)"
+ },
+ "plugins.platforms.wecom.__init__": {
+  "status": "done",
+  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)"
+ },
+ "plugins.platforms.whatsapp.__init__": {
+  "status": "done",
+  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)"
  }
 }

@@ -112,7 +112,14 @@ Next goal: `docs/long-horizon-101.md` (waves A–D, M1–M7, all-33 lanes).
 
 `hermes-platforms` crate + `plugins/__init__` + slack entry (PluginCtx seam,
 review-clean). **Ledger: 34/142/8719 (0.38% tracked, 0.98% prod).**
-Serial 1,807/0. Next: remaining 19 platform entries (same seam, cheap rows).
+Serial 1,807/0.
+
+## Wave A batch 3 done (2026-09-16)
+
+21 platform entries (all `plugins.platforms.*/__init__` complete).
+**Ledger: 55/142/8698 (0.62% tracked, 1.58% prod).** Serial 1,828/0.
+Next: Wave A remaining trivials (acp/cron-scripts/tui roots need crates;
+evals/skills sweep) or Wave B partials.
 
 ## Next actions, in order
 
