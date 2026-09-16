@@ -1,7 +1,7 @@
 # Hermes Agent → Hermes Agent Rust Conversion Ledger
 
-**Current strict completion: 0.31% of all tracked upstream modules (28/8895).**
-Production-only strict completion: **0.80%** (28/3481 production modules).
+**Current strict completion: 0.36% of all tracked upstream modules (32/8895).**
+Production-only strict completion: **0.92%** (32/3481 production modules).
 
 > This file is generated from `tools/inventory.json`; update the source ledger in `tools/port_status.json`, regenerate the inventory, then run `python3 tools/conversion_ledger.py`. Only `done` counts toward the percentage. `partial` is intentionally zero credit until its stated parity seams are closed.
 
@@ -9,10 +9,10 @@ Production-only strict completion: **0.80%** (28/3481 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 28 | 142 | 8725 | 0.31% | 875/2,468,648 done LOC |
-| Production modules | 28 | 142 | 3311 | 0.80% | 875/1,147,748 done LOC |
+| All tracked modules | 32 | 142 | 8721 | 0.36% | 909/2,468,648 done LOC |
+| Production modules | 32 | 142 | 3307 | 0.92% | 909/1,147,748 done LOC |
 
-Inventory source: `/tmp/hermes-upstream-5d59366` at `2026-09-16T18:53:00`.
+Inventory source: `/tmp/hermes-upstream-5d59366` at `2026-09-16T20:23:48`.
 
 ## Definition of 100.00%
 
@@ -228,7 +228,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `acp_adapter.server` | production | P5 | 1,037 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `acp_adapter.session` | production | P5 | 440 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `acp_adapter.tools` | production | P5 | 840 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `agent.__init__` | production | P2 | 3 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `agent.__init__` | production | P2 | 3 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.account_usage` | production | P2 | 615 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.acp_openai_bridge` | production | P2 | 170 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.activity_tracking` | production | P2 | 138 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
@@ -309,7 +309,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `agent.interrupt_control` | production | P2 | 304 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.interrupt_scope` | production | P2 | 65 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.iteration_budget` | production | P2 | 59 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
-| `agent.jiter_preload` | production | P2 | 29 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `agent.jiter_preload` | production | P2 | 29 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.kanban_stop` | production | P2 | 79 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
 | `agent.lazy_forward` | production | P2 | 29 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.learn_prompt` | production | P2 | 197 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
@@ -383,7 +383,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `agent.provider_projection` | production | P2 | 47 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.provider_registry` | production | P2 | 201 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.proxy_bypass` | production | P2 | 145 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `agent.proxy_sources.__init__` | production | P2 | 1 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `agent.proxy_sources.__init__` | production | P2 | 1 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.proxy_sources.iron_proxy` | production | P2 | 1,044 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.rate_limit_credits` | production | P2 | 190 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.rate_limit_tracker` | production | P2 | 189 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
@@ -690,7 +690,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `gateway.bot_loop_guard` | production | P4 | 141 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `gateway.browser_control_artifacts` | production | P4 | 333 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `gateway.browser_control_broker` | production | P4 | 525 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `gateway.builtin_hooks.__init__` | production | P4 | 1 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `gateway.builtin_hooks.__init__` | production | P4 | 1 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `gateway.cgroup_cleanup` | production | P4 | 66 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
 | `gateway.channel_directory` | production | P4 | 473 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `gateway.code_skew` | production | P4 | 48 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |

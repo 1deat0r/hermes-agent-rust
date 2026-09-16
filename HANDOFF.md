@@ -103,6 +103,11 @@ R3/R4 pointer fixes → unanimous BUILD. Record: `docs/board-review-r2.md`.
 Live validation at close: serial 1,798/0 (195 suites), diff clean.
 Next goal: `docs/long-horizon-101.md` (waves A–D, M1–M7, all-33 lanes).
 
+## Wave A batch 1 done (2026-09-16)
+
+4 rows (`agent.jiter_preload` + 3 package surfaces), review-closed.
+**Ledger: 32/142/8721 (0.36% tracked, 0.92% prod).** Serial 1,805/0.
+
 ## Next actions, in order
 
 1. Wave A: trivial sweep (`__init__` 0–3 LOC, eslint configs, barrels),

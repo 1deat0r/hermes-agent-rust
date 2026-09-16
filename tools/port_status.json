@@ -673,5 +673,21 @@
  "ts:apps.desktop.electron.active-runtime-state": {
   "status": "done",
   "retarget_note": "ported 2026-09-16 under mattpocock tdd+implement+code-review skills: 9 parity tests (7 oracle + 2 hardening), UTF-16 length parity, seam contracts documented; review findings closed"
+ },
+ "agent.jiter_preload": {
+  "status": "done",
+  "retarget_note": "ported 2026-09-16 Wave A batch 1 under mattpocock tdd+implement+code-review: review findings closed (name mirror, PARITY tags, thiserror seam wrapper, eager-call PENDING-with-entry-point)"
+ },
+ "agent.__init__": {
+  "status": "done",
+  "retarget_note": "package surface ported 2026-09-16 (lib.rs docs + jiter_preload surface; private-alias visibility divergence documented)"
+ },
+ "agent.proxy_sources.__init__": {
+  "status": "done",
+  "retarget_note": "pointer surface ported 2026-09-16; iron_proxy backend remains missing"
+ },
+ "gateway.builtin_hooks.__init__": {
+  "status": "done",
+  "retarget_note": "always-registered contract ported 2026-09-16 (no hook impls at pin)"
  }
 }

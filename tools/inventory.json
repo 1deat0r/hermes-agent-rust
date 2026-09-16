@@ -1,20 +1,20 @@
 {
  "generated_from": "/tmp/hermes-upstream-5d59366",
- "generated_at": "2026-09-16T18:53:00",
+ "generated_at": "2026-09-16T20:23:48",
  "summary": {
   "modules": 8895,
   "total_lines": 2468648,
   "production_modules": 3481,
   "production_lines": 1147748,
   "status_counts": {
-   "done": 28,
+   "done": 32,
    "partial": 142,
-   "missing": 8725
+   "missing": 8721
   },
   "prod_status_counts": {
-   "done": 28,
+   "done": 32,
    "partial": 142,
-   "missing": 3311
+   "missing": 3307
   },
   "packages": {
    "tests.tui_gateway": {
@@ -36,9 +36,9 @@
     "lines": 114244,
     "modules": 283,
     "status": {
-     "missing": 239,
+     "missing": 236,
      "partial": 38,
-     "done": 6
+     "done": 9
     }
    },
    "tests.agent": {
@@ -84,9 +84,9 @@
     "lines": 85954,
     "modules": 159,
     "status": {
-     "missing": 148,
+     "missing": 147,
      "partial": 8,
-     "done": 3
+     "done": 4
     }
    },
    "tests.hermes_cli": {
@@ -56577,7 +56577,7 @@
   "agent.jiter_preload": {
    "lines": 29,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "ts:apps.desktop.src.store.layout-dismissed-projects.test": {
@@ -58979,7 +58979,7 @@
   "agent.__init__": {
    "lines": 3,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "ts:apps.desktop.src.components.assistant-ui.embeds.escape-html": {
@@ -59015,7 +59015,7 @@
   "gateway.builtin_hooks.__init__": {
    "lines": 1,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "cron.scripts.__init__": {
@@ -59027,7 +59027,7 @@
   "agent.proxy_sources.__init__": {
    "lines": 1,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "acp_adapter.__init__": {

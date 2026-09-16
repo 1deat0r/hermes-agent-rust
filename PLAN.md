@@ -854,6 +854,14 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   scaffold-test rename, desktop status correction. Next long-horizon goal
   set: `docs/long-horizon-101.md` (waves A–D, all-33-skills lanes M1–M7).
   Full record: `docs/board-review-r2.md`.
+- 2026-09-16 (Wave A batch 1 — long-horizon-101 assault opens): 4 rows done
+  (`agent.jiter_preload` TDD-ported: fail-open idempotent preload seam,
+  name-mirrored, thiserror wrapper; `agent/__init__`,
+  `agent.proxy_sources/__init__`, `gateway/builtin_hooks/__init__` package
+  surfaces). Two-axis code-review closed 8 findings (rename, PARITY tags,
+  error type, tautology, stale pin; seam/test-hook API + visibility kept
+  with documented rationale). Ledger: **32 done / 142 partial / 8,721
+  missing (0.36%)**. Evidence: serial 1,805/0, diff clean.
 - 2026-08-31 (session 4da): Fifty units across four crates, all red-first:
   batch 1 — the `hermes_cli/main.py` private git-fingerprint helpers
   (`_read_packed_ref`, `_read_git_revision_fingerprint`) into
