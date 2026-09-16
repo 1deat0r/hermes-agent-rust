@@ -915,6 +915,10 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   under parallel-binary contention (passes alone/serial; untouched file).
   Ledger: **92 done / 105 partial / 8,698 missing (1.03%)**. Evidence:
   serial 1,866/0, diff clean.
+- 2026-09-16 (Wave B summaries batch): `reasoning_summaries` Any-delta +
+  append/backfill ported (live oracle, reviews PASS); 6 cosmetic recerts.
+  Partials below 100 first time. Ledger: **98 done / 99 partial / 8,698
+  missing (1.10%)**. Evidence: serial 1,868/0, diff clean.
 - 2026-09-16 (Wave B unit 5): 7 smallest-DIFF partials closed — provider trio
   (`alibaba-coding-plan` +CN profile, `nvidia` 4 aliases + `prepare_messages`
   copy-on-write strip via a `nvidia_tool_strip` base hook, `vertex` +`vertexai`

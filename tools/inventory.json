@@ -1,19 +1,19 @@
 {
  "generated_from": "/tmp/hermes-upstream-5d59366",
- "generated_at": "2026-09-17T09:26:15",
+ "generated_at": "2026-09-17T09:52:18",
  "summary": {
   "modules": 8895,
   "total_lines": 2468648,
   "production_modules": 3481,
   "production_lines": 1147748,
   "status_counts": {
-   "done": 92,
-   "partial": 105,
+   "done": 98,
+   "partial": 99,
    "missing": 8698
   },
   "prod_status_counts": {
-   "done": 92,
-   "partial": 105,
+   "done": 98,
+   "partial": 99,
    "missing": 3284
   },
   "packages": {
@@ -37,8 +37,8 @@
     "modules": 283,
     "status": {
      "missing": 236,
-     "partial": 28,
-     "done": 19
+     "partial": 26,
+     "done": 21
     }
    },
    "tests.agent": {
@@ -53,8 +53,8 @@
     "modules": 219,
     "status": {
      "missing": 164,
-     "done": 47,
-     "partial": 8
+     "done": 49,
+     "partial": 6
     }
    },
    "hermes_cli": {
@@ -164,8 +164,8 @@
     "modules": 310,
     "status": {
      "missing": 269,
-     "partial": 32,
-     "done": 9
+     "partial": 30,
+     "done": 11
     }
    },
    "tests.conftest": {
@@ -48592,7 +48592,7 @@
   "agent.reasoning_summaries": {
    "lines": 65,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "agent.interrupt_scope": {
@@ -48690,7 +48690,7 @@
    "imports": [
     "hermes_constants"
    ],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "tools.close_preview_tool": {
@@ -48834,7 +48834,7 @@
   "plugins.model-providers.copilot-acp.__init__": {
    "lines": 64,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "optional-skills.creative.comfyui.tests.conftest": {
@@ -48854,7 +48854,7 @@
   "agent.turn_retry_state": {
    "lines": 64,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "ts:apps.desktop.src.store.provider-wait.test": {
@@ -49498,7 +49498,7 @@
   "plugins.model-providers.minimax.__init__": {
    "lines": 61,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "evals.desktop_bug_campaign.async-report-producer": {
@@ -50657,7 +50657,7 @@
   "tools.daemon_pool": {
    "lines": 56,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "tools.audio_container": {

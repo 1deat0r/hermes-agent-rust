@@ -104,8 +104,8 @@
   "status": "done"
  },
  "agent.reasoning_summaries": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (67 -> 65 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "ported 2026-09-16 autonomous: Any-delta + flatten, append_streamed_reasoning_detail with backfill (live-oracle); signature migrated; reviews PASS"
  },
  "agent.redact": {
   "retarget_note": "extended 2026-09-16 Wave B: REDACTION_UNAVAILABLE + redact_for_egress ported",
@@ -162,8 +162,8 @@
   "status": "done"
  },
  "agent.turn_retry_state": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (92 -> 64 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
  },
  "agent.verify.__init__": {
   "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green",
@@ -409,8 +409,8 @@
   "status": "done"
  },
  "plugins.model-providers.copilot-acp.__init__": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (35 -> 64 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
  },
  "plugins.model-providers.copilot.__init__": {
   "status": "done",
@@ -453,8 +453,8 @@
   "status": "partial"
  },
  "plugins.model-providers.minimax.__init__": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (97 -> 61 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
  },
  "plugins.model-providers.nous.__init__": {
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (88 -> 76 LOC); re-certify line-by-line before promoting",
@@ -644,8 +644,8 @@
   "status": "partial"
  },
  "tools.daemon_pool": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (64 -> 56 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: docstring-only drift; 10 tests green (max_workers peak test timing-sensitive under parallel contention, green serial/alone)"
  },
  "tools.debug_helpers": {
   "status": "done",
@@ -751,8 +751,8 @@
   "status": "partial"
  },
  "tools.tool_output_limits": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (110 -> 64 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
  },
  "tools.tool_result_storage": {
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (254 -> 321 LOC); re-certify line-by-line before promoting",
