@@ -121,6 +121,11 @@ Serial 1,807/0.
 Next: Wave A remaining trivials (acp/cron-scripts/tui roots need crates;
 evals/skills sweep) or Wave B partials.
 
+## Wave B unit 1 done (2026-09-16)
+
+lmstudio_reasoning + reactions + message_content re-certified.
+**Ledger: 58/139/8698 (0.65% tracked, 1.67% prod).** Serial 1,828/0.
+
 ## Next actions, in order
 
 1. Wave A: trivial sweep (`__init__` 0–3 LOC, eslint configs, barrels),

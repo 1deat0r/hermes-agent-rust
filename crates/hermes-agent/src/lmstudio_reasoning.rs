@@ -1,6 +1,6 @@
 //! LM Studio reasoning-effort resolution.
 //!
-//! PARITY: `agent/lmstudio_reasoning.py` @ b9aa928 (whole module, lines 1-61).
+//! PARITY: `agent/lmstudio_reasoning.py` @ 5d59366 (whole module, lines 1-61).
 //!
 //! LM Studio publishes per-model `capabilities.reasoning.allowed_options` (for
 //! example `["off","on"]` for toggle-style models or `["off","minimal","low"]`

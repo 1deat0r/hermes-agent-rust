@@ -36,8 +36,8 @@
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (108 -> 79 LOC); re-certify line-by-line before promoting"
  },
  "agent.lmstudio_reasoning": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (60 -> 40 LOC); re-certify line-by-line before promoting"
+  "status": "done",
+  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): drift is cosmetic restructure only (ternary folds, docstring trims); logic identical; existing suites re-run green"
  },
  "agent.manual_compression_feedback": {
   "status": "partial",
@@ -48,8 +48,8 @@
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (309 -> 187 LOC); re-certify line-by-line before promoting"
  },
  "agent.message_content": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (50 -> 43 LOC); re-certify line-by-line before promoting"
+  "status": "done",
+  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): drift is cosmetic restructure only (ternary folds, docstring trims); logic identical; existing suites re-run green"
  },
  "agent.monitoring.__init__": {
   "status": "done",
@@ -88,8 +88,8 @@
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (144 -> 99 LOC); re-certify line-by-line before promoting"
  },
  "agent.reactions": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (56 -> 42 LOC); re-certify line-by-line before promoting"
+  "status": "done",
+  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): drift is cosmetic restructure only (ternary folds, docstring trims); logic identical; existing suites re-run green"
  },
  "agent.reasoning_summaries": {
   "status": "partial",

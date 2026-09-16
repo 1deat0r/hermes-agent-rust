@@ -1,6 +1,6 @@
 //! Visible-text extraction from chat/Responses message content shapes.
 //!
-//! PARITY: `agent/message_content.py` @ b9aa928 (whole module).
+//! PARITY: `agent/message_content.py` @ 5d59366 (whole module).
 
 use serde_json::Value;
 

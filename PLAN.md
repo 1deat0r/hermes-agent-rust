@@ -873,6 +873,10 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   honestly scoped). Two-axis review: Standards PASS (explicitness over macro),
   Spec 6/6 spot PASS. Ledger: **55 done / 142 partial / 8,698 missing
   (0.62%)**. Evidence: serial 1,828/0, diff clean.
+- 2026-09-16 (Wave B unit 1): `agent.lmstudio_reasoning`, `agent.reactions`,
+  `agent.message_content` re-certified (cosmetic-only drift, suites 8+6+6
+  green, pins updated). Ledger: **58 done / 139 partial / 8,698 missing
+  (0.65%)**. Evidence: serial 1,828/0, diff clean.
 - 2026-08-31 (session 4da): Fifty units across four crates, all red-first:
   batch 1 — the `hermes_cli/main.py` private git-fingerprint helpers
   (`_read_packed_ref`, `_read_git_revision_fingerprint`) into

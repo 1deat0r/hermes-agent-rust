@@ -1,19 +1,19 @@
 {
  "generated_from": "/tmp/hermes-upstream-5d59366",
- "generated_at": "2026-09-16T21:03:26",
+ "generated_at": "2026-09-16T21:15:35",
  "summary": {
   "modules": 8895,
   "total_lines": 2468648,
   "production_modules": 3481,
   "production_lines": 1147748,
   "status_counts": {
-   "done": 55,
-   "partial": 142,
+   "done": 58,
+   "partial": 139,
    "missing": 8698
   },
   "prod_status_counts": {
-   "done": 55,
-   "partial": 142,
+   "done": 58,
+   "partial": 139,
    "missing": 3284
   },
   "packages": {
@@ -37,8 +37,8 @@
     "modules": 283,
     "status": {
      "missing": 236,
-     "partial": 38,
-     "done": 9
+     "partial": 35,
+     "done": 12
     }
    },
    "tests.agent": {
@@ -53951,7 +53951,7 @@
   "agent.message_content": {
    "lines": 43,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "ts:apps.desktop.src.plugins.hermes-bots.dialog-parts": {
@@ -54184,7 +54184,7 @@
   "agent.reactions": {
    "lines": 42,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "ts:apps.shared.src.ansi": {
@@ -54554,7 +54554,7 @@
   "agent.lmstudio_reasoning": {
    "lines": 40,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "agent.auxiliary_health": {

@@ -1,6 +1,6 @@
 //! Token-free detection of user *reactions* to the agent.
 //!
-//! PARITY: `agent/reactions.py` @ b9aa928 (whole module).
+//! PARITY: `agent/reactions.py` @ 5d59366 (whole module).
 //!
 //! Currently the only reaction is `vibe` — an expression of affection or
 //! gratitude toward the agent (`ily`, `<3`, `love you`, `good bot`, a heart
