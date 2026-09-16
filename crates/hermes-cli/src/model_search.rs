@@ -1,6 +1,6 @@
 //! Picker-only search aliases for model ids.
 //!
-//! PARITY: `hermes_cli/model_search.py` @ b9aa928 (whole module, lines 1-52).
+//! PARITY: `hermes_cli/model_search.py` @ 5d59366 (whole module).
 //!
 //! Wire IDs stay unchanged. Some providers report short or brand-less ids (Kimi
 //! Coding's flagship is literally `k3`) that users still search for by the
@@ -14,9 +14,14 @@
 
 use std::collections::BTreeMap;
 
-/// PARITY: `_MODEL_SEARCH_ALIASES` (upstream lines 12-14): lowercased wire id →
-/// extra tokens appended to the search haystack only.
-pub const MODEL_SEARCH_ALIASES: [(&str, &[&str]); 1] = [("k3", &["kimi-k3", "kimi"])];
+/// PARITY: `_MODEL_SEARCH_ALIASES` (upstream lines 6-10): lowercased wire id →
+/// extra tokens appended to the search haystack only. The `x-preview-f-free`
+/// row is OpenCode Zen's "Ox Alpha" stealth model under an opaque preview
+/// slug (upstream comment lines 8-9).
+pub const MODEL_SEARCH_ALIASES: [(&str, &[&str]); 2] = [
+    ("k3", &["kimi-k3", "kimi"]),
+    ("x-preview-f-free", &["ox-alpha", "ox"]),
+];
 
 fn alias_map() -> BTreeMap<&'static str, &'static [&'static str]> {
     MODEL_SEARCH_ALIASES.into_iter().collect()

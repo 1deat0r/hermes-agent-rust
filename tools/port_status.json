@@ -198,8 +198,8 @@
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (461 -> 287 LOC); re-certify line-by-line before promoting"
  },
  "gateway.platforms.qqbot.utils": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (71 -> 39 LOC); re-certify line-by-line before promoting"
+  "status": "done",
+  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): ternary-fold drift only; 10 tests green"
  },
  "gateway.readiness": {
   "status": "partial",
@@ -289,8 +289,8 @@
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (214 -> 169 LOC); re-certify line-by-line before promoting"
  },
  "hermes_cli.model_search": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (50 -> 30 LOC); re-certify line-by-line before promoting"
+  "status": "done",
+  "retarget_note": "ported 2026-09-16 Wave B: ox-alpha alias row added (data drift) + test; refactor-only remainder"
  },
  "hermes_cli.secret_prompt": {
   "status": "partial",
@@ -580,8 +580,8 @@
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (92 -> 97 LOC); re-certify line-by-line before promoting"
  },
  "tools.path_security": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (43 -> 41 LOC); re-certify line-by-line before promoting"
+  "status": "done",
+  "retarget_note": "ported 2026-09-16 Wave B: has_traversal_component was missing \u2014 TDD-added with 2 tests; PLUGIN-COMPAT logger PENDING with tools.approval"
  },
  "tools.read_extract": {
   "status": "partial",
@@ -607,8 +607,8 @@
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (1161 -> 784 LOC); re-certify line-by-line before promoting"
  },
  "tools.skill_provenance": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (78 -> 44 LOC); re-certify line-by-line before promoting"
+  "status": "done",
+  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): docstring-only drift; 5 tests green"
  },
  "tools.slash_confirm": {
   "status": "partial",

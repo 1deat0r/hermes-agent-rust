@@ -126,6 +126,12 @@ evals/skills sweep) or Wave B partials.
 lmstudio_reasoning + reactions + message_content re-certified.
 **Ledger: 58/139/8698 (0.65% tracked, 1.67% prod).** Serial 1,828/0.
 
+## Wave B unit 2 done (2026-09-16)
+
+model_search (data) + path_security (missing fn) + skill_provenance +
+qqbot.utils (cosmetic). **Ledger: 62/135/8698 (0.70% tracked, 1.78%
+prod).** Serial 1,831/0.
+
 ## Next actions, in order
 
 1. Wave A: trivial sweep (`__init__` 0–3 LOC, eslint configs, barrels),

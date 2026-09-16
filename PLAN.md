@@ -877,6 +877,11 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   `agent.message_content` re-certified (cosmetic-only drift, suites 8+6+6
   green, pins updated). Ledger: **58 done / 139 partial / 8,698 missing
   (0.65%)**. Evidence: serial 1,828/0, diff clean.
+- 2026-09-16 (Wave B unit 2): `hermes_cli.model_search` (ox-alpha data drift
+  + test), `tools.path_security` (missing `has_traversal_component`
+  TDD-added; compat logger pending with approval), `tools.skill_provenance`
+  + `qqbot.utils` re-certified cosmetic. Ledger: **62 done / 135 partial /
+  8,698 missing (0.70%)**. Evidence: serial 1,831/0, diff clean.
 - 2026-08-31 (session 4da): Fifty units across four crates, all red-first:
   batch 1 — the `hermes_cli/main.py` private git-fingerprint helpers
   (`_read_packed_ref`, `_read_git_revision_fingerprint`) into

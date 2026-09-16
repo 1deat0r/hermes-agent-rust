@@ -17,7 +17,21 @@ fn a_brand_less_wire_id_gains_the_sibling_tokens() {
     // Case-insensitive lookup, and the wire id keeps its own spelling because
     // the search haystack must never rewrite what is sent to the provider.
     assert_eq!(model_search_text(" K3 "), "K3 kimi-k3 kimi");
-    assert_eq!(MODEL_SEARCH_ALIASES, [("k3", &["kimi-k3", "kimi"][..])]);
+    assert_eq!(
+        MODEL_SEARCH_ALIASES,
+        [
+            ("k3", &["kimi-k3", "kimi"][..]),
+            ("x-preview-f-free", &["ox-alpha", "ox"][..])
+        ]
+    );
+}
+
+/// PARITY @ 5d59366: OpenCode Zen's "Ox Alpha" stealth model is served under
+/// the opaque preview slug — users find it by its public codename.
+#[test]
+fn opaque_preview_slug_gains_the_public_codename_tokens() {
+    assert_eq!(model_search_text("x-preview-f-free"), "x-preview-f-free ox-alpha ox");
+    assert_eq!(model_alias_canonical("x-preview-f-free"), "ox-alpha");
 }
 
 #[test]

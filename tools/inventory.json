@@ -1,19 +1,19 @@
 {
  "generated_from": "/tmp/hermes-upstream-5d59366",
- "generated_at": "2026-09-16T21:15:35",
+ "generated_at": "2026-09-16T21:30:08",
  "summary": {
   "modules": 8895,
   "total_lines": 2468648,
   "production_modules": 3481,
   "production_lines": 1147748,
   "status_counts": {
-   "done": 58,
-   "partial": 139,
+   "done": 62,
+   "partial": 135,
    "missing": 8698
   },
   "prod_status_counts": {
-   "done": 58,
-   "partial": 139,
+   "done": 62,
+   "partial": 135,
    "missing": 3284
   },
   "packages": {
@@ -62,8 +62,8 @@
     "modules": 502,
     "status": {
      "missing": 476,
-     "partial": 22,
-     "done": 4
+     "partial": 21,
+     "done": 5
     }
    },
    "tests.hermes_state": {
@@ -85,8 +85,8 @@
     "modules": 159,
     "status": {
      "missing": 147,
-     "partial": 8,
-     "done": 4
+     "partial": 7,
+     "done": 5
     }
    },
    "tests.hermes_cli": {
@@ -164,8 +164,8 @@
     "modules": 310,
     "status": {
      "missing": 269,
-     "partial": 38,
-     "done": 3
+     "partial": 36,
+     "done": 5
     }
    },
    "tests.conftest": {
@@ -53598,7 +53598,7 @@
   "tools.skill_provenance": {
    "lines": 44,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "tests.tools.test_terminal_tool_exception_redaction": {
@@ -54262,7 +54262,7 @@
   "tools.path_security": {
    "lines": 41,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "tests.tools.test_truncation_footer_sandbox_paths": {
@@ -54768,7 +54768,7 @@
   "gateway.platforms.qqbot.utils": {
    "lines": 39,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "agent.message_metadata": {
@@ -56411,7 +56411,7 @@
   "hermes_cli.model_search": {
    "lines": 30,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "hermes_cli.colors": {
