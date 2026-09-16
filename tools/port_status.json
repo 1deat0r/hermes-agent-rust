@@ -81,7 +81,7 @@
  },
  "agent.monitoring.redaction": {
   "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (71 -> 45 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "DEFERRED-UNIT at 5d59366 (2026-09-16): upstream refactored secrets to redact_for_egress (20-char bearer floor, fail-closed) + added redact_bounded; Rust still runs the old inline sweep. Port redact_for_egress into hermes-logging, add redact_bounded, rewire. Own unit."
  },
  "agent.portal_tags": {
   "status": "partial",
@@ -357,8 +357,8 @@
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (89 -> 92 LOC); re-certify line-by-line before promoting"
  },
  "plugins.model-providers.ai-gateway.__init__": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (43 -> 28 LOC); re-certify line-by-line before promoting"
+  "status": "done",
+  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): early-return restructure is logic-identical; 2 tests green"
  },
  "plugins.model-providers.alibaba-coding-plan.__init__": {
   "status": "partial",
@@ -381,8 +381,8 @@
   "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green"
  },
  "plugins.model-providers.bedrock.__init__": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (30 -> 18 LOC); re-certify line-by-line before promoting"
+  "status": "done",
+  "retarget_note": "ported 2026-09-16 Wave B: supports_model_listing rename (base flag + 3 profiles + 4 suites); polarity audited per-site after sed inversion caught by tests"
  },
  "plugins.model-providers.copilot-acp.__init__": {
   "status": "partial",
@@ -409,8 +409,8 @@
   "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green"
  },
  "plugins.model-providers.gemini.__init__": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (61 -> 41 LOC); re-certify line-by-line before promoting"
+  "status": "done",
+  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): cosmetic-only drift; 3 tests green"
  },
  "plugins.model-providers.gmi.__init__": {
   "status": "done",

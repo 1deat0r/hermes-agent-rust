@@ -59,8 +59,10 @@ pub struct ProviderProfile {
     pub default_aux_model: String,
     /// Use Actual Computer's environment-aware `/models` catalog hook.
     pub actual_catalog: bool,
-    /// Disable REST model discovery when a provider uses a separate SDK.
-    pub models_fetch_disabled: bool,
+    // PARITY: `supports_model_listing` (providers/base.py @ 5d59366) —
+    // True → REST catalog probe; False → `fetch_models` returns None
+    // without a network call (catalog comes from an SDK/subprocess).
+    pub supports_model_listing: bool,
     /// Select a provider-specific model-catalog request shape.
     pub models_fetch_mode: ModelsFetchMode,
     /// Translate Hermes reasoning into Gemini's native thinking config.
@@ -120,7 +122,7 @@ impl ProviderProfile {
             default_max_tokens: None,
             default_aux_model: String::new(),
             actual_catalog: false,
-            models_fetch_disabled: false,
+            supports_model_listing: true,
             models_fetch_mode: ModelsFetchMode::Standard,
             gemini_thinking: false,
             vertex_thinking: false,
@@ -275,9 +277,9 @@ impl ProviderProfile {
             return None;
         }
 
-        // PARITY: BedrockProfile overrides the upstream method and always
-        // returns None because model discovery uses the AWS SDK, not REST.
-        if self.models_fetch_disabled {
+        // PARITY: `if not self.supports_model_listing: return None`
+        // (providers/base.py `fetch_models` @ 5d59366).
+        if !self.supports_model_listing {
             return None;
         }
 

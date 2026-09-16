@@ -132,6 +132,11 @@ model_search (data) + path_security (missing fn) + skill_provenance +
 qqbot.utils (cosmetic). **Ledger: 62/135/8698 (0.70% tracked, 1.78%
 prod).** Serial 1,831/0.
 
+## Wave B unit 3 done (2026-09-16)
+
+bedrock rename + ai-gateway/gemini recerts; redaction scoped own unit.
+**Ledger: 65/132/8698 (0.73% tracked, 1.87% prod).** Serial 1,831/0.
+
 ## Next actions, in order
 
 1. Wave A: trivial sweep (`__init__` 0–3 LOC, eslint configs, barrels),

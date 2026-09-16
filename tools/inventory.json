@@ -1,19 +1,19 @@
 {
  "generated_from": "/tmp/hermes-upstream-5d59366",
- "generated_at": "2026-09-16T21:30:08",
+ "generated_at": "2026-09-16T21:39:54",
  "summary": {
   "modules": 8895,
   "total_lines": 2468648,
   "production_modules": 3481,
   "production_lines": 1147748,
   "status_counts": {
-   "done": 62,
-   "partial": 135,
+   "done": 65,
+   "partial": 132,
    "missing": 8698
   },
   "prod_status_counts": {
-   "done": 62,
-   "partial": 135,
+   "done": 65,
+   "partial": 132,
    "missing": 3284
   },
   "packages": {
@@ -53,8 +53,8 @@
     "modules": 219,
     "status": {
      "missing": 164,
-     "done": 34,
-     "partial": 21
+     "done": 37,
+     "partial": 18
     }
    },
    "hermes_cli": {
@@ -54348,7 +54348,7 @@
   "plugins.model-providers.gemini.__init__": {
    "lines": 41,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "gateway.platforms.qqbot.constants": {
@@ -56707,7 +56707,7 @@
   "plugins.model-providers.ai-gateway.__init__": {
    "lines": 28,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "hermes_cli.subcommands.egress": {
@@ -58021,7 +58021,7 @@
   "plugins.model-providers.bedrock.__init__": {
    "lines": 18,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "hermes_cli.subcommands.insights": {

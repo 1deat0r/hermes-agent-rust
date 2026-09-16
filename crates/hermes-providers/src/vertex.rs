@@ -18,7 +18,7 @@ pub(crate) fn profile() -> ProviderProfile {
     profile.default_aux_model = "google/gemini-3.6-flash".into();
     // PARITY: VertexProfile.fetch_models() always returns None because its
     // setup wizard owns the curated model list rather than REST discovery.
-    profile.models_fetch_disabled = true;
+    profile.supports_model_listing = false;
     // PARITY: VertexProfile always emits Gemini's nested OpenAI-compatible
     // `extra_body.google.thinking_config` shape.
     profile.vertex_thinking = true;

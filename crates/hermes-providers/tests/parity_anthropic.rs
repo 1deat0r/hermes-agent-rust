@@ -81,7 +81,7 @@ fn anthropic_profile_fields_and_empty_key_short_circuit_match_upstream() {
     assert!(profile.default_headers.is_empty());
     assert!(profile.fallback_models.is_empty());
     assert_eq!(profile.default_aux_model, "claude-haiku-4-5-20251001");
-    assert!(!profile.models_fetch_disabled);
+    assert!(profile.supports_model_listing);
     for alias in ["claude", "claude-oauth", "claude-code"] {
         assert_eq!(get_provider_profile(alias).unwrap().name, "anthropic");
     }

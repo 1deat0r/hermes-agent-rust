@@ -881,7 +881,13 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   + test), `tools.path_security` (missing `has_traversal_component`
   TDD-added; compat logger pending with approval), `tools.skill_provenance`
   + `qqbot.utils` re-certified cosmetic. Ledger: **62 done / 135 partial /
-  8,698 missing (0.70%)**. Evidence: serial 1,831/0, diff clean.
+  8,698   missing (0.70%)**. Evidence: serial 1,831/0, diff clean.
+- 2026-09-16 (Wave B unit 3): bedrock `supports_model_listing` rename
+  (mechanical sed inverted 4 test polarities — caught by tests, audited
+  per-site), ai-gateway + gemini re-certified cosmetic. Redaction scoped
+  as its own unit (upstream `redact_for_egress` refactor + new
+  `redact_bounded`). Ledger: **65 done / 132 partial / 8,698 missing
+  (0.73%)**. Evidence: serial 1,831/0, diff clean.
 - 2026-08-31 (session 4da): Fifty units across four crates, all red-first:
   batch 1 — the `hermes_cli/main.py` private git-fingerprint helpers
   (`_read_packed_ref`, `_read_git_revision_fingerprint`) into

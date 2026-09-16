@@ -43,7 +43,7 @@ fn vertex_profile_fields_aliases_and_oauth_discovery_match_upstream() {
     assert!(profile.default_headers.is_empty());
     assert!(profile.fallback_models.is_empty());
     assert_eq!(profile.default_aux_model, "google/gemini-3.6-flash");
-    assert!(profile.models_fetch_disabled);
+    assert!(!profile.supports_model_listing);
     assert!(profile.vertex_thinking);
     for alias in ["google-vertex", "vertex-ai", "gcp-vertex"] {
         assert_eq!(get_provider_profile(alias).unwrap().name, "vertex");

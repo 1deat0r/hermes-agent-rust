@@ -40,7 +40,7 @@ fn copilot_acp_delegates_model_listing_and_is_listed_once() {
     // PARITY: CopilotACPProfile.fetch_models() always returns None because
     // model listing is handled by the external ACP subprocess.
     assert_eq!(profile.fetch_models(None, None, 8.0), None);
-    assert!(profile.models_fetch_disabled);
+    assert!(!profile.supports_model_listing);
     assert_eq!(
         get_provider_profile("github-copilot-acp").unwrap().name,
         "copilot-acp"

@@ -18,6 +18,6 @@ pub(crate) fn profile() -> ProviderProfile {
     profile.auth_type = "external_process".into();
     // PARITY: CopilotACPProfile.fetch_models() always returns None because
     // model listing is handled by the ACP subprocess.
-    profile.models_fetch_disabled = true;
+    profile.supports_model_listing = false;
     profile
 }
