@@ -40,7 +40,10 @@ user countermands them.
 `mattpocock/skills` @ `959a8e9f1edc3adbe2f7e3054bb6fbefa6696260` is
 installed as a copy-snapshot in `~/.config/opencode/skills/` (33 skills:
 engineering 17 + productivity 8 + in-progress 8; deprecated/misc skipped
-per upstream's own installer). Repo config: `docs/agents/issue-tracker.md`,
+per upstream's own installer). Harness caveat (2026-09-16, R1-adjudicated):
+this harness's `skill`-tool registry snapshot does not list newly added
+skill dirs — installed skills are consumed by direct file read until the
+registry refreshes. Repo config: `docs/agents/issue-tracker.md`,
 `triage-labels.md`, `domain.md` + `AGENTS.md` Agent-skills block (via
 `setup-matt-pocock-skills`). Proven on `ts:apps.desktop.electron.
 active-runtime-state` (2026-09-16): seam-agreed TDD → 9 tests →

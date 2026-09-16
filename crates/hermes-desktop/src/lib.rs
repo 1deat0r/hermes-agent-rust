@@ -22,7 +22,8 @@
 //!
 //! ## Status
 //!
-//! Scaffold only: no `ts:` row is `done` yet. Each Electron module ports
+//! `ts:apps.desktop.electron.active-runtime-state` is `done`; all other
+//! `ts:` rows remain `missing`. Each Electron module ports
 //! bottom-up (backend-child/lifecycle first) with upstream-derived parity
 //! tests (`apps/desktop/electron/*.test.ts` are the oracles) before any
 //! renderer work. One module per commit, TDD, tests-first.

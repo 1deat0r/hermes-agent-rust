@@ -96,11 +96,19 @@ First unit under the skills: `ts:apps.desktop.electron.active-runtime-state`
 → done (9 tests, review-closed). **Ledger: 28/142/8725 (0.31% tracked,
 0.80% prod).** Validation: serial 1,798/0, diff clean.
 
+## Board gate R2: PASSED UNANIMOUS (R1→R4, 2026-09-16)
+
+4B/1C → S2 line fixed → S3 kills died live → R2 quote + S6 cold-read →
+R3/R4 pointer fixes → unanimous BUILD. Record: `docs/board-review-r2.md`.
+Live validation at close: serial 1,798/0 (195 suites), diff clean.
+Next goal: `docs/long-horizon-101.md` (waves A–D, M1–M7, all-33 lanes).
+
 ## Next actions, in order
 
-1. Continue re-certification bottom-up under mattpocock `tdd`+`code-review`
-   (`agent.lmstudio_reasoning`, `agent.reactions`, `agent.message_content`).
-2. Next P6 Electron module (`api-transport.ts`, 207 LOC) under the same loop.
+1. Wave A: trivial sweep (`__init__` 0–3 LOC, eslint configs, barrels),
+   10–15/commit under `implement` batch mode.
+2. Wave B: partials closure smallest-DIFF first (`agent.lmstudio_reasoning`,
+   `agent.reactions`, `agent.message_content`).
 3. Keep ownership disjoint; commit and publish each logical unit immediately.
 
 ## Archive: session 4da (2026-08-31, pin b9aa928 — superseded)

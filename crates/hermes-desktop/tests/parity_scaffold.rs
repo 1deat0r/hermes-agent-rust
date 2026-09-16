@@ -4,7 +4,7 @@
 use hermes_desktop::scaffold_marker;
 
 #[test]
-fn scaffold_declares_pin_and_empty_surface() {
+fn scaffold_declares_pin_and_ported_surface() {
     let marker = scaffold_marker();
     assert!(marker.contains("5d59366"), "{marker}");
     assert!(marker.contains("active_runtime_state ported"), "{marker}");

@@ -846,6 +846,14 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   + 2 hardening; review closed UTF-16 length parity + seam contracts).
   Ledger: **28 done / 142 partial / 8,725 missing (0.31%)**. Evidence:
   serial 1,798 passed / 0 failed; `git diff --check` clean.
+- 2026-09-16 (board gate R2 on skills install + next goal): 5-seat R1 →
+  4B/1C; S2 disclosure line CONFIRMED; S3's five kill vectors all died live
+  (snapshot is HEAD, hardening labeled, UTF-16 in code, ledger entry
+  exists); R2 verify-by-quote + S6 cold-read → R3/R4 unanimous BUILD after
+  pointer-level record fixes. Revisions: registry-staleness caveat,
+  scaffold-test rename, desktop status correction. Next long-horizon goal
+  set: `docs/long-horizon-101.md` (waves A–D, all-33-skills lanes M1–M7).
+  Full record: `docs/board-review-r2.md`.
 - 2026-08-31 (session 4da): Fifty units across four crates, all red-first:
   batch 1 — the `hermes_cli/main.py` private git-fingerprint helpers
   (`_read_packed_ref`, `_read_git_revision_fingerprint`) into
