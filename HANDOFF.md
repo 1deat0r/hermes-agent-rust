@@ -153,10 +153,10 @@ Flaky bitwarden assertion fixed deterministically.
 Any-delta + append/backfill ported; 6 recerts; partials <100.
 **Ledger: 98/99/8698 (1.10% tracked, 2.82% prod).** Serial 1,868/0.
 
-## Summaries batch done (2026-09-16)
+## CLI batch done (2026-09-16)
 
-Any-delta + append/backfill ported; 6 recerts; partials <100.
-**Ledger: 98/99/8698 (1.10% tracked, 2.82% prod).** Serial 1,868/0.
+line_input + soul template ports; 3 recerts.
+**Ledger: 103/94/8698 (1.16% tracked, 2.96% prod).** Serial 1,873/0.
 
 ## Wave B provider batch done (2026-09-16)
 

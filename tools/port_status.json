@@ -190,8 +190,8 @@
   "status": "done"
  },
  "gateway.cgroup_cleanup": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (81 -> 66 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
  },
  "gateway.code_skew": {
   "status": "done",
@@ -242,8 +242,8 @@
   "status": "partial"
  },
  "hermes_cli.cli_output": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (77 -> 70 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "ported 2026-09-16 autonomous: line_input TTY-gated triple-fallback (4 tests); KI/EOF propagate"
  },
  "hermes_cli.colors": {
   "retarget_note": "re-certified at 5d59366 (2026-09-16): refactor-only drift (cosmetic restructure, behavior identical); existing parity tests re-run green",
@@ -290,8 +290,8 @@
   "status": "partial"
  },
  "hermes_cli.default_soul": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (76 -> 72 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "ported 2026-09-16 autonomous: new DEFAULT_SOUL_MD + 2 legacy entries (prev-gen + ASCII-dashed byte-exact); 5 tests"
  },
  "hermes_cli.input_sanitize": {
   "status": "done",
@@ -656,8 +656,8 @@
   "status": "partial"
  },
  "tools.desktop_ui": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (40 -> 70 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
  },
  "tools.env_probe": {
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (370 -> 255 LOC); re-certify line-by-line before promoting",
@@ -735,8 +735,8 @@
   "status": "partial"
  },
  "tools.thread_context": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (120 -> 74 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
  },
  "tools.threat_patterns": {
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (284 -> 153 LOC); re-certify line-by-line before promoting",

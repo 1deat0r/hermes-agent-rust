@@ -169,3 +169,55 @@ fn prompt_yes_no_hint_and_default_semantics() {
     let mut read_line = move || queue.next().flatten();
     assert!(!prompt_yes_no_with("ok?", true, &mut read_line));
 }
+
+// ── line_input ─────────────────────────────────────────────────────────────
+// PARITY @ 5d59366: TTY-gated fancy reader with triple fallback (non-TTY,
+// missing prompt_toolkit, runtime failure → plain reader; KI/EOF re-raise).
+
+use hermes_cli::cli_output::{line_input_from, LineInputFailure};
+
+#[test]
+fn line_input_non_tty_uses_plain_reader() {
+    let out = line_input_from(
+        "name: ",
+        false,
+        &mut || Err(LineInputFailure::Unavailable),
+        &mut || Some("plain".to_string()),
+    );
+    assert_eq!(out, Some("plain".to_string()));
+}
+
+#[test]
+fn line_input_fancy_success_wins_on_tty() {
+    let out = line_input_from(
+        "name: ",
+        true,
+        &mut || Ok(Some("fancy".to_string())),
+        &mut || Some("plain".to_string()),
+    );
+    assert_eq!(out, Some("fancy".to_string()));
+}
+
+#[test]
+fn line_input_fancy_runtime_failure_falls_back() {
+    let out = line_input_from(
+        "name: ",
+        true,
+        &mut || Err(LineInputFailure::Runtime("EINVAL".to_string())),
+        &mut || Some("fallback".to_string()),
+    );
+    assert_eq!(out, Some("fallback".to_string()));
+}
+
+#[test]
+fn line_input_interrupt_and_eof_propagate() {
+    for failure in [LineInputFailure::Interrupted, LineInputFailure::Eof] {
+        let out = line_input_from(
+            "name: ",
+            true,
+            &mut || Err(failure.clone()),
+            &mut || Some("must-not-use".to_string()),
+        );
+        assert_eq!(out, None);
+    }
+}

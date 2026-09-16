@@ -919,6 +919,9 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   append/backfill ported (live oracle, reviews PASS); 6 cosmetic recerts.
   Partials below 100 first time. Ledger: **98 done / 99 partial / 8,698
   missing (1.10%)**. Evidence: serial 1,868/0, diff clean.
+- 2026-09-16 (Wave B cli batch): `line_input` triple-fallback + new
+  soul template/legacy entries ported; 3 cosmetic recerts. Ledger: **103
+  done / 94 partial / 8,698 missing (1.16%)**. Evidence: serial 1,873/0.
 - 2026-09-16 (Wave B unit 5): 7 smallest-DIFF partials closed — provider trio
   (`alibaba-coding-plan` +CN profile, `nvidia` 4 aliases + `prepare_messages`
   copy-on-write strip via a `nvidia_tool_strip` base hook, `vertex` +`vertexai`

@@ -88,6 +88,48 @@ pub fn prompt_from(
     }
 }
 
+/// Fancy-reader failure modes for [`line_input_from`].
+///
+/// PARITY: `line_input` except arms (upstream lines 44-50) — KI/EOF
+/// re-raise (here: `None`, matching the prompt seam's EOF convention);
+/// any other prompt_toolkit runtime failure degrades to the plain reader.
+#[derive(Debug, Clone, PartialEq)]
+pub enum LineInputFailure {
+    /// prompt_toolkit missing (`ImportError`) — use the plain reader.
+    Unavailable,
+    /// prompt_toolkit present but failed at runtime (e.g. macOS kqueue
+    /// EINVAL on fd 0) — use the plain reader.
+    Runtime(String),
+    /// `KeyboardInterrupt` — propagates (caller sees `None`).
+    Interrupted,
+    /// `EOFError` — propagates (caller sees `None`).
+    Eof,
+}
+
+/// Read non-secret text with cursor editing on a real TTY.
+///
+/// PARITY: `line_input` (upstream lines 29-50 @ 5d59366). Setup commands
+/// run outside the chat's prompt_toolkit app, so a short-lived fancy
+/// prompt is safe; redirected stdio keeps the plain reader. The fancy
+/// reader (prompt_toolkit) crosses the seam as an injected closure since
+/// Rust has no prompt_toolkit: `Ok` wins, `Unavailable`/`Runtime` fall
+/// back to `fallback_read`, `Interrupted`/`Eof` propagate as `None`.
+pub fn line_input_from(
+    _prompt_text: &str,
+    is_tty: bool,
+    fancy_read: &mut dyn FnMut() -> Result<Option<String>, LineInputFailure>,
+    fallback_read: &mut dyn FnMut() -> Option<String>,
+) -> Option<String> {
+    if !is_tty {
+        return fallback_read();
+    }
+    match fancy_read() {
+        Ok(value) => value,
+        Err(LineInputFailure::Unavailable | LineInputFailure::Runtime(_)) => fallback_read(),
+        Err(LineInputFailure::Interrupted | LineInputFailure::Eof) => None,
+    }
+}
+
 /// Interactive form of [`prompt_from`] reading from stdin.
 pub fn prompt(question: &str, default: Option<&str>, password: bool) -> String {
     let stdin = std::io::stdin();

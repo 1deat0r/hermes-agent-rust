@@ -1,19 +1,19 @@
 {
  "generated_from": "/tmp/hermes-upstream-5d59366",
- "generated_at": "2026-09-17T09:52:18",
+ "generated_at": "2026-09-17T10:35:43",
  "summary": {
   "modules": 8895,
   "total_lines": 2468648,
   "production_modules": 3481,
   "production_lines": 1147748,
   "status_counts": {
-   "done": 98,
-   "partial": 99,
+   "done": 103,
+   "partial": 94,
    "missing": 8698
   },
   "prod_status_counts": {
-   "done": 98,
-   "partial": 99,
+   "done": 103,
+   "partial": 94,
    "missing": 3284
   },
   "packages": {
@@ -62,8 +62,8 @@
     "modules": 502,
     "status": {
      "missing": 476,
-     "partial": 17,
-     "done": 9
+     "partial": 15,
+     "done": 11
     }
    },
    "tests.hermes_state": {
@@ -85,8 +85,8 @@
     "modules": 159,
     "status": {
      "missing": 147,
-     "partial": 5,
-     "done": 7
+     "partial": 4,
+     "done": 8
     }
    },
    "tests.hermes_cli": {
@@ -164,8 +164,8 @@
     "modules": 310,
     "status": {
      "missing": 269,
-     "partial": 30,
-     "done": 11
+     "partial": 28,
+     "done": 13
     }
    },
    "tests.conftest": {
@@ -46209,7 +46209,7 @@
   "tools.thread_context": {
    "lines": 74,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "tests.tui_gateway.test_gateway_owned_session_reap": {
@@ -46818,7 +46818,7 @@
   "hermes_cli.default_soul": {
    "lines": 72,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "agent.image_gen_registry": {
@@ -47118,7 +47118,7 @@
   "tools.desktop_ui": {
    "lines": 70,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "tools.connectors.targets": {
@@ -47253,7 +47253,7 @@
   "hermes_cli.cli_output": {
    "lines": 70,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "hermes_cli.subcommands.approvals": {
@@ -48320,7 +48320,7 @@
   "gateway.cgroup_cleanup": {
    "lines": 66,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "evals.api_delegation_sync_probe": {
