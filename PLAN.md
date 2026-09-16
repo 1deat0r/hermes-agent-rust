@@ -900,7 +900,11 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   re-certified (already-covered / logic-identical). Flaky-test fix:
   bitwarden `v"` assertion false-positived ~5%/run on random base64 —
   tightened to `"v"` (deterministic). Ledger: **70 done / 127 partial /
-  8,698 missing (0.79%)**. Evidence: serial 1,844/0, diff clean.
+  8,698 missing   (0.79%)**. Evidence: serial 1,844/0, diff clean.
+- 2026-09-16 (Wave B provider batch): alibaba +3 profiles, ollama-cloud
+  minimal→low clamp (live-verified divergence), nvidia/vertex recerts,
+  registry count/order updated 38→41. Ledger: **81 done / 116 partial /
+  8,698 missing (0.91%)**. Evidence: serial 1,856/0, diff clean.
 - 2026-09-16 (Wave B unit 5): 7 smallest-DIFF partials closed — provider trio
   (`alibaba-coding-plan` +CN profile, `nvidia` 4 aliases + `prepare_messages`
   copy-on-write strip via a `nvidia_tool_strip` base hook, `vertex` +`vertexai`

@@ -108,12 +108,21 @@ fn ollama_cloud_reasoning_disable_gate_and_unknown_efforts_match_upstream() {
         Some(&Value::String("none".into()))
     );
 
-    for effort in ["", "future-tier", "minimal"] {
+    for effort in ["", "future-tier"] {
         let config = reasoning(Some(true), Some(effort));
         let (_, top_level) =
             profile.build_api_kwargs_extras(Some(&config), &supports_reasoning(true));
         assert!(top_level.is_empty(), "effort {effort:?} must be omitted");
     }
+    // PARITY @ 5d59366 (live oracle): "minimal" 400s → clamps DOWN to "low"
+    // via shared clamp_effort (nearest weaker, never escalate).
+    let config = reasoning(Some(true), Some("minimal"));
+    let (_, top_level) =
+        profile.build_api_kwargs_extras(Some(&config), &supports_reasoning(true));
+    assert_eq!(
+        top_level.get("reasoning_effort"),
+        Some(&Value::String("low".into()))
+    );
 
     let (_, no_config_top) = profile.build_api_kwargs_extras(None, &supports_reasoning(true));
     assert!(no_config_top.is_empty());

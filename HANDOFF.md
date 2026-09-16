@@ -148,6 +148,11 @@ binary_extensions (opaque set) + verify.environment + timeouts.
 Flaky bitwarden assertion fixed deterministically.
 **Ledger: 70/127/8698 (0.79% tracked, 2.01% prod).** Serial 1,844/0.
 
+## Wave B provider batch done (2026-09-16)
+
+alibaba×3, ollama clamp, nvidia/vertex recerts, registry 38→41.
+**Ledger: 81/116/8698 (0.91% tracked, 2.33% prod).** Serial 1,856/0.
+
 ## Wave B unit 5 done (2026-09-16)
 
 7 smallest-DIFF partials closed: alibaba-coding-plan +CN profile, nvidia

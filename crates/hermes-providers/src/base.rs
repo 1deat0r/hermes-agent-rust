@@ -1636,10 +1636,14 @@ fn build_ollama_cloud_reasoning(
     else {
         return (Map::new(), Map::new());
     };
+    // PARITY: shared `clamp_effort(effort, OLLAMA_CLOUD_EFFORTS,
+    // OLLAMA_CLOUD_OVERRIDES)` @ 5d59366 — "minimal" 400s so it clamps to
+    // the nearest weaker level ("low"); bespoke levels omit.
     let effort = match effort.as_str() {
         "none" => "none",
         "xhigh" | "max" | "ultra" => "max",
         "low" | "medium" | "high" => effort.as_str(),
+        "minimal" => "low",
         _ => return (Map::new(), Map::new()),
     };
     (

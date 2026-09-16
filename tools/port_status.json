@@ -194,16 +194,16 @@
   "status": "partial"
  },
  "gateway.code_skew": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (64 -> 48 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified at 5d59366 autonomous: ternary folds only; 10 tests green"
  },
  "gateway.cwd_placeholder": {
   "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): deleted _truthy_env was dead code at old pin (defined line 15, zero call sites); docker-branch fold is a logic-identical conjunction merge; parity tests re-run green",
   "status": "done"
  },
  "gateway.platforms._http_client_limits": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (84 -> 47 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified at 5d59366 autonomous: _positive_env unifies env_float/env_int with identical grammar (incl NaN/inf parity); 5 tests green"
  },
  "gateway.platforms.qqbot.constants": {
   "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green",
@@ -234,8 +234,8 @@
   "status": "partial"
  },
  "hermes_cli.__init__": {
-  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B unit 5): version literals already at 0.21.3/2026.9.14; _ensure_utf8 portable contract ported as hermes-cli::utf8 (codec gate + repaired-only env nudge; stream reconfigure/reopen is Python-runtime-only, documented); suites green",
-  "status": "done"
+  "status": "done",
+  "retarget_note": "re-certified at 5d59366 autonomous: version bump already applied; docstring trims only; 1 test green"
  },
  "hermes_cli.build_info": {
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (51 -> 121 LOC); re-certify line-by-line before promoting",
@@ -389,8 +389,8 @@
   "status": "done"
  },
  "plugins.model-providers.alibaba.__init__": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (13 -> 44 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "ported 2026-09-16 autonomous: aliyun alias + alibaba-cn/token-plan/token-plan-cn profiles (4 registrations); 3 tests"
  },
  "plugins.model-providers.anthropic.__init__": {
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (54 -> 55 LOC); re-certify line-by-line before promoting",
@@ -465,12 +465,12 @@
   "status": "done"
  },
  "plugins.model-providers.nvidia.__init__": {
-  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B unit 5): 4 aliases + NvidiaProviderProfile.prepare_messages copy-on-write strip via nvidia_tool_strip hook (identity fast-path documented as value-equality); suites green",
-  "status": "done"
+  "status": "done",
+  "retarget_note": "re-certified at 5d59366 autonomous: prepare_messages already modeled (nvidia_tool_strip); aliases current; suite green"
  },
  "plugins.model-providers.ollama-cloud.__init__": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (89 -> 43 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "ported 2026-09-16 autonomous: minimal->low clamp divergence found live, fixed + tested"
  },
  "plugins.model-providers.openai-codex.__init__": {
   "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green",
@@ -489,8 +489,8 @@
   "status": "partial"
  },
  "plugins.model-providers.vertex.__init__": {
-  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B unit 5): +vertexai alias; build_extra_body refactor behavior-neutral (vertex_thinking flag already covered); supports_model_listing=False already ported; suites green",
-  "status": "done"
+  "status": "done",
+  "retarget_note": "re-certified at 5d59366 autonomous: cosmetic-only drift; suite green"
  },
  "plugins.model-providers.xai.__init__": {
   "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green",

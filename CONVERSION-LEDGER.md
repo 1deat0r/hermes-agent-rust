@@ -1,7 +1,7 @@
 # Hermes Agent → Hermes Agent Rust Conversion Ledger
 
-**Current strict completion: 0.87% of all tracked upstream modules (77/8895).**
-Production-only strict completion: **2.21%** (77/3481 production modules).
+**Current strict completion: 0.91% of all tracked upstream modules (81/8895).**
+Production-only strict completion: **2.33%** (81/3481 production modules).
 
 > This file is generated from `tools/inventory.json`; update the source ledger in `tools/port_status.json`, regenerate the inventory, then run `python3 tools/conversion_ledger.py`. Only `done` counts toward the percentage. `partial` is intentionally zero credit until its stated parity seams are closed.
 
@@ -9,10 +9,10 @@ Production-only strict completion: **2.21%** (77/3481 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 77 | 120 | 8698 | 0.87% | 3,232/2,468,648 done LOC |
-| Production modules | 77 | 120 | 3284 | 2.21% | 3,232/1,147,748 done LOC |
+| All tracked modules | 81 | 116 | 8698 | 0.91% | 3,414/2,468,648 done LOC |
+| Production modules | 81 | 116 | 3284 | 2.33% | 3,414/1,147,748 done LOC |
 
-Inventory source: `/tmp/hermes-upstream-5d59366` at `2026-09-17T00:05:11`.
+Inventory source: `/tmp/hermes-upstream-5d59366` at `2026-09-17T08:53:11`.
 
 ## Definition of 100.00%
 
@@ -59,8 +59,6 @@ The conversion is complete only when all of these are true:
 | `agent.verify.recipes` | P2 | 296 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `agent.verify.runner` | P2 | 255 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `gateway.cgroup_cleanup` | P4 | 66 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
-| `gateway.code_skew` | P4 | 48 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
-| `gateway.platforms._http_client_limits` | P4 | 47 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `gateway.platforms.qqbot.keyboards` | P4 | 287 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `gateway.readiness` | P4 | 108 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `gateway.rich_sent_store` | P4 | 85 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
@@ -94,7 +92,6 @@ The conversion is complete only when all of these are true:
 | `hermes_time` | P1 | 111 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `model_tools` | P2 | 987 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `plugins.model-providers.actual.__init__` | P4 | 92 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
-| `plugins.model-providers.alibaba.__init__` | P4 | 44 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `plugins.model-providers.anthropic.__init__` | P4 | 55 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `plugins.model-providers.copilot-acp.__init__` | P4 | 64 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `plugins.model-providers.copilot.__init__` | P4 | 51 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
@@ -104,7 +101,6 @@ The conversion is complete only when all of these are true:
 | `plugins.model-providers.kimi-coding.__init__` | P4 | 71 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `plugins.model-providers.minimax.__init__` | P4 | 61 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `plugins.model-providers.nous.__init__` | P4 | 76 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
-| `plugins.model-providers.ollama-cloud.__init__` | P4 | 43 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `plugins.model-providers.qwen-oauth.__init__` | P4 | 72 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `plugins.model-providers.upstage.__init__` | P4 | 56 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `plugins.model-providers.zai.__init__` | P4 | 75 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
@@ -671,7 +667,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `gateway.builtin_hooks.__init__` | production | P4 | 1 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `gateway.cgroup_cleanup` | production | P4 | 66 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
 | `gateway.channel_directory` | production | P4 | 473 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `gateway.code_skew` | production | P4 | 48 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
+| `gateway.code_skew` | production | P4 | 48 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `gateway.config` | production | P4 | 831 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `gateway.config_env` | production | P4 | 648 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `gateway.config_loader` | production | P4 | 424 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
@@ -708,7 +704,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `gateway.pairing` | production | P4 | 617 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `gateway.platform_registry` | production | P4 | 389 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `gateway.platforms.__init__` | production | P4 | 6 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `gateway.platforms._http_client_limits` | production | P4 | 47 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
+| `gateway.platforms._http_client_limits` | production | P4 | 47 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `gateway.platforms._shared` | production | P4 | 250 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `gateway.platforms.access_policy_mixin` | production | P4 | 69 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `gateway.platforms.api_server` | production | P4 | 4,046 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
@@ -1550,7 +1546,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `plugins.model-providers.actual.__init__` | production | P4 | 92 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
 | `plugins.model-providers.ai-gateway.__init__` | production | P4 | 28 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.model-providers.alibaba-coding-plan.__init__` | production | P4 | 30 | ✅ done | Maintain parity evidence; no remaining task in this row. |
-| `plugins.model-providers.alibaba.__init__` | production | P4 | 44 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
+| `plugins.model-providers.alibaba.__init__` | production | P4 | 44 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.model-providers.anthropic.__init__` | production | P4 | 55 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
 | `plugins.model-providers.arcee.__init__` | production | P4 | 11 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.model-providers.azure-foundry.__init__` | production | P4 | 15 | ✅ done | Maintain parity evidence; no remaining task in this row. |
@@ -1573,7 +1569,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `plugins.model-providers.nous.__init__` | production | P4 | 76 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
 | `plugins.model-providers.novita.__init__` | production | P4 | 19 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.model-providers.nvidia.__init__` | production | P4 | 34 | ✅ done | Maintain parity evidence; no remaining task in this row. |
-| `plugins.model-providers.ollama-cloud.__init__` | production | P4 | 43 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
+| `plugins.model-providers.ollama-cloud.__init__` | production | P4 | 43 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.model-providers.openai-codex.__init__` | production | P4 | 12 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.model-providers.opencode-free.__init__` | production | P4 | 51 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.model-providers.opencode-zen.__init__` | production | P4 | 103 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |

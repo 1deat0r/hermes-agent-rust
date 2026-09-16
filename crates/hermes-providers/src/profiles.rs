@@ -80,6 +80,9 @@ pub(crate) fn register_builtin_profiles() {
     register_provider(actual::profile());
     register_provider(ai_gateway::profile());
     register_provider(alibaba::profile());
+    register_provider(alibaba::cn_profile());
+    register_provider(alibaba::token_plan_profile());
+    register_provider(alibaba::token_plan_cn_profile());
     register_provider(alibaba_coding_plan::profile());
     register_provider(alibaba_coding_plan::cn_profile());
     register_provider(anthropic::profile());

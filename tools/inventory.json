@@ -1,19 +1,19 @@
 {
  "generated_from": "/tmp/hermes-upstream-5d59366",
- "generated_at": "2026-09-17T00:05:11",
+ "generated_at": "2026-09-17T08:53:11",
  "summary": {
   "modules": 8895,
   "total_lines": 2468648,
   "production_modules": 3481,
   "production_lines": 1147748,
   "status_counts": {
-   "done": 77,
-   "partial": 120,
+   "done": 81,
+   "partial": 116,
    "missing": 8698
   },
   "prod_status_counts": {
-   "done": 77,
-   "partial": 120,
+   "done": 81,
+   "partial": 116,
    "missing": 3284
   },
   "packages": {
@@ -53,8 +53,8 @@
     "modules": 219,
     "status": {
      "missing": 164,
-     "done": 40,
-     "partial": 15
+     "done": 42,
+     "partial": 13
     }
    },
    "hermes_cli": {
@@ -85,8 +85,8 @@
     "modules": 159,
     "status": {
      "missing": 147,
-     "partial": 7,
-     "done": 5
+     "partial": 5,
+     "done": 7
     }
    },
    "tests.hermes_cli": {
@@ -52707,7 +52707,7 @@
   "gateway.code_skew": {
    "lines": 48,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "evals.postmortem.review_probes.rewrite_hint_probe": {
@@ -52999,7 +52999,7 @@
   "gateway.platforms._http_client_limits": {
    "lines": 47,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "agent.provider_projection": {
@@ -53686,7 +53686,7 @@
   "plugins.model-providers.alibaba.__init__": {
    "lines": 44,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "optional-skills.research.drug-discovery.scripts.ro5_screen": {
@@ -53919,7 +53919,7 @@
   "plugins.model-providers.ollama-cloud.__init__": {
    "lines": 43,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "hermes_cli.subcommands.login": {
