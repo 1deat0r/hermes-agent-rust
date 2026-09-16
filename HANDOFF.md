@@ -88,15 +88,19 @@ confirm → **unanimous BUILD incl. cold-read seat**. Record:
 `docs/long-horizon-100.md`. Validation at gate: 1,789 passed / 0 failed
 serial, `git diff --check` clean. Ledger: 27/142/8726 (0.30%).
 
+## mattpocock skills installed + first skilled unit (2026-09-16)
+
+`mattpocock/skills` @ `959a8e9` (33 skills, copy-snapshot,
+`~/.config/opencode/skills/`); repo config in `docs/agents/` + AGENTS.md.
+First unit under the skills: `ts:apps.desktop.electron.active-runtime-state`
+→ done (9 tests, review-closed). **Ledger: 28/142/8725 (0.31% tracked,
+0.80% prod).** Validation: serial 1,798/0, diff clean.
+
 ## Next actions, in order
 
-1. Continue re-certification bottom-up: smallest real-DIFF partials next
-   (`agent.lmstudio_reasoning` 40 LOC, `agent.reactions` 42,
-   `agent.message_content` 43, provider `__init__`s with new behavior).
-   The 145-code-DIFF classifier output from this session is the worklist.
-2. Port the first real `apps/desktop/electron` module into
-   `hermes-desktop` (scaffold landed this session); renderer per-module
-   per `docs/long-horizon-100.md` §3 doctrine.
+1. Continue re-certification bottom-up under mattpocock `tdd`+`code-review`
+   (`agent.lmstudio_reasoning`, `agent.reactions`, `agent.message_content`).
+2. Next P6 Electron module (`api-transport.ts`, 207 LOC) under the same loop.
 3. Keep ownership disjoint; commit and publish each logical unit immediately.
 
 ## Archive: session 4da (2026-08-31, pin b9aa928 — superseded)

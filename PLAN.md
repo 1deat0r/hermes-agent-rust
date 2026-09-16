@@ -837,6 +837,15 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   `docs/long-horizon-100.md` (phase order P1→P6+oracles, mattpocock-skills
   doctrine §3, ≥20 rows/session, re-pin at phase boundaries, board re-gate
   per phase exit). Full record: `docs/board-review-r1.md`.
+- 2026-09-16 (mattpocock skills install + first skilled P6 unit):
+  installed `mattpocock/skills` @ `959a8e9` (33 skills, copy-snapshot in
+  `~/.config/opencode/skills/`; vetted clean) + repo config
+  (`docs/agents/{issue-tracker,triage-labels,domain}.md`, AGENTS.md block).
+  First unit under `tdd`+`implement`+`code-review`:
+  `ts:apps.desktop.electron.active-runtime-state` → done (9 tests: 7 oracle
+  + 2 hardening; review closed UTF-16 length parity + seam contracts).
+  Ledger: **28 done / 142 partial / 8,725 missing (0.31%)**. Evidence:
+  serial 1,798 passed / 0 failed; `git diff --check` clean.
 - 2026-08-31 (session 4da): Fifty units across four crates, all red-first:
   batch 1 — the `hermes_cli/main.py` private git-fingerprint helpers
   (`_read_packed_ref`, `_read_git_revision_fingerprint`) into

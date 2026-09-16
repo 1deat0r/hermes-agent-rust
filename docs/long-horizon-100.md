@@ -35,32 +35,35 @@ user countermands them.
 7. **Oracle sweep**: mechanical conversion of remaining `tests.*` rows into
    parity suites or explicit resolved gaps.
 
-## 3. Mattpocock-skills doctrine (Total TypeScript standards, every turn)
+## 3. Mattpocock-skills automation (installed 2026-09-16, snapshot `959a8e9`)
 
-No mattpocock skill is installed in this harness (verified 2026-09-16:
-341 skills, none by that name). The standing instruction is therefore a
-doctrine, applied to every TS-touching unit, at the highest quality bar:
+`mattpocock/skills` @ `959a8e9f1edc3adbe2f7e3054bb6fbefa6696260` is
+installed as a copy-snapshot in `~/.config/opencode/skills/` (33 skills:
+engineering 17 + productivity 8 + in-progress 8; deprecated/misc skipped
+per upstream's own installer). Repo config: `docs/agents/issue-tracker.md`,
+`triage-labels.md`, `domain.md` + `AGENTS.md` Agent-skills block (via
+`setup-matt-pocock-skills`). Proven on `ts:apps.desktop.electron.
+active-runtime-state` (2026-09-16): seam-agreed TDD → 9 tests →
+two-axis code-review → findings closed (UTF-16 length parity, seam
+contracts) → done.
 
-1. **Strictest types, no `any`**: every ported TS surface (and every
-   Rust↔TS bridge type in `hermes-desktop`) is fully typed; `any` requires
-   a tracked ticket, never a pass. (`react-ts-patterns` skill §5 is the
-   local enforcement arm until a mattpocock skill is ingested.)
-2. **Typecheck-green is a gate**: `tsc --noEmit` (renderer) +
-   `tsc -p tsconfig.electron.json --noEmit` (main) must pass for any
-   P6 unit, mirroring upstream's `check:lint`. A P6 commit without the
-   typecheck log is red by definition.
-3. **Narrow the unknown at every seam**: IPC channels enumerated with
-   payload schemas (cf. `electron-side-app` §2 — no untyped `invoke`);
-   Zod-or-equivalent runtime validation where the renderer meets the
-   backend; `unknown` + narrowing, never silent casts.
-4. **Derive, don't duplicate**: shared contract types come from
-   `@hermes/shared` (or its Rust mirror), never re-declared per consumer —
-   one source of truth per shape, compiler-checked.
-5. **Error handling explicit**: `Result`-shaped returns across the bridge;
-   no `catch {}` swallowing; every failure mode in the type signature.
-6. **When a genuine mattpocock skill becomes available** (user-supplied
-   source), ingest it via the harness skill mechanism and amend this
-   section the same turn — doctrine becomes automation.
+Binding per-unit loop (Total TypeScript standards, highest bar):
+
+1. **Load `tdd` + `implement` + `code-review`** on every port unit
+   (AGENTS.md). TDD: pre-agreed seams, independent literals (goldens from
+   the upstream oracle, never recomputed), vertical tracer slices, RED
+   observed.
+2. **`implement`**: typecheck regularly (Rust: `cargo check`; P6 TS work:
+   `tsc --noEmit` both projects — a P6 commit without the typecheck log is
+   red), single test file regularly, full suite once at the end.
+3. **`code-review` two-axis** before commit: Standards (repo standards +
+   smell baseline) and Spec (oracle line-by-line) as isolated reviews,
+   aggregated without reranking; findings closed or explicitly deferred.
+4. **`diagnosing-bugs`** for any failing/ambiguous behavior: feedback loop
+   first (failing test > harness > bisection), redact secrets.
+5. **Strictest types, no `any`** on every TS-touching unit; IPC channels
+   enumerated with payload schemas; contract types derived from
+   `@hermes/shared`, never re-declared; explicit error returns.
 
 ## 4. Operating cadence (binding)
 

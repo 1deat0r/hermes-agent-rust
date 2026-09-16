@@ -27,8 +27,10 @@
 //! tests (`apps/desktop/electron/*.test.ts` are the oracles) before any
 //! renderer work. One module per commit, TDD, tests-first.
 
+pub mod active_runtime_state;
+
 /// P6 scaffold marker: the crate links and its contract is documented.
 /// Every ported Electron module registers its surface here as it lands.
 pub fn scaffold_marker() -> &'static str {
-    "hermes-desktop P6 scaffold (5d59366): no backend surface ported yet"
+    "hermes-desktop P6 scaffold (5d59366): active_runtime_state ported"
 }

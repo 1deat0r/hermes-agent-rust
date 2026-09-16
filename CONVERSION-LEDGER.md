@@ -1,7 +1,7 @@
 # Hermes Agent → Hermes Agent Rust Conversion Ledger
 
-**Current strict completion: 0.30% of all tracked upstream modules (27/8895).**
-Production-only strict completion: **0.78%** (27/3481 production modules).
+**Current strict completion: 0.31% of all tracked upstream modules (28/8895).**
+Production-only strict completion: **0.80%** (28/3481 production modules).
 
 > This file is generated from `tools/inventory.json`; update the source ledger in `tools/port_status.json`, regenerate the inventory, then run `python3 tools/conversion_ledger.py`. Only `done` counts toward the percentage. `partial` is intentionally zero credit until its stated parity seams are closed.
 
@@ -9,10 +9,10 @@ Production-only strict completion: **0.78%** (27/3481 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 27 | 142 | 8726 | 0.30% | 817/2,468,648 done LOC |
-| Production modules | 27 | 142 | 3312 | 0.78% | 817/1,147,748 done LOC |
+| All tracked modules | 28 | 142 | 8725 | 0.31% | 875/2,468,648 done LOC |
+| Production modules | 28 | 142 | 3311 | 0.80% | 875/1,147,748 done LOC |
 
-Inventory source: `/tmp/hermes-upstream-5d59366` at `2026-09-16T17:36:31`.
+Inventory source: `/tmp/hermes-upstream-5d59366` at `2026-09-16T18:34:24`.
 
 ## Definition of 100.00%
 
@@ -6497,7 +6497,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `ts:apps.bootstrap-installer.src.store` | production | P6 | 484 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `ts:apps.bootstrap-installer.src.theme` | production | P6 | 51 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `ts:apps.bootstrap-installer.vite.config` | production | P6 | 46 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `ts:apps.desktop.electron.active-runtime-state` | production | P6 | 58 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `ts:apps.desktop.electron.active-runtime-state` | production | P6 | 58 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `ts:apps.desktop.electron.active-runtime-state.test` | oracle/test | P6 | 60 | ⬜ missing | Read the upstream test; add the matching Rust parity coverage and evidence. |
 | `ts:apps.desktop.electron.api-transport` | production | P6 | 207 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `ts:apps.desktop.electron.api-transport.test` | oracle/test | P6 | 406 | ⬜ missing | Read the upstream test; add the matching Rust parity coverage and evidence. |

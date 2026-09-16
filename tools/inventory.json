@@ -1,20 +1,20 @@
 {
  "generated_from": "/tmp/hermes-upstream-5d59366",
- "generated_at": "2026-09-16T17:36:31",
+ "generated_at": "2026-09-16T18:34:24",
  "summary": {
   "modules": 8895,
   "total_lines": 2468648,
   "production_modules": 3481,
   "production_lines": 1147748,
   "status_counts": {
-   "done": 27,
+   "done": 28,
    "partial": 142,
-   "missing": 8726
+   "missing": 8725
   },
   "prod_status_counts": {
-   "done": 27,
+   "done": 28,
    "partial": 142,
-   "missing": 3312
+   "missing": 3311
   },
   "packages": {
    "tests.tui_gateway": {
@@ -28,7 +28,8 @@
     "lines": 572373,
     "modules": 2470,
     "status": {
-     "missing": 2470
+     "missing": 2469,
+     "done": 1
     }
    },
    "agent": {
@@ -50438,7 +50439,7 @@
   "ts:apps.desktop.electron.active-runtime-state": {
    "lines": 58,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "tui_gateway.loop_noise": {

@@ -91,6 +91,29 @@ partial-work checkpoint in `HANDOFF.md`.
 - Platform detection (`is_wsl`, `is_container`, ...) is cached for process
   lifetime exactly like upstream's module globals.
 
+## Agent skills
+
+### Issue tracker
+
+Local-markdown: `PLAN.md` §5/§7 + `HANDOFF.md` + ledger. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Defaults (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `PLAN.md` is the glossary; board rulings bind. See `docs/agents/domain.md`.
+
+### mattpocock skills (installed 2026-09-16, snapshot `959a8e9`)
+
+`~/.config/opencode/skills/`: `tdd`, `implement`, `code-review`,
+`diagnosing-bugs`, `codebase-design`, `domain-modeling`, `research`,
+`to-spec`, `to-tickets`, `triage`, `wayfinder`, plus productivity/misc sets.
+Load `tdd` + `implement` + `code-review` on every port unit; the P6
+TypeScript doctrine in `docs/long-horizon-100.md` §3 is now automation, not
+aspiration.
+
 ## 4. Fidelity rules — the hard line
 
 - When upstream semantics are ambiguous, the upstream **test** is the oracle.

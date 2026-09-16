@@ -669,5 +669,9 @@
  "tools.mcp_death_supervisor": {
   "status": "partial",
   "retarget_note": "successor of tools.mcp_stdio_watchdog at 5d59366; prior watchdog port is the starting point, re-certify against supervisor before promoting"
+ },
+ "ts:apps.desktop.electron.active-runtime-state": {
+  "status": "done",
+  "retarget_note": "ported 2026-09-16 under mattpocock tdd+implement+code-review skills: 9 parity tests (7 oracle + 2 hardening), UTF-16 length parity, seam contracts documented; review findings closed"
  }
 }
