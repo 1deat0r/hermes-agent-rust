@@ -137,6 +137,11 @@ prod).** Serial 1,831/0.
 bedrock rename + ai-gateway/gemini recerts; redaction scoped own unit.
 **Ledger: 65/132/8698 (0.73% tracked, 1.87% prod).** Serial 1,831/0.
 
+## Wave B redaction unit done (2026-09-16)
+
+egress refactor ported; 5 stale expectations fixed live.
+**Ledger: 67/130/8698 (0.75% tracked, 1.92% prod).** Serial 1,841/0.
+
 ## Next actions, in order
 
 1. Wave A: trivial sweep (`__init__` 0–3 LOC, eslint configs, barrels),

@@ -1,19 +1,19 @@
 {
  "generated_from": "/tmp/hermes-upstream-5d59366",
- "generated_at": "2026-09-16T21:39:54",
+ "generated_at": "2026-09-16T22:09:34",
  "summary": {
   "modules": 8895,
   "total_lines": 2468648,
   "production_modules": 3481,
   "production_lines": 1147748,
   "status_counts": {
-   "done": 65,
-   "partial": 132,
+   "done": 67,
+   "partial": 130,
    "missing": 8698
   },
   "prod_status_counts": {
-   "done": 65,
-   "partial": 132,
+   "done": 67,
+   "partial": 130,
    "missing": 3284
   },
   "packages": {
@@ -37,8 +37,8 @@
     "modules": 283,
     "status": {
      "missing": 236,
-     "partial": 35,
-     "done": 12
+     "partial": 33,
+     "done": 14
     }
    },
    "tests.agent": {
@@ -3665,7 +3665,7 @@
    "imports": [
     "hermes_constants"
    ],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "hermes_constants": {
@@ -53440,7 +53440,7 @@
   "agent.monitoring.redaction": {
    "lines": 45,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "ts:apps.shared.src.i18n.test": {

@@ -23,9 +23,13 @@ fn none_passes_through() {
 
 #[test]
 fn bearer_and_token_shapes_are_redacted() {
+    // PARITY @ 5d59366 (live oracle): the force-pass masks the bearer token
+    // shape; the egress sweep (20-char floor) leaves the masked form alone.
+    // The old `[redacted]` fold was the pre-refactor inline sweep (removed
+    // upstream when secrets moved to `redact_for_egress`).
     let out = redact_for_export(Some("Authorization: Bearer abc123.def_ghi")).unwrap();
     assert!(!out.contains("abc123"), "{out}");
-    assert!(out.contains("[redacted]"), "{out}");
+    assert!(out.contains("Bearer ***"), "{out}");
 
     for token in ["sk-abcdefghijklmnop", "ghp_abcdefghijkl", "xoxb-1234567890"] {
         let out = redact_for_export(Some(&format!("token is {token} end"))).unwrap();
@@ -54,9 +58,11 @@ fn pii_is_classified_not_dropped() {
 
 #[test]
 fn scrub_is_unconditional_including_masks() {
-    // Secret-literal asterisk runs are rewritten even post-mask.
+    // PARITY @ 5d59366 (live oracle): the `\*{3,}` literal sweep is gone
+    // upstream (it lived in the removed inline sweep); asterisk runs pass
+    // through when the force-pass finds no secret shape.
     let out = redact_for_export(Some("value: ****")).unwrap();
-    assert!(out.contains("[redacted]"), "{out}");
+    assert_eq!(out, "value: ****", "{out}");
     // Empty string stays empty (still Some — only None maps to None).
     assert_eq!(redact_for_export(Some("")), Some(String::new()));
 }

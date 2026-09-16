@@ -1,42 +1,22 @@
 //! Redaction applied to monitoring data before egress.
 //!
-//! PARITY: `agent/monitoring/redaction.py` @ b9aa928 (whole module).
+//! PARITY: `agent/monitoring/redaction.py` @ 5d59366 (whole module, incl.
+//! `redact_bounded`).
 //!
 //! One unconditional scrub, no modes, no knobs. Every string that leaves
-//! the process passes through [`redact_for_export`]:
+//! the process passes through [`redact_for_export`]: secrets via
+//! `agent/redact.py::redact_for_egress` — the single pattern source, fails
+//! CLOSED so a broken redactor never emits the raw string — then PII
+//! (e-mail, phone, UUID-shaped ids → `[email]` / `[phone]` / `[id]`).
 //!
-//! * Secrets first — wraps `agent/redact.py::redact_sensitive_text`
-//!   with `force = true` (upstream `force=True` so user config can't
-//!   disable it) plus bearer/token-shape patterns, and fails CLOSED: if
-//!   the redactor cannot run, the raw string is never emitted.
-//! * PII second — e-mail addresses, phone numbers, and UUID-shaped
-//!   identifiers are rewritten to `[email]` / `[phone]` / `[id]`.
-//!
-//! There is deliberately no setting to weaken this.
+//! There is deliberately no setting to weaken this. The old inline
+//! bearer/token/literal/residue sweep now lives in `redact_for_egress`
+//! (hermes-logging), exactly as upstream refactored it.
 
 use once_cell::sync::Lazy;
 use regex::Regex;
 
-use hermes_logging::redact_sensitive_text;
-
-// Secret shapes (belt-and-suspenders on top of agent/redact.py).
-
-/// PARITY: `_BEARER_RE` (upstream line 24) — `re.IGNORECASE`.
-static BEARER_RE: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"(?i)\bBearer\s+[A-Za-z0-9._~+\-/]+=*").expect("bearer re"));
-
-/// PARITY: `_TOKEN_RE` (upstream lines 25-27).
-static TOKEN_RE: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"\b(xox[baprs]-[A-Za-z0-9-]+|sk-[A-Za-z0-9_-]{8,}|gh[pousr]_[A-Za-z0-9_]{8,})\b")
-        .expect("token re")
-});
-
-/// PARITY: `_SECRET_LITERAL_RE` (upstream line 28).
-static SECRET_LITERAL_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"\*{3,}").expect("literal re"));
-
-/// PARITY: `_BEARER_RESIDUE_RE` (upstream line 29).
-static BEARER_RESIDUE_RE: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"(?i)\bBearer\s+\[[^\]]+\]").expect("bearer residue re"));
+use hermes_logging::redact_for_egress;
 
 // PII shapes.
 
@@ -62,35 +42,35 @@ static UUID_RE: Lazy<Regex> = Lazy::new(|| {
         .expect("uuid re")
 });
 
-/// Always-on secret redaction. `force = true` so user config can't disable
-/// it.
-///
-/// PARITY: `_secret_redact` (upstream lines 41-54). The import-failure arm
-/// can't occur here (the redactor is a compile-time dependency), but the
-/// fail-CLOSED contract is preserved: the input is never returned raw on a
-/// redaction error path.
-fn secret_redact(text: &str) -> String {
-    let out = redact_sensitive_text(text, true, false, false, false);
-    let out = BEARER_RE.replace_all(&out, "[redacted]");
-    let out = TOKEN_RE.replace_all(&out, "[redacted]");
-    let out = SECRET_LITERAL_RE.replace_all(&out, "[redacted]");
-    BEARER_RESIDUE_RE
-        .replace_all(&out, "[redacted]")
-        .into_owned()
-}
-
 /// Scrub a string for egress: secrets, then PII. Unconditional.
 ///
-/// PARITY: `redact_for_export` (upstream lines 57-65). `None` maps to
-/// `None` (the `if text is None` arm); PII ordering is email → uuid →
-/// phone exactly as upstream.
+/// PARITY: `redact_for_export` (upstream lines 30-38). Secrets delegate to
+/// `redact_for_egress` (the single pattern source); PII ordering is
+/// email → uuid → phone exactly as upstream. `None` maps to `None`.
 pub fn redact_for_export(text: Option<&str>) -> Option<String> {
     let text = text?;
-    let out = secret_redact(text);
+    let out = redact_for_egress(text);
     let out = EMAIL_RE.replace_all(&out, "[email]");
     let out = UUID_RE.replace_all(&out, "[id]");
     let out = replace_phone(&out);
     Some(out)
+}
+
+/// Upstream defaults for [`redact_bounded`] (`limit=500`,
+/// `empty="[redacted]"`, `unavailable=REDACTION_UNAVAILABLE`). Rust has no
+/// default args — callers pass these explicitly.
+// PARITY: `redact_bounded` (upstream lines 41-47) — redact
+/// `str(raw or "")`, substitute `empty` for empty results, truncate to
+/// `limit` chars (no suffix); `unavailable` is returned if redaction
+/// raises. Rust's redaction path is infallible, so the `unavailable` arm
+/// is a contract: callers that can fail map their error to it instead of
+/// emitting raw text.
+pub fn redact_bounded(raw: &str, limit: usize, empty: &str, unavailable: &str) -> String {
+    let _ = unavailable;
+    match redact_for_export(Some(raw)) {
+        Some(out) if !out.is_empty() => out.chars().take(limit).collect(),
+        _ => empty.to_string(),
+    }
 }
 
 /// `_PHONE_RE.sub("[phone]", ...)` with the lookaround guards: the

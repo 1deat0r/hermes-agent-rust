@@ -1,7 +1,7 @@
 # Hermes Agent → Hermes Agent Rust Conversion Ledger
 
-**Current strict completion: 0.73% of all tracked upstream modules (65/8895).**
-Production-only strict completion: **1.87%** (65/3481 production modules).
+**Current strict completion: 0.75% of all tracked upstream modules (67/8895).**
+Production-only strict completion: **1.92%** (67/3481 production modules).
 
 > This file is generated from `tools/inventory.json`; update the source ledger in `tools/port_status.json`, regenerate the inventory, then run `python3 tools/conversion_ledger.py`. Only `done` counts toward the percentage. `partial` is intentionally zero credit until its stated parity seams are closed.
 
@@ -9,10 +9,10 @@ Production-only strict completion: **1.87%** (65/3481 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 65 | 132 | 8698 | 0.73% | 1,438/2,468,648 done LOC |
-| Production modules | 65 | 132 | 3284 | 1.87% | 1,438/1,147,748 done LOC |
+| All tracked modules | 67 | 130 | 8698 | 0.75% | 2,778/2,468,648 done LOC |
+| Production modules | 67 | 130 | 3284 | 1.92% | 2,778/1,147,748 done LOC |
 
-Inventory source: `/tmp/hermes-upstream-5d59366` at `2026-09-16T21:39:54`.
+Inventory source: `/tmp/hermes-upstream-5d59366` at `2026-09-16T22:09:34`.
 
 ## Definition of 100.00%
 
@@ -45,10 +45,8 @@ The conversion is complete only when all of these are true:
 | `agent.monitoring.gateway_health` | P2 | 352 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `agent.monitoring.gateway_health_export` | P2 | 344 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `agent.monitoring.otlp_exporter` | P2 | 283 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
-| `agent.monitoring.redaction` | P2 | 45 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `agent.portal_tags` | P2 | 99 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `agent.reasoning_summaries` | P2 | 65 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
-| `agent.redact` | P1 | 1,295 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `agent.secret_sources._cache` | P2 | 191 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `agent.secret_sources.base` | P2 | 255 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `agent.secret_sources.bitwarden` | P2 | 639 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
@@ -338,7 +336,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `agent.monitoring.gateway_health_export` | production | P2 | 344 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
 | `agent.monitoring.otlp_exporter` | production | P2 | 283 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
 | `agent.monitoring.policy` | production | P2 | 47 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `agent.monitoring.redaction` | production | P2 | 45 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
+| `agent.monitoring.redaction` | production | P2 | 45 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.moonshot_schema` | production | P2 | 177 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.native_compaction` | production | P2 | 352 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.nous_rate_guard` | production | P2 | 207 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
@@ -382,7 +380,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `agent.reasoning_params` | production | P2 | 197 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.reasoning_summaries` | production | P2 | 65 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
 | `agent.reasoning_timeouts` | production | P2 | 74 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `agent.redact` | production | P1 | 1,295 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
+| `agent.redact` | production | P1 | 1,295 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.relay_llm` | production | P2 | 890 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.relay_runtime` | production | P2 | 1,354 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.relay_tools` | production | P2 | 115 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |

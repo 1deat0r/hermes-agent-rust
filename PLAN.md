@@ -888,6 +888,13 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   as its own unit (upstream `redact_for_egress` refactor + new
   `redact_bounded`). Ledger: **65 done / 132 partial / 8,698 missing
   (0.73%)**. Evidence: serial 1,831/0, diff clean.
+- 2026-09-16 (Wave B redaction unit): `redact_for_egress` +
+  `REDACTION_UNAVAILABLE` ported to hermes-logging (live-oracle goldens,
+  20-char floor); `monitoring::redaction` rewired, `redact_bounded` added.
+  Blast radius: 5 stale expectations in 4 files updated to the refactor
+  behavior (verified live each). Reviews PASS. Ledger: **67 done / 130
+  partial / 8,698 missing (0.75%)**. Evidence: serial 1,841/0 (205
+  suites), diff clean.
 - 2026-08-31 (session 4da): Fifty units across four crates, all red-first:
   batch 1 — the `hermes_cli/main.py` private git-fingerprint helpers
   (`_read_packed_ref`, `_read_git_revision_fingerprint`) into

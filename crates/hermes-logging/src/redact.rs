@@ -637,6 +637,52 @@ pub fn redact_cdp_url(value: &str) -> String {
     redact_url_userinfo(&t)
 }
 
+// ── redact_for_egress ─────────────────────────────────────────────────────
+
+/// Fail-closed sentinel: returned when the redactor itself raises, so the
+/// raw string is never emitted.
+///
+/// PARITY: `REDACTION_UNAVAILABLE` (`agent/redact.py` @ 5d59366).
+pub const REDACTION_UNAVAILABLE: &str = "[redaction-unavailable]";
+
+static _EGRESS_BEARER_RE: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"(?i)\bBearer\s+(?:\[[^\]]+\]|[A-Za-z0-9._~+/-]{20,}=*)")
+        .expect("egress bearer re")
+});
+
+/// The one scrub for text leaving the process for a remote reader.
+///
+/// PARITY: `redact_for_egress` (`agent/redact.py` @ 5d59366):
+/// `redact_sensitive_text(force=True)` — the only secret-pattern list —
+/// plus a bearer sweep (an opaque `Bearer <value>` carries no shape the
+/// prefix matcher can key on). Fails CLOSED: on redactor error the raw
+/// text is never returned.
+///
+/// The 20-char floor is load-bearing: without it the English word "bearer"
+/// turns "the bearer of bad news" into "Bearer [redacted] bad news" on
+/// every chat reply. The bracket branch folds an already-masked residue
+/// (`Bearer [redacted-jwt]`) to one marker.
+pub fn redact_for_egress(text: &str) -> String {
+    let text = text.to_string();
+    // Rust has no exception channel: `redact_sensitive_text` never raises
+    // (fail-open internally), so the CLOSED arm below guards the bearer
+    // sweep itself via a checked replacement.
+    let redacted = redact_sensitive_text(&text, true, false, false, false);
+    // PARITY: `if "earer" in text` — case-sensitive lowercase substring
+    // (catches "Bearer"/"bearer", not "BEARER"; the regex itself is re.I).
+    if !redacted.contains("earer") {
+        return redacted;
+    }
+    // Fail-CLOSED note: upstream returns REDACTION_UNAVAILABLE when the
+    // redactor raises; this port's sweep is infallible (fancy-regex returns
+    // Cow, no error channel), and `redact_sensitive_text` never raises, so
+    // the raw-text-on-error path is unreachable — the sentinel exists for
+    // callers (e.g. `redact_bounded`) that need the marker spelled once.
+    _EGRESS_BEARER_RE
+        .replace_all(&redacted, "Bearer [redacted]")
+        .into_owned()
+}
+
 // ── redact_sensitive_text ───────────────────────────────────────────────────
 
 /// `redact_sensitive_text` @ redact.py 772–1016.

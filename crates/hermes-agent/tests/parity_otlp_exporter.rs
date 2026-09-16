@@ -136,7 +136,16 @@ fn span_string_values_are_redacted_and_bounded() {
     });
     let attrs = span_attrs(&event);
     let value = attrs["hermes.error_code"].as_str().unwrap();
-    assert!(!value.contains("abc123"), "{value}");
+    // PARITY @ 5d59366 (live oracle): bare 13-char bearer passes the
+    // 20-char floor (no vendor shape); the old un-floored fold is gone.
+    assert_eq!(value, "Bearer abc123.def_ghi", "{value}");
+    let event = json!({
+        "event": "gateway_diagnostic",
+        "error_code": "Bearer abcdefghijklmnopqrst1234",
+    });
+    let attrs = span_attrs(&event);
+    let value = attrs["hermes.error_code"].as_str().unwrap();
+    assert!(!value.contains("abcdefghijklmnopqrst1234"), "{value}");
     // 500-char bound.
     let event = json!({
         "event": "cron_execution",

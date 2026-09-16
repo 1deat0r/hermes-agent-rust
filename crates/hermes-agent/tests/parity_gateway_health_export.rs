@@ -14,8 +14,12 @@ use hermes_agent::monitoring::gateway_health_export::{
 
 #[test]
 fn redact_string_scrubs_and_bounds() {
+    // PARITY @ 5d59366: 6-char bearer passes the 20-char floor; a 20+
+    // opaque folds. (Old un-floored fold removed with the inline sweep.)
     let out = redact_string(Some("Bearer abc123"), 500);
-    assert!(!out.contains("abc123"), "{out}");
+    assert_eq!(out, "Bearer abc123", "{out}");
+    let out = redact_string(Some("Bearer abcdefghijklmnopqrst1234"), 500);
+    assert!(!out.contains("abcdefghijklmnopqrst1234"), "{out}");
     let long = "a".repeat(600);
     assert_eq!(redact_string(Some(&long), 128).chars().count(), 128);
     assert_eq!(redact_string(None, 500), "[redacted]");
@@ -78,7 +82,7 @@ fn diagnostic_attributes_allowlist_with_redaction() {
         "name": "platform.fatal",
         "subsystem": "platform.telegram",
         "severity": "error",
-        "error_code": "Bearer abc123",
+        "error_code": "Bearer abcdefghijklmnopqrst1234",
         "profile": "prod",           // not allowlisted
         "ts_ns": 9,                  // not allowlisted
     });
@@ -87,7 +91,7 @@ fn diagnostic_attributes_allowlist_with_redaction() {
     assert_eq!(attrs["hermes.subsystem"], "platform.telegram");
     assert_eq!(attrs["hermes.severity"], "error");
     let code = attrs["hermes.error_code"].as_str().unwrap();
-    assert!(!code.contains("abc123"), "{code}");
+    assert!(!code.contains("abcdefghijklmnopqrst1234"), "{code}");
     assert!(!attrs.contains_key("hermes.profile"));
     assert!(!attrs.contains_key("hermes.ts_ns"));
 }

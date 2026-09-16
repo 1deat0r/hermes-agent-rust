@@ -30,7 +30,7 @@ pub use queue::{
     drain_log_queue, flush_log_queue, register_queued_handler, register_queued_target,
     reset_queued_handlers, rotating_file_handlers,
 };
-pub use redact::{redact_cdp_url, redact_sensitive_text, redact_terminal_output, is_env_dump_command, mask_secret, RedactingFormatter};
+pub use redact::{redact_cdp_url, redact_for_egress, redact_sensitive_text, redact_terminal_output, is_env_dump_command, mask_secret, RedactingFormatter, REDACTION_UNAVAILABLE};
 pub use record::{
     clear_session_context, install_redactor, set_session_context, Level, LogRecord, LogTarget,
     NoopRedactor, Redactor, LOG_FORMAT, LOG_FORMAT_VERBOSE,

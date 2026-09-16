@@ -128,9 +128,13 @@ fn source_logger_allowlist() {
 
 #[test]
 fn message_redaction_bounds_and_scrubs() {
+    // PARITY @ 5d59366 (live oracle): 17-char bearer with no vendor shape
+    // passes through (20-char floor); the old un-floored fold is gone with
+    // the inline sweep. A 20+ char opaque folds.
     let out = redact_gateway_message(Some("Bearer supersecrettoken"));
-    assert!(out.contains("[redacted]"), "{out}");
-    assert!(!out.contains("supersecrettoken"), "{out}");
+    assert_eq!(out, "Bearer supersecrettoken", "{out}");
+    let out = redact_gateway_message(Some("Bearer abcdefghijklmnopqrst1234"));
+    assert!(!out.contains("abcdefghijklmnopqrst1234"), "{out}");
     // 500-char bound: 600 a's truncated to 500.
     let long = "a".repeat(600);
     assert_eq!(redact_gateway_message(Some(&long)).chars().count(), 500);

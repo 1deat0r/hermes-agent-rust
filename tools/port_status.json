@@ -80,8 +80,8 @@
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (272 -> 283 LOC); re-certify line-by-line before promoting"
  },
  "agent.monitoring.redaction": {
-  "status": "partial",
-  "retarget_note": "DEFERRED-UNIT at 5d59366 (2026-09-16): upstream refactored secrets to redact_for_egress (20-char bearer floor, fail-closed) + added redact_bounded; Rust still runs the old inline sweep. Port redact_for_egress into hermes-logging, add redact_bounded, rewire. Own unit."
+  "status": "done",
+  "retarget_note": "ported 2026-09-16 Wave B redaction unit: redact_for_egress (live goldens) in hermes-logging; rewired export; redact_bounded added; 5 stale expectations updated to refactor behavior across 4 files; reviews PASS"
  },
  "agent.portal_tags": {
   "status": "partial",
@@ -96,8 +96,8 @@
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (67 -> 65 LOC); re-certify line-by-line before promoting"
  },
  "agent.redact": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (1197 -> 1295 LOC); re-certify line-by-line before promoting"
+  "status": "done",
+  "retarget_note": "extended 2026-09-16 Wave B: REDACTION_UNAVAILABLE + redact_for_egress ported"
  },
  "agent.secret_sources._cache": {
   "status": "partial",
