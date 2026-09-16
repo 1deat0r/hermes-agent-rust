@@ -904,7 +904,11 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 - 2026-09-16 (Wave B provider batch): alibaba +3 profiles, ollama-cloud
   minimal→low clamp (live-verified divergence), nvidia/vertex recerts,
   registry count/order updated 38→41. Ledger: **81 done / 116 partial /
-  8,698 missing (0.91%)**. Evidence: serial 1,856/0, diff clean.
+  8,698 missing   (0.91%)**. Evidence: serial 1,856/0, diff clean.
+- 2026-09-16 (Wave B anthropic pagination): cursor loop ported
+  (limit/after_id/MAX_PAGES/repeat-guard/dedup, 2 mock tests) via shared
+  `get_json_page` extraction; deepseek/upstage recerts. Ledger: **88 done
+  / 109 partial / 8,698 missing (0.99%)**. Evidence: serial 1,858/0.
 - 2026-09-16 (Wave B unit 5): 7 smallest-DIFF partials closed — provider trio
   (`alibaba-coding-plan` +CN profile, `nvidia` 4 aliases + `prepare_messages`
   copy-on-write strip via a `nvidia_tool_strip` base hook, `vertex` +`vertexai`

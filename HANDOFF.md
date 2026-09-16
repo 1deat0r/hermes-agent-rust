@@ -153,6 +153,11 @@ Flaky bitwarden assertion fixed deterministically.
 alibaba×3, ollama clamp, nvidia/vertex recerts, registry 38→41.
 **Ledger: 81/116/8698 (0.91% tracked, 2.33% prod).** Serial 1,856/0.
 
+## Anthropic pagination done (2026-09-16)
+
+Cursor loop + shared page fetcher; deepseek/upstage recerts.
+**Ledger: 88/109/8698 (0.99% tracked, 2.53% prod).** Serial 1,858/0.
+
 ## Wave B unit 5 done (2026-09-16)
 
 7 smallest-DIFF partials closed: alibaba-coding-plan +CN profile, nvidia

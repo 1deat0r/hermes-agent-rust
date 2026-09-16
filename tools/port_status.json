@@ -294,8 +294,8 @@
   "status": "partial"
  },
  "hermes_cli.input_sanitize": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (70 -> 54 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: _BOUNDARY_SUBS table == same 4 patterns/substitutions in order; 7 tests green"
  },
  "hermes_cli.lifecycle": {
   "status": "done"
@@ -393,8 +393,8 @@
   "retarget_note": "ported 2026-09-16 autonomous: aliyun alias + alibaba-cn/token-plan/token-plan-cn profiles (4 registrations); 3 tests"
  },
  "plugins.model-providers.anthropic.__init__": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (54 -> 55 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "ported 2026-09-16 autonomous: cursor pagination (limit=1000/after_id/MAX_PAGES-20/repeat-guard/dedup) with 2 mock-tier tests; single-shot path refactored to shared get_json_page"
  },
  "plugins.model-providers.arcee.__init__": {
   "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green",
@@ -413,20 +413,20 @@
   "status": "partial"
  },
  "plugins.model-providers.copilot.__init__": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (74 -> 51 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: signature/docstring folds only; 2 tests green"
  },
  "plugins.model-providers.custom.__init__": {
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (103 -> 73 LOC); re-certify line-by-line before promoting",
   "status": "partial"
  },
  "plugins.model-providers.deepinfra.__init__": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (81 -> 47 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: docstring/code folds only; 3 tests green"
  },
  "plugins.model-providers.deepseek.__init__": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (102 -> 53 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: docstring trims only; suite green"
  },
  "plugins.model-providers.fireworks.__init__": {
   "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green",
@@ -485,8 +485,8 @@
   "status": "done"
  },
  "plugins.model-providers.upstage.__init__": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (115 -> 56 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: clamp_effort refactor already modeled in base; suite green"
  },
  "plugins.model-providers.vertex.__init__": {
   "status": "done",
@@ -632,8 +632,8 @@
   "status": "partial"
  },
  "tools.close_terminal_tool": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (62 -> 52 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: description trims only; 7 tests green"
  },
  "tools.computer_use.schema": {
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (353 -> 208 LOC); re-certify line-by-line before promoting",

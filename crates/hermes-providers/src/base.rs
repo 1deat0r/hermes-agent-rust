@@ -357,11 +357,10 @@ impl ProviderProfile {
                 // explicit endpoint without changing the production default.
                 self.models_url.trim()
             };
-            return match self.fetch_models_inner(
-                api_key,
+            return match self.fetch_anthropic_models(
+                api_key.filter(|value| !value.is_empty()),
                 endpoint,
                 timeout,
-                ModelsFetchMode::Anthropic,
             ) {
                 Ok(models) => Some(models),
                 Err(error) => {
@@ -399,19 +398,78 @@ impl ProviderProfile {
         }
     }
 
-    fn fetch_models_inner(
+    // PARITY: cursor pagination (`_anthropic_models_url` /
+    // `_anthropic_next_cursor` / `_ANTHROPIC_MODELS_MAX_PAGES` in
+    // `hermes_cli/models.py` @ 5d59366). The endpoint is cursor-paginated
+    // with a default page of 20, so every request asks `limit=1000` and
+    // follows `last_id` via `after_id`; a repeated cursor terminates
+    // (server loop guard); ids dedup first-seen-wins across pages.
+    fn fetch_anthropic_models(
         &self,
         api_key: Option<&str>,
         endpoint: &str,
         timeout: f64,
-        mode: ModelsFetchMode,
     ) -> Result<Vec<String>, String> {
+        const MAX_PAGES: usize = 20;
+        let api_key = api_key.filter(|value| !value.is_empty()).ok_or_else(|| {
+            "Anthropic model discovery requires a non-empty API key".to_owned()
+        })?;
+        // Seed URL carries limit=1000 (after_id appended per page).
+        let mut url = Url::parse(endpoint).map_err(|error| error.to_string())?;
+        {
+            let mut pairs = url.query_pairs_mut();
+            pairs.append_pair("limit", "1000");
+        }
+        let seed_url = url.clone();
+        let mut models: Vec<String> = Vec::new();
+        let mut seen_cursors: std::collections::HashSet<String> = std::collections::HashSet::new();
+        for _ in 0..MAX_PAGES {
+            let data =
+                self.get_json_page(Some(api_key), &url, timeout, ModelsFetchMode::Anthropic)?;
+            let items = match &data {
+                Value::Object(object) => object
+                    .get("data")
+                    .and_then(|value| value.as_array())
+                    .cloned()
+                    .unwrap_or_default(),
+                _ => {
+                    return Err("model catalog response is not an object or array".into());
+                }
+            };
+            for item in items {
+                if let Value::Object(object) = item {
+                    if let Some(id) = object.get("id").and_then(Value::as_str) {
+                        if !models.iter().any(|seen| seen == id) {
+                            models.push(id.to_owned());
+                        }
+                    }
+                }
+            }
+            let Some(cursor) = anthropic_next_cursor(&data, &mut seen_cursors) else {
+                break;
+            };
+            url = seed_url.clone();
+            url.query_pairs_mut().append_pair("after_id", &cursor);
+        }
+        Ok(models)
+    }
+
+    /// Single GET with the redirect policy, returning the parsed JSON page.
+    /// Extracted from `fetch_models_inner` so the Anthropic cursor loop
+    /// shares the transport; behavior of the single-shot path is unchanged.
+    fn get_json_page(
+        &self,
+        api_key: Option<&str>,
+        url: &Url,
+        timeout: f64,
+        mode: ModelsFetchMode,
+    ) -> Result<Value, String> {
         let timeout = if timeout.is_finite() && timeout >= 0.0 {
             Duration::from_secs_f64(timeout)
         } else {
             return Err("invalid timeout".into());
         };
-        let mut current_url = Url::parse(endpoint).map_err(|error| error.to_string())?;
+        let mut current_url = url.clone();
         let original_origin = url_origin(&current_url);
 
         let mut headers = HeaderMap::new();
@@ -450,22 +508,12 @@ impl ProviderProfile {
             }
         }
 
-        // urllib's secure opener preserves an installed application's proxy,
-        // TLS, cookie, protocol-handler, and instrumentation policy while
-        // replacing redirect handling. The Rust CLI owner is not present yet;
-        // reqwest supplies the transport and environment proxy/TLS behavior,
-        // with automatic redirects disabled so the header allowlist can be
-        // applied before each redirected request.
         let client = Client::builder()
             .redirect(reqwest::redirect::Policy::none())
             .timeout(timeout)
             .build()
             .map_err(|error| error.to_string())?;
 
-        // HTTPRedirectHandler defaults to ten redirects. Keep the same bound
-        // and compare every hop with the *original* origin, matching
-        // SafeCredentialRedirectHandler rather than only comparing adjacent
-        // URLs.
         for _ in 0..=10 {
             let response = client
                 .get(current_url.clone())
@@ -473,8 +521,6 @@ impl ProviderProfile {
                 .send()
                 .map_err(|error| error.to_string())?;
 
-            // PARITY: urllib's HTTPRedirectHandler follows these five
-            // redirect statuses; other 3xx responses are treated as final.
             if matches!(
                 response.status(),
                 StatusCode::MOVED_PERMANENTLY
@@ -505,28 +551,60 @@ impl ProviderProfile {
             let body = response.bytes().map_err(|error| error.to_string())?;
             let body = String::from_utf8(body.to_vec()).map_err(|error| error.to_string())?;
             let data: Value = serde_json::from_str(&body).map_err(|error| error.to_string())?;
-            let items = match data {
-                Value::Array(items) if mode == ModelsFetchMode::Standard => items,
-                Value::Object(mut object) => object
-                    .remove("data")
-                    .and_then(|value| value.as_array().cloned())
-                    .unwrap_or_default(),
-                _ => return Err("model catalog response is not an object or array".into()),
-            };
-            return Ok(items
-                .into_iter()
-                .filter_map(|item| match item {
-                    Value::Object(object) => object
-                        .get("id")
-                        .and_then(Value::as_str)
-                        .map(ToOwned::to_owned),
-                    _ => None,
-                })
-                .collect());
+            return Ok(data);
         }
 
         Err("too many redirects".into())
     }
+
+    fn fetch_models_inner(
+        &self,
+        api_key: Option<&str>,
+        endpoint: &str,
+        timeout: f64,
+        mode: ModelsFetchMode,
+    ) -> Result<Vec<String>, String> {
+        let url = Url::parse(endpoint).map_err(|error| error.to_string())?;
+        let data = self.get_json_page(api_key, &url, timeout, mode)?;
+        let items = match data {
+            Value::Array(items) if mode == ModelsFetchMode::Standard => items,
+            Value::Object(mut object) => object
+                .remove("data")
+                .and_then(|value| value.as_array().cloned())
+                .unwrap_or_default(),
+            _ => return Err("model catalog response is not an object or array".into()),
+        };
+        Ok(items
+            .into_iter()
+            .filter_map(|item| match item {
+                Value::Object(object) => object
+                    .get("id")
+                    .and_then(Value::as_str)
+                    .map(ToOwned::to_owned),
+                _ => None,
+            })
+            .collect())
+    }
+}
+
+// PARITY: `_anthropic_next_cursor` (`hermes_cli/models.py` @ 5d59366) —
+// `last_id` to continue from, or None when the page is final (`has_more`
+// is not True), the id is missing/empty/non-string, or the server repeats
+// a cursor (which would otherwise loop forever).
+fn anthropic_next_cursor(
+    page: &Value,
+    seen_cursors: &mut std::collections::HashSet<String>,
+) -> Option<String> {
+    let object = page.as_object()?;
+    if object.get("has_more").and_then(Value::as_bool) != Some(true) {
+        return None;
+    }
+    let last_id = object.get("last_id").and_then(Value::as_str)?;
+    if last_id.is_empty() || seen_cursors.contains(last_id) {
+        return None;
+    }
+    seen_cursors.insert(last_id.to_owned());
+    Some(last_id.to_owned())
 }
 
 fn fetch_actual_models(

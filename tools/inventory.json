@@ -1,19 +1,19 @@
 {
  "generated_from": "/tmp/hermes-upstream-5d59366",
- "generated_at": "2026-09-17T08:53:11",
+ "generated_at": "2026-09-17T09:12:15",
  "summary": {
   "modules": 8895,
   "total_lines": 2468648,
   "production_modules": 3481,
   "production_lines": 1147748,
   "status_counts": {
-   "done": 81,
-   "partial": 116,
+   "done": 88,
+   "partial": 109,
    "missing": 8698
   },
   "prod_status_counts": {
-   "done": 81,
-   "partial": 116,
+   "done": 88,
+   "partial": 109,
    "missing": 3284
   },
   "packages": {
@@ -53,8 +53,8 @@
     "modules": 219,
     "status": {
      "missing": 164,
-     "done": 42,
-     "partial": 13
+     "done": 47,
+     "partial": 8
     }
    },
    "hermes_cli": {
@@ -62,8 +62,8 @@
     "modules": 502,
     "status": {
      "missing": 476,
-     "partial": 19,
-     "done": 7
+     "partial": 18,
+     "done": 8
     }
    },
    "tests.hermes_state": {
@@ -164,8 +164,8 @@
     "modules": 310,
     "status": {
      "missing": 269,
-     "partial": 35,
-     "done": 6
+     "partial": 34,
+     "done": 7
     }
    },
    "tests.conftest": {
@@ -50815,7 +50815,7 @@
   "plugins.model-providers.upstage.__init__": {
    "lines": 56,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "optional-skills.mcp.fastmcp.scripts.scaffold_fastmcp": {
@@ -51060,7 +51060,7 @@
   "plugins.model-providers.anthropic.__init__": {
    "lines": 55,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "optional-skills.mcp.fastmcp.templates.file_processor": {
@@ -51284,7 +51284,7 @@
   "hermes_cli.input_sanitize": {
    "lines": 54,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "hermes_cli.subcommands.slack": {
@@ -51506,7 +51506,7 @@
   "plugins.model-providers.deepseek.__init__": {
    "lines": 53,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "plugins.memory.mem0._oss_providers": {
@@ -51616,7 +51616,7 @@
   "tools.close_terminal_tool": {
    "lines": 52,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "tests.tui_gateway.test_interim_assistant_callback": {
@@ -51949,7 +51949,7 @@
   "plugins.model-providers.copilot.__init__": {
    "lines": 51,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "hermes_cli.gateway_command_errors": {
@@ -52981,7 +52981,7 @@
   "plugins.model-providers.deepinfra.__init__": {
    "lines": 47,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "hermes_cli.psutil_android": {

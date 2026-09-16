@@ -124,11 +124,101 @@ fn anthropic_model_fetch_uses_native_headers_and_filters_ids() {
     );
     let request = requests.lock().unwrap().first().cloned().unwrap();
     let lower = request.to_ascii_lowercase();
-    assert!(lower.starts_with("get / "));
+    // PARITY @ 5d59366: every page asks limit=1000 (endpoint paginates at 20).
+    assert!(lower.starts_with("get /?limit=1000 "));
     assert!(lower.contains("x-api-key: sk-ant-test"));
     assert!(lower.contains("anthropic-version: 2023-06-01"));
     assert!(lower.contains("accept: application/json"));
     assert!(!lower.contains("authorization: bearer"));
+}
+
+/// PARITY @ 5d59366: cursor pagination (`has_more`/`last_id`, `limit=1000`,
+/// `after_id`, MAX_PAGES=20, cross-page dedup, repeat-cursor termination).
+/// Live oracle: `_anthropic_models_url` + `_anthropic_next_cursor` +
+/// `_ANTHROPIC_MODELS_MAX_PAGES` in `hermes_cli/models.py`.
+#[test]
+fn anthropic_model_fetch_follows_cursor_pages_with_dedup() {
+    let page1 = r#"{"data":[{"id":"m-a"},{"id":"m-b"}],"has_more":true,"last_id":"m-b"}"#;
+    let page2 = r#"{"data":[{"id":"m-b"},{"id":"m-c"}],"has_more":false}"#;
+    let (server_url, requests, thread) = spawn_server_multi(vec![page1, page2]);
+
+    let _guard = ANTHROPIC_TEST_LOCK.lock().unwrap();
+    reset_registry_for_tests();
+    let mut profile = get_provider_profile("anthropic").unwrap();
+    profile.models_url = server_url;
+    let models = profile.fetch_models(Some("sk-ant-test"), None, 8.0);
+    thread.join().unwrap();
+
+    // Dedup across pages, order-stable (first-seen wins).
+    assert_eq!(
+        models,
+        Some(vec!["m-a".into(), "m-b".into(), "m-c".into()])
+    );
+    let requests = requests.lock().unwrap();
+    assert_eq!(requests.len(), 2);
+    assert!(requests[0].contains("limit=1000"), "{}", requests[0]);
+    assert!(!requests[0].contains("after_id"), "{}", requests[0]);
+    assert!(requests[1].contains("after_id=m-b"), "{}", requests[1]);
+}
+
+/// A server repeating its cursor terminates instead of looping forever.
+#[test]
+fn anthropic_model_fetch_stops_on_repeated_cursor() {
+    let page = r#"{"data":[{"id":"m-a"}],"has_more":true,"last_id":"m-a"}"#;
+    // Script only 2 pages: a correct client stops after the repeat; a
+    // looping client would exhaust the script and fail open (asserted).
+    let (server_url, requests, thread) = spawn_server_multi(vec![page; 2]);
+    let _guard = ANTHROPIC_TEST_LOCK.lock().unwrap();
+    reset_registry_for_tests();
+    let mut profile = get_provider_profile("anthropic").unwrap();
+    profile.models_url = server_url;
+    let models = profile.fetch_models(Some("sk-ant-test"), None, 8.0);
+    thread.join().unwrap();
+    assert_eq!(models, Some(vec!["m-a".into()]));
+    assert!(requests.lock().unwrap().len() <= 3, "must terminate early");
+}
+
+fn spawn_server_multi(
+    bodies: Vec<&'static str>,
+) -> (String, Arc<Mutex<Vec<String>>>, JoinHandle<()>) {
+    let listener = TcpListener::bind(("127.0.0.1", 0)).expect("bind loopback server");
+    let address = listener.local_addr().expect("server address");
+    let requests = Arc::new(Mutex::new(Vec::new()));
+    let captured = Arc::clone(&requests);
+    let total = bodies.len();
+    let thread = thread::spawn(move || {
+        // Nonblocking accept so join never hangs when the client stops
+        // early; the loop exits after serving the script (a runaway client
+        // then gets connection-refused → fail-open, caught by assertions).
+        // Idle deadline is a backstop only.
+        listener
+            .set_nonblocking(true)
+            .expect("nonblocking accept");
+        let mut bodies = bodies.into_iter();
+        let mut served = 0usize;
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(20);
+        while served < total {
+            match listener.accept() {
+                Ok((mut stream, _)) => {
+                    let Some(body) = bodies.next() else {
+                        break;
+                    };
+                    stream
+                        .set_read_timeout(Some(std::time::Duration::from_secs(5)))
+                        .ok();
+                    let request = read_request(&mut stream);
+                    captured.lock().unwrap().push(request);
+                    let _ = stream.write_all(response("200 OK", body).as_bytes());
+                    served += 1;
+                }
+                Err(_) if std::time::Instant::now() < deadline => {
+                    std::thread::sleep(std::time::Duration::from_millis(10));
+                }
+                Err(_) => break,
+            }
+        }
+    });
+    (format!("http://{address}"), requests, thread)
 }
 
 #[test]
