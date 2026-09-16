@@ -142,6 +142,12 @@ bedrock rename + ai-gateway/gemini recerts; redaction scoped own unit.
 egress refactor ported; 5 stale expectations fixed live.
 **Ledger: 67/130/8698 (0.75% tracked, 1.92% prod).** Serial 1,841/0.
 
+## Wave B unit 4 done (2026-09-16)
+
+binary_extensions (opaque set) + verify.environment + timeouts.
+Flaky bitwarden assertion fixed deterministically.
+**Ledger: 70/127/8698 (0.79% tracked, 2.01% prod).** Serial 1,844/0.
+
 ## Next actions, in order
 
 1. Wave A: trivial sweep (`__init__` 0–3 LOC, eslint configs, barrels),

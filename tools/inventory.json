@@ -1,19 +1,19 @@
 {
  "generated_from": "/tmp/hermes-upstream-5d59366",
- "generated_at": "2026-09-16T22:09:34",
+ "generated_at": "2026-09-16T22:34:46",
  "summary": {
   "modules": 8895,
   "total_lines": 2468648,
   "production_modules": 3481,
   "production_lines": 1147748,
   "status_counts": {
-   "done": 67,
-   "partial": 130,
+   "done": 70,
+   "partial": 127,
    "missing": 8698
   },
   "prod_status_counts": {
-   "done": 67,
-   "partial": 130,
+   "done": 70,
+   "partial": 127,
    "missing": 3284
   },
   "packages": {
@@ -37,8 +37,8 @@
     "modules": 283,
     "status": {
      "missing": 236,
-     "partial": 33,
-     "done": 14
+     "partial": 32,
+     "done": 15
     }
    },
    "tests.agent": {
@@ -62,8 +62,8 @@
     "modules": 502,
     "status": {
      "missing": 476,
-     "partial": 21,
-     "done": 5
+     "partial": 20,
+     "done": 6
     }
    },
    "tests.hermes_state": {
@@ -164,8 +164,8 @@
     "modules": 310,
     "status": {
      "missing": 269,
-     "partial": 36,
-     "done": 5
+     "partial": 35,
+     "done": 6
     }
    },
    "tests.conftest": {
@@ -52551,7 +52551,7 @@
   "tools.binary_extensions": {
    "lines": 48,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "tests.tools.test_file_tools_plugin_container_cwd": {
@@ -52681,7 +52681,7 @@
   "hermes_cli.timeouts": {
    "lines": 48,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "hermes_cli.web_routers.chat_ws_errors": {
@@ -52725,7 +52725,7 @@
   "agent.verify.environment": {
    "lines": 48,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "ts:apps.shared.src.model-search-text.test": {

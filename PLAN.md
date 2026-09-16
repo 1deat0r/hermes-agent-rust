@@ -893,8 +893,14 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   20-char floor); `monitoring::redaction` rewired, `redact_bounded` added.
   Blast radius: 5 stale expectations in 4 files updated to the refactor
   behavior (verified live each). Reviews PASS. Ledger: **67 done / 130
-  partial / 8,698 missing (0.75%)**. Evidence: serial 1,841/0 (205
+  partial / 8,698 missing   (0.75%)**. Evidence: serial 1,841/0 (205
   suites), diff clean.
+- 2026-09-16 (Wave B unit 4): `tools.binary_extensions` (opaque-doc set +
+  helper + pdf predicate, 3 tests), `verify.environment` + `timeouts`
+  re-certified (already-covered / logic-identical). Flaky-test fix:
+  bitwarden `v"` assertion false-positived ~5%/run on random base64 —
+  tightened to `"v"` (deterministic). Ledger: **70 done / 127 partial /
+  8,698 missing (0.79%)**. Evidence: serial 1,844/0, diff clean.
 - 2026-08-31 (session 4da): Fifty units across four crates, all red-first:
   batch 1 — the `hermes_cli/main.py` private git-fingerprint helpers
   (`_read_packed_ref`, `_read_git_revision_fingerprint`) into

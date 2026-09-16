@@ -154,8 +154,8 @@
   "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green"
  },
  "agent.verify.environment": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (75 -> 48 LOC); re-certify line-by-line before promoting"
+  "status": "done",
+  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): wrapped-shape support already present; 18 tests green"
  },
  "agent.verify.recipes": {
   "status": "partial",
@@ -309,8 +309,8 @@
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (30 -> 58 LOC); re-certify line-by-line before promoting"
  },
  "hermes_cli.timeouts": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (82 -> 48 LOC); re-certify line-by-line before promoting"
+  "status": "done",
+  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): _configured_timeout parameterization is logic-identical (structure differs, behavior same); 6 tests green"
  },
  "hermes_cli.toolset_validation": {
   "status": "partial",
@@ -501,8 +501,8 @@
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (97 -> 56 LOC); re-certify line-by-line before promoting"
  },
  "tools.binary_extensions": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (42 -> 48 LOC); re-certify line-by-line before promoting"
+  "status": "done",
+  "retarget_note": "ported 2026-09-16 Wave B: OPAQUE_DOCUMENT_EXTENSIONS + has_extension_in + is_pdf_path (3 tests); has_->is_ rename divergence kept+documented"
  },
  "tools.browser_camofox_state": {
   "status": "done",

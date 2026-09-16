@@ -147,7 +147,11 @@ fn encrypted_cache_write_then_read_round_trip() {
         assert_eq!(mode & 0o777, 0o600, "encrypted cache must be 0600");
     }
     let raw = std::fs::read_to_string(&path).unwrap();
-    assert!(!raw.contains("v\""), "plaintext value must not leak: {raw}");
+    // FLAKY-FIX (2026-09-16): `v"` false-positives ~5%/run when random
+    // base64 (salt/nonce/ciphertext) ends in `v` before a closing quote.
+    // `"v"` (full JSON string) is deterministic: base64 never contains `"`,
+    // so only a real plaintext leak can produce it.
+    assert!(!raw.contains("\"v\""), "plaintext value must not leak: {raw}");
 
     // In-window read decrypts back.
     let loaded = hermes_agent::secret_sources::bitwarden::read_encrypted_disk_cache(
