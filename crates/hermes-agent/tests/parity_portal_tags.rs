@@ -274,3 +274,22 @@ fn a_published_version_changes_the_tag_without_a_restart() {
     set_hermes_version(previous.as_deref());
     assert_eq!(hermes_client_tag(), "client=hermes-client-v0.21.3");
 }
+
+/// PARITY @ 5d59366: affinity scope triple (`set_affinity_scope` /
+/// `reset_affinity_scope` / `get_affinity_scope`, upstream lines 42-54).
+/// Falsy publishes clear; unset reads None (consumers fall back to the
+/// conversation id, so delegate trees share the parent's sticky key).
+#[test]
+fn affinity_scope_publish_reset_round_trip() {
+    use hermes_agent::portal_tags::{
+        get_affinity_scope, reset_affinity_scope, set_affinity_scope,
+    };
+    assert_eq!(get_affinity_scope(), None);
+    let token = set_affinity_scope(Some("scope-A"));
+    assert_eq!(get_affinity_scope(), Some("scope-A".to_string()));
+    reset_affinity_scope(token);
+    assert_eq!(get_affinity_scope(), None);
+    // Empty string clears like None (`scope or None`).
+    set_affinity_scope(Some(""));
+    assert_eq!(get_affinity_scope(), None);
+}

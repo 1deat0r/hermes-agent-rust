@@ -1,6 +1,9 @@
 //! Kimi / Moonshot provider profiles.
 //!
-//! PARITY: plugins/model-providers/kimi-coding/__init__.py @ b9aa928.
+//! PARITY: plugins/model-providers/kimi-coding/__init__.py @ 5d59366.
+//! The `User-Agent` now follows the shared `_HEADERS` table
+//! (`HermesAgent/{hermes_cli.__version__}`); baked as the 5d59366 literal
+//! like the other provider UA strings in this crate (re-pinned per pin).
 
 use crate::base::{ProviderProfile, OMIT_TEMPERATURE};
 
@@ -18,7 +21,7 @@ fn profile_with_name(
     profile.default_max_tokens = Some(32_000);
     profile
         .default_headers
-        .insert("User-Agent".into(), "hermes-agent/1.0".into());
+        .insert("User-Agent".into(), "HermesAgent/0.21.3".into());
     profile.default_aux_model = "kimi-k2-turbo-preview".into();
     // PARITY: KimiProfile owns the Coding endpoint confirmation, k3 catalog
     // filtering, and mutually-exclusive reasoning wire shape.

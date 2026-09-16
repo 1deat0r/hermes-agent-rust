@@ -92,8 +92,8 @@
   "status": "done"
  },
  "agent.portal_tags": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (144 -> 99 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "ported 2026-09-16 autonomous: affinity-scope triple (set/reset/get) mirroring conversation pattern; 15 tests"
  },
  "agent.proxy_sources.__init__": {
   "retarget_note": "pointer surface ported 2026-09-16; iron_proxy backend remains missing",
@@ -417,8 +417,8 @@
   "retarget_note": "re-certified autonomous: signature/docstring folds only; 2 tests green"
  },
  "plugins.model-providers.custom.__init__": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (103 -> 73 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: qwen _normalize_parts already modeled; custom/zai docstring-only drift; suites green"
  },
  "plugins.model-providers.deepinfra.__init__": {
   "status": "done",
@@ -449,16 +449,16 @@
   "status": "done"
  },
  "plugins.model-providers.kimi-coding.__init__": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (121 -> 71 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "ported 2026-09-16 autonomous: versioned UA HermesAgent/0.21.3 (was stale hermes-agent/1.0); suite green"
  },
  "plugins.model-providers.minimax.__init__": {
   "status": "done",
   "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
  },
  "plugins.model-providers.nous.__init__": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (88 -> 76 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: profile surface green (18 tests); resolve_aux_model DEFERRED to CLI/model layer (network + hermes_cli.models, above providers crate)"
  },
  "plugins.model-providers.novita.__init__": {
   "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green",
@@ -477,8 +477,8 @@
   "status": "done"
  },
  "plugins.model-providers.qwen-oauth.__init__": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (108 -> 72 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: qwen _normalize_parts already modeled; custom/zai docstring-only drift; suites green"
  },
  "plugins.model-providers.stepfun.__init__": {
   "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green",
@@ -501,8 +501,8 @@
   "status": "done"
  },
  "plugins.model-providers.zai.__init__": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (127 -> 75 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: qwen _normalize_parts already modeled; custom/zai docstring-only drift; suites green"
  },
  "plugins.platforms.a2a.__init__": {
   "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",

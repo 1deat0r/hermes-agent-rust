@@ -1,19 +1,19 @@
 {
  "generated_from": "/tmp/hermes-upstream-5d59366",
- "generated_at": "2026-09-17T10:35:43",
+ "generated_at": "2026-09-17T11:15:46",
  "summary": {
   "modules": 8895,
   "total_lines": 2468648,
   "production_modules": 3481,
   "production_lines": 1147748,
   "status_counts": {
-   "done": 103,
-   "partial": 94,
+   "done": 109,
+   "partial": 88,
    "missing": 8698
   },
   "prod_status_counts": {
-   "done": 103,
-   "partial": 94,
+   "done": 109,
+   "partial": 88,
    "missing": 3284
   },
   "packages": {
@@ -37,8 +37,8 @@
     "modules": 283,
     "status": {
      "missing": 236,
-     "partial": 26,
-     "done": 21
+     "partial": 25,
+     "done": 22
     }
    },
    "tests.agent": {
@@ -53,8 +53,8 @@
     "modules": 219,
     "status": {
      "missing": 164,
-     "done": 49,
-     "partial": 6
+     "done": 54,
+     "partial": 1
     }
    },
    "hermes_cli": {
@@ -40541,7 +40541,7 @@
   "agent.portal_tags": {
    "lines": 99,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "ts:apps.desktop.src.store.approval-mode.test": {
@@ -45854,7 +45854,7 @@
   "plugins.model-providers.nous.__init__": {
    "lines": 76,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "plugins.google_meet.node.registry": {
@@ -46107,7 +46107,7 @@
   "plugins.model-providers.zai.__init__": {
    "lines": 75,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "plugins.memory.honcho.session_migration": {
@@ -46628,7 +46628,7 @@
   "plugins.model-providers.custom.__init__": {
    "lines": 73,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "plugins.cron_providers.chronos._nas_client": {
@@ -46806,7 +46806,7 @@
   "plugins.model-providers.qwen-oauth.__init__": {
    "lines": 72,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "optional-skills.web-development.har-derived-api-client.scripts.har_capture": {
@@ -47034,7 +47034,7 @@
   "plugins.model-providers.kimi-coding.__init__": {
    "lines": 71,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "evals.core_tool_deferral.report": {

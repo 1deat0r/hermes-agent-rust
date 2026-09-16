@@ -135,6 +135,45 @@ pub fn get_conversation_context() -> Option<String> {
     CONVERSATION_ID.with(|slot| slot.borrow().clone())
 }
 
+thread_local! {
+    /// PARITY: `_affinity_scope: ContextVar[Optional[str]]` (upstream
+    /// `agent/portal_tags.py` lines 29-31). Ambient affinity scope (ROUTING
+    /// value): the sticky backend/prompt-cache key, usually equal to the
+    /// conversation id, but a host minting one physical session per RESPONSE
+    /// routes on its declared whole-chat key. Unset → consumers fall back
+    /// to the conversation id, so delegate trees share the parent's key.
+    static AFFINITY_SCOPE: RefCell<Option<String>> = const { RefCell::new(None) };
+}
+
+/// Publish the declared routing/affinity scope.
+///
+/// PARITY: `set_affinity_scope` (upstream lines 42-44). Only the declared
+/// value is published; falsy clears (`scope or None`). Returns the previous
+/// value (ContextVar token analog) for turn-exit restore.
+pub fn set_affinity_scope(scope: Option<&str>) -> Option<String> {
+    let next = scope.filter(|value| !value.is_empty()).map(str::to_string);
+    AFFINITY_SCOPE.with(|slot| {
+        let mut current = slot.borrow_mut();
+        std::mem::replace(&mut *current, next)
+    })
+}
+
+/// Restore a previous affinity scope (pair with [`set_affinity_scope`]).
+///
+/// PARITY: `reset_affinity_scope` (upstream lines 47-49). Same
+/// cross-Context fallback semantics as the conversation twin: Rust tokens
+/// are same-thread by construction, so the restore always applies.
+pub fn reset_affinity_scope(token: Option<String>) {
+    AFFINITY_SCOPE.with(|slot| *slot.borrow_mut() = token);
+}
+
+/// Return the ambient affinity scope, or `None` when unset.
+///
+/// PARITY: `get_affinity_scope` (upstream lines 52-54).
+pub fn get_affinity_scope() -> Option<String> {
+    AFFINITY_SCOPE.with(|slot| slot.borrow().clone())
+}
+
 /// Return the `client=...` tag for Nous Portal requests.
 ///
 /// PARITY: `hermes_client_tag` (upstream lines 98-103). Format:

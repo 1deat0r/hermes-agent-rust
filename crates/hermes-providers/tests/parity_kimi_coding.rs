@@ -65,7 +65,7 @@ fn kimi_profiles_match_source_fields_and_aliases() {
     assert_eq!(global.default_max_tokens, Some(32_000));
     assert_eq!(
         global.default_headers.get("User-Agent"),
-        Some(&"hermes-agent/1.0".to_owned())
+        Some(&"HermesAgent/0.21.3".to_owned())
     );
     assert_eq!(global.default_aux_model, "kimi-k2-turbo-preview");
     assert!(global.kimi_coding);

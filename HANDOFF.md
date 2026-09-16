@@ -158,6 +158,11 @@ Any-delta + append/backfill ported; 6 recerts; partials <100.
 line_input + soul template ports; 3 recerts.
 **Ledger: 103/94/8698 (1.16% tracked, 2.96% prod).** Serial 1,873/0.
 
+## Affinity batch done (2026-09-16)
+
+affinity triple + kimi UA; 4 recerts; aux-model deferred.
+**Ledger: 109/88/8698 (1.23% tracked, 3.13% prod).** Serial 1,874/0.
+
 ## Wave B provider batch done (2026-09-16)
 
 alibaba×3, ollama clamp, nvidia/vertex recerts, registry 38→41.
