@@ -1,0 +1,12 @@
+[package]
+name = "hermes-platforms"
+description = "1:1 Rust port of plugins/ platform entries (NousResearch/hermes-agent @ 5d59366, P4)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+thiserror.workspace = true
+
+[dev-dependencies]

@@ -1,20 +1,20 @@
 {
  "generated_from": "/tmp/hermes-upstream-5d59366",
- "generated_at": "2026-09-16T20:23:48",
+ "generated_at": "2026-09-16T20:50:35",
  "summary": {
   "modules": 8895,
   "total_lines": 2468648,
   "production_modules": 3481,
   "production_lines": 1147748,
   "status_counts": {
-   "done": 32,
+   "done": 34,
    "partial": 142,
-   "missing": 8721
+   "missing": 8719
   },
   "prod_status_counts": {
-   "done": 32,
+   "done": 34,
    "partial": 142,
-   "missing": 3307
+   "missing": 3305
   },
   "packages": {
    "tests.tui_gateway": {
@@ -52,9 +52,9 @@
     "lines": 85849,
     "modules": 219,
     "status": {
-     "missing": 187,
+     "missing": 185,
      "partial": 21,
-     "done": 11
+     "done": 13
     }
    },
    "hermes_cli": {
@@ -58889,7 +58889,7 @@
   "plugins.platforms.slack.__init__": {
    "lines": 3,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "plugins.platforms.simplex.__init__": {
@@ -59009,7 +59009,7 @@
   "plugins.__init__": {
    "lines": 1,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "gateway.builtin_hooks.__init__": {

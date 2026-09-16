@@ -108,6 +108,12 @@ Next goal: `docs/long-horizon-101.md` (waves A–D, M1–M7, all-33 lanes).
 4 rows (`agent.jiter_preload` + 3 package surfaces), review-closed.
 **Ledger: 32/142/8721 (0.36% tracked, 0.92% prod).** Serial 1,805/0.
 
+## Wave A batch 2 done (2026-09-16)
+
+`hermes-platforms` crate + `plugins/__init__` + slack entry (PluginCtx seam,
+review-clean). **Ledger: 34/142/8719 (0.38% tracked, 0.98% prod).**
+Serial 1,807/0. Next: remaining 19 platform entries (same seam, cheap rows).
+
 ## Next actions, in order
 
 1. Wave A: trivial sweep (`__init__` 0–3 LOC, eslint configs, barrels),

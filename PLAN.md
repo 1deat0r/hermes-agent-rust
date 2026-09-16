@@ -862,6 +862,12 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   error type, tautology, stale pin; seam/test-hook API + visibility kept
   with documented rationale). Ledger: **32 done / 142 partial / 8,721
   missing (0.36%)**. Evidence: serial 1,805/0, diff clean.
+- 2026-09-16 (Wave A batch 2): `hermes-platforms` crate opened (P4) with
+  `PluginCtx` seam + first entry `plugins.platforms.slack/__init__`
+  (name/label/env/hint pinned, 13 adapter kwargs deferred to the tracked
+  adapter row). Two-axis review: no hard breaches; test-setup dup
+  extracted. Ledger: **34 done / 142 partial / 8,719 missing (0.38%)**.
+  Evidence: serial 1,807/0, diff clean.
 - 2026-08-31 (session 4da): Fifty units across four crates, all red-first:
   batch 1 — the `hermes_cli/main.py` private git-fingerprint helpers
   (`_read_packed_ref`, `_read_git_revision_fingerprint`) into

@@ -689,5 +689,13 @@
  "gateway.builtin_hooks.__init__": {
   "status": "done",
   "retarget_note": "always-registered contract ported 2026-09-16 (no hook impls at pin)"
+ },
+ "plugins.__init__": {
+  "status": "done",
+  "retarget_note": "package root ported 2026-09-16 (hermes-platforms crate root declares plugins/ scope; review-clean)"
+ },
+ "plugins.platforms.slack.__init__": {
+  "status": "done",
+  "retarget_note": "entry ported 2026-09-16 under mattpocock tdd+review: PluginCtx seam + 2 tests; 13 adapter kwargs deferred to plugins.platforms.slack.adapter (missing, tracked)"
  }
 }

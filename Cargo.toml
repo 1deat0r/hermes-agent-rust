@@ -13,6 +13,7 @@ members = [
     "crates/hermes-cli",
     "crates/hermes-gateway",
     "crates/hermes-desktop",
+    "crates/hermes-platforms",
 ]
 
 [workspace.package]

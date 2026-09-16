@@ -1,7 +1,7 @@
 # Hermes Agent → Hermes Agent Rust Conversion Ledger
 
-**Current strict completion: 0.36% of all tracked upstream modules (32/8895).**
-Production-only strict completion: **0.92%** (32/3481 production modules).
+**Current strict completion: 0.38% of all tracked upstream modules (34/8895).**
+Production-only strict completion: **0.98%** (34/3481 production modules).
 
 > This file is generated from `tools/inventory.json`; update the source ledger in `tools/port_status.json`, regenerate the inventory, then run `python3 tools/conversion_ledger.py`. Only `done` counts toward the percentage. `partial` is intentionally zero credit until its stated parity seams are closed.
 
@@ -9,10 +9,10 @@ Production-only strict completion: **0.92%** (32/3481 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 32 | 142 | 8721 | 0.36% | 909/2,468,648 done LOC |
-| Production modules | 32 | 142 | 3307 | 0.92% | 909/1,147,748 done LOC |
+| All tracked modules | 34 | 142 | 8719 | 0.38% | 913/2,468,648 done LOC |
+| Production modules | 34 | 142 | 3305 | 0.98% | 913/1,147,748 done LOC |
 
-Inventory source: `/tmp/hermes-upstream-5d59366` at `2026-09-16T20:23:48`.
+Inventory source: `/tmp/hermes-upstream-5d59366` at `2026-09-16T20:50:35`.
 
 ## Definition of 100.00%
 
@@ -1484,7 +1484,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `optional-skills.web-development.har-derived-api-client.scripts.har_capture` | production | P2 | 72 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `optional-skills.web-development.har-derived-api-client.scripts.har_capture_cdp` | production | P2 | 135 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `optional-skills.web-development.har-derived-api-client.scripts.har_to_client` | production | P2 | 147 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `plugins.__init__` | production | P4 | 1 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `plugins.__init__` | production | P4 | 1 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.browser._common` | production | P4 | 138 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.browser.browser_use.__init__` | production | P4 | 9 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.browser.browser_use.provider` | production | P4 | 183 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
@@ -1659,7 +1659,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `plugins.platforms.raft.adapter` | production | P4 | 585 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.platforms.simplex.__init__` | production | P4 | 3 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.platforms.simplex.adapter` | production | P4 | 678 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `plugins.platforms.slack.__init__` | production | P4 | 3 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `plugins.platforms.slack.__init__` | production | P4 | 3 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `plugins.platforms.slack.adapter` | production | P4 | 6,660 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.platforms.slack.block_kit` | production | P4 | 602 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `plugins.platforms.sms.__init__` | production | P4 | 3 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |

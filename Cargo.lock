@@ -661,6 +661,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "hermes-platforms"
+version = "0.1.0"
+dependencies = [
+ "thiserror",
+]
+
+[[package]]
 name = "hermes-providers"
 version = "0.1.0"
 dependencies = [
