@@ -1,19 +1,19 @@
 {
  "generated_from": "/tmp/hermes-upstream-5d59366",
- "generated_at": "2026-09-16T14:45:29",
+ "generated_at": "2026-09-16T14:51:16",
  "summary": {
   "modules": 8895,
   "total_lines": 2468648,
   "production_modules": 3481,
   "production_lines": 1147748,
   "status_counts": {
-   "done": 5,
-   "partial": 164,
+   "done": 27,
+   "partial": 142,
    "missing": 8726
   },
   "prod_status_counts": {
-   "done": 5,
-   "partial": 164,
+   "done": 27,
+   "partial": 142,
    "missing": 3312
   },
   "packages": {
@@ -36,8 +36,8 @@
     "modules": 283,
     "status": {
      "missing": 239,
-     "partial": 42,
-     "done": 2
+     "partial": 38,
+     "done": 6
     }
    },
    "tests.agent": {
@@ -52,7 +52,8 @@
     "modules": 219,
     "status": {
      "missing": 187,
-     "partial": 32
+     "partial": 21,
+     "done": 11
     }
    },
    "hermes_cli": {
@@ -60,8 +61,8 @@
     "modules": 502,
     "status": {
      "missing": 476,
-     "partial": 25,
-     "done": 1
+     "partial": 22,
+     "done": 4
     }
    },
    "tests.hermes_state": {
@@ -83,7 +84,8 @@
     "modules": 159,
     "status": {
      "missing": 148,
-     "partial": 11
+     "partial": 8,
+     "done": 3
     }
    },
    "tests.hermes_cli": {
@@ -161,8 +163,8 @@
     "modules": 310,
     "status": {
      "missing": 269,
-     "partial": 39,
-     "done": 2
+     "partial": 38,
+     "done": 3
     }
    },
    "tests.conftest": {
@@ -54351,7 +54353,7 @@
   "gateway.platforms.qqbot.constants": {
    "lines": 41,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "evals.botmode-dm-delivery.exception-tick": {
@@ -54845,7 +54847,7 @@
    "imports": [
     "hermes_constants"
    ],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "tests.tui_gateway.test_slash_worker_profile_home": {
@@ -55200,7 +55202,7 @@
   "gateway.cwd_placeholder": {
    "lines": 37,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "ts:tests-js.install-process-close.test": {
@@ -56402,7 +56404,7 @@
   "hermes_cli.setup_hidden_env": {
    "lines": 30,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "hermes_cli.model_search": {
@@ -56414,7 +56416,7 @@
   "hermes_cli.colors": {
    "lines": 30,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "agent.search_policy": {
@@ -56550,7 +56552,7 @@
   "plugins.model-providers.fireworks.__init__": {
    "lines": 29,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "hermes_cli.subcommands.uninstall": {
@@ -56850,7 +56852,7 @@
   "hermes_cli.dashboard_auth.public_paths": {
    "lines": 27,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "ts:apps.shared.src.format": {
@@ -57634,7 +57636,7 @@
   "plugins.model-providers.gmi.__init__": {
    "lines": 22,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "hermes_cli.main_dep_hints": {
@@ -57862,7 +57864,7 @@
   "gateway.platforms.qqbot.crypto": {
    "lines": 20,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "agent.auxiliary_wire": {
@@ -57916,7 +57918,7 @@
   "plugins.model-providers.novita.__init__": {
    "lines": 19,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "hermes_cli.cli_unknown_command": {
@@ -57940,7 +57942,7 @@
   "agent.secret_sources.__init__": {
    "lines": 19,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "ts:apps.shared.src.reasoning-effort": {
@@ -58152,7 +58154,7 @@
   "agent.monitoring.__init__": {
    "lines": 17,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "ts:apps.desktop.src.store.haptics": {
@@ -58290,7 +58292,7 @@
   "plugins.model-providers.azure-foundry.__init__": {
    "lines": 15,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "hermes_cli.subcommands.completion": {
@@ -58314,7 +58316,7 @@
   "agent.verify.__init__": {
    "lines": 15,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "ts:apps.desktop.src.plugins.hermes-bots.group-presence": {
@@ -58356,13 +58358,13 @@
   "plugins.model-providers.xiaomi.__init__": {
    "lines": 14,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "plugins.model-providers.huggingface.__init__": {
    "lines": 14,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "hermes_cli.subcommands.console": {
@@ -58458,7 +58460,7 @@
   "plugins.model-providers.xai.__init__": {
    "lines": 13,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "hermes_cli.toolset_scope": {
@@ -58538,7 +58540,7 @@
   "plugins.model-providers.openai-codex.__init__": {
    "lines": 12,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "ts:apps.desktop.src.lib.code-skew-error": {
@@ -58562,19 +58564,19 @@
   "plugins.model-providers.stepfun.__init__": {
    "lines": 11,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "plugins.model-providers.kilocode.__init__": {
    "lines": 11,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "plugins.model-providers.arcee.__init__": {
    "lines": 11,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "ts:apps.desktop.src.store.profile-rail-prefs": {
@@ -58598,7 +58600,7 @@
   "agent.errors": {
    "lines": 10,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "ts:apps.desktop.src.components.chat.shiki-plain": {

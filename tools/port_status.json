@@ -16,8 +16,8 @@
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (3147 -> 2778 LOC); re-certify line-by-line before promoting"
  },
  "agent.errors": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (13 -> 10 LOC); re-certify line-by-line before promoting"
+  "status": "done",
+  "retarget_note": "re-certified at 5d59366 (2026-09-16): AST-identical modulo docstrings vs b9aa928; existing parity tests re-run green"
  },
  "agent.file_safety": {
   "status": "partial",
@@ -52,8 +52,8 @@
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (50 -> 43 LOC); re-certify line-by-line before promoting"
  },
  "agent.monitoring.__init__": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (29 -> 17 LOC); re-certify line-by-line before promoting"
+  "status": "done",
+  "retarget_note": "re-certified at 5d59366 (2026-09-16): AST-identical modulo docstrings vs b9aa928; existing parity tests re-run green"
  },
  "agent.monitoring.cron_health": {
   "status": "partial",
@@ -150,8 +150,8 @@
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (92 -> 64 LOC); re-certify line-by-line before promoting"
  },
  "agent.verify.__init__": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (38 -> 15 LOC); re-certify line-by-line before promoting"
+  "status": "done",
+  "retarget_note": "re-certified at 5d59366 (2026-09-16): AST-identical modulo docstrings vs b9aa928; existing parity tests re-run green"
  },
  "agent.verify.environment": {
   "status": "partial",
@@ -178,20 +178,20 @@
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (64 -> 48 LOC); re-certify line-by-line before promoting"
  },
  "gateway.cwd_placeholder": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (49 -> 37 LOC); re-certify line-by-line before promoting"
+  "status": "done",
+  "retarget_note": "re-certified at 5d59366 (2026-09-16): refactor-only drift (cosmetic restructure, behavior identical); existing parity tests re-run green"
  },
  "gateway.platforms._http_client_limits": {
   "status": "partial",
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (84 -> 47 LOC); re-certify line-by-line before promoting"
  },
  "gateway.platforms.qqbot.constants": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (74 -> 41 LOC); re-certify line-by-line before promoting"
+  "status": "done",
+  "retarget_note": "re-certified at 5d59366 (2026-09-16): AST-identical modulo docstrings vs b9aa928; existing parity tests re-run green"
  },
  "gateway.platforms.qqbot.crypto": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (45 -> 20 LOC); re-certify line-by-line before promoting"
+  "status": "done",
+  "retarget_note": "re-certified at 5d59366 (2026-09-16): refactor-only drift (cosmetic restructure, behavior identical); existing parity tests re-run green"
  },
  "gateway.platforms.qqbot.keyboards": {
   "status": "partial",
@@ -226,12 +226,12 @@
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (77 -> 70 LOC); re-certify line-by-line before promoting"
  },
  "hermes_cli.colors": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (38 -> 30 LOC); re-certify line-by-line before promoting"
+  "status": "done",
+  "retarget_note": "re-certified at 5d59366 (2026-09-16): refactor-only drift (cosmetic restructure, behavior identical); existing parity tests re-run green"
  },
  "hermes_cli.dashboard_auth.__init__": {
   "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (48 -> 20 LOC); re-certify line-by-line before promoting"
+  "retarget_note": "re-certified at 5d59366 except HTTP-layer siblings; classify_jwks_lookup_error ported w/ 5 oracle tests (2026-09-16)"
  },
  "hermes_cli.dashboard_auth.audit": {
   "status": "partial",
@@ -254,8 +254,8 @@
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (232 -> 130 LOC); re-certify line-by-line before promoting"
  },
  "hermes_cli.dashboard_auth.public_paths": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (60 -> 27 LOC); re-certify line-by-line before promoting"
+  "status": "done",
+  "retarget_note": "re-certified at 5d59366 (2026-09-16): AST-identical modulo docstrings vs b9aa928; existing parity tests re-run green"
  },
  "hermes_cli.dashboard_auth.registry": {
   "status": "partial",
@@ -297,8 +297,8 @@
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (126 -> 98 LOC); re-certify line-by-line before promoting"
  },
  "hermes_cli.setup_hidden_env": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (56 -> 30 LOC); re-certify line-by-line before promoting"
+  "status": "done",
+  "retarget_note": "re-certified at 5d59366 (2026-09-16): AST-identical modulo docstrings vs b9aa928; existing parity tests re-run green"
  },
  "hermes_cli.sqlite_util": {
   "status": "partial",
@@ -373,12 +373,12 @@
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (54 -> 55 LOC); re-certify line-by-line before promoting"
  },
  "plugins.model-providers.arcee.__init__": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (13 -> 11 LOC); re-certify line-by-line before promoting"
+  "status": "done",
+  "retarget_note": "re-certified at 5d59366 (2026-09-16): AST-identical modulo docstrings vs b9aa928; existing parity tests re-run green"
  },
  "plugins.model-providers.azure-foundry.__init__": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (21 -> 15 LOC); re-certify line-by-line before promoting"
+  "status": "done",
+  "retarget_note": "re-certified at 5d59366 (2026-09-16): AST-identical modulo docstrings vs b9aa928; existing parity tests re-run green"
  },
  "plugins.model-providers.bedrock.__init__": {
   "status": "partial",
@@ -405,24 +405,24 @@
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (102 -> 53 LOC); re-certify line-by-line before promoting"
  },
  "plugins.model-providers.fireworks.__init__": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (46 -> 29 LOC); re-certify line-by-line before promoting"
+  "status": "done",
+  "retarget_note": "re-certified at 5d59366 (2026-09-16): AST-identical modulo docstrings vs b9aa928; existing parity tests re-run green"
  },
  "plugins.model-providers.gemini.__init__": {
   "status": "partial",
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (61 -> 41 LOC); re-certify line-by-line before promoting"
  },
  "plugins.model-providers.gmi.__init__": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (32 -> 22 LOC); re-certify line-by-line before promoting"
+  "status": "done",
+  "retarget_note": "re-certified at 5d59366 (2026-09-16): AST-identical modulo docstrings vs b9aa928; existing parity tests re-run green"
  },
  "plugins.model-providers.huggingface.__init__": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (20 -> 14 LOC); re-certify line-by-line before promoting"
+  "status": "done",
+  "retarget_note": "re-certified at 5d59366 (2026-09-16): AST-identical modulo docstrings vs b9aa928; existing parity tests re-run green"
  },
  "plugins.model-providers.kilocode.__init__": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (14 -> 11 LOC); re-certify line-by-line before promoting"
+  "status": "done",
+  "retarget_note": "re-certified at 5d59366 (2026-09-16): AST-identical modulo docstrings vs b9aa928; existing parity tests re-run green"
  },
  "plugins.model-providers.kimi-coding.__init__": {
   "status": "partial",
@@ -437,8 +437,8 @@
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (88 -> 76 LOC); re-certify line-by-line before promoting"
  },
  "plugins.model-providers.novita.__init__": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (27 -> 19 LOC); re-certify line-by-line before promoting"
+  "status": "done",
+  "retarget_note": "re-certified at 5d59366 (2026-09-16): AST-identical modulo docstrings vs b9aa928; existing parity tests re-run green"
  },
  "plugins.model-providers.nvidia.__init__": {
   "status": "partial",
@@ -449,16 +449,16 @@
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (89 -> 43 LOC); re-certify line-by-line before promoting"
  },
  "plugins.model-providers.openai-codex.__init__": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (15 -> 12 LOC); re-certify line-by-line before promoting"
+  "status": "done",
+  "retarget_note": "re-certified at 5d59366 (2026-09-16): AST-identical modulo docstrings vs b9aa928; existing parity tests re-run green"
  },
  "plugins.model-providers.qwen-oauth.__init__": {
   "status": "partial",
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (108 -> 72 LOC); re-certify line-by-line before promoting"
  },
  "plugins.model-providers.stepfun.__init__": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (14 -> 11 LOC); re-certify line-by-line before promoting"
+  "status": "done",
+  "retarget_note": "re-certified at 5d59366 (2026-09-16): AST-identical modulo docstrings vs b9aa928; existing parity tests re-run green"
  },
  "plugins.model-providers.upstage.__init__": {
   "status": "partial",
@@ -469,12 +469,12 @@
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (75 -> 34 LOC); re-certify line-by-line before promoting"
  },
  "plugins.model-providers.xai.__init__": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (17 -> 13 LOC); re-certify line-by-line before promoting"
+  "status": "done",
+  "retarget_note": "re-certified at 5d59366 (2026-09-16): AST-identical modulo docstrings vs b9aa928; existing parity tests re-run green"
  },
  "plugins.model-providers.xiaomi.__init__": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (16 -> 14 LOC); re-certify line-by-line before promoting"
+  "status": "done",
+  "retarget_note": "re-certified at 5d59366 (2026-09-16): AST-identical modulo docstrings vs b9aa928; existing parity tests re-run green"
  },
  "plugins.model-providers.zai.__init__": {
   "status": "partial",
@@ -505,8 +505,8 @@
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (42 -> 48 LOC); re-certify line-by-line before promoting"
  },
  "tools.browser_camofox_state": {
-  "status": "partial",
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (47 -> 38 LOC); re-certify line-by-line before promoting"
+  "status": "done",
+  "retarget_note": "re-certified at 5d59366 (2026-09-16): refactor-only drift (cosmetic restructure, behavior identical); existing parity tests re-run green"
  },
  "tools.browser_dialog_tool": {
   "status": "partial",
@@ -663,8 +663,8 @@
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (666 -> 611 LOC); re-certify line-by-line before promoting"
  },
  "agent.secret_sources.__init__": {
-  "status": "partial",
-  "retarget_note": "package rollup agent.secret_sources folded to real module at 5d59366; port + re-certify before promoting"
+  "status": "done",
+  "retarget_note": "re-certified at 5d59366 (2026-09-16): AST-identical modulo docstrings vs b9aa928; existing parity tests re-run green"
  },
  "tools.mcp_death_supervisor": {
   "status": "partial",

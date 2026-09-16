@@ -67,11 +67,22 @@ renderer strategy per-module.
 - `cargo test --workspace -- --test-threads=1` — 1,781 passed, 0 failed.
 - `git diff --check` — clean.
 
+## Re-cert batch 1 (2026-09-16, @ 5d59366)
+
+22 modules promoted (5 → 27 done): 18 AST-identical-modulo-docstring rows
+re-run green, 4 refactor-only drifts re-certified green, plus a TDD port of
+`classify_jwks_lookup_error` (#94558, 5 oracle tests in
+`crates/hermes-cli/tests/parity_dashboard_auth_jwks.rs`). Full validation:
+`cargo test --workspace -- --test-threads=1` — **1,786 passed, 0 failed**;
+`git diff --check` clean. **Ledger: 27 done / 142 partial / 8,726 missing
+tracked (0.30%); production 27 / 142 / 3,312 (0.78% — computed 0.7756%, ledger rounds display).**
+
 ## Next actions, in order
 
-1. Re-certify the 164 partial rows bottom-up (foundation first: the 5 kept
-   `done` rows anchor P1; drifted P1/P2 rows next), promoting each only
-   after a line-by-line diff against the `5d59366` source.
+1. Continue re-certification bottom-up: smallest real-DIFF partials next
+   (`agent.lmstudio_reasoning` 40 LOC, `agent.reactions` 42,
+   `agent.message_content` 43, provider `__init__`s with new behavior).
+   The 145-code-DIFF classifier output from this session is the worklist.
 2. Open the `hermes-desktop` crate (P6): scaffold Tauri backend, port the
    first `apps/desktop/electron` main-process module with parity tests.
 3. Keep ownership disjoint; commit and publish each logical unit immediately.

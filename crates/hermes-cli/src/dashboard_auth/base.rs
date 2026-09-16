@@ -1,6 +1,7 @@
 //! Abstract base + dataclasses + exceptions for dashboard auth providers.
 //!
-//! PARITY: `hermes_cli/dashboard_auth/base.py` @ b9aa928 (whole module).
+//! PARITY: `hermes_cli/dashboard_auth/base.py` @ 5d59366 (whole module,
+//! incl. `classify_jwks_lookup_error`).
 //!
 //! Lifecycle (see the DashboardAuthProvider docstring upstream):
 //!   1. `start_login` — user clicks "Log in with X"; the provider returns a
@@ -90,6 +91,69 @@ pub struct InvalidCredentialsError(pub String);
 #[derive(Debug, thiserror::Error)]
 #[error("refresh expired: {0}")]
 pub struct RefreshExpiredError(pub String);
+
+/// Caller-mapped PyJWT failure kinds for [`classify_jwks_lookup_error`].
+///
+/// Upstream branches on `jwt` exception types; this crate has no PyJWT, so
+/// the JWT-library owner maps its errors to these variants. The mapping must
+/// preserve upstream's order-sensitivity: subclass arms (`NotJwt` ≈
+/// `DecodeError`, `UnknownKid` ≈ `PyJWKSetError`) classify before their
+/// parent kinds (`MalformedJwks` ≈ bare `PyJWKClientError`,
+/// `InvalidToken` ≈ `InvalidTokenError`).
+///
+/// PARITY: `classify_jwks_lookup_error` isinstance ladder
+/// (`hermes_cli/dashboard_auth/base.py` @ 5d59366).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum JwksLookupFailure {
+    /// `PyJWKClientConnectionError` — JWKS fetch transport failure.
+    Connection,
+    /// `DecodeError` — the bearer is not a JWT at all (opaque peer key…).
+    NotJwt,
+    /// `PyJWKSetError` — JWKS fetched but holds no key for this `kid`.
+    UnknownKid,
+    /// Bare `PyJWKClientError` — unexpected JWKS shape.
+    MalformedJwks,
+    /// `InvalidTokenError` (non-decode, non-set) — token not verifiable.
+    InvalidToken,
+    /// Anything else — upstream's final `ProviderError` fallthrough.
+    Unknown,
+}
+
+/// Outcome of [`classify_jwks_lookup_error`]: either "unreachable" (503) or
+/// "not my token" (401 / next provider).
+#[derive(Debug, thiserror::Error)]
+pub enum JwksClassify {
+    #[error(transparent)]
+    Provider(#[from] ProviderError),
+    #[error(transparent)]
+    InvalidCode(#[from] InvalidCodeError),
+}
+
+/// Map a JWKS-lookup failure to the auth protocol (#94558).
+///
+/// Only a genuine transport failure is [`ProviderError`] ("unreachable",
+/// HTTP 503); anything else means "not verifiable by this provider"
+/// ([`InvalidCodeError`] — `verify_session` returns `None`, middleware
+/// answers 401 or tries the next provider). Folding "cannot parse" into
+/// "cannot reach" once made every opaque bearer a fast 503.
+///
+/// PARITY: `classify_jwks_lookup_error`
+/// (`hermes_cli/dashboard_auth/base.py` @ 5d59366). The `import jwt`
+/// failure arm has no Rust analog (JWT support is caller-wired).
+pub fn classify_jwks_lookup_error(failure: JwksLookupFailure, detail: &str) -> JwksClassify {
+    match failure {
+        JwksLookupFailure::Connection
+        | JwksLookupFailure::MalformedJwks
+        | JwksLookupFailure::Unknown => {
+            JwksClassify::Provider(ProviderError(format!("JWKS lookup failed: {detail}")))
+        }
+        JwksLookupFailure::NotJwt | JwksLookupFailure::UnknownKid | JwksLookupFailure::InvalidToken => {
+            JwksClassify::InvalidCode(InvalidCodeError(format!(
+                "token not verifiable by this provider: {detail}"
+            )))
+        }
+    }
+}
 
 /// Outcome of a per-request session verification.
 #[derive(Debug, Clone)]

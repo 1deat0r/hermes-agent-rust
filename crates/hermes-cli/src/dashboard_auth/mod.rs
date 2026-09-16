@@ -1,10 +1,10 @@
 //! Dashboard authentication provider framework.
 //!
-//! PARITY: `hermes_cli/dashboard_auth/__init__.py` @ b9aa928 — PARTIAL:
-//! `base.py` (protocol + dataclasses + errors), `registry.py`,
-//! `public_paths.py`, `prefix.py`, `audit.py`, and `token_auth.py` (route
-//! registry + bearer extraction + provider stacking) are ported;
-//! `middleware.py`, `cookies.py`, `routes.py`, `login_page.py`,
+//! PARITY: `hermes_cli/dashboard_auth/__init__.py` @ 5d59366 — PARTIAL:
+//! `base.py` (protocol + dataclasses + errors + `classify_jwks_lookup_error`),
+//! `registry.py`, `public_paths.py`, `prefix.py`, `audit.py`, and
+//! `token_auth.py` (route registry + bearer extraction + provider stacking)
+//! are ported; `middleware.py`, `cookies.py`, `routes.py`, `login_page.py`,
 //! `native_flow.py`, `ws_tickets.py`, and `audit`'s siblings handling the
 //! HTTP layer are PENDING with the web-server surface.
 //!

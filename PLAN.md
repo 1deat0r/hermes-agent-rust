@@ -807,6 +807,23 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   `cargo test --workspace -- --test-threads=1` 1,781 passed / 0 failed;
   `git diff --check` clean. Next: re-certify partials bottom-up, then open
   the `hermes-desktop` crate with the first `apps/desktop/electron` module.
+- 2026-09-16 (re-cert batch 1 @ 5d59366): 18 AST-identical-modulo-docstring
+  modules promoted to done after re-running their parity suites green
+  (`agent.errors`, `agent.monitoring/__init__`, `agent.verify/__init__`,
+  `agent.secret_sources/__init__`, 11 provider `__init__`s, qqbot
+  `constants`, `public_paths`, `setup_hidden_env`); 4 refactor-only drifts
+  re-certified green and promoted (`hermes_cli.colors`,
+  `gateway.platforms.qqbot.crypto`, `gateway.cwd_placeholder`,
+  `tools.browser_camofox_state`); `classify_jwks_lookup_error` (#94558)
+  TDD-ported into `hermes-cli::dashboard_auth::base` with 5 oracle tests
+  (`parity_dashboard_auth_jwks.rs`, PyJWT taxonomy crosses the seam as
+  `JwksLookupFailure`). Ledger: **27 done / 142 partial / 8,726 missing
+  tracked (0.30%)**. Evidence: `cargo test --workspace --
+  --test-threads=1` 1,786 passed / 0 failed; `git diff --check` clean
+  (3 pre-existing warnings in untouched `token_auth.rs`/`ws_tickets.rs`
+  confirmed on clean HEAD). Next: smallest real-DIFF partials
+  (`agent.lmstudio_reasoning`, `agent.reactions`, `agent.message_content`,
+  provider `__init__`s with new behavior).
 - 2026-08-31 (session 4da): Fifty units across four crates, all red-first:
   batch 1 — the `hermes_cli/main.py` private git-fingerprint helpers
   (`_read_packed_ref`, `_read_git_revision_fingerprint`) into
