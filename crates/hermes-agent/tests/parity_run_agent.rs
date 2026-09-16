@@ -1169,10 +1169,10 @@ fn stream_error_event_carries_sdk_shaped_body() {
 fn routermint_user_agent_carries_caller_version() {
     // Upstream interpolates `hermes_cli.__version__`; the version is a
     // caller argument here (see module docs), so pin the interpolation.
-    let headers: HashMap<String, String> = routermint_headers("0.20.0");
+    let headers: HashMap<String, String> = routermint_headers("0.21.3");
     assert_eq!(
         headers.get("User-Agent").map(String::as_str),
-        Some("HermesAgent/0.20.0")
+        Some("HermesAgent/0.21.3")
     );
     assert_eq!(headers.len(), 1);
 }

@@ -17,7 +17,7 @@ pub(crate) fn profile() -> ProviderProfile {
     // can replace this pinned b9aa928 value at runtime.
     profile
         .default_headers
-        .insert("User-Agent".into(), "HermesAgent/0.20.0".into());
+        .insert("User-Agent".into(), "HermesAgent/0.21.3".into());
     profile.default_aux_model = "google/gemini-3.1-flash-lite-preview".into();
     profile.fallback_models = vec![
         "zai-org/GLM-5.1-FP8".into(),

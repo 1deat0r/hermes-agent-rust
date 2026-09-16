@@ -24,10 +24,10 @@ fn nous_portal_tags_contains_product_and_client() {
 }
 
 #[test]
-fn tag_shapes_are_pinned_to_the_b9aa928_version() {
-    assert_eq!(HERMES_VERSION, "0.20.0");
+fn tag_shapes_are_pinned_to_the_5d59366_version() {
+    assert_eq!(HERMES_VERSION, "0.21.3");
     assert_eq!(hermes_version(), HERMES_VERSION);
-    assert_eq!(hermes_client_tag(), "client=hermes-client-v0.20.0");
+    assert_eq!(hermes_client_tag(), "client=hermes-client-v0.21.3");
     assert_eq!(conversation_tag("abc"), "conversation=abc");
 }
 
@@ -51,7 +51,7 @@ fn empty_session_id_appends_no_tag() {
         nous_portal_tags(Some("")),
         vec![
             "product=hermes-agent".to_string(),
-            "client=hermes-client-v0.20.0".to_string(),
+            "client=hermes-client-v0.21.3".to_string(),
         ]
     );
 }
@@ -272,5 +272,5 @@ fn a_published_version_changes_the_tag_without_a_restart() {
     set_hermes_version(Some("9.9.9"));
     assert_eq!(hermes_client_tag(), "client=hermes-client-v9.9.9");
     set_hermes_version(previous.as_deref());
-    assert_eq!(hermes_client_tag(), "client=hermes-client-v0.20.0");
+    assert_eq!(hermes_client_tag(), "client=hermes-client-v0.21.3");
 }

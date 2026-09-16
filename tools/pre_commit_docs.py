@@ -128,9 +128,9 @@ def main() -> int:
             text=True,
             stdout=subprocess.PIPE,
         ).stdout.strip()
-        if pin != "b9aa9289a8083f2e9d248ad6837b2938f5ee92d7":
+        if pin != "5d59366010640c1d6b8f170d8a4ee109db2bbdef":
             return fail(
-                "upstream checkout is not at the pinned b9aa928 (got "
+                "upstream checkout is not at the pinned 5d59366 (got "
                 f"{pin or 'unknown'}); refusing to refresh against a moved HEAD — "
                 "recreate the pinned worktree per HANDOFF.md and set "
                 "HERMES_UPSTREAM or git config hermes.upstream"

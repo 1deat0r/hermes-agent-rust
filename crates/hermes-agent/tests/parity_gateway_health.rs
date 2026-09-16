@@ -169,7 +169,7 @@ fn subsystem_and_platform_derivation() {
 #[test]
 fn snapshot_from_empty_runtime_reports_unknown_state() {
     let snapshot =
-        build_gateway_health_snapshot(None, false, "default", "install-1", "0.20.0", "unknown");
+        build_gateway_health_snapshot(None, false, "default", "install-1", "0.21.3", "unknown");
     let names: Vec<&str> = snapshot.metrics.iter().map(|m| m.name.as_str()).collect();
     assert!(names.contains(&"hermes.gateway.up"));
     assert!(names.contains(&"hermes.gateway.active_agents"));
@@ -205,7 +205,7 @@ fn snapshot_counts_running_and_fatal_platforms() {
         "pid": 4242,
     });
     let snapshot =
-        build_gateway_health_snapshot(Some(&runtime), true, "prod", "inst-9", "0.20.0", "systemd");
+        build_gateway_health_snapshot(Some(&runtime), true, "prod", "inst-9", "0.21.3", "systemd");
     let health = snapshot.events.first().unwrap().to_dict();
     assert_eq!(health["gateway_state"], "running");
     assert_eq!(health["gateway_busy"], true);
@@ -279,7 +279,7 @@ fn transition_emits_lifecycle_and_exit_events() {
             Some(&json!({"gateway_state": "running"})),
             &current,
             "prod",
-            "0.20.0",
+            "0.21.3",
         );
         // The dispatcher is asynchronous; wait for the batch to drain.
         emitter.flush(2.0);
@@ -308,7 +308,7 @@ fn transition_without_state_change_is_silent() {
             Some(&json!({"gateway_state": "running"})),
             &json!({"gateway_state": "running"}),
             "default",
-            "0.20.0",
+            "0.21.3",
         );
     }
     reset_emitter_for_tests(None);

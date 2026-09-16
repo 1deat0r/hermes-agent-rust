@@ -2,7 +2,7 @@
 
 OWNS: crates/**, tools/**, scripts/**, examples/**, upstream/**, PLAN.md, HANDOFF.md, README.md, CONVERSION-LEDGER.md
 
-Scope: finish and verify the full pinned `hermes-agent` @ `b9aa928` conversion, including implementation, parity evidence, integration, documentation, and exact local/GitHub publication.
+Scope: finish and verify the full pinned `hermes-agent` @ `5d59366` conversion (Python agent/CLI/gateway surface **plus the Hermes Agent Desktop Linux app**: `apps/desktop` Electron 40 main + React renderer with Linux AppImage/deb/rpm packaging, `apps/shared`, Tauri `apps/bootstrap-installer`, root `tests-js` desktop gates), including implementation, parity evidence, integration, documentation, and exact local/GitHub publication.
 
 ## Depth tree
 
@@ -13,7 +13,8 @@ The conversion is decomposed into these dependency-ordered branches:
 3. CLI: `cli.py`, `hermes_cli/`, configuration, auth, and entry points.
 4. Integrations: providers, plugins/platforms, gateway, and cron.
 5. Surfaces: TUI, ACP, scripts, bundled skills, and remaining top-level modules.
-6. Root integration: full-workspace tests, live/mock contract checks, docs/ledger closure, and local/GitHub mirror verification.
+6. Desktop (P6): `hermes-desktop` crate via Tauri — Electron main-process TS modules ported to Rust backend commands, `apps/shared` contract lib mirrored, React renderer strategy decided per-module, Linux AppImage/deb/rpm packaging parity.
+7. Root integration: full-workspace tests, live/mock contract checks, docs/ledger closure, and local/GitHub mirror verification.
 
 The active leaves are Agent core → config discovery and Providers → Z.AI
 endpoint chooser. Both current units are transport-neutral explicit-input
@@ -22,9 +23,9 @@ concrete Z.AI HTTP/cache integration. Later leaves must not be marked verified
 while a lower-layer contract remains partial.
 
 - [ ] G1: every tracked upstream module is marked done in the generated inventory
-  CHECK: /usr/bin/python3 -c "import json; s=json.load(open('tools/inventory.json', encoding='utf-8'))['summary']; assert s['modules'] == 3882 and s['status_counts'] == {'done': 3882}, s; assert s['production_modules'] == 1103 and s['prod_status_counts'] == {'done': 1103}, s; print('inventory closure passed')"
+  CHECK: /usr/bin/python3 -c "import json; s=json.load(open('tools/inventory.json', encoding='utf-8'))['summary']; assert s['modules'] == 8895 and s['status_counts'] == {'done': 8895}, s; assert s['production_modules'] == 3481 and s['prod_status_counts'] == {'done': 3481}, s; print('inventory closure passed')"
   EXPECT: inventory closure passed
-  EVIDENCE: pending
+  EVIDENCE: pending (retarget 2026-09-16: 5 done / 164 partial / 8726 missing tracked; 5 / 164 / 3312 production)
 
 - [ ] G2: the complete workspace builds and all active Rust tests pass serially
   CHECK: cargo test --workspace -- --test-threads=1
@@ -37,7 +38,7 @@ while a lower-layer contract remains partial.
   EVIDENCE: pending
 
 - [ ] G4: the generated ledger and README are refreshed from the pinned upstream checkout and contain no stale completion snapshot
-  CHECK: UP=/tmp/hermes-upstream-b9aa928; git -C /run/media/its1deat0r/Projects/Research/hermes-agent-repo worktree list 2>/dev/null | grep -q "$UP" || git -C /run/media/its1deat0r/Projects/Research/hermes-agent-repo worktree add --detach "$UP" b9aa928; test "$(git -C "$UP" rev-parse HEAD)" = b9aa9289a8083f2e9d248ad6837b2938f5ee92d7 && HERMES_UPSTREAM="$UP" /usr/bin/python3 tools/refresh_docs.py --upstream "$UP" && git diff --exit-code -- tools/inventory.json CONVERSION-LEDGER.md README.md && echo documentation snapshot passed
+  CHECK: UP=/tmp/hermes-upstream-5d59366; git -C /run/media/its1deat0r/Projects/Research/hermes-agent-repo worktree list 2>/dev/null | grep -q "$UP" || git -C /run/media/its1deat0r/Projects/Research/hermes-agent-repo worktree add --detach "$UP" 5d59366; test "$(git -C "$UP" rev-parse HEAD)" = 5d59366010640c1d6b8f170d8a4ee109db2bbdef && HERMES_UPSTREAM="$UP" /usr/bin/python3 tools/refresh_docs.py --upstream "$UP" && git diff --exit-code -- tools/inventory.json CONVERSION-LEDGER.md README.md && echo documentation snapshot passed
   EXPECT: documentation snapshot passed
   EVIDENCE: pending
 

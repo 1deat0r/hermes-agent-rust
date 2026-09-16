@@ -6,6 +6,6 @@ use hermes_cli::{RELEASE_DATE, VERSION};
 
 #[test]
 fn version_and_release_date_match_the_pinned_package() {
-    assert_eq!(VERSION, "0.20.0");
-    assert_eq!(RELEASE_DATE, "2026.8.3");
+    assert_eq!(VERSION, "0.21.3");
+    assert_eq!(RELEASE_DATE, "2026.9.14");
 }

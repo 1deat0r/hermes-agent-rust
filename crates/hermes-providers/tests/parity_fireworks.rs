@@ -47,7 +47,7 @@ fn fireworks_profile_identity_headers_and_models_match_upstream() {
             .default_headers
             .get("User-Agent")
             .map(String::as_str),
-        Some("HermesAgent/0.20.0")
+        Some("HermesAgent/0.21.3")
     );
     assert_eq!(
         profile.default_aux_model,

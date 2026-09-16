@@ -22,11 +22,11 @@ pub mod toolset_validation;
 
 /// PARITY: `hermes_cli.__version__` (upstream `hermes_cli/__init__.py` line 17),
 /// the single string `scripts/release.py` regex-bumps at release time.
-pub const VERSION: &str = "0.20.0";
+pub const VERSION: &str = "0.21.3";
 
 /// PARITY: `hermes_cli.__release_date__` (upstream line 18), the calendar
 /// version `scripts/release.py` rewrites alongside the version.
-pub const RELEASE_DATE: &str = "2026.8.3";
+pub const RELEASE_DATE: &str = "2026.9.14";
 
 /// Resolve the baked-in build SHA through the crate that owns it.
 ///

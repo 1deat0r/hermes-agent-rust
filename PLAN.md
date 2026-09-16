@@ -1,11 +1,13 @@
 # Hermes Agent in Rust — 1:1 Port Plan
 
-Target: https://github.com/NousResearch/hermes-agent @ `b9aa928` (local clone:
-`/run/media/its1deat0r/Projects/Research/hermes-agent-repo`; inventory always
-regenerated against a pinned `/tmp/hermes-upstream-b9aa928` worktree, never HEAD)
-Goal: Functional **1:1 port** of Hermes Agent to idiomatic Rust — same CLI
-surface, same on-disk formats, same wire protocols, same observable behavior —
-different implementation language.
+Target: https://github.com/NousResearch/hermes-agent @ `5d59366` (local clone:
+`/run/media/its1deat0r/Projects/Research/hermes-agent-repo`; latest
+`origin/main` as of 2026-09-16 NZ — always regenerate the inventory against
+the pinned `/tmp/hermes-upstream-5d59366` worktree, never HEAD)
+Goal: Functional **1:1 port** of Hermes Agent **and the Hermes Agent Desktop
+Linux app** to idiomatic Rust — same CLI surface, same on-disk formats, same
+wire protocols, same observable behavior, same Linux desktop shell
+(AppImage/deb/rpm) — different implementation language.
 
 ## 0. Governance — standing process rules
 
@@ -42,24 +44,32 @@ Entry points (pyproject `[project.scripts]`):
 - `hermes-agent`  → `run_agent:main`
 - `hermes-acp`    → `acp_adapter.entry:main`
 
-### Upstream inventory (current, pinned @ b9aa928)
+### Upstream inventory (current, pinned @ 5d59366)
 
 | Area | ~LOC | Modules | Port status |
 |---|---|---|---|
-| tests | 665,706 | — | oracle source only |
-| hermes_cli/ | 207,724 | 266 | ❌ Phase 3 |
-| agent/ | 133,942 | 186 | ❌ Phase 2 |
-| plugins/ | 124,195 | 181 | ❌ Phase 4 |
-| tools/ | 123,020 | 131 | ❌ Phase 2 |
-| gateway/ | 101,551 | 88 | ❌ Phase 4 |
-| top-level .py (cli, run_agent, hermes_state, …) | 52,598 | 53 | 🟡 Phase 1/2 |
-| tui_gateway/ | 25,883 | 22 | ❌ Phase 5 |
-| skills (bundled) | 18,293 | 47 | ❌ (runtime data) |
-| scripts/ | 15,836 | 14 | ❌ later |
-| cron/ | 11,324 | 13 | ❌ Phase 4 |
-| acp_adapter/ | 5,832 | 11 | ❌ Phase 5 |
-| providers/ | 436 | 3 | ❌ Phase 2 |
-| **Production** | **~843,792** | **1,103** | |
+| tests (Python oracles) | ~1,012,000 | 4,382 | oracle source only |
+| apps/desktop (Electron 40 main + React renderer, Linux AppImage/deb/rpm) | 572,373 | 2,470 | ❌ Phase 6 (P6) |
+| hermes_cli/ | 212,532 | 502 | 🟡 Phase 3 |
+| agent/ | 114,244 | 283 | 🟡 Phase 2 |
+| tools/ | 105,953 | 310 | 🟡 Phase 2 |
+| gateway/ | 85,954 | 159 | 🟡 Phase 4 |
+| plugins/ | 85,849 | 219 | ❌ Phase 4 |
+| tui_gateway/ | 34,976 | 88 | ❌ Phase 5 |
+| cron/ | 15,440 | 27 | ❌ Phase 4 |
+| apps/shared + bootstrap-installer | 11,714 | 55 | ❌ Phase 6 (P6) |
+| skills (bundled) | ~35,000 | ~140 | ❌ (runtime data) |
+| acp_adapter/ + top-level .py + evals/ + misc | ~80,000 | ~260 | 🟡 Phase 1/2/5 |
+| **Production** | **~1,352,779** | **4,513** | **5 done / 164 partial** |
+
+Retarget note (2026-09-16): previous pin `b9aa928` (1,103 prod modules,
+843,792 LOC, no desktop) is superseded. 162 of 172 done/partial Python rows
+changed upstream between pins (refactors incl. `hermes_state.py` split into
+20+ modules, `tools/mcp_stdio_watchdog.py` superseded by
+`tools/mcp_death_supervisor.py`) and were demoted to `partial` with a
+  `retarget_note`; 5 unchanged modules keep `done`. Added scope: 1,506 first-
+  party TS/JS desktop production modules (~381k LOC, +1,032 TS oracles)
+  tracked as `ts:` rows under P6.
 
 Full machine-readable inventory: `tools/inventory.json` (regenerate with
 `tools/inventory.sh`). The authoritative per-module port ledger lives there.
@@ -106,6 +116,9 @@ Hermes-Agent-Rust/
     hermes-cron/           # cron/                            (Phase 4)
     hermes-tui/            # tui_gateway/                     (Phase 5)
     hermes-acp/            # acp_adapter/                     (Phase 5)
+    hermes-desktop/        # apps/desktop (Electron 40 main → Tauri commands),
+                           # apps/shared (contract lib), bootstrap-installer
+                           # Tauri setup UI; React renderer strategy per-module (Phase 6)
   tools/                   # inventory + parity helpers
   scripts/                 # build/parity scripts
   upstream/                # vendored upstream fixtures (golden oracles)
@@ -129,6 +142,7 @@ are P4/P5-deferred — designed above, not yet created; their modules read
 | **P3** | CLI: cli.py + hermes_cli/ | `hermes` binary matches CLI surface; config load/save parity |
 | **P4** | Gateway: gateway/, plugins/, cron | Gateway connects to ≥1 real platform + cron fires |
 | **P5** | tui_gateway, acp_adapter, remaining scripts | Full surface parity |
+| **P6** | Hermes Agent Desktop Linux app: apps/desktop (Electron 40 main + React renderer), apps/shared, bootstrap-installer, tests-js gates | `hermes-desktop` crate via Tauri (upstream's own bootstrap-installer precedent) drives the same backend surface; Linux AppImage/deb/rpm packaging parity; renderer strategy decided per-module |
 
 **P1 status: 🟡 FOUNDATION COMPLETE (2026-08-22, session 1u).** hermes-constants
 (foundational subset), hermes-time, hermes-utils, hermes-logging (incl.
@@ -777,6 +791,22 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 ## 7. Session log
 
+- 2026-09-16 (retarget to `5d59366` + Desktop Linux app): parity target moved
+  from `b9aa928` to `5d59366` (latest `origin/main` as of 2026-09-16 NZ; pinned
+  worktree `/tmp/hermes-upstream-5d59366`), scope extended to the Hermes Agent
+  Desktop Linux app. `tools/inventory.py` now tracks first-party TS/JS
+  (`apps/`, `tests-js`) as `ts:` rows with desktop-scope exclusions;
+  `tools/conversion_ledger.py` gains P6;   `tools/port_status.json` demotes 162
+  drifted done/partial rows to `partial` with `retarget_note` (5 unchanged rows
+  keep `done`); version literals bumped to `0.21.3` / `2026.9.14`. Ledger:
+  **5 done / 164 partial / 8,726 missing tracked (0.06%); 5 / 164 / 3,312
+  production (0.14%)** — 8,895 modules / 2,468,648 LOC, 3,481 prod /
+  1,147,748 prod LOC (1,975 Python @ 766k + 1,506 P6 desktop TS @ 381k).
+  Desktop strategy (approved): `hermes-desktop` crate via Tauri, renderer
+  per-module. Evidence tier: unit — `cargo build --workspace` green;
+  `cargo test --workspace -- --test-threads=1` 1,781 passed / 0 failed;
+  `git diff --check` clean. Next: re-certify partials bottom-up, then open
+  the `hermes-desktop` crate with the first `apps/desktop/electron` module.
 - 2026-08-31 (session 4da): Fifty units across four crates, all red-first:
   batch 1 — the `hermes_cli/main.py` private git-fingerprint helpers
   (`_read_packed_ref`, `_read_git_revision_fingerprint`) into

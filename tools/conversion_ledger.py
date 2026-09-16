@@ -18,7 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_INVENTORY = ROOT / "tools" / "inventory.json"
 DEFAULT_OUTPUT = ROOT / "CONVERSION-LEDGER.md"
 
-PHASE_ORDER = {"P1": 1, "P2": 2, "P3": 3, "P4": 4, "P5": 5, "oracle": 6}
+PHASE_ORDER = {"P1": 1, "P2": 2, "P3": 3, "P4": 4, "P5": 5, "P6": 6, "oracle": 7}
 FOUNDATION_ROOTS = {
     "hermes_constants",
     "hermes_logging",
@@ -47,6 +47,11 @@ P5_ROOTS = {"acp_adapter", "tui_gateway"}
 def phase_for(module: str, is_test: bool) -> str:
     """Assign the repository phase owning a module or its oracle."""
 
+    if module.startswith("ts:"):
+        # P6: Hermes Agent Desktop Linux app (Electron main + React
+        # renderer, @hermes/shared, Tauri bootstrap-installer) plus the
+        # sibling web/ui-tui/tests-js TypeScript surfaces.
+        return "P6"
     root = module
     if root.startswith("tests."):
         root = root[len("tests.") :]

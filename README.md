@@ -1,15 +1,15 @@
 # Hermes Agent in Rust ☤
 
-An in-progress **1:1 Rust port of [NousResearch/hermes-agent](https://github.com/NousResearch/hermes-agent)**. The target is the same CLI surface, on-disk formats, wire protocols, provider/tool behavior, and observable semantics in an idiomatic Rust implementation.
+An in-progress **1:1 Rust port of [NousResearch/hermes-agent](https://github.com/NousResearch/hermes-agent) @ `5d59366` — including the Hermes Agent Desktop Linux app**. The target is the same CLI surface, on-disk formats, wire protocols, provider/tool behavior, observable semantics, and Linux desktop shell (AppImage/deb/rpm) in an idiomatic Rust implementation. The desktop strategy is a `hermes-desktop` crate via Tauri (upstream's own bootstrap-installer precedent); renderer strategy per-module.
 
 ## Current status
 
 The live conversion ledger currently reports:
 
-- **All tracked modules:** **3.74%** — `145 / 3,882` done, `23` partial,
-  `3,714` missing.
-- **Production modules:** **13.15%** — `145 / 1,103` done, `23` partial,
-  `935` missing.
+- **All tracked modules:** **0.06%** — `5 / 8,895` done, `164` partial,
+  `8,726` missing.
+- **Production modules:** **0.14%** — `5 / 3,481` done, `164` partial,
+  `3,312` missing.
 
 Only `done` rows receive credit; partial rows remain zero-credit until their
 parity seams are closed. Regenerate the inventory and ledger with:
@@ -21,8 +21,12 @@ python3 tools/conversion_ledger.py
 
 P0 infrastructure/governance is complete. Foundation and provider-support work
 is landed in several crates, while the agent core, remaining tools, CLI,
-gateway, platform plugins, cron, TUI, ACP, and the full parity-oracle surface
-remain in progress. The percentage is intentionally strict and is not a claim
+gateway, platform plugins, cron, TUI, ACP, the new P6 desktop surface
+(2,470 `apps/desktop` + 55 shared/installer TS modules), and the full
+parity-oracle surface remain in progress. Retargeted 2026-09-16 from
+`b9aa928` to `5d59366`: 162 drifted Python rows were honestly demoted to
+`partial` for re-certification (see PLAN.md), which is why the strict
+percentage reset. The percentage is intentionally strict and is not a claim
 that the runtime is feature-complete.
 
 The first `hermes-agent::auxiliary_client` routing/wire-predicate slice is
@@ -129,7 +133,7 @@ convert partial or missing inventory rows into completion.
 
 Target repository: [NousResearch/hermes-agent](https://github.com/NousResearch/hermes-agent)
 
-Pinned upstream commit: `b9aa928`.
+Pinned upstream commit: `5d59366` (`5d59366010640c1d6b8f170d8a4ee109db2bbdef`, latest `origin/main` as of 2026-09-16 NZ; pinned worktree `/tmp/hermes-upstream-5d59366`).
 
 ## License
 

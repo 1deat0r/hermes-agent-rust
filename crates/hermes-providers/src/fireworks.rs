@@ -25,7 +25,7 @@ pub(crate) fn profile() -> ProviderProfile {
         .insert("X-Title".into(), "Hermes Agent".into());
     profile
         .default_headers
-        .insert("User-Agent".into(), "HermesAgent/0.20.0".into());
+        .insert("User-Agent".into(), "HermesAgent/0.21.3".into());
     profile.default_aux_model = "accounts/fireworks/models/glm-5p2".into();
     profile.fallback_models = vec![
         "accounts/fireworks/models/kimi-k2p6".into(),

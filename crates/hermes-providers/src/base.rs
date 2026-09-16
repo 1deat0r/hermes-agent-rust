@@ -1711,7 +1711,7 @@ fn build_nous_extra_body(
     // until that seam is available.
     let mut tags = vec![
         Value::String("product=hermes-agent".into()),
-        Value::String("client=hermes-client-v0.20.0".into()),
+        Value::String("client=hermes-client-v0.21.3".into()),
     ];
     let effective_session = context
         .get("conversation_context")

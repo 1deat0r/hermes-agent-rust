@@ -1,6 +1,6 @@
 //! Centralized Nous Portal request tags.
 //!
-//! PARITY: `agent/portal_tags.py` @ b9aa928 (whole module, lines 1-144).
+//! PARITY: `agent/portal_tags.py` @ 5d59366 (whole module, lines 1-144).
 //!
 //! Every Hermes request that hits the Nous Portal — main agent loop,
 //! auxiliary client (compression / titles / vision / web_extract /
@@ -16,7 +16,7 @@
 //! 85-95) so a hot-reloaded or bumped release is picked up without a restart.
 //! [`hermes_version`] reproduces that call-time lookup against a runtime slot
 //! that the CLI owner publishes with [`set_hermes_version`]; the slot's
-//! fallback is [`HERMES_VERSION`], the `b9aa928` value of
+//! fallback is [`HERMES_VERSION`], the `5d59366` value of
 //! `hermes_cli/__init__.py` line 17 (`hermes_cli::VERSION` in this workspace).
 //!
 //! DOCUMENTED DIVERGENCE: upstream's `except Exception: return "unknown"`
@@ -46,10 +46,10 @@
 use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
 
-/// PARITY: `hermes_cli.__version__` at upstream `b9aa928`
+/// PARITY: `hermes_cli.__version__` at upstream `5d59366`
 /// (`hermes_cli/__init__.py` line 17). The fallback [`hermes_version`] returns
 /// until the CLI owner publishes a different one.
-pub const HERMES_VERSION: &str = "0.20.0";
+pub const HERMES_VERSION: &str = "0.21.3";
 
 thread_local! {
     /// The published release version, mirroring the live module attribute the

@@ -54,7 +54,7 @@ fn nous_portal_body_and_sticky_routing_match_upstream() {
         body.get("tags"),
         Some(&json!([
             "product=hermes-agent",
-            "client=hermes-client-v0.20.0"
+            "client=hermes-client-v0.21.3"
         ]))
     );
     assert!(!body.contains_key("session_id"));
@@ -77,7 +77,7 @@ fn nous_portal_body_and_sticky_routing_match_upstream() {
         ambient_body.get("tags"),
         Some(&json!([
             "product=hermes-agent",
-            "client=hermes-client-v0.20.0",
+            "client=hermes-client-v0.21.3",
             "conversation=root-conversation"
         ]))
     );

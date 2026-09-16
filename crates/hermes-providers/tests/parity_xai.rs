@@ -26,7 +26,7 @@ fn xai_profile_fields_and_aliases_match_upstream() {
     assert_eq!(profile.auth_type, "api_key");
     assert_eq!(
         profile.default_headers.get("User-Agent"),
-        Some(&"Hermes-Agent/0.20.0".to_owned())
+        Some(&"Hermes-Agent/0.21.3".to_owned())
     );
     assert_eq!(profile.default_headers.len(), 1);
     assert_eq!(get_provider_profile("grok").unwrap().name, "xai");
