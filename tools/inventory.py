@@ -24,12 +24,21 @@ TS_TEST_RE = re.compile(r'(^|\.)(test|spec)(\.[a-z]+)?$')
 # (apps/desktop Electron main + React renderer, apps/shared contract lib,
 # apps/bootstrap-installer Tauri setup UI) plus root desktop-gating JS tests.
 # Sibling web/, ui-tui/, and per-package e2e/diag/perf harnesses are not
-# desktop parity surface. Vendored shims and fixture helpers are excluded.
+# desktop parity surface.
+#
+# Module naming: `ts:<dotted path minus extension>`, e.g.
+# `ts:apps.desktop.electron.main` == apps/desktop/electron/main.ts.
+# (R1-adjudicated: rows carry no separate path field; the mapping rule above
+# is authoritative — spot-verified, not exhaustively audited.)
 TS_SKIP_PARTS = {
     '__fixtures__', 'e2e', 'pr-assets', 'public',
     'diag-', 'perf', 'repro', 'rehearsal', 'click-session',
     'connector-rehearsal', 'find-in-page-native-fixture',
 }
+# NOTE (R1-adjudicated): no literal `__fixtures__/` directory exists upstream;
+# the entry above is defensive. `*fixture*`-named helper modules that DO exist
+# (dev-fixtures, fixture servers, test-utils) stay tracked — test-only ones as
+# oracles via TS_ORACLE_HINTS.
 TS_SKIP_SUFFIX = (
     '.d.ts', '.d.mts', '.d.cts',
     '.e2e.ts', '.e2e.mts', '.e2e.mjs', '.e2e.js',

@@ -113,6 +113,10 @@ pub enum JwksLookupFailure {
     UnknownKid,
     /// Bare `PyJWKClientError` — unexpected JWKS shape.
     MalformedJwks,
+    /// `PyJWKError` that is neither client nor token shaped (e.g.
+    /// key-construction failure on a bad `kty`) — upstream's final
+    /// `ProviderError` fallthrough catches it.
+    KeyMaterial,
     /// `InvalidTokenError` (non-decode, non-set) — token not verifiable.
     InvalidToken,
     /// Anything else — upstream's final `ProviderError` fallthrough.
@@ -140,10 +144,16 @@ pub enum JwksClassify {
 /// PARITY: `classify_jwks_lookup_error`
 /// (`hermes_cli/dashboard_auth/base.py` @ 5d59366). The `import jwt`
 /// failure arm has no Rust analog (JWT support is caller-wired).
+/// Cancellation is caller-owned: a cancelled JWKS fetch never produces a
+/// [`JwksLookupFailure`] — the caller propagates cancellation instead of
+/// classifying it (upstream folds `BaseException` into `ProviderError`;
+/// the enum seam refuses to represent that fold so `Cancelled` cannot
+/// mask as a 503).
 pub fn classify_jwks_lookup_error(failure: JwksLookupFailure, detail: &str) -> JwksClassify {
     match failure {
         JwksLookupFailure::Connection
         | JwksLookupFailure::MalformedJwks
+        | JwksLookupFailure::KeyMaterial
         | JwksLookupFailure::Unknown => {
             JwksClassify::Provider(ProviderError(format!("JWKS lookup failed: {detail}")))
         }

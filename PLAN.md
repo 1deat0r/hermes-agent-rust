@@ -824,6 +824,19 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   confirmed on clean HEAD). Next: smallest real-DIFF partials
   (`agent.lmstudio_reasoning`, `agent.reactions`, `agent.message_content`,
   provider `__init__`s with new behavior).
+- 2026-09-16 (board gate + R2/R3 revisions): 5-seat board (S1 parity, S2
+  ledger, S3 adversarial, S4 desktop, S5 oracle) R1 → 1B/3C/1R; adjudication
+  CONFIRMED 7 blockers (GATES G1 line, AST-label precision, JWKS `PyJWKError`
+  gap, prefix asserts, order test, RED wording, desktop stub), PARTLY 2,
+  REFUTED 1 (stub-suite claim — suites hold ~20 assertions). Revisions:
+  `JwksLookupFailure::KeyMaterial` + 2 tests (7/7 green), `hermes-desktop`
+  scaffold crate, relabeled re-cert notes, reconciled TS counts (2,539 =
+  1,506 prod + 1,033 oracles). R2 verify-by-quote → R3 unanimous BUILD;
+  cold-read seat concurred. Full serial: **1,789 passed / 0 failed**.
+  Ledger unchanged in count (27/142). Long-horizon 100% goal recorded in
+  `docs/long-horizon-100.md` (phase order P1→P6+oracles, mattpocock-skills
+  doctrine §3, ≥20 rows/session, re-pin at phase boundaries, board re-gate
+  per phase exit). Full record: `docs/board-review-r1.md`.
 - 2026-08-31 (session 4da): Fifty units across four crates, all red-first:
   batch 1 — the `hermes_cli/main.py` private git-fingerprint helpers
   (`_read_packed_ref`, `_read_git_revision_fingerprint`) into

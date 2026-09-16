@@ -17,7 +17,7 @@
  },
  "agent.errors": {
   "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16): AST-identical modulo docstrings vs b9aa928; existing parity tests re-run green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green"
  },
  "agent.file_safety": {
   "status": "partial",
@@ -53,7 +53,7 @@
  },
  "agent.monitoring.__init__": {
   "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16): AST-identical modulo docstrings vs b9aa928; existing parity tests re-run green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green"
  },
  "agent.monitoring.cron_health": {
   "status": "partial",
@@ -151,7 +151,7 @@
  },
  "agent.verify.__init__": {
   "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16): AST-identical modulo docstrings vs b9aa928; existing parity tests re-run green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green"
  },
  "agent.verify.environment": {
   "status": "partial",
@@ -179,7 +179,7 @@
  },
  "gateway.cwd_placeholder": {
   "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16): refactor-only drift (cosmetic restructure, behavior identical); existing parity tests re-run green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): deleted _truthy_env was dead code at old pin (defined line 15, zero call sites); docker-branch fold is a logic-identical conjunction merge; parity tests re-run green"
  },
  "gateway.platforms._http_client_limits": {
   "status": "partial",
@@ -187,7 +187,7 @@
  },
  "gateway.platforms.qqbot.constants": {
   "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16): AST-identical modulo docstrings vs b9aa928; existing parity tests re-run green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green"
  },
  "gateway.platforms.qqbot.crypto": {
   "status": "done",
@@ -255,7 +255,7 @@
  },
  "hermes_cli.dashboard_auth.public_paths": {
   "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16): AST-identical modulo docstrings vs b9aa928; existing parity tests re-run green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green"
  },
  "hermes_cli.dashboard_auth.registry": {
   "status": "partial",
@@ -298,7 +298,7 @@
  },
  "hermes_cli.setup_hidden_env": {
   "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16): AST-identical modulo docstrings vs b9aa928; existing parity tests re-run green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green"
  },
  "hermes_cli.sqlite_util": {
   "status": "partial",
@@ -374,11 +374,11 @@
  },
  "plugins.model-providers.arcee.__init__": {
   "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16): AST-identical modulo docstrings vs b9aa928; existing parity tests re-run green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green"
  },
  "plugins.model-providers.azure-foundry.__init__": {
   "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16): AST-identical modulo docstrings vs b9aa928; existing parity tests re-run green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green"
  },
  "plugins.model-providers.bedrock.__init__": {
   "status": "partial",
@@ -406,7 +406,7 @@
  },
  "plugins.model-providers.fireworks.__init__": {
   "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16): AST-identical modulo docstrings vs b9aa928; existing parity tests re-run green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green"
  },
  "plugins.model-providers.gemini.__init__": {
   "status": "partial",
@@ -414,15 +414,15 @@
  },
  "plugins.model-providers.gmi.__init__": {
   "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16): AST-identical modulo docstrings vs b9aa928; existing parity tests re-run green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green"
  },
  "plugins.model-providers.huggingface.__init__": {
   "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16): AST-identical modulo docstrings vs b9aa928; existing parity tests re-run green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green"
  },
  "plugins.model-providers.kilocode.__init__": {
   "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16): AST-identical modulo docstrings vs b9aa928; existing parity tests re-run green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green"
  },
  "plugins.model-providers.kimi-coding.__init__": {
   "status": "partial",
@@ -438,7 +438,7 @@
  },
  "plugins.model-providers.novita.__init__": {
   "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16): AST-identical modulo docstrings vs b9aa928; existing parity tests re-run green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green"
  },
  "plugins.model-providers.nvidia.__init__": {
   "status": "partial",
@@ -450,7 +450,7 @@
  },
  "plugins.model-providers.openai-codex.__init__": {
   "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16): AST-identical modulo docstrings vs b9aa928; existing parity tests re-run green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green"
  },
  "plugins.model-providers.qwen-oauth.__init__": {
   "status": "partial",
@@ -458,7 +458,7 @@
  },
  "plugins.model-providers.stepfun.__init__": {
   "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16): AST-identical modulo docstrings vs b9aa928; existing parity tests re-run green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green"
  },
  "plugins.model-providers.upstage.__init__": {
   "status": "partial",
@@ -470,11 +470,11 @@
  },
  "plugins.model-providers.xai.__init__": {
   "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16): AST-identical modulo docstrings vs b9aa928; existing parity tests re-run green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green"
  },
  "plugins.model-providers.xiaomi.__init__": {
   "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16): AST-identical modulo docstrings vs b9aa928; existing parity tests re-run green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green"
  },
  "plugins.model-providers.zai.__init__": {
   "status": "partial",
@@ -506,7 +506,7 @@
  },
  "tools.browser_camofox_state": {
   "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16): refactor-only drift (cosmetic restructure, behavior identical); existing parity tests re-run green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): constants inlined at use-site + re-exported under PLUGIN-COMPAT block that check_compat_pointers.py forbids internal use of; uuid5 digests unchanged; parity tests re-run green"
  },
  "tools.browser_dialog_tool": {
   "status": "partial",
@@ -664,7 +664,7 @@
  },
  "agent.secret_sources.__init__": {
   "status": "done",
-  "retarget_note": "re-certified at 5d59366 (2026-09-16): AST-identical modulo docstrings vs b9aa928; existing parity tests re-run green"
+  "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green"
  },
  "tools.mcp_death_supervisor": {
   "status": "partial",

@@ -1,0 +1,13 @@
+[package]
+name = "hermes-desktop"
+description = "1:1 Rust port of the Hermes Agent Desktop Linux app backend (apps/desktop Electron main → Tauri commands; NousResearch/hermes-agent @ 5d59366, P6)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+thiserror.workspace = true
+serde_json = { workspace = true }
+
+[dev-dependencies]

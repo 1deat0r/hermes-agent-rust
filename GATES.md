@@ -25,7 +25,7 @@ while a lower-layer contract remains partial.
 - [ ] G1: every tracked upstream module is marked done in the generated inventory
   CHECK: /usr/bin/python3 -c "import json; s=json.load(open('tools/inventory.json', encoding='utf-8'))['summary']; assert s['modules'] == 8895 and s['status_counts'] == {'done': 8895}, s; assert s['production_modules'] == 3481 and s['prod_status_counts'] == {'done': 3481}, s; print('inventory closure passed')"
   EXPECT: inventory closure passed
-  EVIDENCE: pending (retarget 2026-09-16: 5 done / 164 partial / 8726 missing tracked; 5 / 164 / 3312 production)
+  EVIDENCE: pending (2026-09-16 re-cert batch 1: 27 done / 142 partial / 8726 missing tracked; 27 / 142 / 3312 production)
 
 - [ ] G2: the complete workspace builds and all active Rust tests pass serially
   CHECK: cargo test --workspace -- --test-threads=1

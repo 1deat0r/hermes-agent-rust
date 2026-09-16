@@ -26,10 +26,11 @@ Scope now includes the **Hermes Agent Desktop Linux app**: `apps/desktop`
 electron-builder, desktop `0.17.3`), `apps/shared` (`@hermes/shared`
 contract lib), the Tauri `apps/bootstrap-installer` (`0.21.1`, upstream's
 port precedent), and root `tests-js` desktop gates. First-party TS/JS is
-tracked as `ts:` modules under P6 (2,525 desktop modules, ~586k LOC);
-sibling `web/`, `ui-tui/`, e2e/diag/perf harnesses, and fixtures are
-excluded. Port strategy (user-approved): `hermes-desktop` crate via Tauri,
-renderer strategy per-module.
+tracked as `ts:` modules under P6: 2,539 total = 1,506 production
+(~381k LOC) + 1,033 oracles; sibling `web/`, `ui-tui/`, e2e/diag/perf
+harnesses, and fixtures are excluded (R2-reconciled; the earlier "2,525"
+was the pre-oracle-split count). Port strategy (user-approved):
+`hermes-desktop` crate via Tauri, renderer strategy per-module.
 
 ## What landed this session (retarget 5d59366)
 
@@ -77,14 +78,25 @@ re-run green, 4 refactor-only drifts re-certified green, plus a TDD port of
 `git diff --check` clean. **Ledger: 27 done / 142 partial / 8,726 missing
 tracked (0.30%); production 27 / 142 / 3,312 (0.78% — computed 0.7756%, ledger rounds display).**
 
+## Board gate: PASSED UNANIMOUS (R1→R3, 2026-09-16)
+
+R1 1B/3C/1R → adjudicated live (7 confirmed, 2 partly, 1 refuted) →
+revisions (KeyMaterial variant, hardened jwks tests, desktop scaffold,
+relabeled notes, reconciled counts) → R2 verify-by-quote → R3 S3+S6
+confirm → **unanimous BUILD incl. cold-read seat**. Record:
+`docs/board-review-r1.md`. Long-horizon 100% goal:
+`docs/long-horizon-100.md`. Validation at gate: 1,789 passed / 0 failed
+serial, `git diff --check` clean. Ledger: 27/142/8726 (0.30%).
+
 ## Next actions, in order
 
 1. Continue re-certification bottom-up: smallest real-DIFF partials next
    (`agent.lmstudio_reasoning` 40 LOC, `agent.reactions` 42,
    `agent.message_content` 43, provider `__init__`s with new behavior).
    The 145-code-DIFF classifier output from this session is the worklist.
-2. Open the `hermes-desktop` crate (P6): scaffold Tauri backend, port the
-   first `apps/desktop/electron` main-process module with parity tests.
+2. Port the first real `apps/desktop/electron` module into
+   `hermes-desktop` (scaffold landed this session); renderer per-module
+   per `docs/long-horizon-100.md` §3 doctrine.
 3. Keep ownership disjoint; commit and publish each logical unit immediately.
 
 ## Archive: session 4da (2026-08-31, pin b9aa928 — superseded)

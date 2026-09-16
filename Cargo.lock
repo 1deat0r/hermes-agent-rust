@@ -620,6 +620,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "hermes-desktop"
+version = "0.1.0"
+dependencies = [
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
 name = "hermes-gateway"
 version = "0.1.0"
 dependencies = [
