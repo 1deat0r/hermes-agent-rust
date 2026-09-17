@@ -926,6 +926,9 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   versioned UA ported; qwen/custom/zai/nous recerts (aux-model deferred
   to CLI layer). Ledger: **109 done / 88 partial / 8,698 missing
   (1.23%)**. Evidence: serial 1,874/0, diff clean.
+- 2026-09-16 (Wave B sweep batch): 6 recerts (stall, focus, preview,
+  events-wire-order, ssl truthy-dedup, kanban env-folds). Ledger: **115
+  done / 82 partial / 8,698 missing (1.29%)**. Evidence: serial 1,874/0.
 - 2026-09-16 (Wave B unit 5): 7 smallest-DIFF partials closed — provider trio
   (`alibaba-coding-plan` +CN profile, `nvidia` 4 aliases + `prepare_messages`
   copy-on-write strip via a `nvidia_tool_strip` base hook, `vertex` +`vertexai`

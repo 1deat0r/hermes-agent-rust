@@ -163,6 +163,11 @@ line_input + soul template ports; 3 recerts.
 affinity triple + kimi UA; 4 recerts; aux-model deferred.
 **Ledger: 109/88/8698 (1.23% tracked, 3.13% prod).** Serial 1,874/0.
 
+## Sweep batch done (2026-09-16)
+
+6 recerts (events/ssl/kanban verified, not just greened).
+**Ledger: 115/82/8698 (1.29% tracked, 3.30% prod).** Serial 1,874/0.
+
 ## Wave B provider batch done (2026-09-16)
 
 alibaba×3, ollama clamp, nvidia/vertex recerts, registry 38→41.

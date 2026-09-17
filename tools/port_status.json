@@ -40,8 +40,8 @@
   "status": "done"
  },
  "agent.kanban_stop": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (108 -> 79 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: env-gate folds are logic-identical; 7 tests green"
  },
  "agent.lmstudio_reasoning": {
   "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): drift is cosmetic restructure only (ternary folds, docstring trims); logic identical; existing suites re-run green",
@@ -72,8 +72,8 @@
   "status": "partial"
  },
  "agent.monitoring.events": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (86 -> 78 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: _MonitoringEvent base is structural (macro already discriminator-first, order-pinned, preserve_order); 10 tests green"
  },
  "agent.monitoring.gateway_health": {
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (469 -> 352 LOC); re-certify line-by-line before promoting",
@@ -144,8 +144,8 @@
   "status": "partial"
  },
  "agent.ssl_guard": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (95 -> 78 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: is_truthy_value dedup is semantic no-op (identical 4-string set); 7 tests green"
  },
  "agent.ssl_verify": {
   "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B unit 5): insecure/env-precedence/warning/default arms identical; _context_for_ca_bundle SSLContext cache recorded as transport-owner seam (auxiliary_client resolves to CaBundle path); suites green",
@@ -230,8 +230,8 @@
   "status": "partial"
  },
  "gateway.session_stall": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (121 -> 76 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: docstring-only drift; 8 tests green"
  },
  "hermes_cli.__init__": {
   "status": "done",
@@ -672,8 +672,8 @@
   "status": "partial"
  },
  "tools.focus_pane_tool": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (64 -> 76 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: description/bridge-call folds; 6 tests green"
  },
  "tools.interrupt": {
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (113 -> 121 LOC); re-certify line-by-line before promoting",
@@ -704,8 +704,8 @@
   "status": "partial"
  },
  "tools.read_preview_tool": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (94 -> 76 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: docstring folds; 8 tests green"
  },
  "tools.read_terminal_tool": {
   "status": "done"

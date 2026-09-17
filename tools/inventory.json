@@ -1,19 +1,19 @@
 {
  "generated_from": "/tmp/hermes-upstream-5d59366",
- "generated_at": "2026-09-17T11:15:46",
+ "generated_at": "2026-09-17T15:20:22",
  "summary": {
   "modules": 8895,
   "total_lines": 2468648,
   "production_modules": 3481,
   "production_lines": 1147748,
   "status_counts": {
-   "done": 109,
-   "partial": 88,
+   "done": 115,
+   "partial": 82,
    "missing": 8698
   },
   "prod_status_counts": {
-   "done": 109,
-   "partial": 88,
+   "done": 115,
+   "partial": 82,
    "missing": 3284
   },
   "packages": {
@@ -37,8 +37,8 @@
     "modules": 283,
     "status": {
      "missing": 236,
-     "partial": 25,
-     "done": 22
+     "partial": 22,
+     "done": 25
     }
    },
    "tests.agent": {
@@ -85,8 +85,8 @@
     "modules": 159,
     "status": {
      "missing": 147,
-     "partial": 4,
-     "done": 8
+     "partial": 3,
+     "done": 9
     }
    },
    "tests.hermes_cli": {
@@ -164,8 +164,8 @@
     "modules": 310,
     "status": {
      "missing": 269,
-     "partial": 28,
-     "done": 13
+     "partial": 26,
+     "done": 15
     }
    },
    "tests.conftest": {
@@ -45183,7 +45183,7 @@
   "agent.kanban_stop": {
    "lines": 79,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "agent.chat_completion_helpers_relay": {
@@ -45405,13 +45405,13 @@
    "imports": [
     "utils"
    ],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "agent.monitoring.events": {
    "lines": 78,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "ts:apps.desktop.src.store.connector-catalog": {
@@ -45697,13 +45697,13 @@
   "tools.read_preview_tool": {
    "lines": 76,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "tools.focus_pane_tool": {
    "lines": 76,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "tests.test_tests_tree_layout": {
@@ -45881,7 +45881,7 @@
   "gateway.session_stall": {
    "lines": 76,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "evals.prompt_footprint.property_guidance": {
