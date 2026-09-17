@@ -1,4 +1,7 @@
 /target
+# Pinned upstream worktree (persistent disk; /tmp is tmpfs and gets reaped).
+# Recreate per HANDOFF.md recipe; never commit its contents.
+/.upstream-pin/
 **/*.rs.bk
 Cargo.lock.orig
 .vscode/

@@ -14,11 +14,11 @@ pinned worktree, never HEAD:
 
 ```bash
 git -C /run/media/its1deat0r/Projects/Research/hermes-agent-repo \
-    worktree add --detach /tmp/hermes-upstream-5d59366 5d59366
-HERMES_UPSTREAM=/tmp/hermes-upstream-5d59366 bash tools/inventory.sh
+    worktree add --detach .upstream-pin/5d59366 5d59366
+HERMES_UPSTREAM=.upstream-pin/5d59366 bash tools/inventory.sh
 python3 tools/conversion_ledger.py
 git -C /run/media/its1deat0r/Projects/Research/hermes-agent-repo \
-    worktree remove /tmp/hermes-upstream-5d59366
+    worktree remove .upstream-pin/5d59366
 ```
 
 Scope now includes the **Hermes Agent Desktop Linux app**: `apps/desktop`
@@ -34,7 +34,7 @@ was the pre-oracle-split count). Port strategy (user-approved):
 
 ## What landed this session (retarget 5d59366)
 
-- New pinned worktree `/tmp/hermes-upstream-5d59366` at `5d59366`.
+- New pinned worktree `.upstream-pin/5d59366` at `5d59366`.
 - `tools/inventory.py` extended: walks `apps/` + `tests-js` for first-party
   TS/JS (`ts:` rows, test detection via `.test.`/`.spec.`/`__tests__`/`e2e`),
   scope exclusions (e2e, `__fixtures__`, pr-assets, public, diag/perf/repro
@@ -202,6 +202,12 @@ _SECRET_VAR ported; 3 refactors verified.
 
 THINK tag tables ported; 4 recerts.
 **Ledger: 143/54/8698 (1.61% tracked, 4.11% prod).** Serial 1,888/0.
+
+## Cron batch + pin infra done (2026-09-16)
+
+Outcomes set + delegation ported; 4 recerts. Pinned worktree now
+persistent (`.upstream-pin/5d59366`; /tmp is tmpfs).
+**Ledger: 148/49/8698 (1.66% tracked, 4.25% prod).** Serial 1,889/0.
 
 ## Wave B provider batch done (2026-09-16)
 

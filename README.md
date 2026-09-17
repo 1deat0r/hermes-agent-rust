@@ -6,9 +6,9 @@ An in-progress **1:1 Rust port of [NousResearch/hermes-agent](https://github.com
 
 The live conversion ledger currently reports:
 
-- **All tracked modules:** **1.61%** — `143 / 8,895` done, `54` partial,
+- **All tracked modules:** **1.66%** — `148 / 8,895` done, `49` partial,
   `8,698` missing.
-- **Production modules:** **4.11%** — `143 / 3,481` done, `54` partial,
+- **Production modules:** **4.25%** — `148 / 3,481` done, `49` partial,
   `3,284` missing.
 
 Only `done` rows receive credit; partial rows remain zero-credit until their
@@ -133,7 +133,7 @@ convert partial or missing inventory rows into completion.
 
 Target repository: [NousResearch/hermes-agent](https://github.com/NousResearch/hermes-agent)
 
-Pinned upstream commit: `5d59366` (`5d59366010640c1d6b8f170d8a4ee109db2bbdef`, latest `origin/main` as of 2026-09-16 NZ; pinned worktree `/tmp/hermes-upstream-5d59366`).
+Pinned upstream commit: `5d59366` (`5d59366010640c1d6b8f170d8a4ee109db2bbdef`, latest `origin/main` as of 2026-09-16 NZ; pinned worktree `.upstream-pin/5d59366`).
 
 ## License
 

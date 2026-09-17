@@ -7,7 +7,7 @@
 
 ## 1. Fixed reference points (do not rediscover)
 
-- Upstream: pinned `5d59366` worktree at `/tmp/hermes-upstream-5d59366` (cut from `/run/media/its1deat0r/Projects/Research/hermes-agent-repo`; latest `origin/main` as of 2026-09-16 NZ — always regenerate the inventory against the pinned worktree, never HEAD; see HANDOFF.md recipe). The pre-commit hook refuses to refresh the ledger against any checkout not at the pin.
+- Upstream: pinned `5d59366` worktree at `.upstream-pin/5d59366` (cut from `/run/media/its1deat0r/Projects/Research/hermes-agent-repo`; latest `origin/main` as of 2026-09-16 NZ — always regenerate the inventory against the pinned worktree, never HEAD; see HANDOFF.md recipe). The pre-commit hook refuses to refresh the ledger against any checkout not at the pin.
 - Scope is the full upstream tree **including the Hermes Agent Desktop Linux app**: Python agent/CLI/gateway surface **plus** `apps/desktop` (Electron 40 main + React renderer, Linux AppImage/deb/rpm), `apps/shared`, the Tauri `apps/bootstrap-installer`, and root `tests-js` desktop gates. Inventory tracks first-party TS/JS as `ts:` modules under P6; the port strategy is a `hermes-desktop` crate via Tauri (upstream's own bootstrap-installer precedent), renderer strategy per-module.
 - Master plan + parity matrix: `PLAN.md`
 - Machine-readable ledger: `tools/inventory.json` (regenerate: `tools/inventory.sh`)

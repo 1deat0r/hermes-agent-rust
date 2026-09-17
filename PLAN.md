@@ -3,7 +3,7 @@
 Target: https://github.com/NousResearch/hermes-agent @ `5d59366` (local clone:
 `/run/media/its1deat0r/Projects/Research/hermes-agent-repo`; latest
 `origin/main` as of 2026-09-16 NZ — always regenerate the inventory against
-the pinned `/tmp/hermes-upstream-5d59366` worktree, never HEAD)
+the pinned `.upstream-pin/5d59366` worktree, never HEAD)
 Goal: Functional **1:1 port** of Hermes Agent **and the Hermes Agent Desktop
 Linux app** to idiomatic Rust — same CLI surface, same on-disk formats, same
 wire protocols, same observable behavior, same Linux desktop shell
@@ -793,7 +793,7 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 
 - 2026-09-16 (retarget to `5d59366` + Desktop Linux app): parity target moved
   from `b9aa928` to `5d59366` (latest `origin/main` as of 2026-09-16 NZ; pinned
-  worktree `/tmp/hermes-upstream-5d59366`), scope extended to the Hermes Agent
+  worktree `.upstream-pin/5d59366`), scope extended to the Hermes Agent
   Desktop Linux app. `tools/inventory.py` now tracks first-party TS/JS
   (`apps/`, `tests-js`) as `ts:` rows with desktop-scope exclusions;
   `tools/conversion_ledger.py` gains P6;   `tools/port_status.json` demotes 162
@@ -952,7 +952,12 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   serial 1,887/0, diff clean.
 - 2026-09-16 (Wave B scrubber batch): THINK tag-table exports ported;
   4 recerts with per-module evidence. Ledger: **143 done / 54 partial /
-  8,698 missing (1.61%)**. Evidence: serial 1,888/0, diff clean.
+  8,698   missing (1.61%)**. Evidence: serial 1,888/0, diff clean.
+- 2026-09-16 (Wave B cron batch): outcomes set + job_key delegation
+  ported; 4 recerts. Infra: pinned worktree moved off tmpfs (twice
+  reaped) to `.upstream-pin/5d59366`; all pin paths repointed; ledger
+  re-verified stable. Ledger: **148 done / 49 partial / 8,698 missing
+  (1.66%)**. Evidence: serial 1,889/0, diff clean.
 - 2026-09-16 (Wave B unit 5): 7 smallest-DIFF partials closed — provider trio
   (`alibaba-coding-plan` +CN profile, `nvidia` 4 aliases + `prepare_messages`
   copy-on-write strip via a `nvidia_tool_strip` base hook, `vertex` +`vertexai`

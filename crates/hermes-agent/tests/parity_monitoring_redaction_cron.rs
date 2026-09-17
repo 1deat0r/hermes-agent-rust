@@ -226,3 +226,23 @@ fn terminal_states_flush_through_the_singleton() {
     assert_eq!(sink[0]["error_class"], "auth_failed");
     assert!(sink[0]["job_key"].as_str().unwrap().starts_with("sha256:"));
 }
+
+/// PARITY @ 5d59366: delivery outcomes extended (+queued, +suppressed_acked).
+#[test]
+fn extended_delivery_outcomes_pass_through() {
+    use hermes_agent::monitoring::cron_health::project_execution_event;
+    use serde_json::json;
+    for outcome in ["queued", "suppressed_acked"] {
+        let event = project_execution_event(
+            &json!({"status": "completed", "job_id": "j"}),
+            Some(outcome),
+        );
+        assert_eq!(event.delivery_outcome.as_deref(), Some(outcome));
+    }
+    // Unknown outcomes still drop to None.
+    let event = project_execution_event(
+        &json!({"status": "completed", "job_id": "j"}),
+        Some("bogus"),
+    );
+    assert_eq!(event.delivery_outcome, None);
+}

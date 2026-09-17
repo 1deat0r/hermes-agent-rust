@@ -13,7 +13,6 @@
 
 use chrono::{DateTime, NaiveDateTime, Utc};
 use serde_json::Value;
-use sha2::{Digest, Sha256};
 
 use super::emitter;
 use super::events::CronExecutionEvent;
@@ -22,22 +21,21 @@ use super::events::CronExecutionEvent;
 const KNOWN_STATUSES: [&str; 5] = ["claimed", "running", "completed", "failed", "unknown"];
 /// PARITY: `_KNOWN_SOURCES` (upstream line 22).
 const KNOWN_SOURCES: [&str; 3] = ["builtin", "direct", "external"];
-/// PARITY: `_KNOWN_DELIVERY_OUTCOMES` (upstream line 23).
-const KNOWN_DELIVERY_OUTCOMES: [&str; 4] = ["delivered", "failed", "suppressed", "not_configured"];
+/// PARITY: `_KNOWN_DELIVERY_OUTCOMES` (upstream line 26 @ 5d59366).
+const KNOWN_DELIVERY_OUTCOMES: [&str; 6] = [
+    "queued",
+    "delivered",
+    "failed",
+    "suppressed",
+    "suppressed_acked",
+    "not_configured",
+];
 
-/// PARITY: `_job_key` (upstream lines 30-33) — `str(raw or "unknown")`,
-/// UTF-8-replace encoded, SHA-256 truncated to 24 hex chars.
+/// PARITY: `_job_key` (upstream line 37 @ 5d59366) — now an alias:
+/// `_job_key = _safe_instance_id` (same `sha256:<24 hex>` shape, never the
+/// raw id). Delegates so the two can never drift.
 pub fn job_key(raw: Option<&Value>) -> String {
-    let text = match raw {
-        Some(value) if !value.is_null() => match value {
-            Value::String(s) => s.clone(),
-            other => other.to_string(),
-        },
-        _ => "unknown".to_string(),
-    };
-    let digest = Sha256::digest(text.as_bytes());
-    let hex: String = digest.iter().map(|b| format!("{b:02x}")).collect();
-    format!("sha256:{}", &hex[..24])
+    super::gateway_health::safe_instance_id(raw)
 }
 
 /// PARITY: `classify_cron_error` (upstream lines 36-63) — a first-match

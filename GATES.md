@@ -38,7 +38,7 @@ while a lower-layer contract remains partial.
   EVIDENCE: pending
 
 - [ ] G4: the generated ledger and README are refreshed from the pinned upstream checkout and contain no stale completion snapshot
-  CHECK: UP=/tmp/hermes-upstream-5d59366; git -C /run/media/its1deat0r/Projects/Research/hermes-agent-repo worktree list 2>/dev/null | grep -q "$UP" || git -C /run/media/its1deat0r/Projects/Research/hermes-agent-repo worktree add --detach "$UP" 5d59366; test "$(git -C "$UP" rev-parse HEAD)" = 5d59366010640c1d6b8f170d8a4ee109db2bbdef && HERMES_UPSTREAM="$UP" /usr/bin/python3 tools/refresh_docs.py --upstream "$UP" && git diff --exit-code -- tools/inventory.json CONVERSION-LEDGER.md README.md && echo documentation snapshot passed
+  CHECK: UP=.upstream-pin/5d59366; git -C /run/media/its1deat0r/Projects/Research/hermes-agent-repo worktree list 2>/dev/null | grep -q "$UP" || git -C /run/media/its1deat0r/Projects/Research/hermes-agent-repo worktree add --detach "$UP" 5d59366; test "$(git -C "$UP" rev-parse HEAD)" = 5d59366010640c1d6b8f170d8a4ee109db2bbdef && HERMES_UPSTREAM="$UP" /usr/bin/python3 tools/refresh_docs.py --upstream "$UP" && git diff --exit-code -- tools/inventory.json CONVERSION-LEDGER.md README.md && echo documentation snapshot passed
   EXPECT: documentation snapshot passed
   EVIDENCE: pending
 

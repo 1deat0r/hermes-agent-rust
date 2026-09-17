@@ -1,7 +1,7 @@
 # Hermes Agent → Hermes Agent Rust Conversion Ledger
 
-**Current strict completion: 1.61% of all tracked upstream modules (143/8895).**
-Production-only strict completion: **4.11%** (143/3481 production modules).
+**Current strict completion: 1.66% of all tracked upstream modules (148/8895).**
+Production-only strict completion: **4.25%** (148/3481 production modules).
 
 > This file is generated from `tools/inventory.json`; update the source ledger in `tools/port_status.json`, regenerate the inventory, then run `python3 tools/conversion_ledger.py`. Only `done` counts toward the percentage. `partial` is intentionally zero credit until its stated parity seams are closed.
 
@@ -9,10 +9,10 @@ Production-only strict completion: **4.11%** (143/3481 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 143 | 54 | 8698 | 1.61% | 9,043/2,468,648 done LOC |
-| Production modules | 143 | 54 | 3284 | 4.11% | 9,043/1,147,748 done LOC |
+| All tracked modules | 148 | 49 | 8698 | 1.66% | 10,070/2,467,838 done LOC |
+| Production modules | 148 | 49 | 3284 | 4.25% | 10,070/1,147,748 done LOC |
 
-Inventory source: `/tmp/hermes-upstream-5d59366` at `2026-09-17T22:52:18`.
+Inventory source: `/run/media/its1deat0r/Projects/AI Agents/Hermes-Agent-Rust/.upstream-pin/5d59366` at `2026-09-18T09:23:46`.
 
 ## Definition of 100.00%
 
@@ -32,11 +32,9 @@ The conversion is complete only when all of these are true:
 | `agent.auxiliary_client` | P2 | 7,673 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `agent.credential_pool` | P2 | 2,778 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `agent.file_safety` | P2 | 550 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
-| `agent.monitoring.cron_health` | P2 | 193 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `agent.monitoring.gateway_health` | P2 | 352 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `agent.monitoring.gateway_health_export` | P2 | 344 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `agent.monitoring.otlp_exporter` | P2 | 283 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
-| `agent.secret_sources._cache` | P2 | 191 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `agent.secret_sources.base` | P2 | 255 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `agent.secret_sources.bitwarden` | P2 | 639 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `agent.secret_sources.command` | P2 | 383 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
@@ -67,12 +65,10 @@ The conversion is complete only when all of these are true:
 | `providers.base` | P2 | 344 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `run_agent` | P2 | 1,561 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `tools.clarify_tool` | P2 | 311 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
-| `tools.computer_use.schema` | P2 | 208 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `tools.credential_files` | P2 | 366 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `tools.env_probe` | P2 | 255 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `tools.file_state` | P2 | 254 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `tools.mcp_dashboard_oauth` | P2 | 140 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
-| `tools.mcp_death_supervisor` | P2 | 216 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `tools.read_extract` | P2 | 551 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `tools.registry` | P2 | 975 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `tools.schema_sanitizer` | P2 | 386 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
@@ -80,7 +76,6 @@ The conversion is complete only when all of these are true:
 | `tools.todo_tool` | P2 | 284 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `tools.tool_backend_helpers` | P2 | 259 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `tools.tool_result_storage` | P2 | 321 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
-| `tools.tts_text_normalize` | P2 | 219 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `toolsets` | P2 | 485 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `utils` | P1 | 611 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 
@@ -253,7 +248,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `agent.model_metadata` | production | P2 | 2,306 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.models_dev` | production | P2 | 854 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.monitoring.__init__` | production | P2 | 17 | ✅ done | Maintain parity evidence; no remaining task in this row. |
-| `agent.monitoring.cron_health` | production | P2 | 193 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
+| `agent.monitoring.cron_health` | production | P2 | 193 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.monitoring.emitter` | production | P2 | 176 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.monitoring.events` | production | P2 | 78 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.monitoring.gateway_health` | production | P2 | 352 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
@@ -317,7 +312,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `agent.search_policy` | production | P2 | 30 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.secret_scope` | production | P2 | 280 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.secret_sources.__init__` | production | P2 | 19 | ✅ done | Maintain parity evidence; no remaining task in this row. |
-| `agent.secret_sources._cache` | production | P2 | 191 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
+| `agent.secret_sources._cache` | production | P2 | 191 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.secret_sources.base` | production | P2 | 255 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
 | `agent.secret_sources.bitwarden` | production | P2 | 639 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
 | `agent.secret_sources.command` | production | P2 | 383 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
@@ -6147,7 +6142,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `tools.computer_use.cua_backend_session` | production | P2 | 521 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.computer_use.doctor` | production | P2 | 368 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.computer_use.permissions` | production | P2 | 119 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `tools.computer_use.schema` | production | P2 | 208 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
+| `tools.computer_use.schema` | production | P2 | 208 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `tools.computer_use.tool` | production | P2 | 825 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.computer_use.vision_routing` | production | P2 | 95 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.computer_use_tool` | production | P2 | 29 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
@@ -6242,7 +6237,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `tools.managed_gateway_auth` | production | P2 | 78 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.managed_tool_gateway` | production | P2 | 390 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.mcp_dashboard_oauth` | production | P2 | 140 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
-| `tools.mcp_death_supervisor` | production | P2 | 216 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
+| `tools.mcp_death_supervisor` | production | P2 | 216 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `tools.mcp_oauth` | production | P2 | 1,194 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.mcp_oauth_device` | production | P2 | 198 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.mcp_oauth_manager` | production | P2 | 420 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
@@ -6359,7 +6354,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `tools.transcription_tools` | production | P2 | 588 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.tts_command_provider` | production | P2 | 342 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.tts_streaming` | production | P2 | 344 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `tools.tts_text_normalize` | production | P2 | 219 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
+| `tools.tts_text_normalize` | production | P2 | 219 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `tools.tts_tool` | production | P2 | 685 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.tts_tool_delivery` | production | P2 | 425 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.tts_tool_lifecycle` | production | P2 | 170 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
@@ -7145,7 +7140,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `ts:apps.desktop.src.app.contrib.hooks.live-status-spinner.test` | oracle/test | P6 | 77 | ⬜ missing | Read the upstream test; add the matching Rust parity coverage and evidence. |
 | `ts:apps.desktop.src.app.contrib.hooks.notification-focus.test` | oracle/test | P6 | 110 | ⬜ missing | Read the upstream test; add the matching Rust parity coverage and evidence. |
 | `ts:apps.desktop.src.app.contrib.hooks.use-background-sync` | production | P6 | 928 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `ts:apps.desktop.src.app.contrib.hooks.use-background-sync.test` | oracle/test | P6 | 1,012 | ⬜ missing | Read the upstream test; add the matching Rust parity coverage and evidence. |
+| `ts:apps.desktop.src.app.contrib.hooks.use-background-sync.test` | oracle/test | P6 | 106 | ⬜ missing | Read the upstream test; add the matching Rust parity coverage and evidence. |
 | `ts:apps.desktop.src.app.contrib.hooks.use-desktop-integrations` | production | P6 | 382 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `ts:apps.desktop.src.app.contrib.hooks.use-desktop-integrations.test` | oracle/test | P6 | 636 | ⬜ missing | Read the upstream test; add the matching Rust parity coverage and evidence. |
 | `ts:apps.desktop.src.app.contrib.hooks.use-pet-bridge` | production | P6 | 68 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
@@ -7454,7 +7449,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `ts:apps.desktop.src.app.settings.fallback-models-field.test` | oracle/test | P6 | 132 | ⬜ missing | Read the upstream test; add the matching Rust parity coverage and evidence. |
 | `ts:apps.desktop.src.app.settings.field-copy` | production | P6 | 57 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `ts:apps.desktop.src.app.settings.gateway-settings` | production | P6 | 1,667 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `ts:apps.desktop.src.app.settings.gateway-settings.test` | oracle/test | P6 | 44 | ⬜ missing | Read the upstream test; add the matching Rust parity coverage and evidence. |
+| `ts:apps.desktop.src.app.settings.gateway-settings.test` | oracle/test | P6 | 140 | ⬜ missing | Read the upstream test; add the matching Rust parity coverage and evidence. |
 | `ts:apps.desktop.src.app.settings.helpers` | production | P6 | 399 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `ts:apps.desktop.src.app.settings.helpers.test` | oracle/test | P6 | 448 | ⬜ missing | Read the upstream test; add the matching Rust parity coverage and evidence. |
 | `ts:apps.desktop.src.app.settings.index` | production | P6 | 452 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
