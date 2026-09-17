@@ -1,19 +1,19 @@
 {
  "generated_from": "/tmp/hermes-upstream-5d59366",
- "generated_at": "2026-09-17T21:12:35",
+ "generated_at": "2026-09-17T22:52:18",
  "summary": {
   "modules": 8895,
   "total_lines": 2468648,
   "production_modules": 3481,
   "production_lines": 1147748,
   "status_counts": {
-   "done": 138,
-   "partial": 59,
+   "done": 143,
+   "partial": 54,
    "missing": 8698
   },
   "prod_status_counts": {
-   "done": 138,
-   "partial": 59,
+   "done": 143,
+   "partial": 54,
    "missing": 3284
   },
   "packages": {
@@ -37,8 +37,8 @@
     "modules": 283,
     "status": {
      "missing": 236,
-     "partial": 18,
-     "done": 29
+     "partial": 15,
+     "done": 32
     }
    },
    "tests.agent": {
@@ -61,8 +61,8 @@
     "modules": 502,
     "status": {
      "missing": 476,
-     "partial": 11,
-     "done": 15
+     "partial": 10,
+     "done": 16
     }
    },
    "tests.hermes_state": {
@@ -163,8 +163,8 @@
     "modules": 310,
     "status": {
      "missing": 269,
-     "partial": 16,
-     "done": 25
+     "partial": 15,
+     "done": 26
     }
    },
    "tests.conftest": {
@@ -25788,7 +25788,7 @@
   "agent.markdown_tables": {
    "lines": 187,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "ts:apps.desktop.src.components.ui.context-menu": {
@@ -27046,7 +27046,7 @@
   "agent.monitoring.emitter": {
    "lines": 176,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "ts:tests-js.assistant-ui-tap-compat.test": {
@@ -27189,7 +27189,7 @@
   "agent.think_scrubber": {
    "lines": 175,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "ts:apps.desktop.src.lib.ansi": {
@@ -27959,7 +27959,7 @@
    "imports": [
     "utils"
    ],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "evals.providers.reasoning_shapes": {
@@ -35354,7 +35354,7 @@
   "tools.delegation_output_schema": {
    "lines": 124,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "tests.test_no_shadowed_test_definitions": {

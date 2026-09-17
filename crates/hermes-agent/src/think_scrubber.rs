@@ -38,6 +38,26 @@ pub const OPEN_TAG_NAMES: [&str; 5] = [
 /// PARITY: the longest tag length (for partial-tag hold-back bound).
 const MAX_TAG_LEN: usize = "<REASONING_SCRATCHPAD>".len();
 
+// PARITY: `THINK_TAG_NAMES` / `THINK_OPEN_TAGS` / `THINK_CLOSE_TAGS`
+/// (upstream lines 22-24 @ 5d59366) — the one list every reasoning-hiding
+/// surface binds to. Open/close tags are lowercased upstream (consumers
+/// match case-insensitively).
+pub const THINK_TAG_NAMES: [&str; 5] = OPEN_TAG_NAMES;
+pub const THINK_OPEN_TAGS: [&str; 5] = [
+    "<think>",
+    "<thinking>",
+    "<reasoning>",
+    "<thought>",
+    "<reasoning_scratchpad>",
+];
+pub const THINK_CLOSE_TAGS: [&str; 5] = [
+    "</think>",
+    "</thinking>",
+    "</reasoning>",
+    "</thought>",
+    "</reasoning_scratchpad>",
+];
+
 /// PARITY: `StreamingThinkScrubber` (upstream lines 66-342).
 #[derive(Debug, Default)]
 pub struct StreamingThinkScrubber {

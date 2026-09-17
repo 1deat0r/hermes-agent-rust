@@ -198,6 +198,11 @@ MCP TTL expiry ported; 3 recerts.
 _SECRET_VAR ported; 3 refactors verified.
 **Ledger: 138/59/8698 (1.55% tracked, 3.96% prod).** Serial 1,887/0.
 
+## Scrubber batch done (2026-09-16)
+
+THINK tag tables ported; 4 recerts.
+**Ledger: 143/54/8698 (1.61% tracked, 4.11% prod).** Serial 1,888/0.
+
 ## Wave B provider batch done (2026-09-16)
 
 alibaba×3, ollama clamp, nvidia/vertex recerts, registry 38→41.

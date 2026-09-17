@@ -131,3 +131,21 @@ fn whitespace_only_line_then_open_is_boundary() {
     let (emissions, tail) = run(&["  \n<think>z</think>", "done"]);
     assert_eq!(emissions.concat() + &tail, "  \ndone");
 }
+
+/// PARITY @ 5d59366: exported tag tables (upstream lines 22-24).
+#[test]
+fn exported_tag_tables_match_upstream() {
+    use hermes_agent::think_scrubber::{THINK_CLOSE_TAGS, THINK_OPEN_TAGS, THINK_TAG_NAMES};
+    assert_eq!(
+        THINK_TAG_NAMES,
+        ["think", "thinking", "reasoning", "thought", "REASONING_SCRATCHPAD"]
+    );
+    assert_eq!(
+        THINK_OPEN_TAGS,
+        ["<think>", "<thinking>", "<reasoning>", "<thought>", "<reasoning_scratchpad>"]
+    );
+    assert_eq!(
+        THINK_CLOSE_TAGS,
+        ["</think>", "</thinking>", "</reasoning>", "</thought>", "</reasoning_scratchpad>"]
+    );
+}

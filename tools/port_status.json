@@ -52,8 +52,8 @@
   "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
  },
  "agent.markdown_tables": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (309 -> 187 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: max() clamp already equivalent via width(); 11 tests green"
  },
  "agent.message_content": {
   "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): drift is cosmetic restructure only (ternary folds, docstring trims); logic identical; existing suites re-run green",
@@ -68,8 +68,8 @@
   "status": "partial"
  },
  "agent.monitoring.emitter": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (211 -> 176 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: unsubscribe suppress-ValueError already equivalent (if-let); suite green"
  },
  "agent.monitoring.events": {
   "status": "done",
@@ -152,8 +152,8 @@
   "status": "done"
  },
  "agent.think_scrubber": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (396 -> 175 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "ported 2026-09-16 autonomous: THINK_TAG_NAMES/OPEN/CLOSE exports (lowercased tables); 14 tests"
  },
  "agent.tool_result_classification": {
   "status": "done"
@@ -305,8 +305,8 @@
   "status": "partial"
  },
  "hermes_cli.managed_scope": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (214 -> 169 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: file_signature import + _under_pytest guard already modeled; 12 tests green"
  },
  "hermes_cli.model_search": {
   "retarget_note": "ported 2026-09-16 Wave B: ox-alpha alias row added (data drift) + test; refactor-only remainder",
@@ -652,8 +652,8 @@
   "retarget_note": "re-certified autonomous: structural drift only (_now helper); suite green"
  },
  "tools.delegation_output_schema": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (151 -> 124 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: coerce_output_schema already ported (type-name mapping incl.); 17 tests green"
  },
  "tools.desktop_ui": {
   "status": "done",

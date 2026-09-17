@@ -950,6 +950,9 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   (boundary/API-drop, live oracle); 3 refactors verified identical.
   Ledger: **138 done / 59 partial / 8,698 missing (1.55%)**. Evidence:
   serial 1,887/0, diff clean.
+- 2026-09-16 (Wave B scrubber batch): THINK tag-table exports ported;
+  4 recerts with per-module evidence. Ledger: **143 done / 54 partial /
+  8,698 missing (1.61%)**. Evidence: serial 1,888/0, diff clean.
 - 2026-09-16 (Wave B unit 5): 7 smallest-DIFF partials closed — provider trio
   (`alibaba-coding-plan` +CN profile, `nvidia` 4 aliases + `prepare_messages`
   copy-on-write strip via a `nvidia_tool_strip` base hook, `vertex` +`vertexai`
