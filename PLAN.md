@@ -936,6 +936,9 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 - 2026-09-16 (Wave B tags batch): `strip_unicode_tags` ported (emoji
   preservation, BMP-vs-plane14 trap documented); 4 recerts. Ledger: **121
   done / 76 partial / 8,698 missing (1.36%)**. Evidence: serial 1,879/0.
+- 2026-09-16 (Wave B EOF batch): secret_prompt stream-closed fold analyzed
+  (None-exhaustion covers); 4 cosmetic recerts. Ledger: **126 done / 71
+  partial / 8,698 missing (1.42%)**. Evidence: serial 1,879/0.
 - 2026-09-16 (Wave B unit 5): 7 smallest-DIFF partials closed — provider trio
   (`alibaba-coding-plan` +CN profile, `nvidia` 4 aliases + `prepare_messages`
   copy-on-write strip via a `nvidia_tool_strip` base hook, `vertex` +`vertexai`

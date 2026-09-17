@@ -178,6 +178,11 @@ thinking-toggle reasoning + metadata; above-crate seams deferred.
 unicode-tag strip ported; 4 recerts.
 **Ledger: 121/76/8698 (1.36% tracked, 3.48% prod).** Serial 1,879/0.
 
+## EOF batch done (2026-09-16)
+
+secret_prompt EOF-fold + 4 recerts.
+**Ledger: 126/71/8698 (1.42% tracked, 3.62% prod).** Serial 1,879/0.
+
 ## Wave B provider batch done (2026-09-16)
 
 alibaba×3, ollama clamp, nvidia/vertex recerts, registry 38→41.

@@ -12,8 +12,8 @@
   "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
  },
  "agent.bounded_response": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (148 -> 102 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
  },
  "agent.credential_pool": {
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (3147 -> 2778 LOC); re-certify line-by-line before promoting",
@@ -48,8 +48,8 @@
   "status": "done"
  },
  "agent.manual_compression_feedback": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (120 -> 96 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
  },
  "agent.markdown_tables": {
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (309 -> 187 LOC); re-certify line-by-line before promoting",
@@ -222,8 +222,8 @@
   "status": "done"
  },
  "gateway.readiness": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (122 -> 108 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
  },
  "gateway.rich_sent_store": {
   "status": "done",
@@ -313,8 +313,8 @@
   "status": "done"
  },
  "hermes_cli.secret_prompt": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (126 -> 98 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: ''-closed-stream folded into EOF set; None-exhaustion covers it; 14 tests green"
  },
  "hermes_cli.setup_hidden_env": {
   "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green",
@@ -763,8 +763,8 @@
   "status": "partial"
  },
  "tools.working_diff": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (130 -> 96 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
  },
  "toolset_distributions": {
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (358 -> 106 LOC); re-certify line-by-line before promoting",

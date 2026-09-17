@@ -1,19 +1,19 @@
 {
  "generated_from": "/tmp/hermes-upstream-5d59366",
- "generated_at": "2026-09-17T19:03:17",
+ "generated_at": "2026-09-17T19:11:00",
  "summary": {
   "modules": 8895,
   "total_lines": 2468648,
   "production_modules": 3481,
   "production_lines": 1147748,
   "status_counts": {
-   "done": 121,
-   "partial": 76,
+   "done": 126,
+   "partial": 71,
    "missing": 8698
   },
   "prod_status_counts": {
-   "done": 121,
-   "partial": 76,
+   "done": 126,
+   "partial": 71,
    "missing": 3284
   },
   "packages": {
@@ -37,8 +37,8 @@
     "modules": 283,
     "status": {
      "missing": 236,
-     "partial": 20,
-     "done": 27
+     "partial": 18,
+     "done": 29
     }
    },
    "tests.agent": {
@@ -61,8 +61,8 @@
     "modules": 502,
     "status": {
      "missing": 476,
-     "partial": 14,
-     "done": 12
+     "partial": 13,
+     "done": 13
     }
    },
    "tests.hermes_state": {
@@ -84,8 +84,8 @@
     "modules": 159,
     "status": {
      "missing": 147,
-     "partial": 2,
-     "done": 10
+     "partial": 1,
+     "done": 11
     }
    },
    "tests.hermes_cli": {
@@ -163,8 +163,8 @@
     "modules": 310,
     "status": {
      "missing": 269,
-     "partial": 25,
-     "done": 16
+     "partial": 24,
+     "done": 17
     }
    },
    "tests.conftest": {
@@ -38702,7 +38702,7 @@
    "imports": [
     "hermes_constants"
    ],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "gateway.message_timestamps": {
@@ -39868,7 +39868,7 @@
   "agent.bounded_response": {
    "lines": 102,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "agent.battery": {
@@ -40744,7 +40744,7 @@
   "hermes_cli.secret_prompt": {
    "lines": 98,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "hermes_cli.observability.shared_metrics_subscriber": {
@@ -41108,7 +41108,7 @@
   "tools.working_diff": {
    "lines": 96,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "tools.connectors.search": {
@@ -41265,7 +41265,7 @@
   "agent.manual_compression_feedback": {
    "lines": 96,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "agent.billing_links": {
