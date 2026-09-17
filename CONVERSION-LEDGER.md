@@ -1,7 +1,7 @@
 # Hermes Agent → Hermes Agent Rust Conversion Ledger
 
-**Current strict completion: 1.51% of all tracked upstream modules (134/8895).**
-Production-only strict completion: **3.85%** (134/3481 production modules).
+**Current strict completion: 1.55% of all tracked upstream modules (138/8895).**
+Production-only strict completion: **3.96%** (138/3481 production modules).
 
 > This file is generated from `tools/inventory.json`; update the source ledger in `tools/port_status.json`, regenerate the inventory, then run `python3 tools/conversion_ledger.py`. Only `done` counts toward the percentage. `partial` is intentionally zero credit until its stated parity seams are closed.
 
@@ -9,10 +9,10 @@ Production-only strict completion: **3.85%** (134/3481 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 134 | 63 | 8698 | 1.51% | 7,647/2,468,648 done LOC |
-| Production modules | 134 | 63 | 3284 | 3.85% | 7,647/1,147,748 done LOC |
+| All tracked modules | 138 | 59 | 8698 | 1.55% | 8,212/2,468,648 done LOC |
+| Production modules | 138 | 59 | 3284 | 3.96% | 8,212/1,147,748 done LOC |
 
-Inventory source: `/tmp/hermes-upstream-5d59366` at `2026-09-17T19:45:04`.
+Inventory source: `/tmp/hermes-upstream-5d59366` at `2026-09-17T21:12:35`.
 
 ## Definition of 100.00%
 
@@ -75,7 +75,6 @@ The conversion is complete only when all of these are true:
 | `tools.credential_files` | P2 | 366 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `tools.delegation_output_schema` | P2 | 124 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `tools.env_probe` | P2 | 255 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
-| `tools.fal_common` | P2 | 146 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `tools.file_state` | P2 | 254 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `tools.mcp_dashboard_oauth` | P2 | 140 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `tools.mcp_death_supervisor` | P2 | 216 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
@@ -83,13 +82,10 @@ The conversion is complete only when all of these are true:
 | `tools.registry` | P2 | 975 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `tools.schema_sanitizer` | P2 | 386 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `tools.session_search_tool` | P2 | 784 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
-| `tools.terminal_hints` | P2 | 160 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
-| `tools.threat_patterns` | P2 | 153 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `tools.todo_tool` | P2 | 284 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `tools.tool_backend_helpers` | P2 | 259 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `tools.tool_result_storage` | P2 | 321 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `tools.tts_text_normalize` | P2 | 219 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
-| `toolset_distributions` | P2 | 106 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `toolsets` | P2 | 485 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `utils` | P1 | 611 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 
@@ -6222,7 +6218,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `tools.environments.singularity` | production | P2 | 220 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.environments.ssh` | production | P2 | 285 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.environments.vercel_sandbox` | production | P2 | 344 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `tools.fal_common` | production | P2 | 146 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
+| `tools.fal_common` | production | P2 | 146 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `tools.feishu_doc_tool` | production | P2 | 95 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.feishu_drive_tool` | production | P2 | 203 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.feishu_lark` | production | P2 | 86 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
@@ -6337,7 +6333,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `tools.slash_confirm` | production | P2 | 123 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `tools.spill_safety` | production | P2 | 66 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.subagent_worktree` | production | P2 | 193 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `tools.terminal_hints` | production | P2 | 160 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
+| `tools.terminal_hints` | production | P2 | 160 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `tools.terminal_scope` | production | P2 | 223 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.terminal_tool` | production | P2 | 1,422 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.terminal_tool_backends` | production | P2 | 352 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
@@ -6348,7 +6344,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `tools.terminal_tool_result` | production | P2 | 277 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.terminal_tool_sudo` | production | P2 | 484 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.thread_context` | production | P2 | 74 | ✅ done | Maintain parity evidence; no remaining task in this row. |
-| `tools.threat_patterns` | production | P2 | 153 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
+| `tools.threat_patterns` | production | P2 | 153 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `tools.tip_tool` | production | P2 | 81 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.tirith_security` | production | P2 | 560 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.todo_tool` | production | P2 | 284 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
@@ -6399,7 +6395,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `tools.xai_http` | production | P2 | 229 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.xai_video_tools` | production | P2 | 128 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.yuanbao_tools` | production | P2 | 504 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `toolset_distributions` | production | P2 | 106 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
+| `toolset_distributions` | production | P2 | 106 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `toolsets` | production | P2 | 485 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
 | `trajectory_compressor` | production | P2 | 868 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `ts:apps.bootstrap-installer.eslint.config` | production | P6 | 5 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |

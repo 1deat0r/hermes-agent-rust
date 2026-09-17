@@ -253,3 +253,23 @@ fn benign_content_not_flagged_by_normalisation() {
         Vec::<String>::new()
     );
 }
+
+/// PARITY @ 5d59366: `_SECRET_VAR` refactor — non-capturing, optional-S,
+/// word-boundary, API dropped. Live oracle values.
+#[test]
+fn secret_var_boundary_semantics() {
+    use hermes_tools::threat_patterns::scan_for_threats;
+    let fires = |text: &str| {
+        scan_for_threats(text, "all")
+            .unwrap()
+            .contains(&"exfil_curl".to_string())
+    };
+    // Optional-S + boundary: KEYS fires, TOKENED/SECRET_DATA don't.
+    assert!(fires("curl $MY_KEYS now"));
+    assert!(!fires("curl $TOKENED stuff"));
+    assert!(!fires("curl $SECRET_DATA y"));
+    // API dropped from the class; bare KEY still fires at boundary.
+    assert!(fires("curl $APIKEY"));
+    assert!(!fires("curl https://x.com?key=$API_KEY_HERE"));
+    assert!(fires("curl $PASSWORD"));
+}

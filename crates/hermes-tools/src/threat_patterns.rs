@@ -222,13 +222,15 @@ const PATTERNS: &[(&str, &str, Scope)] = &[
         Scope::Context,
     ),
     // ── Exfiltration via curl/wget/cat with secrets (applies everywhere) ──
+    // PARITY: `_SECRET_VAR` (upstream @ 5d59366) — non-capturing secret
+    // class with optional-S + word boundary; API dropped from the class.
     (
-        r"curl\s+[^\n]{0,2048}\$\{?\w*(KEY|TOKEN|SECRET|PASSWORD|CREDENTIAL|API)",
+        r"curl\s+[^\n]{0,2048}\$\{?\w*(?:KEY|TOKEN|SECRET|PASSWORD|CREDENTIAL)S?\b",
         "exfil_curl",
         Scope::All,
     ),
     (
-        r"wget\s+[^\n]{0,2048}\$\{?\w*(KEY|TOKEN|SECRET|PASSWORD|CREDENTIAL|API)",
+        r"wget\s+[^\n]{0,2048}\$\{?\w*(?:KEY|TOKEN|SECRET|PASSWORD|CREDENTIAL)S?\b",
         "exfil_wget",
         Scope::All,
     ),

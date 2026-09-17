@@ -946,6 +946,10 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
 - 2026-09-16 (Wave B cache batch): MCP TTL expiry ported (explicit-clock,
   >= boundary); 3 recerts. Ledger: **134 done / 63 partial / 8,698
   missing (1.51%)**. Evidence: serial 1,886/0, diff clean.
+- 2026-09-16 (Wave B patterns batch): `_SECRET_VAR` refactor ported
+  (boundary/API-drop, live oracle); 3 refactors verified identical.
+  Ledger: **138 done / 59 partial / 8,698 missing (1.55%)**. Evidence:
+  serial 1,887/0, diff clean.
 - 2026-09-16 (Wave B unit 5): 7 smallest-DIFF partials closed — provider trio
   (`alibaba-coding-plan` +CN profile, `nvidia` 4 aliases + `prepare_messages`
   copy-on-write strip via a `nvidia_tool_strip` base hook, `vertex` +`vertexai`

@@ -1,19 +1,19 @@
 {
  "generated_from": "/tmp/hermes-upstream-5d59366",
- "generated_at": "2026-09-17T19:45:04",
+ "generated_at": "2026-09-17T21:12:35",
  "summary": {
   "modules": 8895,
   "total_lines": 2468648,
   "production_modules": 3481,
   "production_lines": 1147748,
   "status_counts": {
-   "done": 134,
-   "partial": 63,
+   "done": 138,
+   "partial": 59,
    "missing": 8698
   },
   "prod_status_counts": {
-   "done": 134,
-   "partial": 63,
+   "done": 138,
+   "partial": 59,
    "missing": 3284
   },
   "packages": {
@@ -163,8 +163,8 @@
     "modules": 310,
     "status": {
      "missing": 269,
-     "partial": 19,
-     "done": 22
+     "partial": 16,
+     "done": 25
     }
    },
    "tests.conftest": {
@@ -1404,7 +1404,7 @@
     "modules": 1,
     "status": {
      "missing": 0,
-     "partial": 1
+     "done": 1
     }
    },
    "scripts.check_compat_pointers": {
@@ -29023,7 +29023,7 @@
   "tools.terminal_hints": {
    "lines": 160,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "tests.manual.cron_inchannel_e2e": {
@@ -30148,7 +30148,7 @@
   "tools.threat_patterns": {
    "lines": 153,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "tests.hermes_cli.test_shim_fail_closed_windows_live": {
@@ -31274,7 +31274,7 @@
   "tools.fal_common": {
    "lines": 146,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "tools.env_passthrough": {
@@ -38906,7 +38906,7 @@
    "imports": [
     "toolsets"
    ],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "tui_gateway.turn_marker": {

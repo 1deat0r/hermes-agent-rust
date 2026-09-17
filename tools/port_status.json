@@ -664,8 +664,8 @@
   "status": "partial"
  },
  "tools.fal_common": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (163 -> 146 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: ternary/factory/_dist refactors verified behavior-identical; suites green"
  },
  "tools.file_state": {
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (332 -> 254 LOC); re-certify line-by-line before promoting",
@@ -731,16 +731,16 @@
   "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
  },
  "tools.terminal_hints": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (170 -> 160 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: ternary/factory/_dist refactors verified behavior-identical; suites green"
  },
  "tools.thread_context": {
   "status": "done",
   "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
  },
  "tools.threat_patterns": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (284 -> 153 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "ported 2026-09-16 autonomous: _SECRET_VAR refactor (boundary/API-drop, live-oracle); 25 tests"
  },
  "tools.todo_tool": {
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (335 -> 284 LOC); re-certify line-by-line before promoting",
@@ -767,8 +767,8 @@
   "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
  },
  "toolset_distributions": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (358 -> 106 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: ternary/factory/_dist refactors verified behavior-identical; suites green"
  },
  "toolsets": {
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (1029 -> 485 LOC); re-certify line-by-line before promoting",

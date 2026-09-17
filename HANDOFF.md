@@ -193,6 +193,11 @@ open_db + transaction ported; 3 recerts.
 MCP TTL expiry ported; 3 recerts.
 **Ledger: 134/63/8698 (1.51% tracked, 3.85% prod).** Serial 1,886/0.
 
+## Patterns batch done (2026-09-16)
+
+_SECRET_VAR ported; 3 refactors verified.
+**Ledger: 138/59/8698 (1.55% tracked, 3.96% prod).** Serial 1,887/0.
+
 ## Wave B provider batch done (2026-09-16)
 
 alibaba×3, ollama clamp, nvidia/vertex recerts, registry 38→41.
