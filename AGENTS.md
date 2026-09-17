@@ -15,10 +15,18 @@
 
 ## 2. Turn protocol (in order)
 
-1. **Load state.** Read `PLAN.md` §5 (parity matrix), `tools/inventory.json`'s
-   `port_status` summary, and the session log. Determine the *next unit of work*
-   (module or module-section in the current phase). Do not re-derive from the
-   upstream repo what the ledger already records.
+1. **Load state.** Read `PLAN.md` §5 (parity matrix), the session log, and
+   ledger summaries **only via these three shapes** (never `cat`/`read`
+   `tools/inventory.json` whole — 1.3MB/137k tokens — nor
+   CONVERSION-LEDGER.md whole — 230k words; never `print(open(...).read())`
+   or full-dump `json.load`):
+   (a) `python3 -c "import json;s=json.load(open('tools/inventory.json'))['summary'];print(s['status_counts'],s['prod_status_counts'])"`;
+   (b) one module row by exact key (output ≤40 lines);
+   (c) top-N filtered lists, default limit 20, hard max 50 rows.
+   Schema: `tools/port_status.json` maps module → {status, retarget_note}.
+   Determine the *next unit of work* (module or module-section in the
+   current phase). Do not re-derive from the upstream repo what the ledger
+   already records.
 2. **TDD against the oracle.** For the chosen unit:
    a. Read the upstream module **and its tests**.
    b. Write the Rust parity tests first (mirroring upstream cases),
@@ -111,7 +119,7 @@ Single-context: `PLAN.md` is the glossary; board rulings bind. See `docs/agents/
 `diagnosing-bugs`, `codebase-design`, `domain-modeling`, `research`,
 `to-spec`, `to-tickets`, `triage`, `wayfinder`, plus productivity/misc sets.
 Load `tdd` + `implement` + `code-review` on every port unit; the P6
-TypeScript doctrine in `docs/long-horizon-100.md` §3 is now automation, not
+TypeScript doctrine in `docs/long-horizon-101.md` §2 is now automation, not
 aspiration.
 
 ## 4. Fidelity rules — the hard line

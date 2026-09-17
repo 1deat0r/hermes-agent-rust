@@ -151,7 +151,8 @@ def render(data: dict, inventory_path: Path) -> str:
         "ledger in `tools/port_status.json`, regenerate the inventory, then run "
         "`python3 tools/conversion_ledger.py`. Only `done` counts toward the "
         "percentage. `partial` is intentionally zero credit until its stated "
-        "parity seams are closed."
+        "parity seams are closed. AGENTS: generated-only — query JSON "
+        "summaries per AGENTS.md §2; never read this file whole."
     )
     lines.append("")
     lines.append("## Current state")

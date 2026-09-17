@@ -3,7 +3,7 @@
 **Current strict completion: 1.66% of all tracked upstream modules (148/8895).**
 Production-only strict completion: **4.25%** (148/3481 production modules).
 
-> This file is generated from `tools/inventory.json`; update the source ledger in `tools/port_status.json`, regenerate the inventory, then run `python3 tools/conversion_ledger.py`. Only `done` counts toward the percentage. `partial` is intentionally zero credit until its stated parity seams are closed.
+> This file is generated from `tools/inventory.json`; update the source ledger in `tools/port_status.json`, regenerate the inventory, then run `python3 tools/conversion_ledger.py`. Only `done` counts toward the percentage. `partial` is intentionally zero credit until its stated parity seams are closed. AGENTS: generated-only — query JSON summaries per AGENTS.md §2; never read this file whole.
 
 ## Current state
 
@@ -12,7 +12,7 @@ Production-only strict completion: **4.25%** (148/3481 production modules).
 | All tracked modules | 148 | 49 | 8698 | 1.66% | 10,070/2,467,838 done LOC |
 | Production modules | 148 | 49 | 3284 | 4.25% | 10,070/1,147,748 done LOC |
 
-Inventory source: `/run/media/its1deat0r/Projects/AI Agents/Hermes-Agent-Rust/.upstream-pin/5d59366` at `2026-09-18T09:23:46`.
+Inventory source: `/run/media/its1deat0r/Projects/AI Agents/Hermes-Agent-Rust/.upstream-pin/5d59366` at `2026-09-18T09:50:46`.
 
 ## Definition of 100.00%
 

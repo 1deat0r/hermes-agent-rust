@@ -834,9 +834,7 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   1,506 prod + 1,033 oracles). R2 verify-by-quote → R3 unanimous BUILD;
   cold-read seat concurred. Full serial: **1,789 passed / 0 failed**.
   Ledger unchanged in count (27/142). Long-horizon 100% goal recorded in
-  `docs/long-horizon-100.md` (phase order P1→P6+oracles, mattpocock-skills
-  doctrine §3, ≥20 rows/session, re-pin at phase boundaries, board re-gate
-  per phase exit). Full record: `docs/board-review-r1.md`.
+  `docs/long-horizon-101.md` (waves A–D, skills lanes, M1–M7). Full record: `docs/archive/board-review-r1.md`.
 - 2026-09-16 (mattpocock skills install + first skilled P6 unit):
   installed `mattpocock/skills` @ `959a8e9` (33 skills, copy-snapshot in
   `~/.config/opencode/skills/`; vetted clean) + repo config

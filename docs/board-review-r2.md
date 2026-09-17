@@ -37,7 +37,7 @@ Unanimity necessary, not sufficient.
 ## Adjudication log
 
 - S2-B1 (registry-staleness undisclosed in docs) — CONFIRMED. Fixed: caveat
-  line in `docs/long-horizon-100.md` §3 (2026-09-16).
+  line in `docs/long-horizon-101.md` §2 (2026-09-16).
 - S3 kill 1 (staleness) — self-closed live: staging HEAD == `959a8e9`
   (command evidence `git -C /tmp/skill-stage rev-parse HEAD` →
   `959a8e9f1edc…`, no file:line exists for VCS state; still origin/main
