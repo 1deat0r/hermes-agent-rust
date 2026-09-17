@@ -173,6 +173,11 @@ affinity triple + kimi UA; 4 recerts; aux-model deferred.
 thinking-toggle reasoning + metadata; above-crate seams deferred.
 **Ledger: 116/81/8698 (1.30% tracked, 3.33% prod).** Serial 1,875/0.
 
+## Tags batch done (2026-09-16)
+
+unicode-tag strip ported; 4 recerts.
+**Ledger: 121/76/8698 (1.36% tracked, 3.48% prod).** Serial 1,879/0.
+
 ## Wave B provider batch done (2026-09-16)
 
 alibaba×3, ollama clamp, nvidia/vertex recerts, registry 38→41.

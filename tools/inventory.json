@@ -1,19 +1,19 @@
 {
  "generated_from": "/tmp/hermes-upstream-5d59366",
- "generated_at": "2026-09-17T15:32:42",
+ "generated_at": "2026-09-17T19:03:17",
  "summary": {
   "modules": 8895,
   "total_lines": 2468648,
   "production_modules": 3481,
   "production_lines": 1147748,
   "status_counts": {
-   "done": 116,
-   "partial": 81,
+   "done": 121,
+   "partial": 76,
    "missing": 8698
   },
   "prod_status_counts": {
-   "done": 116,
-   "partial": 81,
+   "done": 121,
+   "partial": 76,
    "missing": 3284
   },
   "packages": {
@@ -37,8 +37,8 @@
     "modules": 283,
     "status": {
      "missing": 236,
-     "partial": 22,
-     "done": 25
+     "partial": 20,
+     "done": 27
     }
    },
    "tests.agent": {
@@ -61,8 +61,8 @@
     "modules": 502,
     "status": {
      "missing": 476,
-     "partial": 15,
-     "done": 11
+     "partial": 14,
+     "done": 12
     }
    },
    "tests.hermes_state": {
@@ -84,8 +84,8 @@
     "modules": 159,
     "status": {
      "missing": 147,
-     "partial": 3,
-     "done": 9
+     "partial": 2,
+     "done": 10
     }
    },
    "tests.hermes_cli": {
@@ -163,8 +163,8 @@
     "modules": 310,
     "status": {
      "missing": 269,
-     "partial": 26,
-     "done": 15
+     "partial": 25,
+     "done": 16
     }
    },
    "tests.conftest": {
@@ -41273,7 +41273,7 @@
    "imports": [
     "utils"
    ],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "ts:apps.desktop.src.store.session-unread-tile.test": {
@@ -42487,7 +42487,7 @@
   "agent.session_activity": {
    "lines": 91,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "ts:apps.desktop.eslint.config": {
@@ -42746,7 +42746,7 @@
   "hermes_cli.toolset_validation": {
    "lines": 90,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "hermes_cli.migrate": {
@@ -43811,7 +43811,7 @@
     "hermes_constants",
     "utils"
    ],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "evals.cron_error_diagnostics": {
@@ -44031,7 +44031,7 @@
   "tools.ansi_strip": {
    "lines": 83,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "tests.tools.test_todo_tool_type_coercion": {

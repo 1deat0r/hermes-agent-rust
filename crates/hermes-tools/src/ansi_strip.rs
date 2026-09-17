@@ -1,6 +1,7 @@
 //! Strip ANSI escape sequences from subprocess / persisted output.
 //!
-//! PARITY: tools/ansi_strip.py @ b9aa928 (79 LOC, ported 1:1).
+//! PARITY: tools/ansi_strip.py @ 5d59366 (whole module, incl.
+//! `strip_unicode_tags`).
 
 use once_cell::sync::Lazy;
 use regex::Regex;
@@ -32,6 +33,34 @@ pub fn sanitize_display_text(text: &str) -> String {
     let text = strip_ansi(text);
     let text = text.replace("\r\n", "\n").replace('\r', "\n");
     CONTROL_CHARS_RE.replace_all(&text, "").into_owned()
+}
+
+static HAS_UNICODE_TAG: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"[\u{E0000}-\u{E007F}]").expect("has unicode tag"));
+
+static UNICODE_TAG_SUB_RE: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(
+        r"(\u{1F3F4}[\u{E0020}-\u{E007E}]+\u{E007F})|[\u{E0000}-\u{E007F}]",
+    )
+    .expect("unicode tag sub re")
+});
+
+/// Remove invisible Unicode TAG chars (a prompt-injection smuggling channel
+/// in untrusted tool output); valid emoji tag sequences are preserved.
+///
+/// PARITY: `strip_unicode_tags` (upstream @ 5d59366). Fast path when no
+/// plane-14 tag chars are present. The kept group is the TR51 emoji tag
+/// sequence (black-flag base + spec + CANCEL TAG); every other tag char
+/// strips (replacement is group 1 or empty).
+pub fn strip_unicode_tags(text: &str) -> String {
+    if text.is_empty() || !HAS_UNICODE_TAG.is_match(text) {
+        return text.to_string();
+    }
+    UNICODE_TAG_SUB_RE
+        .replace_all(text, |caps: &regex::Captures| {
+            caps.get(1).map(|m| m.as_str().to_string()).unwrap_or_default()
+        })
+        .into_owned()
 }
 
 #[cfg(test)]

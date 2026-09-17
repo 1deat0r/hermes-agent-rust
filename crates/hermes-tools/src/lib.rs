@@ -72,7 +72,7 @@ pub mod registry;
 pub mod schema_sanitizer;
 pub mod session_search;
 
-pub use ansi_strip::{sanitize_display_text, strip_ansi};
+pub use ansi_strip::{sanitize_display_text, strip_ansi, strip_unicode_tags};
 pub use binary_extensions::{is_binary_extension, BINARY_EXTENSIONS};
 pub use budget_config::{budget_for_context_window, BudgetConfig, BudgetThreshold};
 pub use clarify::{register_clarify, set_clarify_callback};

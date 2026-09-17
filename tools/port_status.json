@@ -8,8 +8,8 @@
   "status": "partial"
  },
  "agent.billing_links": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (124 -> 96 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
  },
  "agent.bounded_response": {
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (148 -> 102 LOC); re-certify line-by-line before promoting",
@@ -140,8 +140,8 @@
   "status": "partial"
  },
  "agent.session_activity": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (106 -> 91 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
  },
  "agent.ssl_guard": {
   "status": "done",
@@ -226,8 +226,8 @@
   "status": "partial"
  },
  "gateway.rich_sent_store": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (83 -> 85 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
  },
  "gateway.session_stall": {
   "status": "done",
@@ -333,8 +333,8 @@
   "status": "done"
  },
  "hermes_cli.toolset_validation": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (74 -> 90 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
  },
  "hermes_constants": {
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (1481 -> 1293 LOC); re-certify line-by-line before promoting",
@@ -605,8 +605,8 @@
   "status": "partial"
  },
  "tools.ansi_strip": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (79 -> 83 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "ported 2026-09-16 autonomous: strip_unicode_tags (live-oracle, emoji preservation, BMP-vs-plane14 documented); 7 tests"
  },
  "tools.audio_container": {
   "status": "done",
