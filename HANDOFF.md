@@ -18,6 +18,11 @@ Date: 2026-09-17 (Pacific/Auckland), doc-efficiency implementation.
 Wave B sweep per `docs/long-horizon-101.md` waves A–D; current ledger +
 validation commands recorded after each batch section below.
 
+## Tree state
+
+Branch `main` @ `a7ad46e`, tree clean (update per commit). Pinned
+worktree: `.upstream-pin/5d59366` (persistent disk; never /tmp).
+
 ## Resume point
 
 Repository: `/run/media/its1deat0r/Projects/AI Agents/Hermes-Agent-Rust`
