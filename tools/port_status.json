@@ -377,8 +377,8 @@
   "status": "done"
  },
  "plugins.model-providers.actual.__init__": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (89 -> 92 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "ported 2026-09-16 autonomous: metadata refresh + thinking-toggle reasoning (live-oracle incl minimal-clamp); certifi/URL-norm deferred above-crate"
  },
  "plugins.model-providers.ai-gateway.__init__": {
   "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): early-return restructure is logic-identical; 2 tests green",

@@ -928,7 +928,11 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   (1.23%)**. Evidence: serial 1,874/0, diff clean.
 - 2026-09-16 (Wave B sweep batch): 6 recerts (stall, focus, preview,
   events-wire-order, ssl truthy-dedup, kanban env-folds). Ledger: **115
-  done / 82 partial / 8,698 missing (1.29%)**. Evidence: serial 1,874/0.
+  done / 82 partial / 8,698   missing (1.29%)**. Evidence: serial 1,874/0.
+- 2026-09-16 (Wave B actual unit): metadata refresh + thinking-toggle
+  reasoning ported (nearest-weaker clamp incl.); certifi/URL-norm deferred
+  above-crate. Ledger: **116 done / 81 partial / 8,698 missing (1.30%)**.
+  Evidence: serial 1,875/0, diff clean.
 - 2026-09-16 (Wave B unit 5): 7 smallest-DIFF partials closed — provider trio
   (`alibaba-coding-plan` +CN profile, `nvidia` 4 aliases + `prepare_messages`
   copy-on-write strip via a `nvidia_tool_strip` base hook, `vertex` +`vertexai`

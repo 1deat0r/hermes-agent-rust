@@ -51,7 +51,7 @@ fn spawn_catalog_server(payload: &'static str) -> (String, JoinHandle<String>) {
 }
 
 #[test]
-fn actual_profile_fields_aliases_and_codex_mode_match_upstream() {
+fn actual_profile_fields_aliases_and_chat_mode_match_upstream() {
     let _guard = ACTUAL_TEST_LOCK.lock().unwrap();
     reset_registry_for_tests();
     let profile = get_provider_profile("actual-computer").expect("Actual must be registered");
@@ -64,13 +64,13 @@ fn actual_profile_fields_aliases_and_codex_mode_match_upstream() {
     assert_eq!(profile.display_name, "Actual Computer");
     assert_eq!(
         profile.description,
-        "Actual Computer - hosted inference via api.actual.inc, or local offline inference via ACTUAL_BASE_URL"
+        "Actual Computer - hosted inference via api.actual.inc, or local offline inference via model.base_url in config.yaml"
     );
     assert_eq!(profile.signup_url, "https://actual.inc");
-    assert_eq!(profile.env_vars, ["ACTUAL_API_KEY", "ACTUAL_BASE_URL"]);
+    assert_eq!(profile.env_vars, ["ACTUAL_API_KEY"]);
     assert_eq!(profile.base_url, "https://api.actual.inc/v1");
     assert_eq!(profile.auth_type, "api_key");
-    assert_eq!(profile.api_mode, "codex_responses");
+    assert_eq!(profile.api_mode, "chat_completions");
     assert!(profile.fallback_models.is_empty());
     assert!(profile.default_aux_model.is_empty());
     assert!(profile.actual_catalog);
@@ -85,6 +85,61 @@ fn actual_profile_fields_aliases_and_codex_mode_match_upstream() {
         .map(|profile| profile.name)
         .collect();
     assert_eq!(names.iter().filter(|name| *name == "actual").count(), 1);
+}
+
+/// PARITY @ 5d59366: `thinking_toggle_extras` over ACTUAL_RELAY_EFFORTS
+/// with always_emit_toggle — live oracle shapes from
+/// `agent/reasoning_effort.py`.
+#[test]
+fn actual_reasoning_toggle_shapes_match_upstream() {
+    use serde_json::{json, Map, Value};
+    let profile = {
+        let _guard = ACTUAL_TEST_LOCK.lock().unwrap();
+        reset_registry_for_tests();
+        get_provider_profile("actual").unwrap()
+    };
+    let config = |enabled: Option<bool>, effort: Option<&str>| {
+        let mut map = Map::new();
+        if let Some(enabled) = enabled {
+            map.insert("enabled".into(), Value::Bool(enabled));
+        }
+        if let Some(effort) = effort {
+            map.insert("effort".into(), Value::String(effort.into()));
+        }
+        map
+    };
+    let context = Map::new();
+    let case = |enabled: Option<bool>, effort: Option<&str>| {
+        let (extra, top) =
+            profile.build_api_kwargs_extras(Some(&config(enabled, effort)), &context);
+        (Value::Object(extra), Value::Object(top))
+    };
+    // Disabled → toggle off, no effort.
+    assert_eq!(
+        case(Some(false), Some("high")),
+        (json!({"thinking": {"type": "disabled"}}), json!({}))
+    );
+    // "none" effort → dual emit (toggle off AND echoed effort).
+    assert_eq!(
+        case(None, Some("none")),
+        (
+            json!({"thinking": {"type": "disabled"}}),
+            json!({"reasoning_effort": "none"})
+        )
+    );
+    // Landed effort → toggle on (always) + effort.
+    assert_eq!(
+        case(None, Some("high")),
+        (
+            json!({"thinking": {"type": "enabled"}}),
+            json!({"reasoning_effort": "high"})
+        )
+    );
+    // Bespoke effort → toggle on, no effort.
+    assert_eq!(
+        case(None, Some("turbo")),
+        (json!({"thinking": {"type": "enabled"}}), json!({}))
+    );
 }
 
 #[test]

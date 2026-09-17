@@ -1,19 +1,19 @@
 {
  "generated_from": "/tmp/hermes-upstream-5d59366",
- "generated_at": "2026-09-17T15:20:22",
+ "generated_at": "2026-09-17T15:32:42",
  "summary": {
   "modules": 8895,
   "total_lines": 2468648,
   "production_modules": 3481,
   "production_lines": 1147748,
   "status_counts": {
-   "done": 115,
-   "partial": 82,
+   "done": 116,
+   "partial": 81,
    "missing": 8698
   },
   "prod_status_counts": {
-   "done": 115,
-   "partial": 82,
+   "done": 116,
+   "partial": 81,
    "missing": 3284
   },
   "packages": {
@@ -53,8 +53,7 @@
     "modules": 219,
     "status": {
      "missing": 164,
-     "done": 54,
-     "partial": 1
+     "done": 55
     }
    },
    "hermes_cli": {
@@ -42233,7 +42232,7 @@
   "plugins.model-providers.actual.__init__": {
    "lines": 92,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "optional-skills.research.darwinian-evolver.scripts.show_snapshot": {

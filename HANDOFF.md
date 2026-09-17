@@ -168,6 +168,11 @@ affinity triple + kimi UA; 4 recerts; aux-model deferred.
 6 recerts (events/ssl/kanban verified, not just greened).
 **Ledger: 115/82/8698 (1.29% tracked, 3.30% prod).** Serial 1,874/0.
 
+## Actual unit done (2026-09-16)
+
+thinking-toggle reasoning + metadata; above-crate seams deferred.
+**Ledger: 116/81/8698 (1.30% tracked, 3.33% prod).** Serial 1,875/0.
+
 ## Wave B provider batch done (2026-09-16)
 
 alibaba×3, ollama clamp, nvidia/vertex recerts, registry 38→41.

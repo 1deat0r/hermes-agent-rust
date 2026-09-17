@@ -79,6 +79,9 @@ pub struct ProviderProfile {
     pub ollama_cloud_reasoning: bool,
     /// Translate MiniMax-M3 reasoning for the global OpenAI-compatible route.
     pub minimax_reasoning: bool,
+    /// Translate Actual relay thinking toggle + reasoning_effort
+    /// (`thinking_toggle_extras` over ACTUAL_RELAY_EFFORTS, always on).
+    pub actual_reasoning: bool,
     /// Apply Custom/Ollama local reasoning and user-configured catalog hooks.
     pub custom_provider: bool,
     /// Apply Qwen Portal message normalization and request metadata hooks.
@@ -134,6 +137,7 @@ impl ProviderProfile {
             nous_portal: false,
             ollama_cloud_reasoning: false,
             minimax_reasoning: false,
+            actual_reasoning: false,
             custom_provider: false,
             qwen_portal: false,
             upstage_reasoning: false,
@@ -221,6 +225,9 @@ impl ProviderProfile {
         }
         if self.minimax_reasoning {
             return build_minimax_reasoning(reasoning_config, context);
+        }
+        if self.actual_reasoning {
+            return build_actual_reasoning(reasoning_config);
         }
         if self.custom_provider {
             return build_custom_reasoning(reasoning_config, context);
@@ -1728,6 +1735,87 @@ fn build_ollama_cloud_reasoning(
         Map::new(),
         Map::from_iter([("reasoning_effort".into(), Value::String(effort.into()))]),
     )
+}
+
+/// Relay effort vocabulary (`ACTUAL_RELAY_EFFORTS` in
+/// `agent/reasoning_effort.py` @ 5d59366): the relay accepts `none` as a
+/// real level (thinking off AND echoed effort).
+const ACTUAL_RELAY_EFFORTS: [&str; 5] = ["none", "low", "medium", "high", "max"];
+
+fn build_actual_reasoning(
+    reasoning_config: Option<&Map<String, Value>>,
+) -> (Map<String, Value>, Map<String, Value>) {
+    // PARITY: `thinking_toggle_extras(reasoning_config, ACTUAL_RELAY_EFFORTS,
+    // always_emit_toggle=True)` (`agent/reasoning_effort.py` @ 5d59366).
+    // Disabled → toggle off, no effort. "none" effort → dual emit (toggle
+    // off AND echoed effort — the relay treats `none` as a real level).
+    // Landed effort → toggle on (always) + effort. Bespoke → toggle on
+    // only (Moonshot 400s when both toggle and effort are sent... here the
+    // toggle is always emitted per the Actual profile's always_emit flag).
+    let disabled = reasoning_config
+        .and_then(|config| config.get("enabled"))
+        .and_then(Value::as_bool)
+        .is_some_and(|enabled| !enabled);
+    let toggle = |kind: &str| {
+        Map::from_iter([(
+            "thinking".into(),
+            Value::Object(Map::from_iter([("type".into(), Value::String(kind.into()))])),
+        )])
+    };
+    if disabled {
+        return (toggle("disabled"), Map::new());
+    }
+    let effort = reasoning_config
+        .and_then(|config| config.get("effort"))
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|effort| !effort.is_empty())
+        .map(str::to_ascii_lowercase);
+    // `requested_effort` + `clamp_effort` over the relay vocabulary:
+    // verbatim if supported, else nearest weaker (never escalate; "none"
+    // never a degradation target); bespoke names omit.
+    const LADDER: [&str; 8] = [
+        "none", "minimal", "low", "medium", "high", "xhigh", "max", "ultra",
+    ];
+    let clamped: Option<&str> = match effort.as_deref() {
+        None => None,
+        Some("none") => Some("none"),
+        Some(requested) => {
+            if ACTUAL_RELAY_EFFORTS.contains(&requested) {
+                Some(requested)
+            } else if let Some(idx) = LADDER.iter().position(|level| *level == requested) {
+                // Nearest weaker supported level (excluding "none"); floor
+                // when nothing weaker exists.
+                LADDER[..idx]
+                    .iter()
+                    .rev()
+                    .find(|level| **level != "none" && ACTUAL_RELAY_EFFORTS.contains(level))
+                    .copied()
+                    .or_else(|| {
+                        ACTUAL_RELAY_EFFORTS
+                            .iter()
+                            .filter(|level| **level != "none")
+                            .min_by_key(|level| {
+                                LADDER.iter().position(|l| l == *level).unwrap_or(usize::MAX)
+                            })
+                            .copied()
+                    })
+            } else {
+                None
+            }
+        }
+    };
+    match clamped {
+        Some("none") => (
+            toggle("disabled"),
+            Map::from_iter([("reasoning_effort".into(), Value::String("none".into()))]),
+        ),
+        Some(level) => (
+            toggle("enabled"),
+            Map::from_iter([("reasoning_effort".into(), Value::String(level.into()))]),
+        ),
+        None => (toggle("enabled"), Map::new()),
+    }
 }
 
 fn build_minimax_reasoning(
