@@ -938,7 +938,11 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   done / 76 partial / 8,698 missing (1.36%)**. Evidence: serial 1,879/0.
 - 2026-09-16 (Wave B EOF batch): secret_prompt stream-closed fold analyzed
   (None-exhaustion covers); 4 cosmetic recerts. Ledger: **126 done / 71
-  partial / 8,698 missing (1.42%)**. Evidence: serial 1,879/0.
+  partial / 8,698   missing (1.42%)**. Evidence: serial 1,879/0.
+- 2026-09-16 (Wave B sqlite unit): `open_db` + `transaction` ported
+  (#69567 close-semantics, WAL seam, DEFERRED-BEGIN fix found live);
+  3 cosmetic recerts. Ledger: **130 done / 67 partial / 8,698 missing
+  (1.46%)**. Evidence: serial 1,884/0, diff clean.
 - 2026-09-16 (Wave B unit 5): 7 smallest-DIFF partials closed — provider trio
   (`alibaba-coding-plan` +CN profile, `nvidia` 4 aliases + `prepare_messages`
   copy-on-write strip via a `nvidia_tool_strip` base hook, `vertex` +`vertexai`

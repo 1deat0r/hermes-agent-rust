@@ -321,8 +321,8 @@
   "status": "done"
  },
  "hermes_cli.sqlite_util": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (49 -> 113 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "ported 2026-09-16 autonomous: open_db (PRAGMA stack, WAL seam, close-on-error/panic) + transaction (DEFERRED/IMMEDIATE, always-close); 11 tests"
  },
  "hermes_cli.timefmt": {
   "status": "done",
@@ -676,8 +676,8 @@
   "retarget_note": "re-certified autonomous: description/bridge-call folds; 6 tests green"
  },
  "tools.interrupt": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (113 -> 121 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
  },
  "tools.mcp_dashboard_oauth": {
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (145 -> 140 LOC); re-certify line-by-line before promoting",
@@ -692,8 +692,8 @@
   "status": "partial"
  },
  "tools.open_preview_tool": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (92 -> 97 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
  },
  "tools.path_security": {
   "retarget_note": "ported 2026-09-16 Wave B: has_traversal_component was missing \u2014 TDD-added with 2 tests; PLUGIN-COMPAT logger PENDING with tools.approval",
@@ -727,8 +727,8 @@
   "status": "done"
  },
  "tools.slash_confirm": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (167 -> 123 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
  },
  "tools.terminal_hints": {
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (170 -> 160 LOC); re-certify line-by-line before promoting",

@@ -183,6 +183,11 @@ unicode-tag strip ported; 4 recerts.
 secret_prompt EOF-fold + 4 recerts.
 **Ledger: 126/71/8698 (1.42% tracked, 3.62% prod).** Serial 1,879/0.
 
+## SQLite unit done (2026-09-16)
+
+open_db + transaction ported; 3 recerts.
+**Ledger: 130/67/8698 (1.46% tracked, 3.73% prod).** Serial 1,884/0.
+
 ## Wave B provider batch done (2026-09-16)
 
 alibaba×3, ollama clamp, nvidia/vertex recerts, registry 38→41.

@@ -1,19 +1,19 @@
 {
  "generated_from": "/tmp/hermes-upstream-5d59366",
- "generated_at": "2026-09-17T19:11:00",
+ "generated_at": "2026-09-17T19:28:17",
  "summary": {
   "modules": 8895,
   "total_lines": 2468648,
   "production_modules": 3481,
   "production_lines": 1147748,
   "status_counts": {
-   "done": 126,
-   "partial": 71,
+   "done": 130,
+   "partial": 67,
    "missing": 8698
   },
   "prod_status_counts": {
-   "done": 126,
-   "partial": 71,
+   "done": 130,
+   "partial": 67,
    "missing": 3284
   },
   "packages": {
@@ -61,8 +61,8 @@
     "modules": 502,
     "status": {
      "missing": 476,
-     "partial": 13,
-     "done": 13
+     "partial": 12,
+     "done": 14
     }
    },
    "tests.hermes_state": {
@@ -163,8 +163,8 @@
     "modules": 310,
     "status": {
      "missing": 269,
-     "partial": 24,
-     "done": 17
+     "partial": 21,
+     "done": 20
     }
    },
    "tests.conftest": {
@@ -35565,7 +35565,7 @@
   "tools.slash_confirm": {
    "lines": 123,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "tests.tui_gateway.test_voice_live_delegation": {
@@ -35962,7 +35962,7 @@
   "tools.interrupt": {
    "lines": 121,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "tests.tools.test_mcp_image_content": {
@@ -37831,7 +37831,7 @@
    "imports": [
     "hermes_state_wal"
    ],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "hermes_cli.proxy.cli": {
@@ -40828,7 +40828,7 @@
   "tools.open_preview_tool": {
    "lines": 97,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "tests.verify.test_verify_cmd": {
