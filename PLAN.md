@@ -943,6 +943,9 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   (#69567 close-semantics, WAL seam, DEFERRED-BEGIN fix found live);
   3 cosmetic recerts. Ledger: **130 done / 67 partial / 8,698 missing
   (1.46%)**. Evidence: serial 1,884/0, diff clean.
+- 2026-09-16 (Wave B cache batch): MCP TTL expiry ported (explicit-clock,
+  >= boundary); 3 recerts. Ledger: **134 done / 63 partial / 8,698
+  missing (1.51%)**. Evidence: serial 1,886/0, diff clean.
 - 2026-09-16 (Wave B unit 5): 7 smallest-DIFF partials closed — provider trio
   (`alibaba-coding-plan` +CN profile, `nvidia` 4 aliases + `prepare_messages`
   copy-on-write strip via a `nvidia_tool_strip` base hook, `vertex` +`vertexai`

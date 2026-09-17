@@ -1,7 +1,7 @@
 # Hermes Agent → Hermes Agent Rust Conversion Ledger
 
-**Current strict completion: 1.46% of all tracked upstream modules (130/8895).**
-Production-only strict completion: **3.73%** (130/3481 production modules).
+**Current strict completion: 1.51% of all tracked upstream modules (134/8895).**
+Production-only strict completion: **3.85%** (134/3481 production modules).
 
 > This file is generated from `tools/inventory.json`; update the source ledger in `tools/port_status.json`, regenerate the inventory, then run `python3 tools/conversion_ledger.py`. Only `done` counts toward the percentage. `partial` is intentionally zero credit until its stated parity seams are closed.
 
@@ -9,10 +9,10 @@ Production-only strict completion: **3.73%** (130/3481 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 130 | 67 | 8698 | 1.46% | 7,157/2,468,648 done LOC |
-| Production modules | 130 | 67 | 3284 | 3.73% | 7,157/1,147,748 done LOC |
+| All tracked modules | 134 | 63 | 8698 | 1.51% | 7,647/2,468,648 done LOC |
+| Production modules | 134 | 63 | 3284 | 3.85% | 7,647/1,147,748 done LOC |
 
-Inventory source: `/tmp/hermes-upstream-5d59366` at `2026-09-17T19:28:17`.
+Inventory source: `/tmp/hermes-upstream-5d59366` at `2026-09-17T19:45:04`.
 
 ## Definition of 100.00%
 
@@ -48,7 +48,6 @@ The conversion is complete only when all of these are true:
 | `agent.verify.recipes` | P2 | 296 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `agent.verify.runner` | P2 | 255 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `gateway.platforms.qqbot.keyboards` | P4 | 287 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
-| `hermes_cli.build_info` | P3 | 121 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `hermes_cli.dashboard_auth.__init__` | P3 | 20 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `hermes_cli.dashboard_auth.audit` | P3 | 73 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `hermes_cli.dashboard_auth.base` | P3 | 162 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
@@ -67,12 +66,10 @@ The conversion is complete only when all of these are true:
 | `hermes_state_portability` | P1 | 615 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `hermes_state_schema` | P1 | 1,298 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `hermes_state_search` | P1 | 1,343 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
-| `hermes_time` | P1 | 111 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `model_tools` | P2 | 987 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `providers.__init__` | P2 | 468 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `providers.base` | P2 | 344 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `run_agent` | P2 | 1,561 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
-| `tools.browser_dialog_tool` | P2 | 132 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `tools.clarify_tool` | P2 | 311 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `tools.computer_use.schema` | P2 | 208 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `tools.credential_files` | P2 | 366 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
@@ -82,7 +79,6 @@ The conversion is complete only when all of these are true:
 | `tools.file_state` | P2 | 254 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `tools.mcp_dashboard_oauth` | P2 | 140 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `tools.mcp_death_supervisor` | P2 | 216 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
-| `tools.mcp_schema_cache` | P2 | 126 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `tools.read_extract` | P2 | 551 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `tools.registry` | P2 | 975 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `tools.schema_sanitizer` | P2 | 386 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
@@ -810,7 +806,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `hermes_cli.banner` | production | P3 | 1,022 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `hermes_cli.blueprint_cmd` | production | P3 | 237 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `hermes_cli.browser_connect` | production | P3 | 936 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `hermes_cli.build_info` | production | P3 | 121 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
+| `hermes_cli.build_info` | production | P3 | 121 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `hermes_cli.bundles` | production | P3 | 179 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `hermes_cli.callbacks` | production | P3 | 219 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `hermes_cli.checkpoints` | production | P3 | 240 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
@@ -1300,7 +1296,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `hermes_state_usage` | production | P2 | 400 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `hermes_state_user_copy` | production | P2 | 96 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `hermes_state_wal` | production | P2 | 646 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `hermes_time` | production | P1 | 111 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
+| `hermes_time` | production | P1 | 111 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `mcp_serve` | production | P2 | 728 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `mini_swe_runner` | production | P2 | 401 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `model_tools` | production | P2 | 987 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
@@ -6118,7 +6114,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `tools.browser_camofox` | production | P2 | 601 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.browser_camofox_state` | production | P2 | 38 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `tools.browser_cdp_tool` | production | P2 | 409 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `tools.browser_dialog_tool` | production | P2 | 132 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
+| `tools.browser_dialog_tool` | production | P2 | 132 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `tools.browser_extension_router` | production | P2 | 137 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.browser_lightpanda` | production | P2 | 338 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.browser_supervisor` | production | P2 | 564 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
@@ -6260,7 +6256,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `tools.mcp_oauth_device` | production | P2 | 198 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.mcp_oauth_manager` | production | P2 | 420 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.mcp_oauth_provider` | production | P2 | 452 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `tools.mcp_schema_cache` | production | P2 | 126 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
+| `tools.mcp_schema_cache` | production | P2 | 126 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `tools.mcp_tool` | production | P2 | 734 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.mcp_tool_agent` | production | P2 | 265 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.mcp_tool_common` | production | P2 | 156 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |

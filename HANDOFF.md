@@ -188,6 +188,11 @@ secret_prompt EOF-fold + 4 recerts.
 open_db + transaction ported; 3 recerts.
 **Ledger: 130/67/8698 (1.46% tracked, 3.73% prod).** Serial 1,884/0.
 
+## Cache batch done (2026-09-16)
+
+MCP TTL expiry ported; 3 recerts.
+**Ledger: 134/63/8698 (1.51% tracked, 3.85% prod).** Serial 1,886/0.
+
 ## Wave B provider batch done (2026-09-16)
 
 alibaba×3, ollama clamp, nvidia/vertex recerts, registry 38→41.

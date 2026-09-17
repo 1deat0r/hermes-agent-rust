@@ -238,8 +238,8 @@
   "retarget_note": "re-certified at 5d59366 autonomous: version bump already applied; docstring trims only; 1 test green"
  },
  "hermes_cli.build_info": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (51 -> 121 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
  },
  "hermes_cli.cli_output": {
   "status": "done",
@@ -365,8 +365,8 @@
   "status": "partial"
  },
  "hermes_time": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (135 -> 111 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
  },
  "model_tools": {
   "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (1569 -> 987 LOC); re-certify line-by-line before promoting",
@@ -621,8 +621,8 @@
   "status": "done"
  },
  "tools.browser_dialog_tool": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (148 -> 132 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
  },
  "tools.budget_config": {
   "status": "done"
@@ -688,8 +688,8 @@
   "status": "partial"
  },
  "tools.mcp_schema_cache": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (121 -> 126 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
+  "status": "done",
+  "retarget_note": "ported 2026-09-16 autonomous: TTL expiry (explicit-clock, >= boundary) + ttl/written_at/scope persistence; 14 tests"
  },
  "tools.open_preview_tool": {
   "status": "done",

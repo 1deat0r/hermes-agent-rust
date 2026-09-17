@@ -1,19 +1,19 @@
 {
  "generated_from": "/tmp/hermes-upstream-5d59366",
- "generated_at": "2026-09-17T19:28:17",
+ "generated_at": "2026-09-17T19:45:04",
  "summary": {
   "modules": 8895,
   "total_lines": 2468648,
   "production_modules": 3481,
   "production_lines": 1147748,
   "status_counts": {
-   "done": 130,
-   "partial": 67,
+   "done": 134,
+   "partial": 63,
    "missing": 8698
   },
   "prod_status_counts": {
-   "done": 130,
-   "partial": 67,
+   "done": 134,
+   "partial": 63,
    "missing": 3284
   },
   "packages": {
@@ -61,8 +61,8 @@
     "modules": 502,
     "status": {
      "missing": 476,
-     "partial": 12,
-     "done": 14
+     "partial": 11,
+     "done": 15
     }
    },
    "tests.hermes_state": {
@@ -163,8 +163,8 @@
     "modules": 310,
     "status": {
      "missing": 269,
-     "partial": 21,
-     "done": 20
+     "partial": 19,
+     "done": 22
     }
    },
    "tests.conftest": {
@@ -1375,7 +1375,7 @@
     "modules": 1,
     "status": {
      "missing": 0,
-     "partial": 1
+     "done": 1
     }
    },
    "tests.test_sanitize_tool_error": {
@@ -33781,7 +33781,7 @@
   "tools.browser_dialog_tool": {
    "lines": 132,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "tests.tui_gateway.test_subprocess_encoding": {
@@ -34915,7 +34915,7 @@
     "hermes_constants",
     "utils"
    ],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "tests.tui_gateway.test_fast_session_scope": {
@@ -36060,7 +36060,7 @@
   "hermes_cli.build_info": {
    "lines": 121,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "hermes_cli.local_runtime.processes": {
@@ -38109,7 +38109,7 @@
   "hermes_time": {
    "lines": 111,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "tests.test_sanitize_tool_error": {

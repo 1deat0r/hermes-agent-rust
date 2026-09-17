@@ -182,3 +182,46 @@ fn identical_payload_skips_rewrite() {
     });
     let _ = std::fs::remove_dir_all(&tmp);
 }
+
+/// PARITY @ 5d59366: TTL expiry (SEP-2549 `ttlMs` hint) — entries older
+/// than their TTL miss so startup re-probes; TTL-less entries never expire.
+/// Explicit-clock forms are the `time.time` seam.
+#[test]
+fn ttl_expiry_with_explicit_clock() {
+    use hermes_tools::mcp_schema_cache::{
+        get_cached_entry_at, write_cache_entry_at,
+    };
+    let dir = temp("ttl");
+    with_home(&dir, || {
+        write_cache_entry_at(
+            "srv",
+            "fp",
+            vec![],
+            None,
+            Some(1000.0),
+            None,
+            100.0,
+        );
+        // Age 0.5s < TTL 1s → hit.
+        assert!(get_cached_entry_at("srv", "fp", 100.5).is_some());
+        // Age exactly TTL → miss (`>=`).
+        assert!(get_cached_entry_at("srv", "fp", 101.0).is_none());
+        // Age beyond → miss.
+        assert!(get_cached_entry_at("srv", "fp", 200.0).is_none());
+    });
+}
+
+/// TTL-less entries never expire; cache_scope persists when given.
+#[test]
+fn no_ttl_never_expires_and_scope_persists() {
+    use hermes_tools::mcp_schema_cache::{
+        get_cached_entry_at, write_cache_entry_at,
+    };
+    let dir = temp("ttl-scope");
+    with_home(&dir, || {
+        write_cache_entry_at("srv", "fp", vec![], None, None, Some("user"), 0.0);
+        let entry = get_cached_entry_at("srv", "fp", 999999.0).unwrap();
+        assert_eq!(entry.get("cache_scope").and_then(|v| v.as_str()), Some("user"));
+        assert!(entry.get("ttl_ms").is_none());
+    });
+}

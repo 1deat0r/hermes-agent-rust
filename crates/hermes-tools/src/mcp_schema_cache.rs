@@ -1,9 +1,12 @@
 //! Persistent MCP tool-schema cache for lazy server startup.
 //!
-//! PARITY: tools/mcp_schema_cache.py @ b9aa928 (121 LOC, ported 1:1). Stores
-//! per-server tool manifests on disk so MCP tools can be registered into the
-//! agent snapshot without spawning the stdio child at idle dashboard startup.
-//! Entries are keyed by server name + a fingerprint of the connection config.
+//! PARITY: tools/mcp_schema_cache.py @ 5d59366 (whole module, incl. TTL
+//! expiry). Stores per-server tool manifests on disk so MCP tools can be
+//! registered into the agent snapshot without spawning the stdio child at
+//! idle dashboard startup. Entries are keyed by server name + a fingerprint
+//! of the connection config. SEP-2549 `ttlMs` entries expire (`written_at`
+//! anchor); TTL-less entries never expire; `cacheScope` is stored but
+//! irrelevant (per-user local disk).
 
 use std::path::PathBuf;
 use std::sync::Mutex;
@@ -202,6 +205,15 @@ fn save_all(data: &Value) {
 
 /// Return cached entry when fingerprint matches, else None.
 pub fn get_cached_entry(server_name: &str, fingerprint: &str) -> Option<Value> {
+    get_cached_entry_at(server_name, fingerprint, now_secs())
+}
+
+// PARITY: `get_cached_entry` with explicit clock (the `time.time` seam).
+/// Entry older than a recorded TTL is a miss (re-probe instead of stale
+/// manifest); entries without TTL never expire. Expiry is `age_ms >= ttl`
+/// (`(now - written_at) * 1000.0 >= float(ttl_ms)`), both sides numeric
+/// or the entry is TTL-less.
+pub fn get_cached_entry_at(server_name: &str, fingerprint: &str, now: f64) -> Option<Value> {
     let _guard = CACHE_LOCK.lock().unwrap();
     let entry = load_all().get(server_name).cloned();
     let entry = entry?;
@@ -211,7 +223,24 @@ pub fn get_cached_entry(server_name: &str, fingerprint: &str) -> Option<Value> {
     if entry.get("fingerprint").and_then(Value::as_str) != Some(fingerprint) {
         return None;
     }
+    let expired = match (
+        entry.get("ttl_ms").and_then(Value::as_f64),
+        entry.get("written_at").and_then(Value::as_f64),
+    ) {
+        (Some(ttl), Some(written)) => (now - written) * 1000.0 >= ttl,
+        _ => false,
+    };
+    if expired {
+        return None;
+    }
     Some(entry)
+}
+
+fn now_secs() -> f64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs_f64())
+        .unwrap_or(0.0)
 }
 
 pub fn has_cached_entry(server_name: &str, fingerprint: &str) -> bool {
@@ -225,14 +254,37 @@ pub fn write_cache_entry(
     tools: Vec<Value>,
     utility_tools: Option<Vec<Value>>,
 ) {
-    let entry = json!({
+    write_cache_entry_at(server_name, fingerprint, tools, utility_tools, None, None, now_secs());
+}
+
+// PARITY: `write_cache_entry` with explicit clock. `ttl_ms`/`cache_scope`
+/// are the server's SEP-2549 hints; `written_at` anchors expiry. TTL'd
+/// entries ALWAYS rewrite (written_at must advance); TTL-less entries skip
+/// the rewrite when byte-identical on disk.
+pub fn write_cache_entry_at(
+    server_name: &str,
+    fingerprint: &str,
+    tools: Vec<Value>,
+    utility_tools: Option<Vec<Value>>,
+    ttl_ms: Option<f64>,
+    cache_scope: Option<&str>,
+    now: f64,
+) {
+    let mut entry = json!({
         "fingerprint": fingerprint,
         "tools": tools,
         "utility_tools": utility_tools.unwrap_or_default(),
     });
+    if let Some(ttl) = ttl_ms {
+        entry["ttl_ms"] = json!(ttl);
+        entry["written_at"] = json!(now);
+    }
+    if let Some(scope) = cache_scope {
+        entry["cache_scope"] = json!(scope);
+    }
     let _guard = CACHE_LOCK.lock().unwrap();
     let mut data = load_all();
-    if data.get(server_name) == Some(&entry) {
+    if entry.get("written_at").is_none() && data.get(server_name) == Some(&entry) {
         return;
     }
     if let Value::Object(map) = &mut data {
