@@ -42,9 +42,13 @@ fn msg_row_ids(db: &SessionDB, sid: &str) -> Vec<i64> {
 }
 
 fn session_scaffold(db: &SessionDB) -> (String, Vec<i64>) {
-    let key = db.create_session("react-test", "test", &NewSession::default()).expect("create");
-    db.append_message(&key, &msg("user", "how do i center a div"), None).expect("msg1");
-    db.append_message(&key, &msg("assistant", "use flexbox"), None).expect("msg2");
+    let key = db
+        .create_session("react-test", "test", &NewSession::default())
+        .expect("create");
+    db.append_message(&key, &msg("user", "how do i center a div"), None)
+        .expect("msg1");
+    db.append_message(&key, &msg("assistant", "use flexbox"), None)
+        .expect("msg2");
     let rows = msg_row_ids(db, &key);
     (key, rows)
 }
@@ -70,7 +74,8 @@ fn one_reaction_per_author_replaces() {
     let (_dir, db) = open_db("state.db");
     let (key, rows) = session_scaffold(&db);
 
-    db.set_message_reaction(&key, rows[0], Some("\u{2764}\u{fe0f}"), "user").expect("r1");
+    db.set_message_reaction(&key, rows[0], Some("\u{2764}\u{fe0f}"), "user")
+        .expect("r1");
     let reactions = db
         .set_message_reaction(&key, rows[0], Some("\u{1f602}"), "user")
         .expect("r2")
@@ -89,7 +94,8 @@ fn repeating_an_emoji_retracts_it() {
     let (_dir, db) = open_db("state.db");
     let (key, rows) = session_scaffold(&db);
 
-    db.set_message_reaction(&key, rows[0], Some("\u{1f44d}"), "user").expect("r1");
+    db.set_message_reaction(&key, rows[0], Some("\u{1f44d}"), "user")
+        .expect("r1");
     let reactions = db
         .set_message_reaction(&key, rows[0], Some("\u{1f44d}"), "user")
         .expect("r2")
@@ -103,7 +109,8 @@ fn authors_are_independent() {
     let (_dir, db) = open_db("state.db");
     let (key, rows) = session_scaffold(&db);
 
-    db.set_message_reaction(&key, rows[0], Some("\u{2764}\u{fe0f}"), "user").expect("user");
+    db.set_message_reaction(&key, rows[0], Some("\u{2764}\u{fe0f}"), "user")
+        .expect("user");
     let reactions = db
         .set_message_reaction(&key, rows[0], Some("\u{1f525}"), "agent")
         .expect("agent")
@@ -137,7 +144,8 @@ fn rejects_rows_outside_the_session() {
     let (key, rows) = session_scaffold(&db);
 
     assert_eq!(
-        db.set_message_reaction(&key, 9999, Some("\u{2764}\u{fe0f}"), "user").expect("bad row"),
+        db.set_message_reaction(&key, 9999, Some("\u{2764}\u{fe0f}"), "user")
+            .expect("bad row"),
         None
     );
     assert_eq!(
@@ -152,8 +160,10 @@ fn clearing_every_reaction_removes_metadata_key() {
     let (_dir, db) = open_db("state.db");
     let (key, rows) = session_scaffold(&db);
 
-    db.set_message_reaction(&key, rows[0], Some("\u{2764}\u{fe0f}"), "user").expect("r1");
-    db.set_message_reaction(&key, rows[0], None, "user").expect("clear");
+    db.set_message_reaction(&key, rows[0], Some("\u{2764}\u{fe0f}"), "user")
+        .expect("r1");
+    db.set_message_reaction(&key, rows[0], None, "user")
+        .expect("clear");
 
     let conn = db.writer_conn();
     let meta: Option<String> = conn
@@ -170,7 +180,8 @@ fn clearing_every_reaction_removes_metadata_key() {
 fn reactions_survive_reload() {
     let (_dir, db) = open_db("state.db");
     let (key, rows) = session_scaffold(&db);
-    db.set_message_reaction(&key, rows[1], Some("\u{1f525}"), "agent").expect("r1");
+    db.set_message_reaction(&key, rows[1], Some("\u{1f525}"), "agent")
+        .expect("r1");
 
     let path = _dir.path().join("state.db");
     drop(db);
@@ -190,7 +201,8 @@ fn reactions_survive_reload() {
 fn unseen_reactions_are_taken_exactly_once() {
     let (_dir, db) = open_db("state.db");
     let (key, rows) = session_scaffold(&db);
-    db.set_message_reaction(&key, rows[1], Some("\u{2764}\u{fe0f}"), "user").expect("r1");
+    db.set_message_reaction(&key, rows[1], Some("\u{2764}\u{fe0f}"), "user")
+        .expect("r1");
 
     let taken = db.take_unseen_reactions(&key, "user").expect("first");
     let first = taken.as_array().unwrap();
@@ -208,10 +220,12 @@ fn unseen_reactions_are_taken_exactly_once() {
 fn new_reaction_becomes_unseen_again() {
     let (_dir, db) = open_db("state.db");
     let (key, rows) = session_scaffold(&db);
-    db.set_message_reaction(&key, rows[1], Some("\u{2764}\u{fe0f}"), "user").expect("r1");
+    db.set_message_reaction(&key, rows[1], Some("\u{2764}\u{fe0f}"), "user")
+        .expect("r1");
     db.take_unseen_reactions(&key, "user").expect("take");
 
-    db.set_message_reaction(&key, rows[1], Some("\u{1f525}"), "user").expect("r2");
+    db.set_message_reaction(&key, rows[1], Some("\u{1f525}"), "user")
+        .expect("r2");
     let taken = db.take_unseen_reactions(&key, "user").expect("take2");
     let emojis: Vec<&str> = taken
         .as_array()
@@ -226,7 +240,8 @@ fn new_reaction_becomes_unseen_again() {
 fn take_unseen_filters_by_author() {
     let (_dir, db) = open_db("state.db");
     let (key, rows) = session_scaffold(&db);
-    db.set_message_reaction(&key, rows[0], Some("\u{1f60a}"), "agent").expect("r1");
+    db.set_message_reaction(&key, rows[0], Some("\u{1f60a}"), "agent")
+        .expect("r1");
     assert_eq!(
         db.take_unseen_reactions(&key, "user").expect("take"),
         json!([])

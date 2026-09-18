@@ -117,8 +117,7 @@ fn ollama_cloud_reasoning_disable_gate_and_unknown_efforts_match_upstream() {
     // PARITY @ 5d59366 (live oracle): "minimal" 400s → clamps DOWN to "low"
     // via shared clamp_effort (nearest weaker, never escalate).
     let config = reasoning(Some(true), Some("minimal"));
-    let (_, top_level) =
-        profile.build_api_kwargs_extras(Some(&config), &supports_reasoning(true));
+    let (_, top_level) = profile.build_api_kwargs_extras(Some(&config), &supports_reasoning(true));
     assert_eq!(
         top_level.get("reasoning_effort"),
         Some(&Value::String("low".into()))

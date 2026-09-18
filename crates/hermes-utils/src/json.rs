@@ -24,12 +24,21 @@ mod tests {
 
     #[test]
     fn parses_valid() {
-        assert_eq!(safe_json_loads(r#"{"a": 1}"#, serde_json::Value::Null)["a"], 1);
+        assert_eq!(
+            safe_json_loads(r#"{"a": 1}"#, serde_json::Value::Null)["a"],
+            1
+        );
     }
 
     #[test]
     fn returns_default_on_bad() {
-        assert_eq!(safe_json_loads("not json", serde_json::Value::Null), serde_json::Value::Null);
-        assert_eq!(safe_json_loads("", serde_json::json!({})), serde_json::json!({}));
+        assert_eq!(
+            safe_json_loads("not json", serde_json::Value::Null),
+            serde_json::Value::Null
+        );
+        assert_eq!(
+            safe_json_loads("", serde_json::json!({})),
+            serde_json::json!({})
+        );
     }
 }

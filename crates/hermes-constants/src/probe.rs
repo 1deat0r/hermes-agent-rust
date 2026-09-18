@@ -80,7 +80,10 @@ pub(crate) mod fakes {
             Self::default()
         }
         pub fn set_env(&self, k: &str, v: &str) {
-            self.env.lock().unwrap().insert(k.to_string(), v.to_string());
+            self.env
+                .lock()
+                .unwrap()
+                .insert(k.to_string(), v.to_string());
         }
         pub fn add_file(&self, p: impl AsRef<Path>, content: impl AsRef<str>) {
             self.files

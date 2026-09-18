@@ -252,6 +252,24 @@ Cursor loop + shared page fetcher; deepseek/upstage recerts.
 (docstring-only), hermes_cli.__init__ (new utf8 module, 5 tests). 11 new
 tests. **Ledger: 77/120/8698 (0.87% tracked, 2.21% prod).** Serial 1,855/0.
 
+## JEV optimization pass done (2026-09-18)
+
+Jev = TypeSafe System One decision model (2026-09-15). No
+TYPESAFE_API_KEY in env → pattern-applied locally (measured state,
+atomic noul/score decisions, confidence-gated). Landed, uncommitted:
+13 manifests (8 deps centralized, 49 pins → workspace=true, dev
+debug=1, release strip=true), reasoning.rs regex hoist, fmt sweep
+(126 files, G3 `cargo fmt --check` now exits 0). Validation:
+`cargo build --workspace` green (0 errors),
+`cargo test --workspace -- --test-threads=1` green — 211 suites,
+1,889 passed, 0 failed; metadata no-deps + full graph OK, Cargo.lock
+untouched, `git diff --check` clean.
+**Ledger: no status change — 148/49/8698 (1.66% tracked, 4.25% prod).**
+Pre-existing drift noted (not mine): tail batch below says 77/120 but
+live inventory.json + port_status.json + CONVERSION-LEDGER.md agree on
+148/49. Next: optional `cargo clean`; set TYPESAFE_API_KEY for
+live-Jev decision calls.
+
 ## Next actions, in order
 
 1. Wave B unit 6: next smallest-DIFF partials (`agent.ssl_guard`,

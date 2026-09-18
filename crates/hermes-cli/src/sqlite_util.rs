@@ -47,10 +47,7 @@ impl Default for DbOptions {
 
 // PARITY: `open_db` (upstream lines 18-69) — open (parents created),
 // PRAGMA stack, `initialize`; the connection is closed if anything raises.
-pub fn open_db(
-    path: &Path,
-    options: DbOptions,
-) -> Result<Connection, String> {
+pub fn open_db(path: &Path, options: DbOptions) -> Result<Connection, String> {
     open_db_with(path, options, None)
 }
 
@@ -103,9 +100,7 @@ pub fn open_db_with(
                 };
                 match result {
                     Ok(()) => break,
-                    Err(e)
-                        if e.to_lowercase() == "database is locked" && attempts > 1 =>
-                    {
+                    Err(e) if e.to_lowercase() == "database is locked" && attempts > 1 => {
                         attempts -= 1;
                         std::thread::sleep(std::time::Duration::from_millis(10));
                     }

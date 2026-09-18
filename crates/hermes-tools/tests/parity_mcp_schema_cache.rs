@@ -54,7 +54,9 @@ fn fingerprint_ignores_non_connection_keys() {
 fn fingerprint_unicode_url_matches_upstream_dumps_escaping() {
     let a = config_fingerprint(&json!({"url": "https://exämple.com/δ", "transport": "http"}));
     assert_eq!(a, "f0c434d45f89a511");
-    let b = config_fingerprint(&json!({"url": "https://exämple.com/δ", "transport": "http", "lazy": true}));
+    let b = config_fingerprint(
+        &json!({"url": "https://exämple.com/δ", "transport": "http", "lazy": true}),
+    );
     assert_eq!(a, b);
 }
 
@@ -72,7 +74,8 @@ fn write_then_read_with_matching_fingerprint() {
     let tmp = temp("write_then_read_with_matching_fingerprint");
     let _ = std::fs::remove_dir_all(&tmp);
     with_home(&tmp, || {
-        let tools = vec![json!({"name": "t1", "description": "d", "inputSchema": {"type": "object"}})];
+        let tools =
+            vec![json!({"name": "t1", "description": "d", "inputSchema": {"type": "object"}})];
         write_cache_entry("srv", "fp1", tools.clone(), Some(vec![]));
         let entry = get_cached_entry("srv", "fp1");
         assert!(entry.is_some());
@@ -135,8 +138,14 @@ fn corrupt_cache_file_is_tolerated() {
 
 #[test]
 fn malformed_entry_shapes_are_tolerated() {
-    assert_eq!(tools_from_cache_entry(&json!({"tools": "nope"})), Vec::<Value>::new());
-    assert_eq!(utility_tools_from_cache_entry(&json!({})), Vec::<Value>::new());
+    assert_eq!(
+        tools_from_cache_entry(&json!({"tools": "nope"})),
+        Vec::<Value>::new()
+    );
+    assert_eq!(
+        utility_tools_from_cache_entry(&json!({})),
+        Vec::<Value>::new()
+    );
 }
 
 #[test]
@@ -173,7 +182,10 @@ fn identical_payload_skips_rewrite() {
         // Identical payload (reconnect / list_changed refresh) → no rewrite.
         write_cache_entry("srv", "fp1", tools.clone(), Some(vec![]));
         let mtime2 = std::fs::metadata(&path).unwrap().modified().unwrap();
-        assert_eq!(mtime1, mtime2, "identical payload should not rewrite the file");
+        assert_eq!(
+            mtime1, mtime2,
+            "identical payload should not rewrite the file"
+        );
         std::thread::sleep(std::time::Duration::from_millis(20));
         // Changed payload → rewrite.
         write_cache_entry("srv", "fp2", tools, Some(vec![]));
@@ -188,20 +200,10 @@ fn identical_payload_skips_rewrite() {
 /// Explicit-clock forms are the `time.time` seam.
 #[test]
 fn ttl_expiry_with_explicit_clock() {
-    use hermes_tools::mcp_schema_cache::{
-        get_cached_entry_at, write_cache_entry_at,
-    };
+    use hermes_tools::mcp_schema_cache::{get_cached_entry_at, write_cache_entry_at};
     let dir = temp("ttl");
     with_home(&dir, || {
-        write_cache_entry_at(
-            "srv",
-            "fp",
-            vec![],
-            None,
-            Some(1000.0),
-            None,
-            100.0,
-        );
+        write_cache_entry_at("srv", "fp", vec![], None, Some(1000.0), None, 100.0);
         // Age 0.5s < TTL 1s → hit.
         assert!(get_cached_entry_at("srv", "fp", 100.5).is_some());
         // Age exactly TTL → miss (`>=`).
@@ -214,14 +216,15 @@ fn ttl_expiry_with_explicit_clock() {
 /// TTL-less entries never expire; cache_scope persists when given.
 #[test]
 fn no_ttl_never_expires_and_scope_persists() {
-    use hermes_tools::mcp_schema_cache::{
-        get_cached_entry_at, write_cache_entry_at,
-    };
+    use hermes_tools::mcp_schema_cache::{get_cached_entry_at, write_cache_entry_at};
     let dir = temp("ttl-scope");
     with_home(&dir, || {
         write_cache_entry_at("srv", "fp", vec![], None, None, Some("user"), 0.0);
         let entry = get_cached_entry_at("srv", "fp", 999999.0).unwrap();
-        assert_eq!(entry.get("cache_scope").and_then(|v| v.as_str()), Some("user"));
+        assert_eq!(
+            entry.get("cache_scope").and_then(|v| v.as_str()),
+            Some("user")
+        );
         assert!(entry.get("ttl_ms").is_none());
     });
 }

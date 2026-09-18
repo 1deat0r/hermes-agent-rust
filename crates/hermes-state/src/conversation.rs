@@ -30,8 +30,7 @@ use crate::state::{SessionDB, WriteError};
 // ── sanitize_context (agent/memory_manager.py) ─────────────────────────────
 
 static INTERNAL_CONTEXT_RE: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"(?is)<\s*memory-context\s*>[\s\S]*?</\s*memory-context\s*>")
-        .expect("context re")
+    Regex::new(r"(?is)<\s*memory-context\s*>[\s\S]*?</\s*memory-context\s*>").expect("context re")
 });
 static INTERNAL_NOTE_RE: Lazy<Regex> = Lazy::new(|| {
     Regex::new(
@@ -59,7 +58,10 @@ const REVIEW_HARNESS_PREFIXES: [&str; 2] = [
 ];
 
 fn is_background_review_harness_message(msg: &Value) -> bool {
-    if !matches!(msg.get("role").and_then(Value::as_str), Some("user" | "system")) {
+    if !matches!(
+        msg.get("role").and_then(Value::as_str),
+        Some("user" | "system")
+    ) {
         return false;
     }
     let Some(content) = msg.get("content").and_then(Value::as_str) else {
@@ -90,9 +92,8 @@ fn strip_background_review_harness(messages: Vec<Value>) -> Vec<Value> {
 
 // ── stale tool-call marker strip (#78148) ──────────────────────────────────
 
-static STALE_TOOL_CALL_MARKER_RE: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"^\[[A-Za-z_][A-Za-z0-9_.-]*\]$").expect("stale marker re")
-});
+static STALE_TOOL_CALL_MARKER_RE: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"^\[[A-Za-z_][A-Za-z0-9_.-]*\]$").expect("stale marker re"));
 
 fn is_stale_tool_call_marker_message(msg: &Value) -> bool {
     if msg.get("role").and_then(Value::as_str) != Some("assistant") {
@@ -164,9 +165,9 @@ pub fn repair_message_sequence(messages: &mut Vec<Value>) -> i64 {
     for msg in messages.drain(..) {
         let adjacent_assistant = !collapsed.is_empty()
             && msg.get("role").and_then(Value::as_str) == Some("assistant")
-            && collapsed.last().is_some_and(|p| {
-                p.get("role").and_then(Value::as_str) == Some("assistant")
-            })
+            && collapsed
+                .last()
+                .is_some_and(|p| p.get("role").and_then(Value::as_str) == Some("assistant"))
             && !is_codex_interim(&msg)
             && !collapsed.last().is_some_and(is_codex_interim);
         if adjacent_assistant {
@@ -189,18 +190,14 @@ pub fn repair_message_sequence(messages: &mut Vec<Value>) -> i64 {
                 .cloned()
                 .unwrap_or_default();
             let merged_calls: Vec<Value> = if !new_calls.is_empty() {
-                prev_calls
-                    .into_iter()
-                    .chain(new_calls)
-                    .collect()
+                prev_calls.into_iter().chain(new_calls).collect()
             } else if !prev_calls.is_empty() {
                 prev_calls
             } else {
                 Vec::new()
             };
             if msg.get("tool_calls").is_some() && !merged_calls.is_empty() {
-                prev
-                    .as_object_mut()
+                prev.as_object_mut()
                     .unwrap()
                     .insert("tool_calls".to_string(), Value::Array(merged_calls));
             }
@@ -210,18 +207,19 @@ pub fn repair_message_sequence(messages: &mut Vec<Value>) -> i64 {
             let new_content = msg.get("content").cloned();
             match (prev_content, new_content) {
                 (Some(Value::String(a)), Some(Value::String(b))) => {
-                    let joined = [
-                        a.trim().to_string(),
-                        b.trim().to_string(),
-                    ]
-                    .into_iter()
-                    .filter(|p| !p.is_empty())
-                    .collect::<Vec<_>>()
-                    .join("\n");
-                    prev.as_object_mut().unwrap().insert("content".to_string(), Value::String(joined));
+                    let joined = [a.trim().to_string(), b.trim().to_string()]
+                        .into_iter()
+                        .filter(|p| !p.is_empty())
+                        .collect::<Vec<_>>()
+                        .join("\n");
+                    prev.as_object_mut()
+                        .unwrap()
+                        .insert("content".to_string(), Value::String(joined));
                 }
                 (None, Some(newc)) => {
-                    prev.as_object_mut().unwrap().insert("content".to_string(), newc);
+                    prev.as_object_mut()
+                        .unwrap()
+                        .insert("content".to_string(), newc);
                 }
                 _ => {}
             }
@@ -265,7 +263,10 @@ pub fn repair_message_sequence(messages: &mut Vec<Value>) -> i64 {
             }
             filtered.push(msg);
         } else if role == "tool" {
-            let tc_id = msg.get("tool_call_id").and_then(Value::as_str).unwrap_or("");
+            let tc_id = msg
+                .get("tool_call_id")
+                .and_then(Value::as_str)
+                .unwrap_or("");
             if !tc_id.is_empty() && known_tool_ids.contains(tc_id) {
                 known_tool_ids.remove(tc_id);
                 filtered.push(msg);
@@ -285,9 +286,9 @@ pub fn repair_message_sequence(messages: &mut Vec<Value>) -> i64 {
     for msg in filtered {
         let adjacent_user = !merged.is_empty()
             && msg.get("role").and_then(Value::as_str) == Some("user")
-            && merged.last().is_some_and(|p| {
-                p.get("role").and_then(Value::as_str) == Some("user")
-            });
+            && merged
+                .last()
+                .is_some_and(|p| p.get("role").and_then(Value::as_str) == Some("user"));
         if adjacent_user {
             let mut prev = merged.pop().expect("non-empty");
             let prev_content = prev.get("content").cloned();
@@ -300,8 +301,7 @@ pub fn repair_message_sequence(messages: &mut Vec<Value>) -> i64 {
                 } else {
                     b
                 };
-                prev
-                    .as_object_mut()
+                prev.as_object_mut()
                     .unwrap()
                     .insert("content".to_string(), Value::String(combined));
                 drop_stale_api_content(&mut prev);
@@ -448,13 +448,19 @@ impl SessionDB {
         let mut messages: Vec<Value> = Vec::with_capacity(rows.len());
         for row in rows {
             let mut content = crate::conversation::decode_content_json(row.get("content"));
-            if matches!(row.get("role").and_then(Value::as_str), Some("user" | "assistant")) {
+            if matches!(
+                row.get("role").and_then(Value::as_str),
+                Some("user" | "assistant")
+            ) {
                 if let Some(Value::String(s)) = content {
                     content = Some(Value::String(sanitize_context(&s).trim().to_string()));
                 }
             }
             let mut msg = Map::new();
-            msg.insert("role".to_string(), row.get("role").cloned().unwrap_or(Value::Null));
+            msg.insert(
+                "role".to_string(),
+                row.get("role").cloned().unwrap_or(Value::Null),
+            );
             msg.insert("content".to_string(), content.unwrap_or(Value::Null));
             if include_row_ids {
                 if let Some(id) = row.get("id").and_then(Value::as_i64) {
@@ -510,7 +516,10 @@ impl SessionDB {
                     msg.insert("message_id".to_string(), Value::String(pmid.to_string()));
                 }
             }
-            if row.get("observed").and_then(Value::as_bool).unwrap_or(false)
+            if row
+                .get("observed")
+                .and_then(Value::as_bool)
+                .unwrap_or(false)
                 || row.get("observed").and_then(Value::as_i64) == Some(1)
             {
                 msg.insert("observed".to_string(), Value::Bool(true));
@@ -528,7 +537,11 @@ impl SessionDB {
                         }
                     }
                 }
-                for key in ["reasoning_details", "codex_reasoning_items", "codex_message_items"] {
+                for key in [
+                    "reasoning_details",
+                    "codex_reasoning_items",
+                    "codex_message_items",
+                ] {
                     if let Some(parsed) = parse_json_field(&row, key) {
                         msg.insert(key.to_string(), parsed);
                     }
@@ -568,7 +581,11 @@ impl SessionDB {
         } else {
             vec![session_id.to_string()]
         };
-        let active_clause = if include_inactive { "" } else { " AND active = 1" };
+        let active_clause = if include_inactive {
+            ""
+        } else {
+            " AND active = 1"
+        };
         let placeholders = vec!["?"; session_ids.len()].join(",");
         let sql = format!(
             "SELECT {CONVERSATION_ROW_COLUMNS} \
@@ -578,7 +595,10 @@ impl SessionDB {
         let conn = self.writer_conn();
         let mut stmt = conn.prepare(&sql).map_err(WriteError::Sqlite)?;
         let rows = stmt
-            .query_map(rusqlite::params_from_iter(session_ids.iter()), crate::portability::row_to_value)
+            .query_map(
+                rusqlite::params_from_iter(session_ids.iter()),
+                crate::portability::row_to_value,
+            )
             .map_err(WriteError::Sqlite)?
             .collect::<Result<Vec<_>, _>>()
             .map_err(WriteError::Sqlite)?;
@@ -612,7 +632,10 @@ impl SessionDB {
         let conn = self.writer_conn();
         let mut stmt = conn.prepare(&sql).map_err(WriteError::Sqlite)?;
         let rows = stmt
-            .query_map(rusqlite::params_from_iter(session_ids.iter()), crate::portability::row_to_value)
+            .query_map(
+                rusqlite::params_from_iter(session_ids.iter()),
+                crate::portability::row_to_value,
+            )
             .map_err(WriteError::Sqlite)?
             .collect::<Result<Vec<_>, _>>()
             .map_err(WriteError::Sqlite)?;
@@ -621,13 +644,7 @@ impl SessionDB {
             .filter(|r| r.get("session_id").and_then(Value::as_str) == Some(session_id))
             .cloned()
             .collect();
-        let model_history = Self::rows_to_conversation(
-            tip_rows,
-            session_id,
-            false,
-            true,
-            true,
-        );
+        let model_history = Self::rows_to_conversation(tip_rows, session_id, false, true, true);
         let display_history = Self::rows_to_conversation(rows, session_id, true, false, true);
         Ok((model_history, display_history))
     }
@@ -635,10 +652,7 @@ impl SessionDB {
     /// Return ancestor-only display messages for a session lineage.
     ///
     /// PARITY: SessionDB.get_ancestor_display_prefix @ b9aa928 (7820–7859)
-    pub fn get_ancestor_display_prefix(
-        &self,
-        session_id: &str,
-    ) -> Result<Vec<Value>, WriteError> {
+    pub fn get_ancestor_display_prefix(&self, session_id: &str) -> Result<Vec<Value>, WriteError> {
         if session_id.is_empty() {
             return Ok(Vec::new());
         }
@@ -655,7 +669,10 @@ impl SessionDB {
         let conn = self.writer_conn();
         let mut stmt = conn.prepare(&sql).map_err(WriteError::Sqlite)?;
         let rows = stmt
-            .query_map(rusqlite::params_from_iter(session_ids.iter()), crate::portability::row_to_value)
+            .query_map(
+                rusqlite::params_from_iter(session_ids.iter()),
+                crate::portability::row_to_value,
+            )
             .map_err(WriteError::Sqlite)?
             .collect::<Result<Vec<_>, _>>()
             .map_err(WriteError::Sqlite)?;
@@ -666,7 +683,13 @@ impl SessionDB {
         if ancestor_rows.is_empty() {
             return Ok(Vec::new());
         }
-        Ok(Self::rows_to_conversation(ancestor_rows, session_id, true, false, false))
+        Ok(Self::rows_to_conversation(
+            ancestor_rows,
+            session_id,
+            true,
+            false,
+            false,
+        ))
     }
 
     /// Return the ROOT id of `session_id`'s lineage chain (stable
@@ -686,7 +709,11 @@ impl SessionDB {
     /// Returns the number of rows flipped back to `active=1`.
     ///
     /// PARITY: SessionDB.restore_rewound @ b9aa928 (8002–8015)
-    pub fn restore_rewound(&self, session_id: &str, since_message_id: i64) -> Result<i64, WriteError> {
+    pub fn restore_rewound(
+        &self,
+        session_id: &str,
+        since_message_id: i64,
+    ) -> Result<i64, WriteError> {
         let sid = session_id.to_string();
         let f = |conn: &Connection| -> Result<i64, WriteError> {
             let mut stmt = conn

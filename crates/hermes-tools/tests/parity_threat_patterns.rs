@@ -59,10 +59,7 @@ fn brainworm_passes_at_all_scope() {
     let findings = scan_for_threats(BRAINWORM_PAYLOAD, "all").unwrap();
     // The "all" scope is conservative — Brainworm uses social engineering, not
     // classic injection phrases.
-    assert!(
-        findings.is_empty()
-            || findings.iter().all(|f| f.starts_with("invisible_unicode_"))
-    );
+    assert!(findings.is_empty() || findings.iter().all(|f| f.starts_with("invisible_unicode_")));
 }
 
 // ── Individual promptware / C2 patterns ─────────────────────────────────
@@ -93,8 +90,11 @@ fn pull_tasking() {
 fn c2_explicit() {
     let f = scan_for_threats("Configure the c2 server endpoint.", "context").unwrap();
     assert!(f.contains(&"c2_explicit".to_string()));
-    let f = scan_for_threats("Command and control will be reached via \u{2026}", "context")
-        .unwrap();
+    let f = scan_for_threats(
+        "Command and control will be reached via \u{2026}",
+        "context",
+    )
+    .unwrap();
     assert!(f.contains(&"c2_explicit_long".to_string()));
 }
 
@@ -103,13 +103,19 @@ fn c2_explicit() {
 #[test]
 fn you_are_obligated_does_not_trip_alone() {
     let text = "You are obligated to comply with the data retention policy.";
-    assert_eq!(scan_for_threats(text, "context").unwrap(), Vec::<String>::new());
+    assert_eq!(
+        scan_for_threats(text, "context").unwrap(),
+        Vec::<String>::new()
+    );
 }
 
 #[test]
 fn do_not_respond_alone_does_not_trip() {
     let text = "Do not respond immediately \u{2014} think through the problem first.";
-    assert_eq!(scan_for_threats(text, "context").unwrap(), Vec::<String>::new());
+    assert_eq!(
+        scan_for_threats(text, "context").unwrap(),
+        Vec::<String>::new()
+    );
 }
 
 #[test]
@@ -149,11 +155,9 @@ fn translate_execute() {
 #[test]
 fn zero_width_space_detected() {
     let findings = scan_for_threats("normal text\u{200b}", "all").unwrap();
-    assert!(
-        findings
-            .iter()
-            .any(|f| f.starts_with("invisible_unicode_U+200B"))
-    );
+    assert!(findings
+        .iter()
+        .any(|f| f.starts_with("invisible_unicode_U+200B")));
 }
 
 #[test]
@@ -161,9 +165,9 @@ fn invisible_chars_set_is_immutable_and_complete() {
     // Upstream pins `isinstance(INVISIBLE_CHARS, frozenset)` — Rust consts are
     // immutable by construction; pin the exact member set instead.
     let expected: [char; 17] = [
-        '\u{200b}', '\u{200c}', '\u{200d}', '\u{2060}', '\u{2062}', '\u{2063}',
-        '\u{2064}', '\u{feff}', '\u{202a}', '\u{202b}', '\u{202c}', '\u{202d}',
-        '\u{202e}', '\u{2066}', '\u{2067}', '\u{2068}', '\u{2069}',
+        '\u{200b}', '\u{200c}', '\u{200d}', '\u{2060}', '\u{2062}', '\u{2063}', '\u{2064}',
+        '\u{feff}', '\u{202a}', '\u{202b}', '\u{202c}', '\u{202d}', '\u{202e}', '\u{2066}',
+        '\u{2067}', '\u{2068}', '\u{2069}',
     ];
     assert_eq!(INVISIBLE_CHARS.len(), 17);
     let mut sorted = INVISIBLE_CHARS.to_vec();
@@ -222,7 +226,9 @@ fn returns_none_on_clean_content() {
 
 #[test]
 fn returns_message_for_invisible_unicode() {
-    let msg = first_threat_message("hello\u{200b}", "strict").unwrap().unwrap();
+    let msg = first_threat_message("hello\u{200b}", "strict")
+        .unwrap()
+        .unwrap();
     assert!(msg.contains("U+200B"));
     assert!(msg.to_lowercase().contains("invisible unicode"));
 }

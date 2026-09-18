@@ -35,11 +35,13 @@ fn msg(role: &str, content: &str) -> MessageInput {
 }
 
 fn create(db: &SessionDB, sid: &str, source: &str) {
-    db.create_session(sid, source, &NewSession::default()).expect("create");
+    db.create_session(sid, source, &NewSession::default())
+        .expect("create");
 }
 
 fn append(db: &SessionDB, sid: &str, role: &str, content: &str) {
-    db.append_message(sid, &msg(role, content), None).expect("append");
+    db.append_message(sid, &msg(role, content), None)
+        .expect("append");
 }
 
 fn set_col(db: &SessionDB, table: &str, col: &str, val: &str, sid: &str) {
@@ -125,10 +127,14 @@ fn build_compression_chain(db: &SessionDB, t0: f64) -> (String, String, String, 
     append(db, "root1", "user", "help me refactor auth");
 
     // Delegate subagent spawned while root1 was live (before it ended)
-    db.create_session("delegate1", "cli", &NewSession {
-        parent_session_id: Some("root1".into()),
-        ..Default::default()
-    })
+    db.create_session(
+        "delegate1",
+        "cli",
+        &NewSession {
+            parent_session_id: Some("root1".into()),
+            ..Default::default()
+        },
+    )
     .expect("create delegate");
     set_ts(db, "sessions", "started_at", t0 + 600.0, "delegate1");
     set_ts(db, "sessions", "ended_at", t0 + 650.0, "delegate1");
@@ -139,10 +145,14 @@ fn build_compression_chain(db: &SessionDB, t0: f64) -> (String, String, String, 
     set_col(db, "sessions", "end_reason", "compression", "root1");
 
     // Continuation mid created 1s after parent ended
-    db.create_session("mid1", "cli", &NewSession {
-        parent_session_id: Some("root1".into()),
-        ..Default::default()
-    })
+    db.create_session(
+        "mid1",
+        "cli",
+        &NewSession {
+            parent_session_id: Some("root1".into()),
+            ..Default::default()
+        },
+    )
     .expect("create mid");
     set_ts(db, "sessions", "started_at", t0 + 1801.0, "mid1");
     append(db, "mid1", "user", "continuing");
@@ -152,24 +162,37 @@ fn build_compression_chain(db: &SessionDB, t0: f64) -> (String, String, String, 
     set_col(db, "sessions", "end_reason", "compression", "mid1");
 
     // Tip — latest continuation
-    db.create_session("tip1", "cli", &NewSession {
-        parent_session_id: Some("mid1".into()),
-        ..Default::default()
-    })
+    db.create_session(
+        "tip1",
+        "cli",
+        &NewSession {
+            parent_session_id: Some("mid1".into()),
+            ..Default::default()
+        },
+    )
     .expect("create tip");
     set_ts(db, "sessions", "started_at", t0 + 2701.0, "tip1");
     append(db, "tip1", "user", "latest message");
-    ("root1".into(), "delegate1".into(), "mid1".into(), "tip1".into())
+    (
+        "root1".into(),
+        "delegate1".into(),
+        "mid1".into(),
+        "tip1".into(),
+    )
 }
 
 /// Compression pair: root ended via compression, tip started after.
 fn make_compression_pair(db: &SessionDB) {
     let base = now() - 100.0;
     create(db, "root", "cli");
-    db.create_session("tip", "cli", &NewSession {
-        parent_session_id: Some("root".into()),
-        ..Default::default()
-    })
+    db.create_session(
+        "tip",
+        "cli",
+        &NewSession {
+            parent_session_id: Some("root".into()),
+            ..Default::default()
+        },
+    )
     .expect("create tip");
     set_ts(db, "sessions", "started_at", base, "root");
     set_ts(db, "sessions", "ended_at", base + 10.0, "root");
@@ -331,10 +354,14 @@ fn session_count_ge_at_threshold() {
 fn session_count_by_source_grouping_and_exclude_children() {
     let (_dir, db) = open_db("state.db");
     create(&db, "s1", "cli");
-    db.create_session("c1", "cli", &NewSession {
-        parent_session_id: Some("s1".into()),
-        ..Default::default()
-    })
+    db.create_session(
+        "c1",
+        "cli",
+        &NewSession {
+            parent_session_id: Some("s1".into()),
+            ..Default::default()
+        },
+    )
     .expect("child");
     let by_source = db
         .session_count_by_source(false, false, false)
@@ -359,7 +386,8 @@ fn count_empty_sessions_filters_live_and_archived() {
     db.end_session("empty_ended", "tui_shutdown").expect("end");
     assert_eq!(db.count_empty_sessions().expect("count"), 1);
     // Archived empty → not counted.
-    db.set_session_archived("empty_ended", true).expect("archive");
+    db.set_session_archived("empty_ended", true)
+        .expect("archive");
     assert_eq!(db.count_empty_sessions().expect("count after archive"), 0);
 }
 
@@ -390,9 +418,15 @@ fn list_gateway_sessions_newest_row_per_key_and_activity_heartbeat() {
     let rows = db.list_gateway_sessions(None, true).expect("gateway rows");
     assert_eq!(rows.len(), 1);
     assert_eq!(rows[0]["last_active"].as_f64(), Some(heartbeat));
-    let activity = db.get_session_activity("gw-1").expect("activity").expect("some");
+    let activity = db
+        .get_session_activity("gw-1")
+        .expect("activity")
+        .expect("some");
     let o = activity.as_object().expect("obj");
-    assert_eq!(o["last_activity_description"], Value::String("compressing context".into()));
+    assert_eq!(
+        o["last_activity_description"],
+        Value::String("compressing context".into())
+    );
     assert_eq!(o["last_activity_ts"].as_f64(), Some(heartbeat));
 }
 
@@ -409,10 +443,14 @@ fn gateway_sessions_resolve_newest_row_per_session_key() {
     };
     db.create_session("old", "telegram", &base).expect("old");
     db.create_session("new", "telegram", &base).expect("new");
-    db.create_session("other", "telegram", &NewSession {
-        session_key: Some("other-key".into()),
-        ..Default::default()
-    })
+    db.create_session(
+        "other",
+        "telegram",
+        &NewSession {
+            session_key: Some("other-key".into()),
+            ..Default::default()
+        },
+    )
     .expect("other");
 
     let rows = db.list_gateway_sessions(None, false).expect("rows");
@@ -439,8 +477,10 @@ fn rich_list_session_key_filter_precedes_limit() {
         chat_id: Some("lane".into()),
         ..Default::default()
     };
-    db.create_session("lane_oldest", "telegram", &lane("lane_oldest")).expect("oldest");
-    db.create_session("lane_newest", "telegram", &lane("lane_newest")).expect("newest");
+    db.create_session("lane_oldest", "telegram", &lane("lane_oldest"))
+        .expect("oldest");
+    db.create_session("lane_newest", "telegram", &lane("lane_newest"))
+        .expect("newest");
     for i in 0..60 {
         let key = format!("agent:main:telegram:dm:foreign-{i}");
         db.create_session(
@@ -455,11 +495,15 @@ fn rich_list_session_key_filter_precedes_limit() {
         )
         .expect("foreign");
     }
-    db.create_session("legacy_null_key", "telegram", &NewSession {
-        user_id: Some("lane-user".into()),
-        chat_id: Some("lane".into()),
-        ..Default::default()
-    })
+    db.create_session(
+        "legacy_null_key",
+        "telegram",
+        &NewSession {
+            user_id: Some("lane-user".into()),
+            chat_id: Some("lane".into()),
+            ..Default::default()
+        },
+    )
     .expect("legacy");
 
     let sessions = ids(
@@ -471,7 +515,10 @@ fn rich_list_session_key_filter_precedes_limit() {
             ..Default::default()
         },
     );
-    assert_eq!(sessions, vec!["lane_newest".to_string(), "lane_oldest".to_string()]);
+    assert_eq!(
+        sessions,
+        vec!["lane_newest".to_string(), "lane_oldest".to_string()]
+    );
 }
 
 #[test]
@@ -484,27 +531,40 @@ fn rich_list_session_key_scopes_search_and_projects_compression() {
         chat_id: Some("lane".into()),
         ..Default::default()
     };
-    db.create_session("lane_root", "telegram", &lane("lane_root")).expect("root");
-    db.set_session_title("lane_root", "Needle root").expect("title root");
-    db.end_session("lane_root", "compression").expect("end root");
-    db.create_session("lane_tip", "telegram", &NewSession {
-        parent_session_id: Some("lane_root".into()),
-        session_key: Some(lane_key.into()),
-        user_id: Some("lane-user".into()),
-        chat_id: Some("lane".into()),
-        ..Default::default()
-    })
+    db.create_session("lane_root", "telegram", &lane("lane_root"))
+        .expect("root");
+    db.set_session_title("lane_root", "Needle root")
+        .expect("title root");
+    db.end_session("lane_root", "compression")
+        .expect("end root");
+    db.create_session(
+        "lane_tip",
+        "telegram",
+        &NewSession {
+            parent_session_id: Some("lane_root".into()),
+            session_key: Some(lane_key.into()),
+            user_id: Some("lane-user".into()),
+            chat_id: Some("lane".into()),
+            ..Default::default()
+        },
+    )
     .expect("tip");
-    db.set_session_title("lane_tip", "Needle continuation").expect("title tip");
+    db.set_session_title("lane_tip", "Needle continuation")
+        .expect("title tip");
     append(&db, "lane_tip", "user", "latest lane activity");
-    db.create_session("foreign_match", "telegram", &NewSession {
-        session_key: Some("agent:main:telegram:dm:foreign".into()),
-        user_id: Some("foreign-user".into()),
-        chat_id: Some("foreign".into()),
-        ..Default::default()
-    })
+    db.create_session(
+        "foreign_match",
+        "telegram",
+        &NewSession {
+            session_key: Some("agent:main:telegram:dm:foreign".into()),
+            user_id: Some("foreign-user".into()),
+            chat_id: Some("foreign".into()),
+            ..Default::default()
+        },
+    )
     .expect("foreign");
-    db.set_session_title("foreign_match", "Needle foreign").expect("title foreign");
+    db.set_session_title("foreign_match", "Needle foreign")
+        .expect("title foreign");
 
     let rows = db
         .list_sessions_rich(&RichListParams {
@@ -544,10 +604,14 @@ fn get_compression_tip_walks_full_chain() {
 fn subagent_session_still_hidden() {
     let (_dir, db) = open_db("state.db");
     create(&db, "root", "cli");
-    db.create_session("delegate", "cli", &NewSession {
-        parent_session_id: Some("root".into()),
-        ..Default::default()
-    })
+    db.create_session(
+        "delegate",
+        "cli",
+        &NewSession {
+            parent_session_id: Some("root".into()),
+            ..Default::default()
+        },
+    )
     .expect("delegate");
 
     let sessions = ids(&db, &RichListParams::default());
@@ -588,7 +652,10 @@ fn list_surfaces_tip_for_compressed_root() {
         tip_row.get("_lineage_root_id").and_then(Value::as_str),
         Some("root1")
     );
-    assert!(tip_row["preview"].as_str().unwrap_or("").starts_with("latest message"));
+    assert!(tip_row["preview"]
+        .as_str()
+        .unwrap_or("")
+        .starts_with("latest message"));
     assert_eq!(tip_row.get("ended_at"), Some(&Value::Null));
     assert_eq!(tip_row.get("end_reason"), Some(&Value::Null));
 }
@@ -604,10 +671,14 @@ fn list_projects_multiple_independent_chains_in_one_call() {
     append(&db, "root2", "user", "second conversation start");
     set_ts(&db, "sessions", "ended_at", t0 + 1900.0, "root2");
     set_col(&db, "sessions", "end_reason", "compression", "root2");
-    db.create_session("tip2", "cli", &NewSession {
-        parent_session_id: Some("root2".into()),
-        ..Default::default()
-    })
+    db.create_session(
+        "tip2",
+        "cli",
+        &NewSession {
+            parent_session_id: Some("root2".into()),
+            ..Default::default()
+        },
+    )
     .expect("tip2");
     set_ts(&db, "sessions", "started_at", t0 + 1901.0, "tip2");
     append(&db, "tip2", "user", "second chain live tip");
@@ -621,24 +692,30 @@ fn list_projects_multiple_independent_chains_in_one_call() {
         .expect("rich");
     let by_id: std::collections::HashMap<&str, &Value> = sessions
         .iter()
-        .filter_map(|s| {
-            s.get("id")
-                .and_then(Value::as_str)
-                .map(|id| (id, s))
-        })
+        .filter_map(|s| s.get("id").and_then(Value::as_str).map(|id| (id, s)))
         .collect();
     assert!(by_id.contains_key("tip1"));
     assert!(by_id.contains_key("tip2"));
     assert_eq!(
-        by_id["tip1"].get("_lineage_root_id").and_then(Value::as_str),
+        by_id["tip1"]
+            .get("_lineage_root_id")
+            .and_then(Value::as_str),
         Some("root1")
     );
     assert_eq!(
-        by_id["tip2"].get("_lineage_root_id").and_then(Value::as_str),
+        by_id["tip2"]
+            .get("_lineage_root_id")
+            .and_then(Value::as_str),
         Some("root2")
     );
-    assert!(by_id["tip1"]["preview"].as_str().unwrap_or("").starts_with("latest message"));
-    assert!(by_id["tip2"]["preview"].as_str().unwrap_or("").starts_with("second chain live tip"));
+    assert!(by_id["tip1"]["preview"]
+        .as_str()
+        .unwrap_or("")
+        .starts_with("latest message"));
+    assert!(by_id["tip2"]["preview"]
+        .as_str()
+        .unwrap_or("")
+        .starts_with("second chain live tip"));
 }
 
 // =====================================================================
@@ -694,7 +771,10 @@ fn pinned_session_survives_the_limit_window() {
             ..Default::default()
         },
     );
-    assert!(!page.contains(&"s0".to_string()), "precondition: pin off the page");
+    assert!(
+        !page.contains(&"s0".to_string()),
+        "precondition: pin off the page"
+    );
 
     let with_pins = ids(
         &db,
@@ -723,10 +803,14 @@ fn search_sessions_by_id_matches_exact_prefix_and_substring() {
         ("20260602_111111_other99", "other content"),
     ] {
         let (sid, content) = (sid.to_string(), content.to_string());
-        db.create_session(&sid, "cli", &NewSession {
-            model: Some("test-model".into()),
-            ..Default::default()
-        })
+        db.create_session(
+            &sid,
+            "cli",
+            &NewSession {
+                model: Some("test-model".into()),
+                ..Default::default()
+            },
+        )
         .expect("seed");
         append(&db, &sid, "user", &content);
     }
@@ -738,7 +822,10 @@ fn search_sessions_by_id_matches_exact_prefix_and_substring() {
             .filter_map(|s| s.get("id").and_then(Value::as_str).map(|x| x.to_string()))
             .collect()
     };
-    assert_eq!(hit("20260603_090200_abcd12"), vec!["20260603_090200_abcd12".to_string()]);
+    assert_eq!(
+        hit("20260603_090200_abcd12"),
+        vec!["20260603_090200_abcd12".to_string()]
+    );
     assert_eq!(hit("20260603"), vec!["20260603_090200_abcd12".to_string()]);
     assert_eq!(hit("ABCD12"), vec!["20260603_090200_abcd12".to_string()]);
     assert!(hit("").is_empty());
@@ -748,7 +835,10 @@ fn search_sessions_by_id_matches_exact_prefix_and_substring() {
 fn activity_provenance_roundtrip_and_clear_labels() {
     let (_dir, db) = open_db("state.db");
     create(&db, "s1", "cli");
-    let before = db.get_session_activity("s1").expect("activity before").expect("some");
+    let before = db
+        .get_session_activity("s1")
+        .expect("activity before")
+        .expect("some");
     assert_eq!(before["last_activity_at"], Value::Null);
     assert_eq!(before["provenance"], Value::String("unknown".into()));
 
@@ -759,18 +849,39 @@ fn activity_provenance_roundtrip_and_clear_labels() {
         Some(&ActivityProvenance::AgentCompression),
     )
     .expect("touch");
-    let snap = db.get_session_activity("s1").expect("activity").expect("some").as_object().unwrap().clone();
-    assert_eq!(snap["last_activity_provenance"], Value::String("agent.compression".into()));
-    assert_eq!(snap["last_activity_description"], Value::String("executing tool".into()));
+    let snap = db
+        .get_session_activity("s1")
+        .expect("activity")
+        .expect("some")
+        .as_object()
+        .unwrap()
+        .clone();
+    assert_eq!(
+        snap["last_activity_provenance"],
+        Value::String("agent.compression".into())
+    );
+    assert_eq!(
+        snap["last_activity_description"],
+        Value::String("executing tool".into())
+    );
 
     // Observed-only: an older timestamp never moves the watermark back.
     db.touch_session_activity("s1", Some(1_000_000.0), Some("stale"), None)
         .expect("stale touch");
-    let snap = db.get_session_activity("s1").expect("activity2").expect("some");
+    let snap = db
+        .get_session_activity("s1")
+        .expect("activity2")
+        .expect("some");
     assert_eq!(snap["description"], Value::String("executing tool".into()));
 
     db.clear_session_activity_labels("s1").expect("clear");
-    let snap = db.get_session_activity("s1").expect("activity3").expect("some").as_object().unwrap().clone();
+    let snap = db
+        .get_session_activity("s1")
+        .expect("activity3")
+        .expect("some")
+        .as_object()
+        .unwrap()
+        .clone();
     assert_eq!(snap["description"], Value::String("".into()));
     assert_eq!(snap["provenance"], Value::String("unknown".into()));
     // Timestamp survives the label clear.

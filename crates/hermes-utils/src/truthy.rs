@@ -111,7 +111,11 @@ mod tests {
     fn truthy_strings() {
         for s in TRUTHY_STRINGS {
             assert!(is_truthy(&TruthyValue::Str(s), false), "{}", s);
-            assert!(is_truthy(&TruthyValue::Str(&s.to_uppercase()), false), "{}", s);
+            assert!(
+                is_truthy(&TruthyValue::Str(&s.to_uppercase()), false),
+                "{}",
+                s
+            );
         }
         for s in ["0", "false", "no", "off", "nope", "  "] {
             assert!(!is_truthy(&TruthyValue::Str(s), false), "{}", s);
@@ -140,7 +144,12 @@ mod tests {
         assert!(env_bool("HUT_TEST_BOOL", false));
         assert!(env_var_enabled("HUT_TEST_BOOL", ""));
         assert!(!env_var_enabled("HUT_MISSING", ""));
-        for k in ["HUT_TEST_INT", "HUT_TEST_BAD", "HUT_TEST_FLOAT", "HUT_TEST_BOOL"] {
+        for k in [
+            "HUT_TEST_INT",
+            "HUT_TEST_BAD",
+            "HUT_TEST_FLOAT",
+            "HUT_TEST_BOOL",
+        ] {
             unsafe { std::env::remove_var(k) };
         }
     }

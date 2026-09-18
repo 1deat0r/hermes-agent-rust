@@ -78,7 +78,10 @@ impl RotatingHandler {
     }
 
     fn open_stream(&self, state: &mut WriterState) -> std::io::Result<()> {
-        let file = OpenOptions::new().create(true).append(true).open(&self.path)?;
+        let file = OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&self.path)?;
         let size = file.metadata()?.len();
         state.file = Some(file);
         state.current_size = size;
@@ -219,7 +222,9 @@ mod tests {
 
     #[test]
     fn component_filter_prefix_matching() {
-        let f = ComponentFilter { prefixes: vec!["gateway".into(), "plugins.platforms".into()] };
+        let f = ComponentFilter {
+            prefixes: vec!["gateway".into(), "plugins.platforms".into()],
+        };
         assert!(f.matches("gateway.run"));
         assert!(f.matches("plugins.platforms.telegram.adapter"));
         assert!(!f.matches("agent.runtime"));
@@ -228,7 +233,14 @@ mod tests {
     #[test]
     fn level_and_component_filtering() {
         let td = tempfile::TempDir::new().unwrap();
-        let h = RotatingHandler::new(td.path().join("agent.log"), Level::Info, 1024 * 1024, 3, None).unwrap();
+        let h = RotatingHandler::new(
+            td.path().join("agent.log"),
+            Level::Info,
+            1024 * 1024,
+            3,
+            None,
+        )
+        .unwrap();
         assert!(!h.accepts_record(&rec(Level::Debug, "x", "m")));
         assert!(h.accepts_record(&rec(Level::Info, "x", "m")));
         assert!(h.accepts_record(&rec(Level::Warning, "x", "m")));
@@ -257,7 +269,10 @@ mod tests {
         for i in 0..100 {
             h.emit_record(&rec(Level::Info, "t", &format!("m {:04}", i)));
         }
-        assert!(!td.path().join("b.log.3").exists(), "backup_count=2 keeps at most .2");
+        assert!(
+            !td.path().join("b.log.3").exists(),
+            "backup_count=2 keeps at most .2"
+        );
         assert!(td.path().join("b.log.1").exists());
     }
 }

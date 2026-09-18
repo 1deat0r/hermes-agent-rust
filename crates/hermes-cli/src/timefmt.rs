@@ -57,7 +57,9 @@ pub fn coerce_epoch(value: EpochInput<'_>, session_id: Option<&str>, field: &str
             EpochInput::Text(s) => format!("{s:?}"),
             EpochInput::Empty => unreachable!(),
         },
-        session_id.map(|s| format!(" on session {s}")).unwrap_or_default()
+        session_id
+            .map(|s| format!(" on session {s}"))
+            .unwrap_or_default()
     );
     None
 }

@@ -157,11 +157,11 @@ pub fn classify_jwks_lookup_error(failure: JwksLookupFailure, detail: &str) -> J
         | JwksLookupFailure::Unknown => {
             JwksClassify::Provider(ProviderError(format!("JWKS lookup failed: {detail}")))
         }
-        JwksLookupFailure::NotJwt | JwksLookupFailure::UnknownKid | JwksLookupFailure::InvalidToken => {
-            JwksClassify::InvalidCode(InvalidCodeError(format!(
-                "token not verifiable by this provider: {detail}"
-            )))
-        }
+        JwksLookupFailure::NotJwt
+        | JwksLookupFailure::UnknownKid
+        | JwksLookupFailure::InvalidToken => JwksClassify::InvalidCode(InvalidCodeError(format!(
+            "token not verifiable by this provider: {detail}"
+        ))),
     }
 }
 

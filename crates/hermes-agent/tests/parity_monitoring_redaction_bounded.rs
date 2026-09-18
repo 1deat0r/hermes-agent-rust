@@ -11,7 +11,12 @@ use hermes_agent::monitoring::redaction::{redact_bounded, redact_for_export};
 /// Live oracle: 600 x's truncate to exactly 500 (default limit, no suffix).
 #[test]
 fn bounded_default_truncates_to_500() {
-    let out = redact_bounded(&"x".repeat(600), 500, "[redacted]", "[redaction-unavailable]");
+    let out = redact_bounded(
+        &"x".repeat(600),
+        500,
+        "[redacted]",
+        "[redaction-unavailable]",
+    );
     assert_eq!(out.len(), 500);
     assert!(out.chars().all(|c| c == 'x'));
 }

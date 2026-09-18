@@ -83,11 +83,20 @@ pub fn build_activity_snapshot(
     let elapsed = when.map(|w| py_round1(clock - w));
     let prov_s = prov.as_str().to_string();
     let mut map = Map::new();
-    map.insert("last_activity_at".into(), when.map(Value::from).unwrap_or(Value::Null));
+    map.insert(
+        "last_activity_at".into(),
+        when.map(Value::from).unwrap_or(Value::Null),
+    );
     map.insert("last_activity_description".into(), json!(desc));
     map.insert("last_activity_provenance".into(), json!(prov_s));
-    map.insert("seconds_since_activity".into(), elapsed.map(Value::from).unwrap_or(Value::Null));
-    map.insert("last_activity_ts".into(), when.map(Value::from).unwrap_or(Value::Null));
+    map.insert(
+        "seconds_since_activity".into(),
+        elapsed.map(Value::from).unwrap_or(Value::Null),
+    );
+    map.insert(
+        "last_activity_ts".into(),
+        when.map(Value::from).unwrap_or(Value::Null),
+    );
     map.insert("last_activity_desc".into(), json!(desc));
     map.insert("description".into(), json!(desc));
     map.insert("provenance".into(), json!(prov_s));
@@ -121,21 +130,38 @@ mod tests {
 
     #[test]
     fn normalizes_unknown_and_known() {
-        assert_eq!(normalize_activity_provenance(None), ActivityProvenance::Unknown);
-        assert_eq!(normalize_activity_provenance(Some("")), ActivityProvenance::Unknown);
+        assert_eq!(
+            normalize_activity_provenance(None),
+            ActivityProvenance::Unknown
+        );
+        assert_eq!(
+            normalize_activity_provenance(Some("")),
+            ActivityProvenance::Unknown
+        );
         assert_eq!(
             normalize_activity_provenance(Some("agent.compression")),
             ActivityProvenance::AgentCompression
         );
-        assert_eq!(normalize_activity_provenance(Some("bogus")), ActivityProvenance::Unknown);
+        assert_eq!(
+            normalize_activity_provenance(Some("bogus")),
+            ActivityProvenance::Unknown
+        );
     }
 
     #[test]
     fn snapshot_shape() {
-        let snap = build_activity_snapshot(Some(1_700_000_000.0), Some("compressing"), None, Some(1_700_000_010.0));
+        let snap = build_activity_snapshot(
+            Some(1_700_000_000.0),
+            Some("compressing"),
+            None,
+            Some(1_700_000_010.0),
+        );
         let o = snap.as_object().unwrap();
         assert_eq!(o["last_activity_at"], serde_json::json!(1_700_000_000.0));
-        assert_eq!(o["last_activity_description"], serde_json::json!("compressing"));
+        assert_eq!(
+            o["last_activity_description"],
+            serde_json::json!("compressing")
+        );
         assert_eq!(o["last_activity_provenance"], serde_json::json!("unknown"));
         assert_eq!(o["seconds_since_activity"], serde_json::json!(10.0));
         assert_eq!(o["description"], serde_json::json!("compressing"));

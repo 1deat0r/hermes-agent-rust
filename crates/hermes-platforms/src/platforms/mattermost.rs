@@ -17,10 +17,7 @@ pub fn register(ctx: &dyn PluginCtx) {
     ctx.register_platform(PlatformRegistration {
         name: PLATFORM_NAME.to_string(),
         label: "Mattermost".to_string(),
-        required_env: vec![
-            "MATTERMOST_URL".to_string(),
-            "MATTERMOST_TOKEN".to_string(),
-        ],
+        required_env: vec!["MATTERMOST_URL".to_string(), "MATTERMOST_TOKEN".to_string()],
         install_hint: "pip install aiohttp".to_string(),
     });
 }

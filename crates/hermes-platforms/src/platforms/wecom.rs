@@ -17,10 +17,7 @@ pub fn register(ctx: &dyn PluginCtx) {
     ctx.register_platform(PlatformRegistration {
         name: PLATFORM_NAME.to_string(),
         label: "WeCom (Enterprise WeChat)".to_string(),
-        required_env: vec![
-            "WECOM_BOT_ID".to_string(),
-            "WECOM_SECRET".to_string(),
-        ],
+        required_env: vec!["WECOM_BOT_ID".to_string(), "WECOM_SECRET".to_string()],
         install_hint: "Run `hermes setup` to install WeCom support.".to_string(),
     });
 }

@@ -93,12 +93,10 @@ pub(crate) fn legacy_path_has_content(path: &Path) -> bool {
 /// count as "the legacy install is in use".
 ///
 /// PARITY: hermes_constants.py `get_hermes_dir` (254–287).
-pub fn get_hermes_dir(
-    new_subpath: &str,
-    old_name: &str,
-    home: Option<&Path>,
-) -> PathBuf {
-    let home = home.map(|p| p.to_path_buf()).unwrap_or_else(get_hermes_home);
+pub fn get_hermes_dir(new_subpath: &str, old_name: &str, home: Option<&Path>) -> PathBuf {
+    let home = home
+        .map(|p| p.to_path_buf())
+        .unwrap_or_else(get_hermes_home);
     let old_path = home.join(old_name);
     if legacy_path_has_content(&old_path) {
         old_path
@@ -289,7 +287,9 @@ mod display_tests {
     use super::*;
 
     fn guard() -> std::sync::MutexGuard<'static, ()> {
-        crate::TEST_ENV_MUTEX.lock().unwrap_or_else(|p| p.into_inner())
+        crate::TEST_ENV_MUTEX
+            .lock()
+            .unwrap_or_else(|p| p.into_inner())
     }
 
     #[test]
@@ -335,9 +335,17 @@ mod display_tests {
         std::fs::create_dir_all(td.path().join("a/b")).unwrap();
         let target = td.path().join("a/b/file");
         std::fs::write(&target, "x").unwrap();
-        std::fs::set_permissions(td.path().join("a/b"), std::fs::Permissions::from_mode(0o755)).unwrap();
+        std::fs::set_permissions(
+            td.path().join("a/b"),
+            std::fs::Permissions::from_mode(0o755),
+        )
+        .unwrap();
         secure_parent_dir(&target);
-        let mode = std::fs::metadata(td.path().join("a/b")).unwrap().permissions().mode() & 0o777;
+        let mode = std::fs::metadata(td.path().join("a/b"))
+            .unwrap()
+            .permissions()
+            .mode()
+            & 0o777;
         assert_eq!(mode, 0o700);
     }
 }

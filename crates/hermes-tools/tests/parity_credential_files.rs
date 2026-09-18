@@ -4,12 +4,12 @@
 
 use hermes_tools::credential_files::{
     clear_credential_files, get_cache_directory_mounts, get_credential_file_mounts,
-    get_skills_directory_mount, iter_cache_files, iter_skills_files,
-    map_cache_path_to_container, register_credential_file, register_credential_files,
-    reset_terminal_credential_files_for_tests, set_terminal_credential_files,
+    get_skills_directory_mount, iter_cache_files, iter_skills_files, map_cache_path_to_container,
+    register_credential_file, register_credential_files, reset_terminal_credential_files_for_tests,
+    set_terminal_credential_files,
 };
-use std::path::PathBuf;
 use serde_json::json;
+use std::path::PathBuf;
 
 fn with_home(tmp: &std::path::Path, f: impl FnOnce()) {
     let token = hermes_constants::home::set_hermes_home_override(Some(tmp));
@@ -41,7 +41,10 @@ fn dict_with_path_key() {
         assert_eq!(missing.len(), 0);
         let mounts = get_credential_file_mounts();
         assert_eq!(mounts.len(), 1);
-        assert_eq!(mounts[0].host_path, home.join("token.json").to_string_lossy());
+        assert_eq!(
+            mounts[0].host_path,
+            home.join("token.json").to_string_lossy()
+        );
         assert_eq!(mounts[0].container_path, "/root/.hermes/token.json");
     });
     let _ = std::fs::remove_dir_all(&home);
@@ -104,10 +107,20 @@ fn skills_symlinks_are_sanitized() {
         let mounts = get_skills_directory_mount("/root/.hermes");
         let mount = &mounts[0];
         let safe = std::path::Path::new(&mount.host_path);
-        assert_ne!(safe, sdir.as_path(), "sanitized copy must not be the original");
+        assert_ne!(
+            safe,
+            sdir.as_path(),
+            "sanitized copy must not be the original"
+        );
         assert!(safe.join("legit.md").exists());
-        assert_eq!(std::fs::read_to_string(safe.join("legit.md")).unwrap(), "# real skill");
-        assert!(!safe.join("evil_link").exists(), "symlink must not be copied");
+        assert_eq!(
+            std::fs::read_to_string(safe.join("legit.md")).unwrap(),
+            "# real skill"
+        );
+        assert!(
+            !safe.join("evil_link").exists(),
+            "symlink must not be copied"
+        );
     });
     let _ = std::fs::remove_dir_all(&home);
 }
@@ -162,7 +175,10 @@ fn dotdot_traversal_rejected() {
     let home = init_home("traversal_dotdot");
     std::fs::write(home.parent().unwrap().join("sensitive.json"), "{}").unwrap();
     with_home(&home, || {
-        assert!(!register_credential_file("../sensitive.json", "/root/.hermes"));
+        assert!(!register_credential_file(
+            "../sensitive.json",
+            "/root/.hermes"
+        ));
         assert_eq!(get_credential_file_mounts().len(), 0);
     });
     let _ = std::fs::remove_dir_all(&home);
@@ -175,7 +191,10 @@ fn deep_traversal_rejected() {
     std::fs::create_dir_all(&ssh).unwrap();
     std::fs::write(ssh.join("id_rsa"), "PRIVATE KEY").unwrap();
     with_home(&home, || {
-        assert!(!register_credential_file("../../.ssh/id_rsa", "/root/.hermes"));
+        assert!(!register_credential_file(
+            "../../.ssh/id_rsa",
+            "/root/.hermes"
+        ));
         assert_eq!(get_credential_file_mounts().len(), 0);
     });
     let _ = std::fs::remove_dir_all(&home);
@@ -187,7 +206,10 @@ fn absolute_path_rejected() {
     let abs = home.join("absolute.json");
     std::fs::write(&abs, "{}").unwrap();
     with_home(&home, || {
-        assert!(!register_credential_file(&abs.to_string_lossy(), "/root/.hermes"));
+        assert!(!register_credential_file(
+            &abs.to_string_lossy(),
+            "/root/.hermes"
+        ));
         assert_eq!(get_credential_file_mounts().len(), 0);
     });
     let _ = std::fs::remove_dir_all(&home);
@@ -200,7 +222,10 @@ fn nested_subdir_inside_home_allowed() {
     std::fs::create_dir_all(&sub).unwrap();
     std::fs::write(sub.join("oauth.json"), "{}").unwrap();
     with_home(&home, || {
-        assert!(register_credential_file("creds/oauth.json", "/root/.hermes"));
+        assert!(register_credential_file(
+            "creds/oauth.json",
+            "/root/.hermes"
+        ));
     });
     let _ = std::fs::remove_dir_all(&home);
 }
@@ -228,7 +253,9 @@ fn config_traversal_rejected() {
     with_home(&home, || {
         set_terminal_credential_files(Some(vec!["../secret.json".to_string()]));
         let mounts = get_credential_file_mounts();
-        assert!(!mounts.iter().any(|m| m.host_path == sensitive.to_string_lossy()));
+        assert!(!mounts
+            .iter()
+            .any(|m| m.host_path == sensitive.to_string_lossy()));
     });
     let _ = std::fs::remove_dir_all(&home);
 }
@@ -288,7 +315,8 @@ fn cache_legacy_dir_names_resolved() {
         let host_paths: Vec<String> = mounts.iter().map(|m| m.host_path.clone()).collect();
         assert!(host_paths.contains(&legacy_doc.to_string_lossy().into_owned()));
         assert!(host_paths.contains(&legacy_img.to_string_lossy().into_owned()));
-        let container_paths: Vec<String> = mounts.iter().map(|m| m.container_path.clone()).collect();
+        let container_paths: Vec<String> =
+            mounts.iter().map(|m| m.container_path.clone()).collect();
         assert!(container_paths.contains(&"/root/.hermes/cache/documents".to_string()));
         assert!(container_paths.contains(&"/root/.hermes/cache/images".to_string()));
     });
@@ -310,8 +338,10 @@ fn images_upload_dir_is_mounted() {
     std::fs::create_dir_all(home.join("images")).unwrap();
     with_home(&home, || {
         let mounts = get_cache_directory_mounts("/root/.hermes");
-        let by_container: std::collections::HashMap<String, String> =
-            mounts.iter().map(|m| (m.container_path.clone(), m.host_path.clone())).collect();
+        let by_container: std::collections::HashMap<String, String> = mounts
+            .iter()
+            .map(|m| (m.container_path.clone(), m.host_path.clone()))
+            .collect();
         assert_eq!(
             by_container.get("/root/.hermes/images").unwrap(),
             &home.join("images").to_string_lossy().into_owned()
@@ -347,11 +377,23 @@ fn map_cache_path_under_cache_dir() {
             Some("/root/.hermes/cache/images/generated.png".to_string())
         );
         // A path not under any cache dir maps to None.
-        assert_eq!(map_cache_path_to_container(&home.join("other/x.png").to_string_lossy(), "/root/.hermes"), None);
+        assert_eq!(
+            map_cache_path_to_container(
+                &home.join("other/x.png").to_string_lossy(),
+                "/root/.hermes"
+            ),
+            None
+        );
         // No cache dirs at all → None.
         let empty = init_home("map_empty");
         with_home(&empty, || {
-            assert_eq!(map_cache_path_to_container(&empty.join("cache/images/x.png").to_string_lossy(), "/root/.hermes"), None);
+            assert_eq!(
+                map_cache_path_to_container(
+                    &empty.join("cache/images/x.png").to_string_lossy(),
+                    "/root/.hermes"
+                ),
+                None
+            );
         });
         let _ = std::fs::remove_dir_all(&empty);
     });
@@ -367,9 +409,16 @@ fn iter_cache_files_enumerates() {
     std::fs::write(d.join("report.pdf"), [0x25, 0x50, 0x44, 0x46]).unwrap();
     with_home(&home, || {
         let entries = iter_cache_files("/root/.hermes");
-        let names: Vec<String> = entries.iter().map(|e| {
-            std::path::Path::new(&e.container_path).file_name().unwrap().to_string_lossy().into_owned()
-        }).collect();
+        let names: Vec<String> = entries
+            .iter()
+            .map(|e| {
+                std::path::Path::new(&e.container_path)
+                    .file_name()
+                    .unwrap()
+                    .to_string_lossy()
+                    .into_owned()
+            })
+            .collect();
         assert!(names.contains(&"upload.zip".to_string()));
         assert!(names.contains(&"report.pdf".to_string()));
     });
@@ -387,9 +436,16 @@ fn iter_cache_files_skips_symlinks() {
     std::os::unix::fs::symlink(&real, d.join("link.txt")).unwrap();
     with_home(&home, || {
         let entries = iter_cache_files("/root/.hermes");
-        let names: Vec<String> = entries.iter().map(|e| {
-            std::path::Path::new(&e.container_path).file_name().unwrap().to_string_lossy().into_owned()
-        }).collect();
+        let names: Vec<String> = entries
+            .iter()
+            .map(|e| {
+                std::path::Path::new(&e.container_path)
+                    .file_name()
+                    .unwrap()
+                    .to_string_lossy()
+                    .into_owned()
+            })
+            .collect();
         assert!(names.contains(&"real.txt".to_string()));
         assert!(!names.contains(&"link.txt".to_string()));
     });
@@ -410,14 +466,26 @@ fn master_credential_stores_refused() {
     std::fs::write(home.join("google_token.json"), "{}").unwrap();
 
     with_home(&home, || {
-        for rel in [".env", "auth.json", ".anthropic_oauth.json", "webhook_subscriptions.json",
-                    "cache/bws_cache.json", "mcp-tokens/srv.json"] {
-            assert!(!register_credential_file(rel, "/root/.hermes"), "{rel} must not be mountable");
+        for rel in [
+            ".env",
+            "auth.json",
+            ".anthropic_oauth.json",
+            "webhook_subscriptions.json",
+            "cache/bws_cache.json",
+            "mcp-tokens/srv.json",
+        ] {
+            assert!(
+                !register_credential_file(rel, "/root/.hermes"),
+                "{rel} must not be mountable"
+            );
         }
         assert_eq!(get_credential_file_mounts().len(), 0);
 
         // Per-service token still mounts.
-        assert!(register_credential_file("google_token.json", "/root/.hermes"));
+        assert!(register_credential_file(
+            "google_token.json",
+            "/root/.hermes"
+        ));
         let mounts = get_credential_file_mounts();
         assert_eq!(mounts.len(), 1);
         assert_eq!(mounts[0].container_path, "/root/.hermes/google_token.json");
@@ -431,8 +499,14 @@ fn refused_entry_does_not_block_rest_of_batch() {
     std::fs::write(home.join(".env"), "k=v\n").unwrap();
     std::fs::write(home.join("google_token.json"), "{}").unwrap();
     with_home(&home, || {
-        let missing = register_credential_files(&[json!(".env"), json!("google_token.json")], "/root/.hermes");
-        let paths: Vec<String> = get_credential_file_mounts().iter().map(|m| m.container_path.clone()).collect();
+        let missing = register_credential_files(
+            &[json!(".env"), json!("google_token.json")],
+            "/root/.hermes",
+        );
+        let paths: Vec<String> = get_credential_file_mounts()
+            .iter()
+            .map(|m| m.container_path.clone())
+            .collect();
         assert!(paths.contains(&"/root/.hermes/google_token.json".to_string()));
         assert!(!paths.contains(&"/root/.hermes/.env".to_string()));
         assert!(missing.contains(&".env".to_string()));
@@ -448,9 +522,15 @@ fn traversal_guard_still_applies() {
     std::fs::write(ssh.join("id_rsa"), "PRIVATE").unwrap();
     std::fs::write(home.join("google_token.json"), "{}").unwrap();
     with_home(&home, || {
-        assert!(!register_credential_file("../../.ssh/id_rsa", "/root/.hermes"));
+        assert!(!register_credential_file(
+            "../../.ssh/id_rsa",
+            "/root/.hermes"
+        ));
         assert!(!register_credential_file("/etc/passwd", "/root/.hermes"));
-        assert!(register_credential_file("google_token.json", "/root/.hermes"));
+        assert!(register_credential_file(
+            "google_token.json",
+            "/root/.hermes"
+        ));
     });
     let _ = std::fs::remove_dir_all(&home);
 }

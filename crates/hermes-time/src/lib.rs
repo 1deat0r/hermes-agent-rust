@@ -118,7 +118,10 @@ fn tz_from_name(name: &str) -> Option<Tz> {
     match name.parse::<Tz>() {
         Ok(tz) => Some(tz),
         Err(_) => {
-            eprintln!("Invalid timezone '{}'. Falling back to server local time.", name);
+            eprintln!(
+                "Invalid timezone '{}'. Falling back to server local time.",
+                name
+            );
             None
         }
     }
@@ -260,7 +263,11 @@ mod tests {
         assert!(tz.is_none());
         // now() must still be tz-aware (server local)
         let r = now();
-        assert_ne!(r.offset().local_minus_utc(), 0, "server-local offset should be applied");
+        assert_ne!(
+            r.offset().local_minus_utc(),
+            0,
+            "server-local offset should be applied"
+        );
         reset_cache();
     }
 

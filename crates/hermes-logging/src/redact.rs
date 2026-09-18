@@ -70,7 +70,10 @@ fn redact_enabled() -> bool {
     static ENABLED: once_cell::sync::OnceCell<bool> = once_cell::sync::OnceCell::new();
     *ENABLED.get_or_init(|| {
         let raw = std::env::var("HERMES_REDACT_SECRETS").unwrap_or_else(|_| "true".to_string());
-        matches!(raw.to_ascii_lowercase().as_str(), "1" | "true" | "yes" | "on")
+        matches!(
+            raw.to_ascii_lowercase().as_str(),
+            "1" | "true" | "yes" | "on"
+        )
     })
 }
 
@@ -170,111 +173,163 @@ fn rx(pattern: &str, flags: &str) -> Regex {
 }
 
 static _ENV_ASSIGN_RE: Lazy<Regex> = Lazy::new(|| {
-    rx(r#"([A-Z0-9_]{0,50}(?:API_?KEY|KEY|TOKEN|SECRET|PASSWORD|PASSWD|PASS|PW|CREDENTIAL|AUTH)[A-Z0-9_]{0,50})\s*=\s*(['\"]?)(\S+)\2"#, "")
+    rx(
+        r#"([A-Z0-9_]{0,50}(?:API_?KEY|KEY|TOKEN|SECRET|PASSWORD|PASSWD|PASS|PW|CREDENTIAL|AUTH)[A-Z0-9_]{0,50})\s*=\s*(['\"]?)(\S+)\2"#,
+        "",
+    )
 });
 
 static _ENV_ASSIGN_LOWER_RE: Lazy<Regex> = Lazy::new(|| {
-    rx(r#"([a-z0-9_]+(?:_|^)(?:key|pass|pw|token|secret|password|passwd|credential|auth)(?=[^a-z0-9_]|$))\s*=\s*(['\"]?)(\S+)\2"#, "i")
+    rx(
+        r#"([a-z0-9_]+(?:_|^)(?:key|pass|pw|token|secret|password|passwd|credential|auth)(?=[^a-z0-9_]|$))\s*=\s*(['\"]?)(\S+)\2"#,
+        "i",
+    )
 });
 
-static _ENV_LOOKUP_VALUE_RE: Lazy<Regex> = Lazy::new(|| {
-    rx(r#"^(?:os\.(?:getenv|environ)|process\.env|\$ENV\{)"#, "")
-});
+static _ENV_LOOKUP_VALUE_RE: Lazy<Regex> =
+    Lazy::new(|| rx(r#"^(?:os\.(?:getenv|environ)|process\.env|\$ENV\{)"#, ""));
 
 static _CFG_SECRET_WORD_RE: Lazy<Regex> = Lazy::new(|| {
-    rx(r#"(?:api[ _.\-]?key|token|secret|passwd|password|credential|auth)"#, "i")
+    rx(
+        r#"(?:api[ _.\-]?key|token|secret|passwd|password|credential|auth)"#,
+        "i",
+    )
 });
 
 static _CFG_VALUE: &str = r#"(['\"]?)([^\s&]+?)\2(?=[\s&]|$)"#;
 static _CFG_DOTTED_RE: Lazy<Regex> = Lazy::new(|| {
-    rx(&format!(r#"([A-Za-z0-9_\-]++\.[A-Za-z0-9_.\-]*(?:api[ _.\-]?key|token|secret|passwd|password|credential|auth)[A-Za-z0-9_.\-]*+|[A-Za-z0-9_.\-]*(?:api[ _.\-]?key|token|secret|passwd|password|credential|auth)[A-Za-z0-9_.\-]*\.[A-Za-z0-9_.\-]++)={}"#, _CFG_VALUE), "i")
+    rx(
+        &format!(
+            r#"([A-Za-z0-9_\-]++\.[A-Za-z0-9_.\-]*(?:api[ _.\-]?key|token|secret|passwd|password|credential|auth)[A-Za-z0-9_.\-]*+|[A-Za-z0-9_.\-]*(?:api[ _.\-]?key|token|secret|passwd|password|credential|auth)[A-Za-z0-9_.\-]*\.[A-Za-z0-9_.\-]++)={}"#,
+            _CFG_VALUE
+        ),
+        "i",
+    )
 });
 
 static _CFG_ANCHORED_RE: Lazy<Regex> = Lazy::new(|| {
-    rx(&format!(r#"(^[ \t]*(?:export[ \t]+)?[A-Za-z0-9_\-]*(?:api[ _.\-]?key|token|secret|passwd|password|credential|auth)[A-Za-z0-9_\-]*)={}"#, _CFG_VALUE), "im")
+    rx(
+        &format!(
+            r#"(^[ \t]*(?:export[ \t]+)?[A-Za-z0-9_\-]*(?:api[ _.\-]?key|token|secret|passwd|password|credential|auth)[A-Za-z0-9_\-]*)={}"#,
+            _CFG_VALUE
+        ),
+        "im",
+    )
 });
 
 static _YAML_ASSIGN_RE: Lazy<Regex> = Lazy::new(|| {
-    rx(r#"(^[ \t]*+[A-Za-z0-9_.\-]*(?:api[ _.\-]?key|token|secret|passwd|password|credential)[A-Za-z0-9_.\-]*+)(:[ \t]*+)(?!['\"])([^\s&]++)"#, "im")
+    rx(
+        r#"(^[ \t]*+[A-Za-z0-9_.\-]*(?:api[ _.\-]?key|token|secret|passwd|password|credential)[A-Za-z0-9_.\-]*+)(:[ \t]*+)(?!['\"])([^\s&]++)"#,
+        "im",
+    )
 });
 
 static _KEY_KEYWORD_RE: Lazy<Regex> = Lazy::new(|| {
-    rx(r#"(?:api|auth|access|refresh|session|secret)[ _.\\-]?(?:key|token)|token|secret|passwd|password|pass|pw|credential|auth|key"#, "i")
+    rx(
+        r#"(?:api|auth|access|refresh|session|secret)[ _.\\-]?(?:key|token)|token|secret|passwd|password|pass|pw|credential|auth|key"#,
+        "i",
+    )
 });
 
 static _JSON_FIELD_RE: Lazy<Regex> = Lazy::new(|| {
-    rx(r#"("(?:api_?[Kk]ey|token|secret|password|access_token|refresh_token|auth_token|bearer|secret_value|raw_secret|secret_input|key_material)")\s*:\s*"([^"]+)""#, "i")
+    rx(
+        r#"("(?:api_?[Kk]ey|token|secret|password|access_token|refresh_token|auth_token|bearer|secret_value|raw_secret|secret_input|key_material)")\s*:\s*"([^"]+)""#,
+        "i",
+    )
 });
 
 static _AUTH_HEADER_RE: Lazy<Regex> = Lazy::new(|| {
-    rx(r#"((?:Proxy-)?Authorization:\s*)([A-Za-z][\w.+-]*\s+)?([^\s\"']+)"#, "i")
+    rx(
+        r#"((?:Proxy-)?Authorization:\s*)([A-Za-z][\w.+-]*\s+)?([^\s\"']+)"#,
+        "i",
+    )
 });
 
 static _SECRET_HEADER_RE: Lazy<Regex> = Lazy::new(|| {
-    rx(r#"((?:x-api-key|x-goog-api-key|api-key|apikey|x-api-token|x-auth-token|x-access-token)\s*:\s*)(\S+)"#, "i")
+    rx(
+        r#"((?:x-api-key|x-goog-api-key|api-key|apikey|x-api-token|x-auth-token|x-access-token)\s*:\s*)(\S+)"#,
+        "i",
+    )
 });
 
-static _TELEGRAM_RE: Lazy<Regex> = Lazy::new(|| {
-    rx(r#"(bot)?(\d{8,}):([-A-Za-z0-9_]{30,})"#, "")
-});
+static _TELEGRAM_RE: Lazy<Regex> = Lazy::new(|| rx(r#"(bot)?(\d{8,}):([-A-Za-z0-9_]{30,})"#, ""));
 
 static _PRIVATE_KEY_RE: Lazy<Regex> = Lazy::new(|| {
-    rx(r#"-----BEGIN[A-Z ]*PRIVATE KEY-----[\s\S]*?-----END[A-Z ]*PRIVATE KEY-----"#, "")
+    rx(
+        r#"-----BEGIN[A-Z ]*PRIVATE KEY-----[\s\S]*?-----END[A-Z ]*PRIVATE KEY-----"#,
+        "",
+    )
 });
 
 static _DB_CONNSTR_RE: Lazy<Regex> = Lazy::new(|| {
-    rx(r#"((?:postgres(?:ql)?|mysql|mongodb(?:\+srv)?|redis|amqp)://[^:\s]+:)([^@\s]+)(@)"#, "i")
+    rx(
+        r#"((?:postgres(?:ql)?|mysql|mongodb(?:\+srv)?|redis|amqp)://[^:\s]+:)([^@\s]+)(@)"#,
+        "i",
+    )
 });
 
 static _URL_BARE_TOKEN_RE: Lazy<Regex> = Lazy::new(|| {
-    rx(r#"((?:https?|wss?|git|ssh|ftp|ftps|sftp)://)([^\s:@/]{8,})(@[^\s]+)"#, "i")
+    rx(
+        r#"((?:https?|wss?|git|ssh|ftp|ftps|sftp)://)([^\s:@/]{8,})(@[^\s]+)"#,
+        "i",
+    )
 });
 
-static _JWT_RE: Lazy<Regex> = Lazy::new(|| {
-    rx(r#"eyJ[A-Za-z0-9_-]{10,}(?:\.[A-Za-z0-9_=-]{4,}){0,2}"#, "")
-});
+static _JWT_RE: Lazy<Regex> =
+    Lazy::new(|| rx(r#"eyJ[A-Za-z0-9_-]{10,}(?:\.[A-Za-z0-9_=-]{4,}){0,2}"#, ""));
 
-static _SIGNAL_PHONE_RE: Lazy<Regex> = Lazy::new(|| {
-    rx(r#"(\+[1-9]\d{6,14})(?![A-Za-z0-9])"#, "")
-});
+static _SIGNAL_PHONE_RE: Lazy<Regex> = Lazy::new(|| rx(r#"(\+[1-9]\d{6,14})(?![A-Za-z0-9])"#, ""));
 
 static _URL_WITH_QUERY_RE: Lazy<Regex> = Lazy::new(|| {
-    rx(r#"(https?|wss?|ftp)://([^\s/?#]+)([^\s?#]*)\?([^\s#]+)(#\S*)?"#, "")
+    rx(
+        r#"(https?|wss?|ftp)://([^\s/?#]+)([^\s?#]*)\?([^\s#]+)(#\S*)?"#,
+        "",
+    )
 });
 
-static _URL_USERINFO_RE: Lazy<Regex> = Lazy::new(|| {
-    rx(r#"(https?|wss?|ftp)://([^/\s:@]+):([^/\s@]+)@"#, "")
-});
+static _URL_USERINFO_RE: Lazy<Regex> =
+    Lazy::new(|| rx(r#"(https?|wss?|ftp)://([^/\s:@]+):([^/\s@]+)@"#, ""));
 
-static _STRICT_URL_PARAM_RE: Lazy<Regex> = Lazy::new(|| {
-    rx(r#"([?#&;])([A-Za-z0-9_.~+%\-]+)=([^#&;\s\"'<>]*)"#, "")
-});
+static _STRICT_URL_PARAM_RE: Lazy<Regex> =
+    Lazy::new(|| rx(r#"([?#&;])([A-Za-z0-9_.~+%\-]+)=([^#&;\s\"'<>]*)"#, ""));
 
-static _STRICT_URL_USERINFO_RE: Lazy<Regex> = Lazy::new(|| {
-    rx(r#"(//)([^/\s?#@]+)@"#, "")
-});
+static _STRICT_URL_USERINFO_RE: Lazy<Regex> = Lazy::new(|| rx(r#"(//)([^/\s?#@]+)@"#, ""));
 
 static _HTTP_REQUEST_TARGET_QUERY_RE: Lazy<Regex> = Lazy::new(|| {
-    rx(r#"\b((?:GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS|TRACE|CONNECT)\s+[^ \t\r\n\"']*?)\?([^ \t\r\n\"']+)"#, "i")
+    rx(
+        r#"\b((?:GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS|TRACE|CONNECT)\s+[^ \t\r\n\"']*?)\?([^ \t\r\n\"']+)"#,
+        "i",
+    )
 });
 
 static _FORM_BODY_RE: Lazy<Regex> = Lazy::new(|| {
-    rx(r#"^[A-Za-z_][A-Za-z0-9_.-]*=[^&\s]*(?:&[A-Za-z_][A-Za-z0-9_.-]*=[^&\s]*)+$"#, "")
+    rx(
+        r#"^[A-Za-z_][A-Za-z0-9_.-]*=[^&\s]*(?:&[A-Za-z_][A-Za-z0-9_.-]*=[^&\s]*)+$"#,
+        "",
+    )
 });
 
 static _CONTROL_CHARS_RE: Lazy<Regex> = Lazy::new(|| {
-    rx(r#"[\x00-\x1f\x7f\u200b-\u200f\u2028-\u202f\u2060\ufeff]"#, "")
+    rx(
+        r#"[\x00-\x1f\x7f\u200b-\u200f\u2028-\u202f\u2060\ufeff]"#,
+        "",
+    )
 });
 
 static _DISPLAY_CONTROL_RE: Lazy<Regex> = Lazy::new(|| {
-    rx(r#"[\x00-\x1f\x7f\x80-\x9f\u200b-\u200f\u202a-\u202e\u2060-\u2064]"#, "")
+    rx(
+        r#"[\x00-\x1f\x7f\x80-\x9f\u200b-\u200f\u202a-\u202e\u2060-\u2064]"#,
+        "",
+    )
 });
 
 static _PREFIX_RE: Lazy<Regex> = Lazy::new(|| {
     let inner = PREFIX_PATTERNS.join("|");
-    rx(&format!(r#"(?<![A-Za-z0-9_-])({})(?![A-Za-z0-9_-])"#, inner), "")
+    rx(
+        &format!(r#"(?<![A-Za-z0-9_-])({})(?![A-Za-z0-9_-])"#, inner),
+        "",
+    )
 });
-
 
 const TOKEN_BODY_CHARS: &str = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-.";
 
@@ -338,7 +393,14 @@ pub fn mask_secret(
         return placeholder.to_string();
     }
     let head_s: String = display.chars().take(head).collect();
-    let tail_s: String = display.chars().rev().take(tail).collect::<Vec<_>>().into_iter().rev().collect();
+    let tail_s: String = display
+        .chars()
+        .rev()
+        .take(tail)
+        .collect::<Vec<_>>()
+        .into_iter()
+        .rev()
+        .collect();
     format!("{}...{}", head_s, tail_s)
 }
 
@@ -380,7 +442,11 @@ fn is_word_start(s: &str, i: usize) -> bool {
     if cur.is_uppercase()
         && prev.is_uppercase()
         && i + cur.len_utf8() < s.len()
-        && s[i + cur.len_utf8()..].chars().next().unwrap().is_lowercase()
+        && s[i + cur.len_utf8()..]
+            .chars()
+            .next()
+            .unwrap()
+            .is_lowercase()
     {
         return true;
     }
@@ -581,12 +647,10 @@ where
         if (span.contains('\n') || span.contains('\r')) && search(&_PREFIX_RE, span) {
             continue;
         }
-        let span_ok = span.chars().all(|c| {
-            TOKEN_BODY_CHARS.contains(c) || is_control_char(c)
-        });
-        if span_ok
-            && (end_orig >= text.len() || text_bytes[end_orig] != b'=')
-        {
+        let span_ok = span
+            .chars()
+            .all(|c| TOKEN_BODY_CHARS.contains(c) || is_control_char(c));
+        if span_ok && (end_orig >= text.len() || text_bytes[end_orig] != b'=') {
             matches.push((start_orig, end_orig, mask_fn(body)));
         }
     }
@@ -646,8 +710,7 @@ pub fn redact_cdp_url(value: &str) -> String {
 pub const REDACTION_UNAVAILABLE: &str = "[redaction-unavailable]";
 
 static _EGRESS_BEARER_RE: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"(?i)\bBearer\s+(?:\[[^\]]+\]|[A-Za-z0-9._~+/-]{20,}=*)")
-        .expect("egress bearer re")
+    Regex::new(r"(?i)\bBearer\s+(?:\[[^\]]+\]|[A-Za-z0-9._~+/-]{20,}=*)").expect("egress bearer re")
 });
 
 /// The one scrub for text leaving the process for a remote reader.
@@ -812,7 +875,9 @@ pub fn redact_sensitive_text(
 
     // Private key blocks.
     if text.contains("BEGIN") && text.contains("-----") {
-        text = sub(&_PRIVATE_KEY_RE, &text, |_| "[REDACTED PRIVATE KEY]".to_string());
+        text = sub(&_PRIVATE_KEY_RE, &text, |_| {
+            "[REDACTED PRIVATE KEY]".to_string()
+        });
     }
 
     // DB connection strings + bare-token userinfo.
@@ -860,11 +925,25 @@ pub fn redact_sensitive_text(
             let chars: Vec<char> = phone.chars().collect();
             if chars.len() <= 8 {
                 let head: String = chars.iter().take(2).collect();
-                let tail: String = chars.iter().rev().take(2).collect::<Vec<_>>().into_iter().rev().collect();
+                let tail: String = chars
+                    .iter()
+                    .rev()
+                    .take(2)
+                    .collect::<Vec<_>>()
+                    .into_iter()
+                    .rev()
+                    .collect();
                 format!("{}****{}", head, tail)
             } else {
                 let head: String = chars.iter().take(4).collect();
-                let tail: String = chars.iter().rev().take(4).collect::<Vec<_>>().into_iter().rev().collect();
+                let tail: String = chars
+                    .iter()
+                    .rev()
+                    .take(4)
+                    .collect::<Vec<_>>()
+                    .into_iter()
+                    .rev()
+                    .collect();
                 format!("{}****{}", head, tail)
             }
         });
@@ -911,7 +990,13 @@ fn command_reads_env_file(command: Option<&str>) -> bool {
                 continue;
             }
             let arg = arg.trim_matches(['"', '\'']);
-            let basename = arg.rsplit('/').next().unwrap_or(arg).rsplit('\\').next().unwrap_or(arg);
+            let basename = arg
+                .rsplit('/')
+                .next()
+                .unwrap_or(arg)
+                .rsplit('\\')
+                .next()
+                .unwrap_or(arg);
             let basename_lower = basename.to_ascii_lowercase();
             if ENV_FILE_BASENAMES.contains(&basename_lower.as_str()) {
                 return true;
@@ -981,7 +1066,10 @@ mod tests {
     fn prefix_tokens_are_masked() {
         // Golden from upstream agent/redact.py @ b9aa928.
         assert_eq!(red("key sk-abcdefghijklmnop"), "key sk-abc...mnop");
-        assert_eq!(red("ghp_abcdefghijklmnopqrstuvwxyz token here"), "ghp_ab...wxyz token here");
+        assert_eq!(
+            red("ghp_abcdefghijklmnopqrstuvwxyz token here"),
+            "ghp_ab...wxyz token here"
+        );
         assert_eq!(red("sk-abc"), "sk-abc"); // too short for the prefix pattern
     }
 
@@ -989,11 +1077,17 @@ mod tests {
     fn env_assignments_are_masked() {
         // Golden from upstream agent/redact.py @ b9aa928. Note the prefix
         // pass runs first, so the ENV pass re-masks the truncated value.
-        assert_eq!(red("OPENAI_API_KEY=sk-super-secret-value-1234"), "OPENAI_API_KEY=***");
+        assert_eq!(
+            red("OPENAI_API_KEY=sk-super-secret-value-1234"),
+            "OPENAI_API_KEY=***"
+        );
         assert_eq!(red("openai_key=sk-abcdefghijklmnop"), "openai_key=***");
         assert_eq!(red("FOO_SECRET = bar"), "FOO_SECRET=***");
         assert_eq!(red("MYSQL_PASS=hunter2"), "MYSQL_PASS=***");
-        assert_eq!(red("spring.datasource.password=secretvalue"), "spring.datasource.password=***");
+        assert_eq!(
+            red("spring.datasource.password=secretvalue"),
+            "spring.datasource.password=***"
+        );
         // Prose keys are not credentials.
         assert_eq!(red("author=Smith"), "author=Smith");
         assert_eq!(red("press.secretary=done"), "press.secretary=done");
@@ -1010,10 +1104,7 @@ mod tests {
             red("Proxy-Authorization: Basic dXNlcjpwYXNz"),
             "Proxy-Authorization: Basic ***"
         );
-        assert_eq!(
-            red("x-api-key: abcdef1234567890"),
-            "x-api-key: ***"
-        );
+        assert_eq!(red("x-api-key: abcdef1234567890"), "x-api-key: ***");
     }
 
     #[test]
@@ -1034,7 +1125,10 @@ mod tests {
 
     #[test]
     fn json_fields_are_masked() {
-        assert_eq!(red(r#"{"apiKey": "sk-abcdefghijklmnop"}"#), r#"{"apiKey": "***"}"#);
+        assert_eq!(
+            red(r#"{"apiKey": "sk-abcdefghijklmnop"}"#),
+            r#"{"apiKey": "***"}"#
+        );
     }
 
     #[test]
@@ -1053,7 +1147,10 @@ mod tests {
 
     #[test]
     fn telegram_bot_token_masked() {
-        assert_eq!(red("bot12345678:AAHabcdefghijklmnopqrstuvwxyzABCDEFG"), "bot12345678:***");
+        assert_eq!(
+            red("bot12345678:AAHabcdefghijklmnopqrstuvwxyzABCDEFG"),
+            "bot12345678:***"
+        );
     }
 
     #[test]

@@ -22,7 +22,10 @@ fn empty_stays_empty() {
 /// The 20-char floor: plain English "bearer" never masks.
 #[test]
 fn short_bearer_word_is_untouched() {
-    assert_eq!(redact_for_egress("the bearer of bad news"), "the bearer of bad news");
+    assert_eq!(
+        redact_for_egress("the bearer of bad news"),
+        "the bearer of bad news"
+    );
     assert_eq!(redact_for_egress("Bearer short"), "Bearer short");
 }
 
@@ -38,5 +41,8 @@ fn long_opaque_bearer_folds_to_marker() {
 /// Already-masked residue folds to one marker (live oracle output).
 #[test]
 fn bracket_residue_folds_to_marker() {
-    assert_eq!(redact_for_egress("Bearer [redacted-jwt]"), "Bearer [redacted]");
+    assert_eq!(
+        redact_for_egress("Bearer [redacted-jwt]"),
+        "Bearer [redacted]"
+    );
 }

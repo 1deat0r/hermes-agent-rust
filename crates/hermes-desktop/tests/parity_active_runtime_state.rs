@@ -84,7 +84,10 @@ fn unusable_runtime_with_valid_marker_is_unusable() {
 #[test]
 fn cli_installed_runtime_launches_instead_of_bootstrapping() {
     let state = classify_active_runtime(&None, 1, true);
-    assert!(state.should_use_active_runtime, "a usable runtime must launch");
+    assert!(
+        state.should_use_active_runtime,
+        "a usable runtime must launch"
+    );
     assert!(!state.has_valid_marker, "marker provenance stays honest");
 }
 

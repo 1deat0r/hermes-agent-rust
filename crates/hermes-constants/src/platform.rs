@@ -146,17 +146,29 @@ pub(crate) fn is_container_with(probe: &dyn Probe) -> bool {
         1 => true,
         2 => false,
         _ => {
-            const CGROUP_MARKERS: [&str; 6] = ["docker", "podman", "/lxc/", "kubepods", "containerd", "crio"];
+            const CGROUP_MARKERS: [&str; 6] = [
+                "docker",
+                "podman",
+                "/lxc/",
+                "kubepods",
+                "containerd",
+                "crio",
+            ];
             let detected = if probe.file_exists(Path::new("/.dockerenv")) {
                 true
             } else if probe.file_exists(Path::new("/run/.containerenv")) {
                 true
-            } else if probe.env("KUBERNETES_SERVICE_HOST").is_some_and(|v| !v.is_empty()) {
+            } else if probe
+                .env("KUBERNETES_SERVICE_HOST")
+                .is_some_and(|v| !v.is_empty())
+            {
                 true
             } else if let Some(cgroup) = probe.read_file(Path::new("/proc/1/cgroup")) {
                 CGROUP_MARKERS.iter().any(|m| cgroup.contains(m))
             } else if let Some(mountinfo) = probe.read_file(Path::new("/proc/self/mountinfo")) {
-                ["kubepods", "containerd", "crio"].iter().any(|m| mountinfo.contains(m))
+                ["kubepods", "containerd", "crio"]
+                    .iter()
+                    .any(|m| mountinfo.contains(m))
             } else {
                 false
             };
@@ -208,7 +220,10 @@ mod tests {
         let _guard = PLATFORM_CACHE_TEST_LOCK.lock().unwrap();
         reset_platform_caches_for_tests();
         let p = FakeProbe::new();
-        p.add_file("/proc/version", "Linux version 5.15.153.1-microsoft-standard-WSL2");
+        p.add_file(
+            "/proc/version",
+            "Linux version 5.15.153.1-microsoft-standard-WSL2",
+        );
         assert!(is_wsl_with(&p));
     }
 
@@ -258,7 +273,10 @@ mod tests {
             windows_path_to_wsl("C:\\Users\\me\\work"),
             Some("/mnt/c/Users/me/work".to_string())
         );
-        assert_eq!(windows_path_to_wsl("D:/stuff"), Some("/mnt/d/stuff".to_string()));
+        assert_eq!(
+            windows_path_to_wsl("D:/stuff"),
+            Some("/mnt/d/stuff".to_string())
+        );
         assert_eq!(windows_path_to_wsl("/home/user"), None);
         assert_eq!(windows_path_to_wsl(""), None);
     }
@@ -293,7 +311,9 @@ use std::path::PathBuf;
 ///
 /// PARITY: hermes_constants.py `iter_hermes_node_dirs` (285–303).
 pub fn iter_hermes_node_dirs(home: Option<&std::path::Path>) -> Vec<PathBuf> {
-    let root = home.map(|p| p.to_path_buf()).unwrap_or_else(super::home::get_hermes_home);
+    let root = home
+        .map(|p| p.to_path_buf())
+        .unwrap_or_else(super::home::get_hermes_home);
     let dirs = root.join("node");
     let bin_dir = root.join("node").join("bin");
     if cfg!(windows) {
@@ -348,9 +368,15 @@ mod node_tests {
         #[cfg(not(windows))]
         assert_eq!(candidate_node_command_names("npm"), vec!["npm".to_string()]);
         #[cfg(not(windows))]
-        assert_eq!(candidate_node_command_names("/usr/bin/node"), vec!["node".to_string()]);
+        assert_eq!(
+            candidate_node_command_names("/usr/bin/node"),
+            vec!["node".to_string()]
+        );
         #[cfg(not(windows))]
-        assert_eq!(candidate_node_command_names("npm.cmd"), vec!["npm.cmd".to_string()]);
+        assert_eq!(
+            candidate_node_command_names("npm.cmd"),
+            vec!["npm.cmd".to_string()]
+        );
     }
 
     #[test]
@@ -360,11 +386,19 @@ mod node_tests {
         if cfg!(windows) {
             assert_eq!(
                 candidate_node_command_names("npm"),
-                vec!["npm.cmd".to_string(), "npm.exe".to_string(), "npm".to_string()]
+                vec![
+                    "npm.cmd".to_string(),
+                    "npm.exe".to_string(),
+                    "npm".to_string()
+                ]
             );
             assert_eq!(
                 candidate_node_command_names("npx"),
-                vec!["npx.cmd".to_string(), "npx.exe".to_string(), "npx".to_string()]
+                vec![
+                    "npx.cmd".to_string(),
+                    "npx.exe".to_string(),
+                    "npx".to_string()
+                ]
             );
             assert_eq!(
                 candidate_node_command_names("node"),
@@ -372,7 +406,11 @@ mod node_tests {
             );
             assert_eq!(
                 candidate_node_command_names("custom"),
-                vec!["custom.cmd".to_string(), "custom.exe".to_string(), "custom".to_string()]
+                vec![
+                    "custom.cmd".to_string(),
+                    "custom.exe".to_string(),
+                    "custom".to_string()
+                ]
             );
         }
     }

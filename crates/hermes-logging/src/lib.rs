@@ -21,8 +21,8 @@
 //! preserved across the port.
 
 pub mod queue;
-pub mod redact;
 pub mod record;
+pub mod redact;
 pub mod rotating;
 pub mod setup;
 
@@ -30,15 +30,18 @@ pub use queue::{
     drain_log_queue, flush_log_queue, register_queued_handler, register_queued_target,
     reset_queued_handlers, rotating_file_handlers,
 };
-pub use redact::{redact_cdp_url, redact_for_egress, redact_sensitive_text, redact_terminal_output, is_env_dump_command, mask_secret, RedactingFormatter, REDACTION_UNAVAILABLE};
 pub use record::{
     clear_session_context, install_redactor, set_session_context, Level, LogRecord, LogTarget,
     NoopRedactor, Redactor, LOG_FORMAT, LOG_FORMAT_VERBOSE,
 };
+pub use redact::{
+    is_env_dump_command, mask_secret, redact_cdp_url, redact_for_egress, redact_sensitive_text,
+    redact_terminal_output, RedactingFormatter, REDACTION_UNAVAILABLE,
+};
 pub use rotating::{ComponentFilter, RotatingHandler};
 pub use setup::{
-    add_rotating_handler, read_logging_config, setup_logging, setup_verbose_logging,
-    SetupOptions, COMPONENT_PREFIXES, NOISY_LOGGERS,
+    add_rotating_handler, read_logging_config, setup_logging, setup_verbose_logging, SetupOptions,
+    COMPONENT_PREFIXES, NOISY_LOGGERS,
 };
 
 /// Log a record at a specific level/target (the worker applies filtering).

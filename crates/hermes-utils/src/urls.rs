@@ -25,7 +25,12 @@ pub fn base_url_hostname(base_url: &str) -> String {
         format!("https://{}", raw)
     };
     match Url::parse(&with_scheme) {
-        Ok(u) => u.host_str().unwrap_or("").to_lowercase().trim_end_matches('.').to_string(),
+        Ok(u) => u
+            .host_str()
+            .unwrap_or("")
+            .to_lowercase()
+            .trim_end_matches('.')
+            .to_string(),
         Err(_) => String::new(),
     }
 }
@@ -38,7 +43,11 @@ pub fn base_url_host_matches(base_url: &str, domain: &str) -> bool {
     if hostname.is_empty() {
         return false;
     }
-    let domain = domain.trim().to_lowercase().trim_end_matches('.').to_string();
+    let domain = domain
+        .trim()
+        .to_lowercase()
+        .trim_end_matches('.')
+        .to_string();
     if domain.is_empty() {
         return false;
     }
@@ -73,8 +82,14 @@ mod tests {
 
     #[test]
     fn hostname_examples() {
-        assert_eq!(base_url_hostname("https://api.openai.com/v1"), "api.openai.com");
-        assert_eq!(base_url_hostname("https://api.openai.com.example/v1"), "api.openai.com.example");
+        assert_eq!(
+            base_url_hostname("https://api.openai.com/v1"),
+            "api.openai.com"
+        );
+        assert_eq!(
+            base_url_hostname("https://api.openai.com.example/v1"),
+            "api.openai.com.example"
+        );
         assert_eq!(base_url_hostname("api.moonshot.ai/v1"), "api.moonshot.ai");
         assert_eq!(base_url_hostname(""), "");
         assert_eq!(base_url_hostname("   "), "");
@@ -82,25 +97,53 @@ mod tests {
 
     #[test]
     fn host_matches() {
-        assert!(base_url_host_matches("https://api.moonshot.ai/v1", "moonshot.ai"));
+        assert!(base_url_host_matches(
+            "https://api.moonshot.ai/v1",
+            "moonshot.ai"
+        ));
         assert!(base_url_host_matches("https://moonshot.ai", "moonshot.ai"));
-        assert!(!base_url_host_matches("https://evil.com/moonshot.ai/v1", "moonshot.ai"));
-        assert!(!base_url_host_matches("https://moonshot.ai.evil/v1", "moonshot.ai"));
+        assert!(!base_url_host_matches(
+            "https://evil.com/moonshot.ai/v1",
+            "moonshot.ai"
+        ));
+        assert!(!base_url_host_matches(
+            "https://moonshot.ai.evil/v1",
+            "moonshot.ai"
+        ));
         assert!(!base_url_host_matches("", "moonshot.ai"));
     }
 
     #[test]
     fn max_completion_token_families() {
         for m in [
-            "gpt-4o", "gpt-4o-mini", "gpt-4.1", "gpt-4.1-nano", "gpt-5", "gpt-5.4",
-            "o1", "o1-preview", "o3", "o3-mini", "o4-mini", "openai/gpt-5.4",
+            "gpt-4o",
+            "gpt-4o-mini",
+            "gpt-4.1",
+            "gpt-4.1-nano",
+            "gpt-5",
+            "gpt-5.4",
+            "o1",
+            "o1-preview",
+            "o3",
+            "o3-mini",
+            "o4-mini",
+            "openai/gpt-5.4",
         ] {
             assert!(model_forces_max_completion_tokens(m), "{}", m);
         }
-        for m in ["gpt-3.5-turbo", "gpt-4", "claude-opus-4.5", "", "anthropic/claude-sonnet-4-5"] {
+        for m in [
+            "gpt-3.5-turbo",
+            "gpt-4",
+            "claude-opus-4.5",
+            "",
+            "anthropic/claude-sonnet-4-5",
+        ] {
             assert!(!model_forces_max_completion_tokens(m), "{}", m);
         }
         // Upstream uses startswith, so "o1x" DOES match (Python str.startswith).
-        assert!(model_forces_max_completion_tokens("o1x"), "upstream startswith semantics");
+        assert!(
+            model_forces_max_completion_tokens("o1x"),
+            "upstream startswith semantics"
+        );
     }
 }

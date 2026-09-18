@@ -17,10 +17,7 @@ pub fn register(ctx: &dyn PluginCtx) {
     ctx.register_platform(PlatformRegistration {
         name: PLATFORM_NAME.to_string(),
         label: "Feishu / Lark".to_string(),
-        required_env: vec![
-            "FEISHU_APP_ID".to_string(),
-            "FEISHU_APP_SECRET".to_string(),
-        ],
+        required_env: vec!["FEISHU_APP_ID".to_string(), "FEISHU_APP_SECRET".to_string()],
         install_hint: "Run `hermes setup` to install Feishu support.".to_string(),
     });
 }

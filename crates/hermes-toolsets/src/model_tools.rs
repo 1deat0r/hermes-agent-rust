@@ -33,34 +33,45 @@ use once_cell::sync::Lazy;
 use regex::Regex;
 use serde_json::{json, Map, Value};
 
+use crate::{
+    bundle_non_core_tools, get_all_toolsets, get_toolset, resolve_toolset, validate_toolset,
+};
 use hermes_tools::registry::registry;
-use crate::{bundle_non_core_tools, get_all_toolsets, get_toolset, resolve_toolset, validate_toolset};
 
 /// Legacy `_tools`-suffixed toolset names -> tool name lists.
-pub static LEGACY_TOOLSET_MAP: Lazy<HashMap<&'static str, Vec<&'static str>>> =
-    Lazy::new(|| {
-        let mut m = HashMap::new();
-        m.insert("web_tools", vec!["web_search", "web_extract"]);
-        m.insert("terminal_tools", vec!["terminal"]);
-        m.insert("vision_tools", vec!["vision_analyze"]);
-        m.insert("image_tools", vec!["image_generate"]);
-        m.insert("skills_tools", vec!["skills_list", "skill_view", "skill_manage"]);
-        m.insert(
-            "browser_tools",
-            vec![
-                "browser_navigate", "browser_snapshot", "browser_click", "browser_type",
-                "browser_scroll", "browser_back", "browser_press", "browser_get_images",
-                "browser_vision", "browser_console",
-            ],
-        );
-        m.insert("cronjob_tools", vec!["cronjob"]);
-        m.insert(
-            "file_tools",
-            vec!["read_file", "write_file", "patch", "search_files"],
-        );
-        m.insert("tts_tools", vec!["text_to_speech"]);
-        m
-    });
+pub static LEGACY_TOOLSET_MAP: Lazy<HashMap<&'static str, Vec<&'static str>>> = Lazy::new(|| {
+    let mut m = HashMap::new();
+    m.insert("web_tools", vec!["web_search", "web_extract"]);
+    m.insert("terminal_tools", vec!["terminal"]);
+    m.insert("vision_tools", vec!["vision_analyze"]);
+    m.insert("image_tools", vec!["image_generate"]);
+    m.insert(
+        "skills_tools",
+        vec!["skills_list", "skill_view", "skill_manage"],
+    );
+    m.insert(
+        "browser_tools",
+        vec![
+            "browser_navigate",
+            "browser_snapshot",
+            "browser_click",
+            "browser_type",
+            "browser_scroll",
+            "browser_back",
+            "browser_press",
+            "browser_get_images",
+            "browser_vision",
+            "browser_console",
+        ],
+    );
+    m.insert("cronjob_tools", vec!["cronjob"]);
+    m.insert(
+        "file_tools",
+        vec!["read_file", "write_file", "patch", "search_files"],
+    );
+    m.insert("tts_tools", vec!["text_to_speech"]);
+    m
+});
 
 /// Resolved tool names from the last `get_tool_definitions()` call.
 pub fn last_resolved_tool_names() -> Vec<String> {
@@ -70,7 +81,11 @@ pub fn last_resolved_tool_names() -> Vec<String> {
 fn set_last_resolved(names: &[Value]) {
     let list: Vec<String> = names
         .iter()
-        .filter_map(|t| t.get("function").and_then(|f| f.get("name")).and_then(Value::as_str))
+        .filter_map(|t| {
+            t.get("function")
+                .and_then(|f| f.get("name"))
+                .and_then(Value::as_str)
+        })
         .map(|s| s.to_string())
         .collect();
     *last_resolved().lock().expect("last resolved lock") = list;
@@ -164,7 +179,11 @@ pub fn get_tool_definitions(
         if let Some(cached) = cache.get(&key_bytes) {
             *last_resolved().lock().expect("last resolved") = cached
                 .iter()
-                .filter_map(|t| t.get("function").and_then(|f| f.get("name")).and_then(Value::as_str))
+                .filter_map(|t| {
+                    t.get("function")
+                        .and_then(|f| f.get("name"))
+                        .and_then(Value::as_str)
+                })
                 .map(|s| s.to_string())
                 .collect();
             return cached;
@@ -214,7 +233,11 @@ pub fn compute_tool_definitions(
 
     if let Some(enabled) = enabled_toolsets {
         let mut effective: Vec<String> = enabled.to_vec();
-        if kanban_task_env && !delegated_child && dispatcher_owned_worker && !effective.contains(&"kanban".to_string()) {
+        if kanban_task_env
+            && !delegated_child
+            && dispatcher_owned_worker
+            && !effective.contains(&"kanban".to_string())
+        {
             effective.push("kanban".to_string());
         }
         for toolset_name in effective {
@@ -225,7 +248,11 @@ pub fn compute_tool_definitions(
                     eprintln!(
                         "✅ Enabled toolset '{}': {}",
                         toolset_name,
-                        if resolved.is_empty() { "no tools".into() } else { resolved.join(", ") }
+                        if resolved.is_empty() {
+                            "no tools".into()
+                        } else {
+                            resolved.join(", ")
+                        }
                     );
                 }
             } else if let Some(legacy) = LEGACY_TOOLSET_MAP.get(toolset_name.as_str()) {
@@ -264,9 +291,7 @@ pub fn compute_tool_definitions(
                     .and_then(|v| v.as_bool())
                     .unwrap_or(false);
                 let to_remove: Vec<String> = if is_bundle || posture {
-                    bundle_non_core_tools(toolset_name)
-                        .into_iter()
-                        .collect()
+                    bundle_non_core_tools(toolset_name).into_iter().collect()
                 } else {
                     resolve_toolset(toolset_name, None, true)
                 };
@@ -280,14 +305,22 @@ pub fn compute_tool_definitions(
                     eprintln!(
                         "🚫 Disabled toolset '{}': {}",
                         toolset_name,
-                        if resolved_sorted.is_empty() { "no tools".into() } else { resolved_sorted.join(", ") }
+                        if resolved_sorted.is_empty() {
+                            "no tools".into()
+                        } else {
+                            resolved_sorted.join(", ")
+                        }
                     );
                 }
             } else if let Some(legacy) = LEGACY_TOOLSET_MAP.get(toolset_name.as_str()) {
                 let legacy_owned: Vec<String> = legacy.iter().map(|s| s.to_string()).collect();
                 retain_not_in(&mut tools_to_include, &legacy_owned);
                 if !quiet_mode {
-                    eprintln!("🚫 Disabled legacy toolset '{}': {}", toolset_name, legacy_owned.join(", "));
+                    eprintln!(
+                        "🚫 Disabled legacy toolset '{}': {}",
+                        toolset_name,
+                        legacy_owned.join(", ")
+                    );
                 }
             } else if !quiet_mode {
                 eprintln!("⚠️  Unknown toolset: {toolset_name}");
@@ -302,7 +335,11 @@ pub fn compute_tool_definitions(
     // browser_navigate cross-reference strip when web tools are missing.
     let available_names: Vec<String> = filtered
         .iter()
-        .filter_map(|t| t.get("function").and_then(|f| f.get("name")).and_then(Value::as_str))
+        .filter_map(|t| {
+            t.get("function")
+                .and_then(|f| f.get("name"))
+                .and_then(Value::as_str)
+        })
         .map(|s| s.to_string())
         .collect();
     if available_names.iter().any(|n| n == "browser_navigate") {
@@ -311,7 +348,12 @@ pub fn compute_tool_definitions(
             .any(|n| n == "web_search" || n == "web_extract");
         if !web_available {
             for td in filtered.iter_mut() {
-                if td.get("function").and_then(|f| f.get("name")).and_then(Value::as_str) == Some("browser_navigate") {
+                if td
+                    .get("function")
+                    .and_then(|f| f.get("name"))
+                    .and_then(Value::as_str)
+                    == Some("browser_navigate")
+                {
                     let mut fn_obj = td.get("function").cloned().unwrap_or(Value::Null);
                     if let Some(obj) = fn_obj.as_object_mut() {
                         if let Some(Value::String(desc)) = obj.get("description") {
@@ -341,9 +383,17 @@ pub fn compute_tool_definitions(
         } else {
             let names: Vec<&str> = filtered
                 .iter()
-                .filter_map(|t| t.get("function").and_then(|f| f.get("name")).and_then(Value::as_str))
+                .filter_map(|t| {
+                    t.get("function")
+                        .and_then(|f| f.get("name"))
+                        .and_then(Value::as_str)
+                })
                 .collect();
-            eprintln!("🛠️  Final tool selection ({} tools): {}", filtered.len(), names.join(", "));
+            eprintln!(
+                "🛠️  Final tool selection ({} tools): {}",
+                filtered.len(),
+                names.join(", ")
+            );
         }
     }
     filtered
@@ -364,18 +414,17 @@ fn retain_not_in(dst: &mut Vec<String>, remove: &[String]) {
 // ── tool error sanitization ───────────────────────────────────────────────
 
 static TOOL_ERROR_ROLE_TAG_RE: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"(?i)</?(?:tool_call|function_call|result|response|output|input|system|assistant|user)>")
-        .expect("role tag re")
+    Regex::new(
+        r"(?i)</?(?:tool_call|function_call|result|response|output|input|system|assistant|user)>",
+    )
+    .expect("role tag re")
 });
-static TOOL_ERROR_FENCE_OPEN_RE: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"(?m)^\s*```(?:json|xml|html|markdown)?\s*").expect("fence open re")
-});
-static TOOL_ERROR_FENCE_CLOSE_RE: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"(?m)\s*```\s*$").expect("fence close re")
-});
-static TOOL_ERROR_CDATA_RE: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"(?s)<!\[CDATA\[.*?\]\]>").expect("cdata re")
-});
+static TOOL_ERROR_FENCE_OPEN_RE: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"(?m)^\s*```(?:json|xml|html|markdown)?\s*").expect("fence open re"));
+static TOOL_ERROR_FENCE_CLOSE_RE: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"(?m)\s*```\s*$").expect("fence close re"));
+static TOOL_ERROR_CDATA_RE: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"(?s)<!\[CDATA\[.*?\]\]>").expect("cdata re"));
 const TOOL_ERROR_MAX_LEN: usize = 2000;
 
 /// Strip structural framing tokens from a tool error before showing it to
@@ -384,9 +433,15 @@ pub fn sanitize_tool_error(error_msg: &str) -> String {
     if error_msg.is_empty() {
         return "[TOOL_ERROR] ".to_string();
     }
-    let mut sanitized = TOOL_ERROR_ROLE_TAG_RE.replace_all(error_msg, "").into_owned();
-    sanitized = TOOL_ERROR_FENCE_OPEN_RE.replace_all(&sanitized, "").into_owned();
-    sanitized = TOOL_ERROR_FENCE_CLOSE_RE.replace_all(&sanitized, "").into_owned();
+    let mut sanitized = TOOL_ERROR_ROLE_TAG_RE
+        .replace_all(error_msg, "")
+        .into_owned();
+    sanitized = TOOL_ERROR_FENCE_OPEN_RE
+        .replace_all(&sanitized, "")
+        .into_owned();
+    sanitized = TOOL_ERROR_FENCE_CLOSE_RE
+        .replace_all(&sanitized, "")
+        .into_owned();
     sanitized = TOOL_ERROR_CDATA_RE.replace_all(&sanitized, "").into_owned();
     if sanitized.chars().count() > TOOL_ERROR_MAX_LEN {
         let truncated: String = sanitized.chars().take(TOOL_ERROR_MAX_LEN - 3).collect();
@@ -424,7 +479,9 @@ pub fn coerce_tool_args(tool_name: &str, args: Value) -> Value {
 
     let keys: Vec<String> = args.keys().cloned().collect();
     for key in keys {
-        let Some(prop_schema) = properties.get(&key) else { continue };
+        let Some(prop_schema) = properties.get(&key) else {
+            continue;
+        };
         let expected = prop_schema.get("type").cloned();
         let value = args.get(&key).cloned().unwrap_or(Value::Null);
         let is_str = matches!(value, Value::String(_));
@@ -495,7 +552,9 @@ pub fn coerce_tool_args(tool_name: &str, args: Value) -> Value {
 
 /// True when *schema* permits a value of JSON type `kind` (array/object).
 fn schema_accepts_kind(schema: &Value, kind: &str) -> bool {
-    let Some(obj) = schema.as_object() else { return false };
+    let Some(obj) = schema.as_object() else {
+        return false;
+    };
     match obj.get("type") {
         Some(Value::String(s)) if s == kind => return true,
         Some(Value::Array(a)) if a.iter().any(|v| v.as_str() == Some(kind)) => return true,
@@ -627,7 +686,9 @@ fn same_json_string(a: &Value, b: &Value) -> bool {
 /// True when a JSON Schema fragment explicitly permits null.
 fn schema_allows_null(schema: Option<&Value>) -> bool {
     let Some(schema) = schema else { return false };
-    let Some(obj) = schema.as_object() else { return false };
+    let Some(obj) = schema.as_object() else {
+        return false;
+    };
     if let Some(Value::String(s)) = obj.get("type") {
         if s == "null" {
             return true;

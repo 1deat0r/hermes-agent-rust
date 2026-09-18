@@ -183,7 +183,9 @@ pub fn register_queued_target(target: Arc<dyn LogTarget>) {
 /// PARITY: `rotating_file_handlers` (694–700).
 pub fn rotating_file_handlers() -> Vec<Arc<RotatingHandler>> {
     let q = queue();
-    q.as_ref().map(|s| s.file_handlers.clone()).unwrap_or_default()
+    q.as_ref()
+        .map(|s| s.file_handlers.clone())
+        .unwrap_or_default()
 }
 
 /// Tear down the async queue + listener (test-isolation helper).

@@ -48,7 +48,12 @@ fn prose_body_does_not_glue_onto_the_next_heading() {
 
 #[test]
 fn token_streamed_reasoning_is_untouched() {
-    let deltas = ["Looking at", " the session", " logs, I see", " one bold word."];
+    let deltas = [
+        "Looking at",
+        " the session",
+        " logs, I see",
+        " one bold word.",
+    ];
     let values: Vec<serde_json::Value> = deltas.iter().map(|d| s(d)).collect();
     assert_eq!(stream(&values), deltas.concat());
 }
@@ -102,7 +107,10 @@ fn any_shaped_deltas_flatten_before_boundary_check() {
     );
     // Seam edge (no Python shape: Python None short-circuits to ""): a JSON
     // null value falls to the `str(content)` tail → "null".
-    assert_eq!(separate_glued_reasoning_blocks("prev", &json!(null)), "null");
+    assert_eq!(
+        separate_glued_reasoning_blocks("prev", &json!(null)),
+        "null"
+    );
     assert_eq!(separate_glued_reasoning_blocks("prev", &json!(42)), "42");
 }
 

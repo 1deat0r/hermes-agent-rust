@@ -2,7 +2,9 @@
 //! tests/tools/test_todo_tool.py + tests/tools/test_todo_tool_type_coercion.py
 //! @ b9aa928 (registry registration cases deferred until the agent loop).
 
-use hermes_tools::todo_tool::{check_todo_requirements, todo_tool, TodoStore, MAX_TODO_CONTENT_CHARS, MAX_TODO_ITEMS};
+use hermes_tools::todo_tool::{
+    check_todo_requirements, todo_tool, TodoStore, MAX_TODO_CONTENT_CHARS, MAX_TODO_ITEMS,
+};
 use serde_json::{json, Value};
 
 fn item(id: &str, content: &str, status: &str) -> Value {
@@ -12,7 +14,10 @@ fn item(id: &str, content: &str, status: &str) -> Value {
 #[test]
 fn write_replaces_list() {
     let mut store = TodoStore::new();
-    let items = vec![item("1", "First task", "pending"), item("2", "Second task", "in_progress")];
+    let items = vec![
+        item("1", "First task", "pending"),
+        item("2", "Second task", "in_progress"),
+    ];
     let result = store.write(&items, false);
     assert_eq!(result.len(), 2);
     assert_eq!(result[0].id, "1");
@@ -22,11 +27,14 @@ fn write_replaces_list() {
 #[test]
 fn write_deduplicates_duplicate_ids() {
     let mut store = TodoStore::new();
-    let result = store.write(&[
-        item("1", "First version", "pending"),
-        item("2", "Other task", "pending"),
-        item("1", "Latest version", "in_progress"),
-    ], false);
+    let result = store.write(
+        &[
+            item("1", "First version", "pending"),
+            item("2", "Other task", "pending"),
+            item("1", "Latest version", "in_progress"),
+        ],
+        false,
+    );
     assert_eq!(result.len(), 2);
     assert_eq!(result[0].id, "2");
     assert_eq!(result[1].id, "1");
@@ -56,11 +64,14 @@ fn format_for_injection_empty_returns_none() {
 #[test]
 fn format_for_injection_has_markers() {
     let mut store = TodoStore::new();
-    store.write(&[
-        item("1", "Do thing", "completed"),
-        item("2", "Next", "pending"),
-        item("3", "Working", "in_progress"),
-    ], false);
+    store.write(
+        &[
+            item("1", "Do thing", "completed"),
+            item("2", "Next", "pending"),
+            item("3", "Working", "in_progress"),
+        ],
+        false,
+    );
     let text = store.format_for_injection().unwrap();
     assert!(!text.contains("[x]"));
     assert!(!text.contains("Do thing"));
@@ -127,7 +138,9 @@ fn injection_block_is_bounded() {
 #[test]
 fn item_count_is_bounded() {
     let mut store = TodoStore::new();
-    let many: Vec<Value> = (0..5000).map(|i| item(&i.to_string(), &format!("task {i}"), "pending")).collect();
+    let many: Vec<Value> = (0..5000)
+        .map(|i| item(&i.to_string(), &format!("task {i}"), "pending"))
+        .collect();
     store.write(&many, false);
     assert_eq!(store.read().len(), MAX_TODO_ITEMS);
 }
@@ -135,10 +148,13 @@ fn item_count_is_bounded() {
 #[test]
 fn normal_list_is_unchanged() {
     let mut store = TodoStore::new();
-    store.write(&[
-        item("1", "write the report", "in_progress"),
-        item("2", "review PR", "pending"),
-    ], false);
+    store.write(
+        &[
+            item("1", "write the report", "in_progress"),
+            item("2", "review PR", "pending"),
+        ],
+        false,
+    );
     let items = store.read();
     assert_eq!(items[0].content, "write the report");
     assert_eq!(items[1].content, "review PR");
@@ -155,7 +171,12 @@ fn json_string_is_parsed_into_list() {
         item("t2", "Do B", "in_progress"),
     ])
     .unwrap();
-    let result: Value = serde_json::from_str(&todo_tool(Some(Value::String(todos_str)), false, Some(&mut store))).unwrap();
+    let result: Value = serde_json::from_str(&todo_tool(
+        Some(Value::String(todos_str)),
+        false,
+        Some(&mut store),
+    ))
+    .unwrap();
     assert!(result.get("error").is_none());
     assert_eq!(result["summary"]["total"], 2);
     assert_eq!(result["todos"][0]["id"], "t1");
@@ -165,7 +186,8 @@ fn json_string_is_parsed_into_list() {
 #[test]
 fn non_list_non_string_returns_error() {
     let mut store = TodoStore::new();
-    let result: Value = serde_json::from_str(&todo_tool(Some(json!(42)), false, Some(&mut store))).unwrap();
+    let result: Value =
+        serde_json::from_str(&todo_tool(Some(json!(42)), false, Some(&mut store))).unwrap();
     assert!(result.get("error").is_some());
 }
 
@@ -183,7 +205,9 @@ fn string_item_in_list_does_not_crash() {
 fn non_dict_items_via_tool() {
     let mut store = TodoStore::new();
     let result: Value = serde_json::from_str(&todo_tool(
-        Some(json!(["bad", "also bad"])), false, Some(&mut store),
+        Some(json!(["bad", "also bad"])),
+        false,
+        Some(&mut store),
     ))
     .unwrap();
     assert!(result.get("error").is_none());
@@ -211,10 +235,10 @@ fn normal_write_and_read() {
 #[test]
 fn dedup_still_works() {
     let mut store = TodoStore::new();
-    let result = store.write(&[
-        item("1", "v1", "pending"),
-        item("1", "v2", "in_progress"),
-    ], false);
+    let result = store.write(
+        &[item("1", "v1", "pending"), item("1", "v2", "in_progress")],
+        false,
+    );
     assert_eq!(result.len(), 1);
     assert_eq!(result[0].content, "v2");
 }
@@ -236,10 +260,8 @@ fn check_requirements_true() {
 #[test]
 fn schema_golden_parity() {
     let schema = hermes_tools::todo_tool::todo_schema();
-    let golden: Value = serde_json::from_str(
-        include_str!("../../../upstream/golden_todo_schema.json"),
-    )
-    .unwrap();
+    let golden: Value =
+        serde_json::from_str(include_str!("../../../upstream/golden_todo_schema.json")).unwrap();
     assert_eq!(*schema, golden);
     assert_eq!(golden["name"], "todo");
 }

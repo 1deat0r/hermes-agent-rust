@@ -57,10 +57,8 @@ pub fn separate_glued_reasoning_blocks(previous: &str, delta: &Value) -> String 
 /// Detail entry types whose consecutive fragments are one logical block.
 ///
 /// PARITY: `_MERGEABLE_DETAIL_TEXT_KEYS` (upstream line 35).
-const MERGEABLE_DETAIL_TEXT_KEYS: [(&str, &str); 2] = [
-    ("reasoning.text", "text"),
-    ("reasoning.summary", "summary"),
-];
+const MERGEABLE_DETAIL_TEXT_KEYS: [(&str, &str); 2] =
+    [("reasoning.text", "text"), ("reasoning.summary", "summary")];
 
 /// Keys a later fragment backfills when the first omitted them.
 ///
@@ -96,13 +94,9 @@ pub fn append_streamed_reasoning_detail(details_acc: &mut Vec<Map<String, Value>
             );
             last.insert(key.to_string(), Value::String(merged));
             for backfill in BACKFILL_DETAIL_KEYS {
-                let last_empty = last
-                    .get(backfill)
-                    .is_none_or(|v| v.is_null() || v == "");
+                let last_empty = last.get(backfill).is_none_or(|v| v.is_null() || v == "");
                 let incoming = detail.get(backfill);
-                if last_empty
-                    && incoming.is_some_and(|v| !v.is_null() && v != "")
-                {
+                if last_empty && incoming.is_some_and(|v| !v.is_null() && v != "") {
                     last.insert(backfill.to_string(), incoming.cloned().unwrap());
                 }
             }

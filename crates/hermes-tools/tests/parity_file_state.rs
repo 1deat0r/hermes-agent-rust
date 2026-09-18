@@ -5,7 +5,9 @@
 
 use std::sync::Mutex;
 
-use hermes_tools::file_state::{check_stale, known_reads, note_write, record_read, writes_since, FileStateRegistry};
+use hermes_tools::file_state::{
+    check_stale, known_reads, note_write, record_read, writes_since, FileStateRegistry,
+};
 
 static FILE_CTR: Mutex<u64> = Mutex::new(0);
 
@@ -26,7 +28,11 @@ fn mtime_ns(path: &str) -> Option<i64> {
     std::fs::metadata(path)
         .ok()
         .and_then(|m| m.modified().ok())
-        .map(|t| t.duration_since(std::time::UNIX_EPOCH).map(|d| d.as_nanos() as i64).unwrap_or(0))
+        .map(|t| {
+            t.duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_nanos() as i64)
+                .unwrap_or(0)
+        })
 }
 
 fn touch_mtime(path: &str) {

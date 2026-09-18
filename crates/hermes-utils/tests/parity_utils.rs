@@ -3,8 +3,8 @@
 //! upstream module).
 
 use hermes_utils::{
-    base_url_host_matches, base_url_hostname, is_truthy,
-    model_forces_max_completion_tokens, normalize_proxy_url, TruthyValue,
+    base_url_host_matches, base_url_hostname, is_truthy, model_forces_max_completion_tokens,
+    normalize_proxy_url, TruthyValue,
 };
 use serde_json::Value;
 
@@ -93,7 +93,12 @@ fn normalize_proxy_url_matches_upstream_golden() {
         };
         let got = normalize_proxy_url(input);
         match want {
-            Value::Null => assert!(got.is_none(), "record {}: expected None, got {:?}", rec, got),
+            Value::Null => assert!(
+                got.is_none(),
+                "record {}: expected None, got {:?}",
+                rec,
+                got
+            ),
             Value::String(s) => assert_eq!(got.as_deref(), Some(s.as_str()), "record {}", rec),
             other => panic!("unexpected golden shape for {}: {}", rec, other),
         }

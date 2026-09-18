@@ -50,7 +50,7 @@ impl SessionDB {
                 .query_row(
                     "SELECT id FROM messages WHERE session_id = ? AND role = ? \
                      AND content = ? AND active = 1 ORDER BY id DESC LIMIT 1",
-                    rusqlite::params![sid, role, encoded, ],
+                    rusqlite::params![sid, role, encoded,],
                     |r| r.get(0),
                 )
                 .optional()?;
@@ -109,7 +109,8 @@ impl SessionDB {
             let mut reactions: Vec<Value> = existing
                 .iter()
                 .filter(|r| {
-                    !(r.is_object() && r.get("author").and_then(Value::as_str) == Some(author.as_str()))
+                    !(r.is_object()
+                        && r.get("author").and_then(Value::as_str) == Some(author.as_str()))
                 })
                 .cloned()
                 .collect();
@@ -135,7 +136,10 @@ impl SessionDB {
             if reactions.is_empty() {
                 meta.remove(REACTIONS_METADATA_KEY);
             } else {
-                meta.insert(REACTIONS_METADATA_KEY.to_string(), Value::Array(reactions.clone()));
+                meta.insert(
+                    REACTIONS_METADATA_KEY.to_string(),
+                    Value::Array(reactions.clone()),
+                );
             }
             let stored = if meta.is_empty() {
                 None
@@ -188,10 +192,7 @@ impl SessionDB {
             None => Vec::new(),
         };
         Ok(Value::Array(
-            reactions
-                .into_iter()
-                .filter(|r| r.is_object())
-                .collect(),
+            reactions.into_iter().filter(|r| r.is_object()).collect(),
         ))
     }
 
@@ -232,7 +233,9 @@ impl SessionDB {
 
             let mut pending: Vec<Value> = Vec::new();
             for (row_id, role, content_raw, metadata_raw) in rows {
-                let Some(metadata_raw) = metadata_raw else { continue };
+                let Some(metadata_raw) = metadata_raw else {
+                    continue;
+                };
                 let Some(mut meta) = decode_display_metadata(Some(&metadata_raw)) else {
                     continue;
                 };
@@ -244,15 +247,19 @@ impl SessionDB {
                 };
                 let mut changed = false;
                 for reaction in reactions.iter_mut() {
-                    let is_mine = reaction
-                        .get("author")
-                        .and_then(Value::as_str)
-                        == Some(author.as_str());
-                    let seen = reaction.get("seen").and_then(Value::as_bool).unwrap_or(false);
+                    let is_mine =
+                        reaction.get("author").and_then(Value::as_str) == Some(author.as_str());
+                    let seen = reaction
+                        .get("seen")
+                        .and_then(Value::as_bool)
+                        .unwrap_or(false);
                     if !reaction.is_object() || !is_mine || seen {
                         continue;
                     }
-                    reaction.as_object_mut().unwrap().insert("seen".into(), Value::Bool(true));
+                    reaction
+                        .as_object_mut()
+                        .unwrap()
+                        .insert("seen".into(), Value::Bool(true));
                     changed = true;
                     let content = decode_content(Some(content_raw.clone()));
                     let text = match content {

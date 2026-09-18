@@ -7,6 +7,8 @@
 //! dict); `canonical_model_variants` is public here because it is pure and
 //! fully tested.
 
+use once_cell::sync::Lazy;
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 
 /// Valid effort levels (upstream tuple order matters for docs/tests).
@@ -36,7 +38,10 @@ pub struct ReasoningConfig {
 pub fn parse_reasoning_effort<'a>(effort: impl Into<EffortInput<'a>>) -> Option<ReasoningConfig> {
     let input = effort.into();
     match input {
-        EffortInput::Bool(false) => Some(ReasoningConfig { enabled: false, effort: None }),
+        EffortInput::Bool(false) => Some(ReasoningConfig {
+            enabled: false,
+            effort: None,
+        }),
         EffortInput::Bool(true) | EffortInput::None => None,
         EffortInput::Str(s) => {
             if s.trim().is_empty() {
@@ -44,10 +49,16 @@ pub fn parse_reasoning_effort<'a>(effort: impl Into<EffortInput<'a>>) -> Option<
             }
             let e = s.trim().to_lowercase();
             if matches!(e.as_str(), "none" | "false" | "disabled") {
-                return Some(ReasoningConfig { enabled: false, effort: None });
+                return Some(ReasoningConfig {
+                    enabled: false,
+                    effort: None,
+                });
             }
             if VALID_REASONING_EFFORTS.contains(&e.as_str()) {
-                return Some(ReasoningConfig { enabled: true, effort: Some(e) });
+                return Some(ReasoningConfig {
+                    enabled: true,
+                    effort: Some(e),
+                });
             }
             None
         }
@@ -97,6 +108,14 @@ impl<'a> EffortInput<'a> {
 
 // ── Spelling-tolerant variant generation (upstream algorithm, step-for-step) ──
 
+// JEV efficiency: compiled once per process. `canonical_model_variants` sits on the
+// model-routing path; compiling these two patterns per call was pure overhead with
+// identical match semantics.
+static DASH_TO_DOT_RE: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"(\d)-(\d)").expect("dash-to-dot re"));
+static DOT_TO_DASH_RE: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"(\d)\.(\d)").expect("dot-to-dash re"));
+
 fn dash_to_dot(re: &regex::Regex, s: &str) -> String {
     re.replace_all(s, "$1.$2").into_owned()
 }
@@ -141,35 +160,67 @@ fn add_with_derivatives(
 ///
 /// PARITY: hermes_constants.py `_canonical_model_variants` (974–1062).
 pub fn canonical_model_variants(model: &str) -> Vec<String> {
-    let dash_to_dot_re = regex::Regex::new(r"(\d)-(\d)").unwrap();
-    let dot_to_dash_re = regex::Regex::new(r"(\d)\.(\d)").unwrap();
+    let dash_to_dot_re = &*DASH_TO_DOT_RE;
+    let dot_to_dash_re = &*DOT_TO_DASH_RE;
 
     let mut seen: std::collections::HashSet<String> = std::collections::HashSet::new();
     let mut variants: Vec<String> = Vec::new();
 
     // 1–3. Base variants for the full string
-    add_with_derivatives(model, &dash_to_dot_re, &dot_to_dash_re, &mut seen, &mut variants);
+    add_with_derivatives(
+        model,
+        &dash_to_dot_re,
+        &dot_to_dash_re,
+        &mut seen,
+        &mut variants,
+    );
 
     let parts: Vec<&str> = model.split('/').collect();
 
     // 4. Bare model variants (strip provider/aggregator prefix)
     if parts.len() >= 2 {
         let bare = parts[parts.len() - 1];
-        add_with_derivatives(bare, &dash_to_dot_re, &dot_to_dash_re, &mut seen, &mut variants);
+        add_with_derivatives(
+            bare,
+            &dash_to_dot_re,
+            &dot_to_dash_re,
+            &mut seen,
+            &mut variants,
+        );
     }
     // Strip aggregator only (3+ parts):
     // "openrouter/anthropic/claude-opus-4.5" → "anthropic/claude-opus-4.5"
     if parts.len() >= 3 {
         let stripped = parts[1..].join("/");
-        add_with_derivatives(&stripped, &dash_to_dot_re, &dot_to_dash_re, &mut seen, &mut variants);
+        add_with_derivatives(
+            &stripped,
+            &dash_to_dot_re,
+            &dot_to_dash_re,
+            &mut seen,
+            &mut variants,
+        );
     }
 
     // 5. Prepend known provider prefixes to bare variants
     let known_providers: [&str; 12] = [
-        "anthropic", "openai", "google", "openrouter", "groq", "mistral",
-        "xai", "cohere", "perplexity", "together", "fireworks", "deepseek",
+        "anthropic",
+        "openai",
+        "google",
+        "openrouter",
+        "groq",
+        "mistral",
+        "xai",
+        "cohere",
+        "perplexity",
+        "together",
+        "fireworks",
+        "deepseek",
     ];
-    let bare_variants: Vec<String> = variants.iter().filter(|v| !v.contains('/')).cloned().collect();
+    let bare_variants: Vec<String> = variants
+        .iter()
+        .filter(|v| !v.contains('/'))
+        .cloned()
+        .collect();
     for v in bare_variants {
         for provider in known_providers.iter() {
             add(format!("{}/{}", provider, v), &mut seen, &mut variants);
@@ -200,7 +251,13 @@ mod tests {
     fn valid_efforts_parse() {
         for level in VALID_REASONING_EFFORTS {
             let r = parse_reasoning_effort(level).unwrap();
-            assert_eq!(r, ReasoningConfig { enabled: true, effort: Some(level.to_string()) });
+            assert_eq!(
+                r,
+                ReasoningConfig {
+                    enabled: true,
+                    effort: Some(level.to_string())
+                }
+            );
         }
     }
 
@@ -208,10 +265,22 @@ mod tests {
     fn disabled_aliases() {
         for alias in ["none", "false", "disabled"] {
             let r = parse_reasoning_effort(alias).unwrap();
-            assert_eq!(r, ReasoningConfig { enabled: false, effort: None });
+            assert_eq!(
+                r,
+                ReasoningConfig {
+                    enabled: false,
+                    effort: None
+                }
+            );
         }
         let r = parse_reasoning_effort(false).unwrap();
-        assert_eq!(r, ReasoningConfig { enabled: false, effort: None });
+        assert_eq!(
+            r,
+            ReasoningConfig {
+                enabled: false,
+                effort: None
+            }
+        );
     }
 
     #[test]
@@ -227,11 +296,17 @@ mod tests {
     fn case_and_whitespace_insensitive() {
         assert_eq!(
             parse_reasoning_effort("  HIGH ").unwrap(),
-            ReasoningConfig { enabled: true, effort: Some("high".to_string()) }
+            ReasoningConfig {
+                enabled: true,
+                effort: Some("high".to_string())
+            }
         );
         assert_eq!(
             parse_reasoning_effort("Disabled").unwrap(),
-            ReasoningConfig { enabled: false, effort: None }
+            ReasoningConfig {
+                enabled: false,
+                effort: None
+            }
         );
     }
 
@@ -327,7 +402,13 @@ mod per_model_tests {
     fn exact_match() {
         let m = map(&[("claude-opus-4.5", EffortInput::Str("high"))]);
         let r = resolve_per_model_reasoning_effort("claude-opus-4.5", &m).unwrap();
-        assert_eq!(r, ReasoningConfig { enabled: true, effort: Some("high".into()) });
+        assert_eq!(
+            r,
+            ReasoningConfig {
+                enabled: true,
+                effort: Some("high".into())
+            }
+        );
     }
 
     #[test]
@@ -357,6 +438,12 @@ mod per_model_tests {
             ("claude-opus-4-5", EffortInput::Bool(false)),
         ]);
         let r = resolve_per_model_reasoning_effort("claude-opus-4.5", &m).unwrap();
-        assert_eq!(r, ReasoningConfig { enabled: false, effort: None });
+        assert_eq!(
+            r,
+            ReasoningConfig {
+                enabled: false,
+                effort: None
+            }
+        );
     }
 }

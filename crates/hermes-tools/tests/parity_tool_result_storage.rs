@@ -21,14 +21,22 @@ struct FakeExecutor {
 
 impl FakeExecutor {
     fn new(returncode: i32) -> Self {
-        FakeExecutor { calls: Default::default(), returncode }
+        FakeExecutor {
+            calls: Default::default(),
+            returncode,
+        }
     }
 }
 
 impl SandboxExecutor for FakeExecutor {
     fn execute(&self, cmd: &str, _timeout: u64, stdin_data: &str) -> SandboxResult {
-        self.calls.lock().unwrap().push((cmd.to_string(), stdin_data.to_string()));
-        SandboxResult { returncode: self.returncode }
+        self.calls
+            .lock()
+            .unwrap()
+            .push((cmd.to_string(), stdin_data.to_string()));
+        SandboxResult {
+            returncode: self.returncode,
+        }
     }
 }
 
@@ -43,7 +51,9 @@ fn module_constants_have_expected_values() {
 
 #[test]
 fn pinned_thresholds_include_read_file_infinite() {
-    assert!(PINNED_THRESHOLDS.iter().any(|(n, t)| *n == "read_file" && t.is_infinite()));
+    assert!(PINNED_THRESHOLDS
+        .iter()
+        .any(|(n, t)| *n == "read_file" && t.is_infinite()));
     assert!(!PINNED_THRESHOLDS.is_empty());
 }
 
@@ -66,7 +76,10 @@ fn threshold_priority_pinned_overrides_registry_default() {
     let mut overrides = std::collections::HashMap::new();
     overrides.insert("terminal".to_string(), 5_000usize);
     cfg.tool_overrides = overrides;
-    assert_eq!(cfg.resolve_threshold("terminal"), BudgetThreshold::Chars(5_000));
+    assert_eq!(
+        cfg.resolve_threshold("terminal"),
+        BudgetThreshold::Chars(5_000)
+    );
 }
 
 #[test]
@@ -177,7 +190,11 @@ fn tool_use_id_cannot_escape_storage_dir() {
         &BudgetConfig::default(),
         Some(BudgetThreshold::Chars(30_000)),
     );
-    assert!(out.contains("/tmp/hermes-results/outside"), "got: {}", &out[..out.len().min(300)]);
+    assert!(
+        out.contains("/tmp/hermes-results/outside"),
+        "got: {}",
+        &out[..out.len().min(300)]
+    );
     assert!(!out.contains("/tmp/hermes-results/../"));
     assert!(!out.contains("$(whoami)"));
     assert!(!out.contains(';'));
@@ -229,11 +246,20 @@ fn turn_budget_persists_largest_results() {
     // Under budget after spilling the largest.
     let total: usize = messages
         .iter()
-        .map(|m| m.get("content").and_then(serde_json::Value::as_str).unwrap_or("").chars().count())
+        .map(|m| {
+            m.get("content")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or("")
+                .chars()
+                .count()
+        })
         .sum();
     assert!(total <= 150_000);
     // The largest got persisted (small replacement block).
-    assert!(messages[0]["content"].as_str().unwrap().contains(PERSISTED_OUTPUT_TAG));
+    assert!(messages[0]["content"]
+        .as_str()
+        .unwrap()
+        .contains(PERSISTED_OUTPUT_TAG));
     // Already-persisted results are skipped on re-run.
     enforce_turn_budget(&mut messages, Some(&executor), None, &config);
     assert_eq!(executor.calls.lock().unwrap().len(), 1);

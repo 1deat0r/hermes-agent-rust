@@ -13,8 +13,8 @@ use std::sync::{Arc, Mutex};
 use hermes_tools::fal_common::{
     extract_http_status, import_fal_client, normalize_fal_queue_url_format, FalClientModule,
     FalClientModuleClient, FalEnsureError, FalImportError, FalResponse, FalSubmitRequest,
-    HttpErrorShape, ManagedFalError, ManagedFalSyncClient, RequestHandle, SyncClientHandle,
-    SyncClientFactory,
+    HttpErrorShape, ManagedFalError, ManagedFalSyncClient, RequestHandle, SyncClientFactory,
+    SyncClientHandle,
 };
 use serde_json::{json, Value};
 
@@ -62,7 +62,10 @@ fn import_returns_fal_client_module() {
 
     let result = import_fal_client().unwrap();
     assert!(Arc::ptr_eq(&result, &module));
-    assert_eq!(*ensure_calls.lock().unwrap(), vec![("image.fal".to_string(), false)]);
+    assert_eq!(
+        *ensure_calls.lock().unwrap(),
+        vec![("image.fal".to_string(), false)]
+    );
 }
 
 #[test]
@@ -71,9 +74,7 @@ fn import_swallows_lazy_ensure_import_error() {
     let http = Arc::new(FakeHttpClient);
     let module = Arc::new(make_full_module(http.clone()));
 
-    let ensure = Arc::new(|_name: &str, _prompt: bool| {
-        Err(FalEnsureError::ModuleMissing)
-    });
+    let ensure = Arc::new(|_name: &str, _prompt: bool| Err(FalEnsureError::ModuleMissing));
     let provider = Arc::new({
         let module = module.clone();
         move || Some(module.clone())
@@ -124,7 +125,10 @@ fn import_fails_when_package_genuinely_unavailable() {
     hermes_tools::fal_common::set_fal_client_provider(None);
 
     let err = err_of(import_fal_client());
-    assert_eq!(err, FalImportError("import of fal_client failed".to_string()));
+    assert_eq!(
+        err,
+        FalImportError("import of fal_client failed".to_string())
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -195,49 +199,73 @@ impl HttpErrorShape for Exc {
 
 #[test]
 fn extract_returns_status_from_response_attribute() {
-    let exc = Exc { response_status: Some(404), direct_status: None };
+    let exc = Exc {
+        response_status: Some(404),
+        direct_status: None,
+    };
     assert_eq!(extract_http_status(&exc), Some(404));
 }
 
 #[test]
 fn extract_returns_status_from_exc_status_code() {
-    let exc = Exc { response_status: None, direct_status: Some(500) };
+    let exc = Exc {
+        response_status: None,
+        direct_status: Some(500),
+    };
     assert_eq!(extract_http_status(&exc), Some(500));
 }
 
 #[test]
 fn extract_returns_none_when_no_response_and_no_status_code() {
-    let exc = Exc { response_status: None, direct_status: None };
+    let exc = Exc {
+        response_status: None,
+        direct_status: None,
+    };
     assert_eq!(extract_http_status(&exc), None);
 }
 
 #[test]
 fn extract_returns_none_when_response_is_none() {
-    let exc = Exc { response_status: None, direct_status: None };
+    let exc = Exc {
+        response_status: None,
+        direct_status: None,
+    };
     assert_eq!(extract_http_status(&exc), None);
 }
 
 #[test]
 fn extract_returns_none_when_response_status_code_not_int() {
-    let exc = Exc { response_status: None, direct_status: None };
+    let exc = Exc {
+        response_status: None,
+        direct_status: None,
+    };
     assert_eq!(extract_http_status(&exc), None);
 }
 
 #[test]
 fn extract_returns_none_when_status_code_not_int() {
-    let exc = Exc { response_status: None, direct_status: None };
+    let exc = Exc {
+        response_status: None,
+        direct_status: None,
+    };
     assert_eq!(extract_http_status(&exc), None);
 }
 
 #[test]
 fn extract_response_status_takes_precedence_over_exc_status() {
-    let exc = Exc { response_status: Some(200), direct_status: Some(500) };
+    let exc = Exc {
+        response_status: Some(200),
+        direct_status: Some(500),
+    };
     assert_eq!(extract_http_status(&exc), Some(200));
 }
 
 #[test]
 fn extract_falls_back_to_exc_status_when_response_status_not_int() {
-    let exc = Exc { response_status: None, direct_status: Some(503) };
+    let exc = Exc {
+        response_status: None,
+        direct_status: Some(503),
+    };
     assert_eq!(extract_http_status(&exc), Some(503));
 }
 
@@ -256,7 +284,10 @@ fn make_full_module(http: Arc<FakeHttpClient>) -> FalClientModule {
         }
     });
     let retry = Arc::new(|_req: FalSubmitRequest| {
-        Ok(FalResponse { status_code: 200, body: ok_response() })
+        Ok(FalResponse {
+            status_code: 200,
+            body: ok_response(),
+        })
     });
     let raise = Arc::new(|_resp: &FalResponse| Ok(()));
     let handle_factory = Arc::new(
@@ -280,27 +311,36 @@ fn make_full_module(http: Arc<FakeHttpClient>) -> FalClientModule {
         add_priority_header: None,
         add_timeout_header: None,
     };
-    FalClientModule { sync_client: Some(sync_client), client: Some(client_module) }
+    FalClientModule {
+        sync_client: Some(sync_client),
+        client: Some(client_module),
+    }
 }
 
 #[test]
 fn init_succeeds_with_all_attributes() {
     let http = Arc::new(FakeHttpClient);
     let module = make_full_module(http.clone());
-    let client = ManagedFalSyncClient::new(
-        &module,
-        "test-key",
-        Some("https://queue.example.com"),
-    )
-    .unwrap();
+    let client =
+        ManagedFalSyncClient::new(&module, "test-key", Some("https://queue.example.com")).unwrap();
     assert_eq!(client.queue_url_format(), "https://queue.example.com/");
-    assert!(Arc::ptr_eq(&client.http_client(), &(http as Arc<dyn hermes_tools::fal_common::HttpClientLike>)));
+    assert!(Arc::ptr_eq(
+        &client.http_client(),
+        &(http as Arc<dyn hermes_tools::fal_common::HttpClientLike>)
+    ));
 }
 
 #[test]
 fn init_raises_when_sync_client_missing() {
-    let module = FalClientModule { sync_client: None, client: Some(FalClientModuleClient::default()) };
-    let err = err_of(ManagedFalSyncClient::new(&module, "k", Some("https://q.example.com")));
+    let module = FalClientModule {
+        sync_client: None,
+        client: Some(FalClientModuleClient::default()),
+    };
+    let err = err_of(ManagedFalSyncClient::new(
+        &module,
+        "k",
+        Some("https://q.example.com"),
+    ));
     assert_eq!(
         err.to_string(),
         "fal_client.SyncClient is required for managed FAL gateway mode"
@@ -313,9 +353,19 @@ fn init_raises_when_client_module_missing() {
         http_client: None,
         default_timeout: None,
     });
-    let module = FalClientModule { sync_client: Some(sync_client), client: None };
-    let err = err_of(ManagedFalSyncClient::new(&module, "k", Some("https://q.example.com")));
-    assert_eq!(err.to_string(), "fal_client.client is required for managed FAL gateway mode");
+    let module = FalClientModule {
+        sync_client: Some(sync_client),
+        client: None,
+    };
+    let err = err_of(ManagedFalSyncClient::new(
+        &module,
+        "k",
+        Some("https://q.example.com"),
+    ));
+    assert_eq!(
+        err.to_string(),
+        "fal_client.client is required for managed FAL gateway mode"
+    );
 }
 
 #[test]
@@ -325,7 +375,10 @@ fn init_raises_when_http_client_missing() {
         default_timeout: Some(120.0),
     });
     let retry = Arc::new(|_req: FalSubmitRequest| {
-        Ok(FalResponse { status_code: 200, body: ok_response() })
+        Ok(FalResponse {
+            status_code: 200,
+            body: ok_response(),
+        })
     });
     let raise = Arc::new(|_resp: &FalResponse| Ok(()));
     let handle_factory = Arc::new(
@@ -349,8 +402,15 @@ fn init_raises_when_http_client_missing() {
         add_priority_header: None,
         add_timeout_header: None,
     };
-    let module = FalClientModule { sync_client: Some(sync_client), client: Some(client_module) };
-    let err = err_of(ManagedFalSyncClient::new(&module, "k", Some("https://q.example.com")));
+    let module = FalClientModule {
+        sync_client: Some(sync_client),
+        client: Some(client_module),
+    };
+    let err = err_of(ManagedFalSyncClient::new(
+        &module,
+        "k",
+        Some("https://q.example.com"),
+    ));
     assert_eq!(
         err.to_string(),
         "fal_client.SyncClient._client is required for managed FAL gateway mode"
@@ -375,8 +435,15 @@ fn init_raises_when_retry_request_missing() {
         add_priority_header: None,
         add_timeout_header: None,
     };
-    let module = FalClientModule { sync_client: Some(sync_client), client: Some(client_module) };
-    let err = err_of(ManagedFalSyncClient::new(&module, "k", Some("https://q.example.com")));
+    let module = FalClientModule {
+        sync_client: Some(sync_client),
+        client: Some(client_module),
+    };
+    let err = err_of(ManagedFalSyncClient::new(
+        &module,
+        "k",
+        Some("https://q.example.com"),
+    ));
     assert_eq!(
         err.to_string(),
         "fal_client.client request helpers are required for managed FAL gateway mode"
@@ -395,7 +462,10 @@ fn init_raises_when_raise_for_status_missing() {
     });
     let client_module = FalClientModuleClient {
         maybe_retry_request: Some(Arc::new(|_req: FalSubmitRequest| {
-            Ok(FalResponse { status_code: 200, body: ok_response() })
+            Ok(FalResponse {
+                status_code: 200,
+                body: ok_response(),
+            })
         })),
         raise_for_status: None,
         request_handle_class: None,
@@ -403,8 +473,15 @@ fn init_raises_when_raise_for_status_missing() {
         add_priority_header: None,
         add_timeout_header: None,
     };
-    let module = FalClientModule { sync_client: Some(sync_client), client: Some(client_module) };
-    let err = err_of(ManagedFalSyncClient::new(&module, "k", Some("https://q.example.com")));
+    let module = FalClientModule {
+        sync_client: Some(sync_client),
+        client: Some(client_module),
+    };
+    let err = err_of(ManagedFalSyncClient::new(
+        &module,
+        "k",
+        Some("https://q.example.com"),
+    ));
     assert_eq!(
         err.to_string(),
         "fal_client.client request helpers are required for managed FAL gateway mode"
@@ -423,7 +500,10 @@ fn init_raises_when_request_handle_class_missing() {
     });
     let client_module = FalClientModuleClient {
         maybe_retry_request: Some(Arc::new(|_req: FalSubmitRequest| {
-            Ok(FalResponse { status_code: 200, body: ok_response() })
+            Ok(FalResponse {
+                status_code: 200,
+                body: ok_response(),
+            })
         })),
         raise_for_status: Some(Arc::new(|_resp: &FalResponse| Ok(()))),
         request_handle_class: None,
@@ -431,8 +511,15 @@ fn init_raises_when_request_handle_class_missing() {
         add_priority_header: None,
         add_timeout_header: None,
     };
-    let module = FalClientModule { sync_client: Some(sync_client), client: Some(client_module) };
-    let err = err_of(ManagedFalSyncClient::new(&module, "k", Some("https://q.example.com")));
+    let module = FalClientModule {
+        sync_client: Some(sync_client),
+        client: Some(client_module),
+    };
+    let err = err_of(ManagedFalSyncClient::new(
+        &module,
+        "k",
+        Some("https://q.example.com"),
+    ));
     assert_eq!(
         err.to_string(),
         "fal_client.client.SyncRequestHandle is required for managed FAL gateway mode"
@@ -461,7 +548,10 @@ fn init_passes_key_to_sync_client() {
     });
     let client_module = FalClientModuleClient {
         maybe_retry_request: Some(Arc::new(|_req: FalSubmitRequest| {
-            Ok(FalResponse { status_code: 200, body: ok_response() })
+            Ok(FalResponse {
+                status_code: 200,
+                body: ok_response(),
+            })
         })),
         raise_for_status: Some(Arc::new(|_resp: &FalResponse| Ok(()))),
         request_handle_class: Some(Arc::new(
@@ -477,7 +567,10 @@ fn init_passes_key_to_sync_client() {
         add_priority_header: None,
         add_timeout_header: None,
     };
-    let module = FalClientModule { sync_client: Some(sync_client), client: Some(client_module) };
+    let module = FalClientModule {
+        sync_client: Some(sync_client),
+        client: Some(client_module),
+    };
     ManagedFalSyncClient::new(&module, "my-secret-key", Some("https://q.example.com")).unwrap();
     assert_eq!(*keys.lock().unwrap(), vec!["my-secret-key".to_string()]);
 }
@@ -530,7 +623,10 @@ fn make_recording_client(default_timeout: Option<f64>) -> RecordingClient {
     });
     let retry = Arc::new(move |req: FalSubmitRequest| {
         retry_calls2.lock().unwrap().push(req);
-        Ok(FalResponse { status_code: 200, body: ok_response() })
+        Ok(FalResponse {
+            status_code: 200,
+            body: ok_response(),
+        })
     });
     let raise = Arc::new(move |_resp: &FalResponse| {
         *raise_calls2.lock().unwrap() += 1;
@@ -542,23 +638,36 @@ fn make_recording_client(default_timeout: Option<f64>) -> RecordingClient {
               status_url: String,
               cancel_url: String,
               client: Arc<dyn hermes_tools::fal_common::HttpClientLike>| {
-        handle_calls2.lock().unwrap().push((
-            request_id.clone(),
-            response_url.clone(),
-            status_url.clone(),
-            cancel_url.clone(),
-        ));
-        RequestHandle { request_id, response_url, status_url, cancel_url, client }
-    });
-    let add_hint = Arc::new(move |value: &Value, _headers: &mut HashMap<String, String>| {
-        hint_calls2.lock().unwrap().push(value.clone());
-    });
-    let add_priority = Arc::new(move |value: &Value, _headers: &mut HashMap<String, String>| {
-        priority_calls2.lock().unwrap().push(value.clone());
-    });
-    let add_timeout = Arc::new(move |value: &Value, _headers: &mut HashMap<String, String>| {
-        timeout_calls2.lock().unwrap().push(value.clone());
-    });
+            handle_calls2.lock().unwrap().push((
+                request_id.clone(),
+                response_url.clone(),
+                status_url.clone(),
+                cancel_url.clone(),
+            ));
+            RequestHandle {
+                request_id,
+                response_url,
+                status_url,
+                cancel_url,
+                client,
+            }
+        },
+    );
+    let add_hint = Arc::new(
+        move |value: &Value, _headers: &mut HashMap<String, String>| {
+            hint_calls2.lock().unwrap().push(value.clone());
+        },
+    );
+    let add_priority = Arc::new(
+        move |value: &Value, _headers: &mut HashMap<String, String>| {
+            priority_calls2.lock().unwrap().push(value.clone());
+        },
+    );
+    let add_timeout = Arc::new(
+        move |value: &Value, _headers: &mut HashMap<String, String>| {
+            timeout_calls2.lock().unwrap().push(value.clone());
+        },
+    );
     let client_module = FalClientModuleClient {
         maybe_retry_request: Some(retry),
         raise_for_status: Some(raise),
@@ -567,8 +676,12 @@ fn make_recording_client(default_timeout: Option<f64>) -> RecordingClient {
         add_priority_header: Some(add_priority),
         add_timeout_header: Some(add_timeout),
     };
-    let module = FalClientModule { sync_client: Some(sync_client), client: Some(client_module) };
-    let client = ManagedFalSyncClient::new(&module, "k", Some("https://queue.example.com")).unwrap();
+    let module = FalClientModule {
+        sync_client: Some(sync_client),
+        client: Some(client_module),
+    };
+    let client =
+        ManagedFalSyncClient::new(&module, "k", Some("https://queue.example.com")).unwrap();
     RecordingClient {
         client,
         http,
@@ -630,7 +743,9 @@ fn submit_basic() {
 #[test]
 fn submit_with_path() {
     let rc = make_recording_client(None);
-    rc.client.submit("my-app", json!({}), with_path("sub/path")).unwrap();
+    rc.client
+        .submit("my-app", json!({}), with_path("sub/path"))
+        .unwrap();
     let calls = rc.retry_calls.lock().unwrap();
     assert_eq!(calls[0].url, "https://queue.example.com/my-app/sub/path");
 }
@@ -638,9 +753,14 @@ fn submit_with_path() {
 #[test]
 fn submit_with_path_strips_leading_slash() {
     let rc = make_recording_client(None);
-    rc.client.submit("my-app", json!({}), with_path("/leading/slash")).unwrap();
+    rc.client
+        .submit("my-app", json!({}), with_path("/leading/slash"))
+        .unwrap();
     let calls = rc.retry_calls.lock().unwrap();
-    assert_eq!(calls[0].url, "https://queue.example.com/my-app/leading/slash");
+    assert_eq!(
+        calls[0].url,
+        "https://queue.example.com/my-app/leading/slash"
+    );
 }
 
 #[test]
@@ -656,7 +776,9 @@ fn submit_with_webhook_url() {
     };
     rc.client.submit("my-app", json!({}), opts).unwrap();
     let calls = rc.retry_calls.lock().unwrap();
-    assert!(calls[0].url.contains("fal_webhook=https%3A%2F%2Fhook.example.com%2Fcb"));
+    assert!(calls[0]
+        .url
+        .contains("fal_webhook=https%3A%2F%2Fhook.example.com%2Fcb"));
 }
 
 #[test]
@@ -703,7 +825,10 @@ fn submit_with_priority_raises_when_header_fn_missing() {
     });
     let client_module = FalClientModuleClient {
         maybe_retry_request: Some(Arc::new(|_req: FalSubmitRequest| {
-            Ok(FalResponse { status_code: 200, body: ok_response() })
+            Ok(FalResponse {
+                status_code: 200,
+                body: ok_response(),
+            })
         })),
         raise_for_status: Some(Arc::new(|_resp: &FalResponse| Ok(()))),
         request_handle_class: Some(Arc::new(
@@ -719,8 +844,12 @@ fn submit_with_priority_raises_when_header_fn_missing() {
         add_priority_header: None,
         add_timeout_header: None,
     };
-    let module = FalClientModule { sync_client: Some(sync_client), client: Some(client_module) };
-    let client = ManagedFalSyncClient::new(&module, "k", Some("https://queue.example.com")).unwrap();
+    let module = FalClientModule {
+        sync_client: Some(sync_client),
+        client: Some(client_module),
+    };
+    let client =
+        ManagedFalSyncClient::new(&module, "k", Some("https://queue.example.com")).unwrap();
     let opts = hermes_tools::fal_common::SubmitOptions {
         path: "",
         hint: None,
@@ -764,7 +893,10 @@ fn submit_with_start_timeout_raises_when_header_fn_missing() {
     });
     let client_module = FalClientModuleClient {
         maybe_retry_request: Some(Arc::new(|_req: FalSubmitRequest| {
-            Ok(FalResponse { status_code: 200, body: ok_response() })
+            Ok(FalResponse {
+                status_code: 200,
+                body: ok_response(),
+            })
         })),
         raise_for_status: Some(Arc::new(|_resp: &FalResponse| Ok(()))),
         request_handle_class: Some(Arc::new(
@@ -780,8 +912,12 @@ fn submit_with_start_timeout_raises_when_header_fn_missing() {
         add_priority_header: None,
         add_timeout_header: None,
     };
-    let module = FalClientModule { sync_client: Some(sync_client), client: Some(client_module) };
-    let client = ManagedFalSyncClient::new(&module, "k", Some("https://queue.example.com")).unwrap();
+    let module = FalClientModule {
+        sync_client: Some(sync_client),
+        client: Some(client_module),
+    };
+    let client =
+        ManagedFalSyncClient::new(&module, "k", Some("https://queue.example.com")).unwrap();
     let opts = hermes_tools::fal_common::SubmitOptions {
         path: "",
         hint: None,
@@ -812,13 +948,18 @@ fn submit_with_custom_headers() {
     };
     rc.client.submit("my-app", json!({}), opts).unwrap();
     let calls = rc.retry_calls.lock().unwrap();
-    assert_eq!(calls[0].headers.get("X-Custom").map(String::as_str), Some("value"));
+    assert_eq!(
+        calls[0].headers.get("X-Custom").map(String::as_str),
+        Some("value")
+    );
 }
 
 #[test]
 fn submit_with_none_headers_defaults_to_empty_dict() {
     let rc = make_recording_client(None);
-    rc.client.submit("my-app", json!({}), default_options()).unwrap();
+    rc.client
+        .submit("my-app", json!({}), default_options())
+        .unwrap();
     let calls = rc.retry_calls.lock().unwrap();
     assert!(calls[0].headers.is_empty());
 }
@@ -826,7 +967,9 @@ fn submit_with_none_headers_defaults_to_empty_dict() {
 #[test]
 fn submit_uses_custom_default_timeout() {
     let rc = make_recording_client(Some(300.0));
-    rc.client.submit("app", json!({}), default_options()).unwrap();
+    rc.client
+        .submit("app", json!({}), default_options())
+        .unwrap();
     let calls = rc.retry_calls.lock().unwrap();
     assert_eq!(calls[0].timeout, 300.0);
 }
@@ -834,7 +977,9 @@ fn submit_uses_custom_default_timeout() {
 #[test]
 fn submit_falls_back_to_120_when_no_default_timeout() {
     let rc = make_recording_client(None);
-    rc.client.submit("app", json!({}), default_options()).unwrap();
+    rc.client
+        .submit("app", json!({}), default_options())
+        .unwrap();
     let calls = rc.retry_calls.lock().unwrap();
     assert_eq!(calls[0].timeout, 120.0);
 }
@@ -842,7 +987,9 @@ fn submit_falls_back_to_120_when_no_default_timeout() {
 #[test]
 fn submit_passes_request_handle_kwargs() {
     let rc = make_recording_client(None);
-    rc.client.submit("app", json!({}), default_options()).unwrap();
+    rc.client
+        .submit("app", json!({}), default_options())
+        .unwrap();
     let calls = rc.handle_calls.lock().unwrap();
     assert_eq!(calls.len(), 1);
     assert_eq!(
@@ -869,13 +1016,18 @@ fn submit_with_all_optional_params() {
         headers: Some(&headers),
         start_timeout: Some(json!(60)),
     };
-    rc.client.submit("app", json!({"prompt": "test"}), opts).unwrap();
+    rc.client
+        .submit("app", json!({"prompt": "test"}), opts)
+        .unwrap();
 
     let calls = rc.retry_calls.lock().unwrap();
     assert_eq!(calls.len(), 1);
     assert!(calls[0].url.contains("app/sub?"));
     assert!(calls[0].url.contains("fal_webhook="));
-    assert_eq!(calls[0].headers.get("X-Custom").map(String::as_str), Some("val"));
+    assert_eq!(
+        calls[0].headers.get("X-Custom").map(String::as_str),
+        Some("val")
+    );
     drop(calls);
 
     assert_eq!(*rc.hint_calls.lock().unwrap(), vec![json!("hint-val")]);
@@ -916,8 +1068,12 @@ fn submit_propagates_retry_error() {
         add_priority_header: None,
         add_timeout_header: None,
     };
-    let module = FalClientModule { sync_client: Some(sync_client), client: Some(client_module) };
-    let client = ManagedFalSyncClient::new(&module, "k", Some("https://queue.example.com")).unwrap();
+    let module = FalClientModule {
+        sync_client: Some(sync_client),
+        client: Some(client_module),
+    };
+    let client =
+        ManagedFalSyncClient::new(&module, "k", Some("https://queue.example.com")).unwrap();
     let err = err_of(client.submit("app", json!({}), default_options()));
     assert_eq!(err.to_string(), "upstream transport error");
 }
@@ -933,7 +1089,10 @@ fn submit_propagates_raise_for_status_error() {
         }
     });
     let retry = Arc::new(|_req: FalSubmitRequest| {
-        Ok(FalResponse { status_code: 429, body: json!({}) })
+        Ok(FalResponse {
+            status_code: 429,
+            body: json!({}),
+        })
     });
     let raise = Arc::new(|_resp: &FalResponse| Err("HTTP 429 Too Many Requests".to_string()));
     let handle_factory = Arc::new(
@@ -957,8 +1116,12 @@ fn submit_propagates_raise_for_status_error() {
         add_priority_header: None,
         add_timeout_header: None,
     };
-    let module = FalClientModule { sync_client: Some(sync_client), client: Some(client_module) };
-    let client = ManagedFalSyncClient::new(&module, "k", Some("https://queue.example.com")).unwrap();
+    let module = FalClientModule {
+        sync_client: Some(sync_client),
+        client: Some(client_module),
+    };
+    let client =
+        ManagedFalSyncClient::new(&module, "k", Some("https://queue.example.com")).unwrap();
     let err = err_of(client.submit("app", json!({}), default_options()));
     assert_eq!(err.to_string(), "HTTP 429 Too Many Requests");
 }
@@ -966,7 +1129,10 @@ fn submit_propagates_raise_for_status_error() {
 #[test]
 fn submit_passes_client_to_handle() {
     let rc = make_recording_client(None);
-    let result = rc.client.submit("app", json!({}), default_options()).unwrap();
+    let result = rc
+        .client
+        .submit("app", json!({}), default_options())
+        .unwrap();
     let rc_http: Arc<dyn hermes_tools::fal_common::HttpClientLike> = rc.http.clone();
     assert!(Arc::ptr_eq(&result.client, &rc_http));
 }

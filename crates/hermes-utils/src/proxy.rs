@@ -5,8 +5,12 @@
 
 /// Supported proxy env keys (uppercase + lowercase forms).
 pub const PROXY_ENV_KEYS: [&str; 6] = [
-    "HTTPS_PROXY", "HTTP_PROXY", "ALL_PROXY",
-    "https_proxy", "http_proxy", "all_proxy",
+    "HTTPS_PROXY",
+    "HTTP_PROXY",
+    "ALL_PROXY",
+    "https_proxy",
+    "http_proxy",
+    "all_proxy",
 ];
 
 /// Normalize proxy URLs for httpx/aiohttp compatibility.
@@ -69,7 +73,10 @@ mod tests {
         unsafe { std::env::set_var("ALL_PROXY", "socks://127.0.0.1:1080") };
         unsafe { std::env::set_var("HTTP_PROXY", "http://ok:80") };
         normalize_proxy_env_vars();
-        assert_eq!(std::env::var("ALL_PROXY").unwrap(), "socks5://127.0.0.1:1080");
+        assert_eq!(
+            std::env::var("ALL_PROXY").unwrap(),
+            "socks5://127.0.0.1:1080"
+        );
         assert_eq!(std::env::var("HTTP_PROXY").unwrap(), "http://ok:80");
         unsafe { std::env::remove_var("ALL_PROXY") };
         unsafe { std::env::remove_var("HTTP_PROXY") };

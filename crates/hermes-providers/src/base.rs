@@ -418,9 +418,9 @@ impl ProviderProfile {
         timeout: f64,
     ) -> Result<Vec<String>, String> {
         const MAX_PAGES: usize = 20;
-        let api_key = api_key.filter(|value| !value.is_empty()).ok_or_else(|| {
-            "Anthropic model discovery requires a non-empty API key".to_owned()
-        })?;
+        let api_key = api_key
+            .filter(|value| !value.is_empty())
+            .ok_or_else(|| "Anthropic model discovery requires a non-empty API key".to_owned())?;
         // Seed URL carries limit=1000 (after_id appended per page).
         let mut url = Url::parse(endpoint).map_err(|error| error.to_string())?;
         {
@@ -1759,7 +1759,10 @@ fn build_actual_reasoning(
     let toggle = |kind: &str| {
         Map::from_iter([(
             "thinking".into(),
-            Value::Object(Map::from_iter([("type".into(), Value::String(kind.into()))])),
+            Value::Object(Map::from_iter([(
+                "type".into(),
+                Value::String(kind.into()),
+            )])),
         )])
     };
     if disabled {
@@ -1796,7 +1799,10 @@ fn build_actual_reasoning(
                             .iter()
                             .filter(|level| **level != "none")
                             .min_by_key(|level| {
-                                LADDER.iter().position(|l| l == *level).unwrap_or(usize::MAX)
+                                LADDER
+                                    .iter()
+                                    .position(|l| l == *level)
+                                    .unwrap_or(usize::MAX)
                             })
                             .copied()
                     })

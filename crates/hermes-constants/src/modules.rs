@@ -7,8 +7,18 @@
 /// ImportError naming one of these means our own tree is inconsistent;
 /// anything else is a third-party problem with different remediation.
 pub const FIRST_PARTY_MODULE_ROOTS: [&str; 13] = [
-    "agent", "acp_adapter", "cli", "cron", "gateway", "model_tools",
-    "plugins", "providers", "tools", "toolsets", "run_agent", "tui_gateway",
+    "agent",
+    "acp_adapter",
+    "cli",
+    "cron",
+    "gateway",
+    "model_tools",
+    "plugins",
+    "providers",
+    "tools",
+    "toolsets",
+    "run_agent",
+    "tui_gateway",
     "utils",
 ];
 

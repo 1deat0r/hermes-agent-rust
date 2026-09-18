@@ -17,9 +17,8 @@ pub fn register(ctx: &dyn PluginCtx) {
     ctx.register_platform(PlatformRegistration {
         name: PLATFORM_NAME.to_string(),
         label: "SimpleX Chat".to_string(),
-        required_env: vec![
-            "SIMPLEX_WS_URL".to_string(),
-        ],
-        install_hint: "pip install websockets   # SimpleX adapter requires the websockets package".to_string(),
+        required_env: vec!["SIMPLEX_WS_URL".to_string()],
+        install_hint: "pip install websockets   # SimpleX adapter requires the websockets package"
+            .to_string(),
     });
 }

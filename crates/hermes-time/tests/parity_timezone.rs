@@ -43,7 +43,11 @@ fn us_eastern_dst_aware() {
     clear_env();
     unsafe { std::env::set_var("HERMES_TIMEZONE", "America/New_York") };
     let offset_hours = now().offset().local_minus_utc() as f64 / 3600.0;
-    assert!(offset_hours == -5.0 || offset_hours == -4.0, "offset was {}", offset_hours);
+    assert!(
+        offset_hours == -5.0 || offset_hours == -4.0,
+        "offset was {}",
+        offset_hours
+    );
     clear_env();
 }
 

@@ -24,8 +24,8 @@ use rusqlite::{Connection, OptionalExtension};
 use serde_json::Value;
 
 use crate::common::{
-    _preview_raw_select, _shape_preview, _sql_session_last_active,
-    _sql_session_last_active_by_id, _listable_child_sql,
+    _listable_child_sql, _preview_raw_select, _shape_preview, _sql_session_last_active,
+    _sql_session_last_active_by_id,
 };
 use crate::crud::fold_session_dict;
 use crate::portability::{compact_session_cols, cwd_prefix_clause};
@@ -53,20 +53,21 @@ enum P {
 impl rusqlite::ToSql for P {
     fn to_sql(&self) -> rusqlite::Result<rusqlite::types::ToSqlOutput<'_>> {
         Ok(match self {
-            P::S(v) => rusqlite::types::ToSqlOutput::Borrowed(
-                rusqlite::types::ValueRef::Text(v.as_bytes()),
-            ),
-            P::I(v) => rusqlite::types::ToSqlOutput::Borrowed(
-                rusqlite::types::ValueRef::Integer(*v),
-            ),
-
+            P::S(v) => rusqlite::types::ToSqlOutput::Borrowed(rusqlite::types::ValueRef::Text(
+                v.as_bytes(),
+            )),
+            P::I(v) => {
+                rusqlite::types::ToSqlOutput::Borrowed(rusqlite::types::ValueRef::Integer(*v))
+            }
         })
     }
 }
 
 /// Materialize cloneable params into boxed ToSql for a query call.
 fn boxed_params(ps: &[P]) -> Vec<Box<dyn rusqlite::ToSql>> {
-    ps.iter().map(|p| Box::new(p.clone()) as Box<dyn rusqlite::ToSql>).collect()
+    ps.iter()
+        .map(|p| Box::new(p.clone()) as Box<dyn rusqlite::ToSql>)
+        .collect()
 }
 
 /// Holds the ordering/window decisions of `list_sessions_rich`.
@@ -132,11 +133,9 @@ impl SessionDB {
         }
         let when = ts.unwrap_or_else(now);
         let desc = crate::activity::bound_activity_description(description);
-        let prov = crate::activity::normalize_activity_provenance(
-            provenance.map(|p| p.as_str()),
-        )
-        .as_str()
-        .to_string();
+        let prov = crate::activity::normalize_activity_provenance(provenance.map(|p| p.as_str()))
+            .as_str()
+            .to_string();
         let sid = session_id.to_string();
 
         let f = |conn: &Connection| -> Result<(), WriteError> {
@@ -431,30 +430,38 @@ impl SessionDB {
     /// read state.
     ///
     /// PARITY: SessionDB.list_sessions_rich @ b9aa928 (6094–6454)
-    pub fn list_sessions_rich(
-        &self,
-        p: &RichListParams,
-    ) -> Result<Vec<Value>, WriteError> {
+    pub fn list_sessions_rich(&self, p: &RichListParams) -> Result<Vec<Value>, WriteError> {
         // Rows carry token/cost totals — drain queued deltas first.
         let _ = self.flush_token_counts(5.0);
 
         let empty: Vec<String> = Vec::new();
         let source_opt = p.source.as_deref();
-        let sources: &[String] = if p.sources.is_empty() { &empty } else { &p.sources };
+        let sources: &[String] = if p.sources.is_empty() {
+            &empty
+        } else {
+            &p.sources
+        };
 
         let mut where_clauses: Vec<String> = Vec::new();
         let mut params: Vec<P> = Vec::new();
 
         if !p.include_children {
             where_clauses.push(_listable_child_sql());
-            where_clauses.push(format!("{} IS NULL", delegate_from_json_sql("s.model_config")));
+            where_clauses.push(format!(
+                "{} IS NULL",
+                delegate_from_json_sql("s.model_config")
+            ));
         }
         let include_sources: Vec<String> = match source_opt {
             Some(s) => vec![s.to_string()],
             None => sources.to_vec(),
         };
         if !include_sources.is_empty() {
-            let placeholders = include_sources.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+            let placeholders = include_sources
+                .iter()
+                .map(|_| "?")
+                .collect::<Vec<_>>()
+                .join(",");
             where_clauses.push(format!("s.source IN ({placeholders})"));
             for s in &include_sources {
                 params.push(P::S(s.clone()));
@@ -465,7 +472,12 @@ impl SessionDB {
             params.push(P::S(key.clone()));
         }
         if !p.exclude_sources.is_empty() {
-            let placeholders = p.exclude_sources.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+            let placeholders = p
+                .exclude_sources
+                .iter()
+                .map(|_| "?")
+                .collect::<Vec<_>>()
+                .join(",");
             where_clauses.push(format!("s.source NOT IN ({placeholders})"));
             for s in &p.exclude_sources {
                 params.push(P::S(s.clone()));
@@ -516,7 +528,12 @@ impl SessionDB {
 
         let rows: Vec<Value> = if p.order_by_last_active {
             let id_needle = p.id_query.as_deref().unwrap_or("").trim().to_lowercase();
-            let search_needle = p.search_query.as_deref().unwrap_or("").trim().to_lowercase();
+            let search_needle = p
+                .search_query
+                .as_deref()
+                .unwrap_or("")
+                .trim()
+                .to_lowercase();
             let mut filter_clauses: Vec<String> = Vec::new();
             let mut id_params: Vec<P> = Vec::new();
 
@@ -530,14 +547,17 @@ impl SessionDB {
                 id_params.push(P::S(like_pattern(&id_needle)));
             }
             if !search_needle.is_empty() {
-                let compact_needle = COMPACT_NEEDLE_RE.replace_all(&search_needle, "").to_string();
+                let compact_needle = COMPACT_NEEDLE_RE
+                    .replace_all(&search_needle, "")
+                    .to_string();
                 let compact_sql = "REPLACE(REPLACE(REPLACE(REPLACE(LOWER(COALESCE({0}, '')), \
                      '-', ''), '_', ''), '.', ''), ' ', '')";
                 let mut search_clause = "EXISTS (SELECT 1 FROM chain cq \
                      JOIN sessions cs ON cs.id = cq.cur_id \
                      WHERE cq.root_id = s.id \
                        AND (LOWER(COALESCE(cs.title, '')) LIKE ? ESCAPE '\\' \
-                       OR LOWER(cq.cur_id) LIKE ? ESCAPE '\\'".to_string();
+                       OR LOWER(cq.cur_id) LIKE ? ESCAPE '\\'"
+                    .to_string();
                 id_params.push(P::S(like_pattern(&search_needle)));
                 id_params.push(P::S(like_pattern(&search_needle)));
                 if !compact_needle.is_empty() {
@@ -649,7 +669,10 @@ impl SessionDB {
                 .and_then(|v| v.as_str().map(|x| x.to_string()))
                 .unwrap_or_default();
             if let Some(obj) = s.as_object_mut() {
-                obj.insert("preview".to_string(), Value::String(_shape_preview(preview_raw)));
+                obj.insert(
+                    "preview".to_string(),
+                    Value::String(_shape_preview(preview_raw)),
+                );
                 obj.remove("_effective_last_active");
             }
             sessions.push(s);
@@ -657,8 +680,10 @@ impl SessionDB {
 
         // Back-fill pinned conversations the page missed (before projection).
         if p.include_pinned {
-            let mut seen_ids: HashSet<String> =
-                sessions.iter().filter_map(|s| s.get("id").and_then(Value::as_str).map(|x| x.to_string())).collect();
+            let mut seen_ids: HashSet<String> = sessions
+                .iter()
+                .filter_map(|s| s.get("id").and_then(Value::as_str).map(|x| x.to_string()))
+                .collect();
             let pinned_where = if where_sql.is_empty() {
                 "WHERE s.pinned = 1".to_string()
             } else {
@@ -681,17 +706,18 @@ impl SessionDB {
                  {} \
                  {} \
                  ORDER BY s.started_at DESC",
-                sel,
-                prompt_select,
-                preview_select,
-                prompt_join,
-                pinned_where,
+                sel, prompt_select, preview_select, prompt_join, pinned_where,
             );
-            let pinned_rows = self.query_values(&pinned_query, &boxed_params(&base_where_params))?;
+            let pinned_rows =
+                self.query_values(&pinned_query, &boxed_params(&base_where_params))?;
             for row in pinned_rows {
                 let mut s = fold_session_dict(row);
                 let s_id = s.get("id").and_then(Value::as_str).map(|x| x.to_string());
-                if s_id.as_deref().map(|x| seen_ids.contains(x)).unwrap_or(false) {
+                if s_id
+                    .as_deref()
+                    .map(|x| seen_ids.contains(x))
+                    .unwrap_or(false)
+                {
                     continue;
                 }
                 let preview_raw = s
@@ -700,7 +726,10 @@ impl SessionDB {
                     .and_then(|v| v.as_str().map(|x| x.to_string()))
                     .unwrap_or_default();
                 if let Some(obj) = s.as_object_mut() {
-                    obj.insert("preview".to_string(), Value::String(_shape_preview(preview_raw)));
+                    obj.insert(
+                        "preview".to_string(),
+                        Value::String(_shape_preview(preview_raw)),
+                    );
                 }
                 if let Some(sid) = s_id {
                     seen_ids.insert(sid);
@@ -716,7 +745,11 @@ impl SessionDB {
                 if s.get("end_reason").and_then(Value::as_str) != Some("compression") {
                     continue;
                 }
-                let root_id = s.get("id").and_then(Value::as_str).unwrap_or("").to_string();
+                let root_id = s
+                    .get("id")
+                    .and_then(Value::as_str)
+                    .unwrap_or("")
+                    .to_string();
                 let tip_id = self.get_compression_tip(&root_id)?;
                 if tip_id != root_id {
                     tip_ids_by_root.insert(root_id, tip_id);
@@ -730,7 +763,11 @@ impl SessionDB {
             };
             let mut projected: Vec<Value> = Vec::new();
             for s in sessions {
-                let root_id = s.get("id").and_then(Value::as_str).unwrap_or("").to_string();
+                let root_id = s
+                    .get("id")
+                    .and_then(Value::as_str)
+                    .unwrap_or("")
+                    .to_string();
                 let tip_id = tip_ids_by_root.get(&root_id);
                 let tip_row = tip_id.and_then(|tid| tip_rows.get(tid));
                 let Some(tip_row) = tip_row else {
@@ -739,9 +776,19 @@ impl SessionDB {
                 };
                 let mut merged = s.clone();
                 const MERGE_KEYS: [&str; 13] = [
-                    "id", "ended_at", "end_reason", "message_count",
-                    "tool_call_count", "title", "last_active", "preview",
-                    "model", "system_prompt", "cwd", "git_branch", "git_repo_root",
+                    "id",
+                    "ended_at",
+                    "end_reason",
+                    "message_count",
+                    "tool_call_count",
+                    "title",
+                    "last_active",
+                    "preview",
+                    "model",
+                    "system_prompt",
+                    "cwd",
+                    "git_branch",
+                    "git_repo_root",
                 ];
                 if let (Some(src), Some(dst)) = (tip_row.as_object(), merged.as_object_mut()) {
                     for key in MERGE_KEYS {
@@ -793,7 +840,10 @@ impl SessionDB {
 
         if exclude_children {
             where_clauses.push(_listable_child_sql());
-            where_clauses.push(format!("{} IS NULL", delegate_from_json_sql("s.model_config")));
+            where_clauses.push(format!(
+                "{} IS NULL",
+                delegate_from_json_sql("s.model_config")
+            ));
         }
         let mut include_sources: Vec<String> = Vec::new();
         if let Some(s) = source {
@@ -801,14 +851,22 @@ impl SessionDB {
         }
         include_sources.extend(sources.iter().cloned());
         if !include_sources.is_empty() {
-            let placeholders = include_sources.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+            let placeholders = include_sources
+                .iter()
+                .map(|_| "?")
+                .collect::<Vec<_>>()
+                .join(",");
             where_clauses.push(format!("s.source IN ({placeholders})"));
             for s in &include_sources {
                 params.push(Box::new(s.clone()));
             }
         }
         if !exclude_sources.is_empty() {
-            let placeholders = exclude_sources.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+            let placeholders = exclude_sources
+                .iter()
+                .map(|_| "?")
+                .collect::<Vec<_>>()
+                .join(",");
             where_clauses.push(format!("s.source NOT IN ({placeholders})"));
             for s in exclude_sources {
                 params.push(Box::new(s.clone()));
@@ -877,7 +935,10 @@ impl SessionDB {
 
         if exclude_children {
             where_clauses.push(_listable_child_sql());
-            where_clauses.push(format!("{} IS NULL", delegate_from_json_sql("s.model_config")));
+            where_clauses.push(format!(
+                "{} IS NULL",
+                delegate_from_json_sql("s.model_config")
+            ));
         }
         if archived_only {
             where_clauses.push("s.archived = 1".to_string());

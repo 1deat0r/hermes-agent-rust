@@ -114,7 +114,11 @@ impl SessionDB {
     /// Mark a gateway session's expiry-finalization flag in state.db.
     ///
     /// PARITY: SessionDB.set_expiry_finalized @ b9aa928 (3393–3410)
-    pub fn set_expiry_finalized(&self, session_id: &str, finalized: bool) -> Result<(), WriteError> {
+    pub fn set_expiry_finalized(
+        &self,
+        session_id: &str,
+        finalized: bool,
+    ) -> Result<(), WriteError> {
         if session_id.is_empty() {
             return Ok(());
         }
@@ -198,13 +202,18 @@ impl SessionDB {
     /// Load routing entries for `scope` as {session_key: entry_json}.
     ///
     /// PARITY: SessionDB.load_gateway_routing_entries @ b9aa928 (3463–3471)
-    pub fn load_gateway_routing_entries(&self, scope: &str) -> Result<HashMap<String, String>, WriteError> {
+    pub fn load_gateway_routing_entries(
+        &self,
+        scope: &str,
+    ) -> Result<HashMap<String, String>, WriteError> {
         let conn = self.writer_conn();
         let mut stmt = conn
             .prepare("SELECT session_key, entry_json FROM gateway_routing WHERE scope = ?")
             .map_err(WriteError::Sqlite)?;
         let rows = stmt
-            .query_map([scope], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))
+            .query_map([scope], |r| {
+                Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))
+            })
             .map_err(WriteError::Sqlite)?
             .collect::<Result<Vec<_>, _>>()
             .map_err(WriteError::Sqlite)?;
@@ -332,7 +341,8 @@ impl SessionDB {
             return Ok(None);
         }
         let conn = self.writer_conn();
-        let peer_recoverable = "(s.ended_at IS NULL OR s.end_reason IN ('agent_close', 'ws_orphan_reap')) \
+        let peer_recoverable =
+            "(s.ended_at IS NULL OR s.end_reason IN ('agent_close', 'ws_orphan_reap')) \
             AND (COALESCE(s.message_count, 0) > 0 OR EXISTS ( \
                 SELECT 1 FROM messages WHERE messages.session_id = s.id LIMIT 1 \
             ))";

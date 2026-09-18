@@ -17,9 +17,8 @@ pub fn register(ctx: &dyn PluginCtx) {
     ctx.register_platform(PlatformRegistration {
         name: PLATFORM_NAME.to_string(),
         label: "WhatsApp".to_string(),
-        required_env: vec![
-            "WHATSAPP_ENABLED".to_string(),
-        ],
-        install_hint: "WhatsApp requires a Node.js bridge — see the WhatsApp messaging docs".to_string(),
+        required_env: vec!["WHATSAPP_ENABLED".to_string()],
+        install_hint: "WhatsApp requires a Node.js bridge — see the WhatsApp messaging docs"
+            .to_string(),
     });
 }

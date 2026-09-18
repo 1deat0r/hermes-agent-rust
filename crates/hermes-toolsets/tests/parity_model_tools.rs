@@ -54,7 +54,11 @@ fn make_schema(properties: Value) -> Value {
 
 #[test]
 fn coerces_integer_arg() {
-    register("coerce_int", "test", make_schema(json!({"limit": {"type": "integer"}})));
+    register(
+        "coerce_int",
+        "test",
+        make_schema(json!({"limit": {"type": "integer"}})),
+    );
     let args = coerce_tool_args("coerce_int", json!({"limit": "10"}));
     assert_eq!(args["limit"], json!(10));
 }
@@ -76,7 +80,11 @@ fn coerces_number_and_boolean() {
 
 #[test]
 fn leaves_already_correct_types() {
-    register("coerce_keep", "test", make_schema(json!({"limit": {"type": "integer"}})));
+    register(
+        "coerce_keep",
+        "test",
+        make_schema(json!({"limit": {"type": "integer"}})),
+    );
     let args = coerce_tool_args("coerce_keep", json!({"limit": 10}));
     assert_eq!(args["limit"], json!(10));
 }
@@ -134,10 +142,7 @@ fn nested_json_string_elements_normalized() {
             "todos": {"type": "array", "items": {"type": "object", "properties": {"id": {"type": "string"}}}}
         })),
     );
-    let args = coerce_tool_args(
-        "coerce_nested",
-        json!({"todos": [r#"{"id": "x"}"#]}),
-    );
+    let args = coerce_tool_args("coerce_nested", json!({"todos": [r#"{"id": "x"}"#]}));
     assert_eq!(args["todos"][0]["id"], json!("x"));
 }
 
@@ -172,11 +177,25 @@ fn strips_tool_call_tags() {
 
 #[test]
 fn strips_role_tags() {
-    for tag in ["system", "assistant", "user", "result", "response", "output", "input"] {
+    for tag in [
+        "system",
+        "assistant",
+        "user",
+        "result",
+        "response",
+        "output",
+        "input",
+    ] {
         let raw = format!("prefix <{tag}>hi</{tag}> suffix");
         let out = sanitize_tool_error(&raw);
-        assert!(!out.contains(&format!("<{tag}>")), "failed to strip <{tag}>");
-        assert!(!out.contains(&format!("</{tag}>")), "failed to strip </{tag}>");
+        assert!(
+            !out.contains(&format!("<{tag}>")),
+            "failed to strip <{tag}>"
+        );
+        assert!(
+            !out.contains(&format!("</{tag}>")),
+            "failed to strip </{tag}>"
+        );
     }
 }
 
@@ -210,11 +229,22 @@ fn strips_code_fence_and_truncates() {
 // get_tool_definitions
 // =====================================================================
 
-
 fn register_web_tools() {
-    register("web_search", "web", make_schema(json!({"q": {"type": "string"}})));
-    register("web_extract", "web", make_schema(json!({"url": {"type": "string"}})));
-    register("terminal", "terminal", make_schema(json!({"cmd": {"type": "string"}})));
+    register(
+        "web_search",
+        "web",
+        make_schema(json!({"q": {"type": "string"}})),
+    );
+    register(
+        "web_extract",
+        "web",
+        make_schema(json!({"url": {"type": "string"}})),
+    );
+    register(
+        "terminal",
+        "terminal",
+        make_schema(json!({"cmd": {"type": "string"}})),
+    );
 }
 
 #[test]
@@ -226,11 +256,17 @@ fn enabled_toolsets_filter_definitions() {
         None,
         true,
         false,
-        false, false, false,
+        false,
+        false,
+        false,
     );
     let names: HashSet<&str> = defs
         .iter()
-        .filter_map(|d| d.get("function").and_then(|f| f.get("name")).and_then(Value::as_str))
+        .filter_map(|d| {
+            d.get("function")
+                .and_then(|f| f.get("name"))
+                .and_then(Value::as_str)
+        })
         .collect();
     assert!(names.contains("web_search"));
     assert!(names.contains("web_extract"));
@@ -246,14 +282,25 @@ fn disabled_toolset_subtracts() {
     let defs = get_tool_definitions(
         Some(&["web".to_string(), "terminal".to_string()]),
         Some(&["terminal".to_string()]),
-        true, false, false, false, false,
+        true,
+        false,
+        false,
+        false,
+        false,
     );
     let names: Vec<&str> = defs
         .iter()
-        .filter_map(|d| d.get("function").and_then(|f| f.get("name")).and_then(Value::as_str))
+        .filter_map(|d| {
+            d.get("function")
+                .and_then(|f| f.get("name"))
+                .and_then(Value::as_str)
+        })
         .collect();
     assert!(names.contains(&"web_search"));
-    assert!(!names.contains(&"terminal"), "disabled toolset must be subtracted");
+    assert!(
+        !names.contains(&"terminal"),
+        "disabled toolset must be subtracted"
+    );
 }
 
 #[test]
@@ -264,11 +311,19 @@ fn disabled_bundle_keeps_core() {
     let defs = get_tool_definitions(
         Some(&["web".to_string()]),
         Some(&["hermes-telegram".to_string()]),
-        true, false, false, false, false,
+        true,
+        false,
+        false,
+        false,
+        false,
     );
     let names: Vec<&str> = defs
         .iter()
-        .filter_map(|d| d.get("function").and_then(|f| f.get("name")).and_then(Value::as_str))
+        .filter_map(|d| {
+            d.get("function")
+                .and_then(|f| f.get("name"))
+                .and_then(Value::as_str)
+        })
         .collect();
     assert!(names.contains(&"web_search"));
 }
@@ -276,8 +331,24 @@ fn disabled_bundle_keeps_core() {
 #[test]
 fn quiet_cache_returns_same_result() {
     register_web_tools();
-    let a = get_tool_definitions(Some(&["web".to_string()]), None, true, false, false, false, false);
-    let b = get_tool_definitions(Some(&["web".to_string()]), None, true, false, false, false, false);
+    let a = get_tool_definitions(
+        Some(&["web".to_string()]),
+        None,
+        true,
+        false,
+        false,
+        false,
+        false,
+    );
+    let b = get_tool_definitions(
+        Some(&["web".to_string()]),
+        None,
+        true,
+        false,
+        false,
+        false,
+        false,
+    );
     assert_eq!(a, b);
 }
 
@@ -299,12 +370,29 @@ fn web_browser_crossref_stripped_when_web_missing() {
     let defs = compute_tool_definitions(
         Some(&[toolset.to_string()]),
         None,
-        true, false, false, false, false,
+        true,
+        false,
+        false,
+        false,
+        false,
     );
     let desc = defs
         .iter()
-        .find(|d| d.get("function").and_then(|f| f.get("name")).and_then(Value::as_str) == Some("browser_navigate"))
-        .map(|d| d.get("function").and_then(|f| f.get("description")).and_then(Value::as_str).unwrap_or(""));
+        .find(|d| {
+            d.get("function")
+                .and_then(|f| f.get("name"))
+                .and_then(Value::as_str)
+                == Some("browser_navigate")
+        })
+        .map(|d| {
+            d.get("function")
+                .and_then(|f| f.get("description"))
+                .and_then(Value::as_str)
+                .unwrap_or("")
+        });
     assert!(desc.is_some());
-    assert!(!desc.unwrap().contains("prefer web_search"), "cross-reference must be stripped when web tools unavailable");
+    assert!(
+        !desc.unwrap().contains("prefer web_search"),
+        "cross-reference must be stripped when web tools unavailable"
+    );
 }

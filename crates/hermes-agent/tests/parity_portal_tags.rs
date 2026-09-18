@@ -281,9 +281,7 @@ fn a_published_version_changes_the_tag_without_a_restart() {
 /// conversation id, so delegate trees share the parent's sticky key).
 #[test]
 fn affinity_scope_publish_reset_round_trip() {
-    use hermes_agent::portal_tags::{
-        get_affinity_scope, reset_affinity_scope, set_affinity_scope,
-    };
+    use hermes_agent::portal_tags::{get_affinity_scope, reset_affinity_scope, set_affinity_scope};
     assert_eq!(get_affinity_scope(), None);
     let token = set_affinity_scope(Some("scope-A"));
     assert_eq!(get_affinity_scope(), Some("scope-A".to_string()));

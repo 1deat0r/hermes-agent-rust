@@ -48,7 +48,8 @@ fn update_session_model_clears_browser_lock_and_preserves_lineage() {
     )
     .expect("create");
 
-    db.update_session_model("s1", "anthropic/claude-opus-4.8").expect("switch");
+    db.update_session_model("s1", "anthropic/claude-opus-4.8")
+        .expect("switch");
 
     let session = db.get_session("s1").expect("get").expect("row");
     assert_eq!(session.model.as_deref(), Some("anthropic/claude-opus-4.8"));
@@ -62,20 +63,26 @@ fn update_session_model_clears_browser_lock_and_preserves_lineage() {
 #[test]
 fn update_session_meta_coalesces_model() {
     let (_dir, db) = open_db("state.db");
-    db.create_session("s1", "cli", &NewSession {
-        model: Some("old-model".into()),
-        ..Default::default()
-    })
+    db.create_session(
+        "s1",
+        "cli",
+        &NewSession {
+            model: Some("old-model".into()),
+            ..Default::default()
+        },
+    )
     .expect("create");
 
     // model=None leaves the stored model untouched.
-    db.update_session_meta("s1", r#"{"max_iterations": 3}"#, None).expect("meta1");
+    db.update_session_meta("s1", r#"{"max_iterations": 3}"#, None)
+        .expect("meta1");
     let session = db.get_session("s1").expect("get").expect("row");
     assert_eq!(session.model.as_deref(), Some("old-model"));
     assert_eq!(config_of(&db, "s1")["max_iterations"], json!(3));
 
     // model=Some replaces it.
-    db.update_session_meta("s1", r#"{"max_iterations": 4}"#, Some("new-model")).expect("meta2");
+    db.update_session_meta("s1", r#"{"max_iterations": 4}"#, Some("new-model"))
+        .expect("meta2");
     let session = db.get_session("s1").expect("get").expect("row");
     assert_eq!(session.model.as_deref(), Some("new-model"));
 }
@@ -83,10 +90,14 @@ fn update_session_meta_coalesces_model() {
 #[test]
 fn patch_session_model_config_merges_and_deletes_keys() {
     let (_dir, db) = open_db("state.db");
-    db.create_session("s1", "cli", &NewSession {
-        model_config: Some(json!({"_branched_from": "p", "keep": 1})),
-        ..Default::default()
-    })
+    db.create_session(
+        "s1",
+        "cli",
+        &NewSession {
+            model_config: Some(json!({"_branched_from": "p", "keep": 1})),
+            ..Default::default()
+        },
+    )
     .expect("create");
 
     let mut patch = serde_json::Map::new();
@@ -99,34 +110,44 @@ fn patch_session_model_config_merges_and_deletes_keys() {
     assert_eq!(cfg["_branched_from"], json!("p"));
 
     // Empty patch is a no-op; missing row is a no-op.
-    db.patch_session_model_config("s1", &serde_json::Map::new()).expect("empty");
-    db.patch_session_model_config("nope", &patch).expect("missing");
+    db.patch_session_model_config("s1", &serde_json::Map::new())
+        .expect("empty");
+    db.patch_session_model_config("nope", &patch)
+        .expect("missing");
 }
 
 #[test]
 fn get_session_model_config_value_tolerant_read() {
     let (_dir, db) = open_db("state.db");
-    db.create_session("s1", "cli", &NewSession {
-        model_config: Some(json!({"nested": {"a": 1}, "flag": true})),
-        ..Default::default()
-    })
+    db.create_session(
+        "s1",
+        "cli",
+        &NewSession {
+            model_config: Some(json!({"nested": {"a": 1}, "flag": true})),
+            ..Default::default()
+        },
+    )
     .expect("create");
 
     assert_eq!(
-        db.get_session_model_config_value("s1", "flag", None).expect("flag"),
+        db.get_session_model_config_value("s1", "flag", None)
+            .expect("flag"),
         json!(true)
     );
     assert_eq!(
-        db.get_session_model_config_value("s1", "nested", None).expect("nested"),
+        db.get_session_model_config_value("s1", "nested", None)
+            .expect("nested"),
         json!({"a": 1})
     );
     // Missing key -> default; missing session -> default.
     assert_eq!(
-        db.get_session_model_config_value("s1", "zzz", Some(json!("dflt"))).expect("default"),
+        db.get_session_model_config_value("s1", "zzz", Some(json!("dflt")))
+            .expect("default"),
         json!("dflt")
     );
     assert_eq!(
-        db.get_session_model_config_value("nope", "flag", Some(json!(42))).expect("missing"),
+        db.get_session_model_config_value("nope", "flag", Some(json!(42)))
+            .expect("missing"),
         json!(42)
     );
 }
@@ -134,12 +155,16 @@ fn get_session_model_config_value_tolerant_read() {
 #[test]
 fn update_session_runtime_lock_merges_and_nulls_prompt() {
     let (_dir, db) = open_db("state.db");
-    db.create_session("s1", "cli", &NewSession {
-        model: Some("m1".into()),
-        model_config: Some(json!({"_branched_from": "parent"})),
-        system_prompt: Some("stale footer".into()),
-        ..Default::default()
-    })
+    db.create_session(
+        "s1",
+        "cli",
+        &NewSession {
+            model: Some("m1".into()),
+            model_config: Some(json!({"_branched_from": "parent"})),
+            system_prompt: Some("stale footer".into()),
+            ..Default::default()
+        },
+    )
     .expect("create");
 
     let mut opts = serde_json::Map::new();
@@ -170,11 +195,15 @@ fn update_session_runtime_lock_merges_and_nulls_prompt() {
 #[test]
 fn yolo_roundtrip_preserves_keys_and_missing_row_noop() {
     let (_dir, db) = open_db("state.db");
-    db.create_session("s1", "cli", &NewSession {
-        model: Some("m".into()),
-        model_config: Some(json!({"max_iterations": 42, "_branched_from": "parent_x"})),
-        ..Default::default()
-    })
+    db.create_session(
+        "s1",
+        "cli",
+        &NewSession {
+            model: Some("m".into()),
+            model_config: Some(json!({"max_iterations": 42, "_branched_from": "parent_x"})),
+            ..Default::default()
+        },
+    )
     .expect("create");
 
     db.set_session_yolo("s1", true).expect("yolo on");
@@ -192,11 +221,18 @@ fn yolo_roundtrip_preserves_keys_and_missing_row_noop() {
 
     // Missing row is a no-op (lazy creation must not raise or create).
     db.set_session_yolo("does_not_exist", true).expect("noop");
-    assert!(db.get_session("does_not_exist").expect("still missing").is_none());
+    assert!(db
+        .get_session("does_not_exist")
+        .expect("still missing")
+        .is_none());
 
     // Parse-failure reads are False (never accidentally enabled).
-    assert!(!SessionDB::session_yolo_enabled(Some(&json!({"model_config": "not-json{"}))));
-    assert!(!SessionDB::session_yolo_enabled(Some(&json!({"model_config": "{}"}))));
+    assert!(!SessionDB::session_yolo_enabled(Some(
+        &json!({"model_config": "not-json{"})
+    )));
+    assert!(!SessionDB::session_yolo_enabled(Some(
+        &json!({"model_config": "{}"})
+    )));
     assert!(!SessionDB::session_yolo_enabled(None));
 }
 
@@ -208,20 +244,30 @@ fn row_dict(row: &hermes_state::crud::SessionRow) -> Value {
 
 #[test]
 fn yolo_already_parsed_dict_and_null_config() {
-    assert!(SessionDB::session_yolo_enabled(Some(&json!({"model_config": {"yolo_mode": true}}))));
-    assert!(!SessionDB::session_yolo_enabled(Some(&json!({"model_config": {"yolo_mode": false}}))));
+    assert!(SessionDB::session_yolo_enabled(Some(
+        &json!({"model_config": {"yolo_mode": true}})
+    )));
+    assert!(!SessionDB::session_yolo_enabled(Some(
+        &json!({"model_config": {"yolo_mode": false}})
+    )));
     // Null / missing model_config -> False.
-    assert!(!SessionDB::session_yolo_enabled(Some(&json!({"model_config": null}))));
+    assert!(!SessionDB::session_yolo_enabled(Some(
+        &json!({"model_config": null})
+    )));
     assert!(!SessionDB::session_yolo_enabled(Some(&json!({}))));
 }
 
 #[test]
 fn update_session_billing_route_unconditional_and_dedup() {
     let (_dir, db) = open_db("state.db");
-    db.create_session("route", "cli", &NewSession {
-        model: Some("primary".into()),
-        ..Default::default()
-    })
+    db.create_session(
+        "route",
+        "cli",
+        &NewSession {
+            model: Some("primary".into()),
+            ..Default::default()
+        },
+    )
     .expect("create");
 
     db.update_session_billing_route(
@@ -247,17 +293,23 @@ fn update_session_billing_route_unconditional_and_dedup() {
 #[test]
 fn update_system_prompt_stores_hash_and_dedups() {
     let (_dir, db) = open_db("state.db");
-    db.create_session("s1", "cli", &NewSession::default()).expect("create");
+    db.create_session("s1", "cli", &NewSession::default())
+        .expect("create");
 
-    db.update_system_prompt("s1", Some("the full assembled prompt")).expect("sp1");
+    db.update_system_prompt("s1", Some("the full assembled prompt"))
+        .expect("sp1");
     let row = db.get_session("s1").expect("get").expect("row");
     // get_session resolves the prompt through the hash table (upstream
     // _session_row_dict), so it still reads the stored text.
-    assert_eq!(row.system_prompt.as_deref(), Some("the full assembled prompt"));
+    assert_eq!(
+        row.system_prompt.as_deref(),
+        Some("the full assembled prompt")
+    );
     let hash1 = row.system_prompt_hash.clone().expect("hash");
 
     // Same prompt again dedups to the same hash; table stays at one row.
-    db.update_system_prompt("s1", Some("the full assembled prompt")).expect("sp2");
+    db.update_system_prompt("s1", Some("the full assembled prompt"))
+        .expect("sp2");
     let row = db.get_session("s1").expect("get").expect("row");
     assert_eq!(row.system_prompt_hash.as_deref(), Some(hash1.as_str()));
     let conn = db.writer_conn();

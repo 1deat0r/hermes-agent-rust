@@ -17,9 +17,7 @@ pub fn register(ctx: &dyn PluginCtx) {
     ctx.register_platform(PlatformRegistration {
         name: PLATFORM_NAME.to_string(),
         label: "Raft".to_string(),
-        required_env: vec![
-            "RAFT_PROFILE".to_string(),
-        ],
+        required_env: vec!["RAFT_PROFILE".to_string()],
         install_hint: "Install the Raft CLI from https://raft.build".to_string(),
     });
 }

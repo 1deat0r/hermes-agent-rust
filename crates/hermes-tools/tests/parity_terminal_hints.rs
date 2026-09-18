@@ -17,7 +17,10 @@ use hermes_tools::terminal_hints::{annotate_failure, SCAN_CHARS};
 
 #[test]
 fn success_never_annotated() {
-    assert_eq!(annotate_failure("python x.py", 0, "python: command not found"), None);
+    assert_eq!(
+        annotate_failure("python x.py", 0, "python: command not found"),
+        None
+    );
 }
 
 #[test]

@@ -3,14 +3,16 @@
 //! with the parallel pure-path tests.
 
 use hermes_tools::file_safety::{
-    classify_write_denial, get_read_block_error, get_safe_write_roots,
-    get_write_denied_error,
+    classify_write_denial, get_read_block_error, get_safe_write_roots, get_write_denied_error,
 };
 
 fn tmp_dir(label: &str) -> std::path::PathBuf {
     let dir = std::env::temp_dir().join(format!(
         "hfs_env_{label}_{}",
-        std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
     ));
     std::fs::create_dir_all(&dir).unwrap();
     dir
@@ -44,7 +46,10 @@ fn hermes_home_guard_cases() {
         assert!(get_read_block_error("/workspace/.env.example").is_none());
 
         // state.db write denial.
-        assert_eq!(classify_write_denial(&state_db.to_string_lossy()), Some("credential"));
+        assert_eq!(
+            classify_write_denial(&state_db.to_string_lossy()),
+            Some("credential")
+        );
     }
     match old {
         Some(v) => std::env::set_var("HERMES_HOME", v),
@@ -60,7 +65,10 @@ fn safe_root_gate_cases() {
     let dir = tmp_dir("safe");
     std::env::set_var("HERMES_WRITE_SAFE_ROOT", &dir);
     {
-        assert_eq!(classify_write_denial("/tmp/other/file.txt"), Some("safe_root"));
+        assert_eq!(
+            classify_write_denial("/tmp/other/file.txt"),
+            Some("safe_root")
+        );
         let err = get_write_denied_error("/tmp/other/file.txt", "Write");
         assert!(err.is_some() && err.unwrap().contains("HERMES_WRITE_SAFE_ROOT"));
         assert!(classify_write_denial(&dir.join("file.txt").to_string_lossy()).is_none());

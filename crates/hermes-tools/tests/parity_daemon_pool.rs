@@ -137,7 +137,10 @@ fn initializer_runs_in_worker() {
             ran2.store(true, Ordering::SeqCst);
         })
         .build();
-    let value = pool.submit(|| 7).result(Some(RESULT_TIMEOUT)).expect("value");
+    let value = pool
+        .submit(|| 7)
+        .result(Some(RESULT_TIMEOUT))
+        .expect("value");
     assert_eq!(value, 7);
     assert!(ran.load(Ordering::SeqCst), "initializer did not run");
     pool.shutdown(true);
@@ -153,10 +156,7 @@ fn thread_name_prefix_is_used() {
         .submit(|| thread::current().name().unwrap_or("").to_string())
         .result(Some(RESULT_TIMEOUT))
         .expect("value");
-    assert!(
-        name.starts_with("test-pool_"),
-        "worker name was {name:?}"
-    );
+    assert!(name.starts_with("test-pool_"), "worker name was {name:?}");
     pool.shutdown(true);
 }
 

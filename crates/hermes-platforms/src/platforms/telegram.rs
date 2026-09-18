@@ -17,9 +17,7 @@ pub fn register(ctx: &dyn PluginCtx) {
     ctx.register_platform(PlatformRegistration {
         name: PLATFORM_NAME.to_string(),
         label: "Telegram".to_string(),
-        required_env: vec![
-            "TELEGRAM_BOT_TOKEN".to_string(),
-        ],
+        required_env: vec!["TELEGRAM_BOT_TOKEN".to_string()],
         install_hint: "Run `hermes setup` to install Telegram support.".to_string(),
     });
 }

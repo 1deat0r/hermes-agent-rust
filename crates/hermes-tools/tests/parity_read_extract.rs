@@ -22,7 +22,8 @@ fn tmp(name: &str) -> PathBuf {
 fn write_docx(path: &PathBuf, document_xml: &str) {
     let file = std::fs::File::create(path).expect("create");
     let mut zf = zip::ZipWriter::new(file);
-    let opts = zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+    let opts = zip::write::SimpleFileOptions::default()
+        .compression_method(zip::CompressionMethod::Deflated);
     zf.start_file("[Content_Types].xml", opts).unwrap();
     zf.write_all(b"<Types/>").unwrap();
     zf.start_file("word/document.xml", opts).unwrap();
@@ -39,7 +40,8 @@ fn write_xlsx(
 ) {
     let file = std::fs::File::create(path).expect("create");
     let mut zf = zip::ZipWriter::new(file);
-    let opts = zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+    let opts = zip::write::SimpleFileOptions::default()
+        .compression_method(zip::CompressionMethod::Deflated);
     zf.start_file("xl/workbook.xml", opts).unwrap();
     zf.write_all(workbook.as_bytes()).unwrap();
     zf.start_file("xl/_rels/workbook.xml.rels", opts).unwrap();
@@ -169,7 +171,10 @@ fn build_xlsx(path: &PathBuf, include_hidden: bool) {
         &workbook,
         rels,
         Some(&shared),
-        &[("xl/worksheets/sheet1.xml", &sheet1), ("xl/worksheets/sheet2.xml", &sheet2)],
+        &[
+            ("xl/worksheets/sheet1.xml", &sheet1),
+            ("xl/worksheets/sheet2.xml", &sheet2),
+        ],
     );
 }
 

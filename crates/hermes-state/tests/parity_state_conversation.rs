@@ -34,11 +34,13 @@ fn msg(role: &str, content: Option<&str>) -> MessageInput {
 }
 
 fn create(db: &SessionDB, sid: &str, source: &str) {
-    db.create_session(sid, source, &NewSession::default()).expect("create");
+    db.create_session(sid, source, &NewSession::default())
+        .expect("create");
 }
 
 fn append(db: &SessionDB, sid: &str, role: &str, content: &str) {
-    db.append_message(sid, &msg(role, Some(content)), None).expect("append");
+    db.append_message(sid, &msg(role, Some(content)), None)
+        .expect("append");
 }
 
 /// Create sessions in order with deterministic started_at so the
@@ -46,10 +48,14 @@ fn append(db: &SessionDB, sid: &str, role: &str, content: &str) {
 fn make_chain(db: &SessionDB, ids_with_parent: &[(&str, Option<&str>)]) {
     let base = 1_700_000_000.0;
     for (i, (sid, parent)) in ids_with_parent.iter().enumerate() {
-        db.create_session(sid, "cli", &NewSession {
-            parent_session_id: parent.map(|p| p.to_string()),
-            ..Default::default()
-        })
+        db.create_session(
+            sid,
+            "cli",
+            &NewSession {
+                parent_session_id: parent.map(|p| p.to_string()),
+                ..Default::default()
+            },
+        )
         .expect("create");
         set_started(db, sid, base + (i as f64) * 100.0);
     }
@@ -82,13 +88,24 @@ fn resolve_resume_returns_self_when_only_parent_has_messages() {
     let (_dir, db) = open_db("state.db");
     make_chain(&db, &[("root", None), ("child", Some("root"))]);
     append(&db, "root", "user", "hi");
-    assert_eq!(db.resolve_resume_session_id("root").expect("resolve"), "root");
+    assert_eq!(
+        db.resolve_resume_session_id("root").expect("resolve"),
+        "root"
+    );
 }
 
 #[test]
 fn resolve_resume_walks_from_middle_of_chain() {
     let (_dir, db) = open_db("state.db");
-    make_chain(&db, &[("a", None), ("b", Some("a")), ("c", Some("b")), ("d", Some("c"))]);
+    make_chain(
+        &db,
+        &[
+            ("a", None),
+            ("b", Some("a")),
+            ("c", Some("b")),
+            ("d", Some("c")),
+        ],
+    );
     append(&db, "d", "user", "x");
     assert_eq!(db.resolve_resume_session_id("b").expect("b"), "d");
     assert_eq!(db.resolve_resume_session_id("c").expect("c"), "d");
@@ -102,23 +119,40 @@ fn resolve_resume_follows_compression_tip_when_parent_retains_messages() {
     append(&db, "root", "user", "pre-compression turn");
     set_started(&db, "root", base);
     set_ended(&db, "root", base + 50.0, "compression");
-    db.create_session("cont", "cli", &NewSession {
-        parent_session_id: Some("root".into()),
-        ..Default::default()
-    })
+    db.create_session(
+        "cont",
+        "cli",
+        &NewSession {
+            parent_session_id: Some("root".into()),
+            ..Default::default()
+        },
+    )
     .expect("cont");
     set_started(&db, "cont", base + 100.0);
     append(&db, "cont", "assistant", "post-compression reply");
 
-    assert_eq!(db.resolve_resume_session_id("root").expect("resolve"), "cont");
+    assert_eq!(
+        db.resolve_resume_session_id("root").expect("resolve"),
+        "cont"
+    );
 }
 
 #[test]
 fn resolve_resume_prefers_most_recent_child_when_fork_exists() {
     let (_dir, db) = open_db("state.db");
-    make_chain(&db, &[("parent", None), ("older_fork", Some("parent")), ("newer_fork", Some("parent"))]);
+    make_chain(
+        &db,
+        &[
+            ("parent", None),
+            ("older_fork", Some("parent")),
+            ("newer_fork", Some("parent")),
+        ],
+    );
     append(&db, "newer_fork", "user", "x");
-    assert_eq!(db.resolve_resume_session_id("parent").expect("resolve"), "newer_fork");
+    assert_eq!(
+        db.resolve_resume_session_id("parent").expect("resolve"),
+        "newer_fork"
+    );
 }
 
 // =====================================================================
@@ -136,10 +170,14 @@ fn conversation_root_of_standalone_session_is_itself() {
 fn conversation_root_covers_delegate_child_sessions() {
     let (_dir, db) = open_db("state.db");
     create(&db, "parent", "cli");
-    db.create_session("child", "delegate", &NewSession {
-        parent_session_id: Some("parent".into()),
-        ..Default::default()
-    })
+    db.create_session(
+        "child",
+        "delegate",
+        &NewSession {
+            parent_session_id: Some("parent".into()),
+            ..Default::default()
+        },
+    )
     .expect("child");
     assert_eq!(db.get_conversation_root("child").expect("root"), "parent");
 }
@@ -147,7 +185,10 @@ fn conversation_root_covers_delegate_child_sessions() {
 #[test]
 fn conversation_root_walks_full_lineage() {
     let (_dir, db) = open_db("state.db");
-    make_chain(&db, &[("root", None), ("mid", Some("root")), ("tip", Some("mid"))]);
+    make_chain(
+        &db,
+        &[("root", None), ("mid", Some("root")), ("tip", Some("mid"))],
+    );
     assert_eq!(db.get_conversation_root("tip").expect("root"), "root");
     assert_eq!(db.get_conversation_root("mid").expect("root"), "root");
 }
@@ -178,7 +219,9 @@ fn conversation_strips_leaked_memory_context() {
     )
     .expect("append");
 
-    let conv = db.get_messages_as_conversation("s1", false, false, false, false).expect("conv");
+    let conv = db
+        .get_messages_as_conversation("s1", false, false, false, false)
+        .expect("conv");
     assert_eq!(conv.len(), 1);
     assert_eq!(conv[0]["role"], json!("assistant"));
     assert_eq!(conv[0]["content"], json!("Visible answer"));
@@ -216,7 +259,9 @@ fn conversation_restores_reasoning_and_tool_calls() {
     )
     .expect("tool");
 
-    let conv = db.get_messages_as_conversation("s1", false, false, false, false).expect("conv");
+    let conv = db
+        .get_messages_as_conversation("s1", false, false, false, false)
+        .expect("conv");
     assert_eq!(conv.len(), 3);
     let assistant = &conv[1];
     assert_eq!(assistant["role"], json!("assistant"));
@@ -245,12 +290,16 @@ fn conversation_row_ids_and_api_content_sidecar() {
     )
     .expect("append");
 
-    let conv = db.get_messages_as_conversation("s1", false, false, false, true).expect("conv");
+    let conv = db
+        .get_messages_as_conversation("s1", false, false, false, true)
+        .expect("conv");
     assert!(conv[0].get("_row_id").and_then(Value::as_i64).is_some());
     // api_content verbatim.
     assert_eq!(conv[0]["api_content"].as_str(), Some("hello-<exact-bytes>"));
 
-    let without_ids = db.get_messages_as_conversation("s1", false, false, false, false).expect("conv2");
+    let without_ids = db
+        .get_messages_as_conversation("s1", false, false, false, false)
+        .expect("conv2");
     assert!(without_ids[0].get("_row_id").is_none());
 }
 
@@ -263,22 +312,40 @@ fn resume_conversations_collapses_candidate_in_model_history_only() {
     let (_dir, db) = open_db("state.db");
     create(&db, "s1", "tui");
     append(&db, "s1", "user", "do the thing");
-    db.append_message("s1", &MessageInput {
-        role: "assistant".into(),
-        content: Some(json!("long substantive answer")),
-        finish_reason: Some("verification_required".into()),
-        ..Default::default()
-    }, None).expect("candidate");
-    db.append_message("s1", &MessageInput {
-        role: "assistant".into(),
-        content: Some(json!("terse verified reply")),
-        finish_reason: Some("stop".into()),
-        ..Default::default()
-    }, None).expect("verified");
+    db.append_message(
+        "s1",
+        &MessageInput {
+            role: "assistant".into(),
+            content: Some(json!("long substantive answer")),
+            finish_reason: Some("verification_required".into()),
+            ..Default::default()
+        },
+        None,
+    )
+    .expect("candidate");
+    db.append_message(
+        "s1",
+        &MessageInput {
+            role: "assistant".into(),
+            content: Some(json!("terse verified reply")),
+            finish_reason: Some("stop".into()),
+            ..Default::default()
+        },
+        None,
+    )
+    .expect("verified");
 
     let (model_history, display_history) = db.get_resume_conversations("s1").expect("resume");
-    assert!(!model_history.iter().any(|m| m.get("content").and_then(Value::as_str).map(|s| s.contains("long substantive")).unwrap_or(false)));
-    assert!(display_history.iter().any(|m| m.get("content").and_then(Value::as_str).map(|s| s.contains("long substantive")).unwrap_or(false)));
+    assert!(!model_history.iter().any(|m| m
+        .get("content")
+        .and_then(Value::as_str)
+        .map(|s| s.contains("long substantive"))
+        .unwrap_or(false)));
+    assert!(display_history.iter().any(|m| m
+        .get("content")
+        .and_then(Value::as_str)
+        .map(|s| s.contains("long substantive"))
+        .unwrap_or(false)));
 }
 
 // =====================================================================
@@ -329,7 +396,10 @@ fn repair_drops_stray_tool_and_merges_consecutive_users() {
     ];
     let repairs = repair_message_sequence(&mut messages);
     assert_eq!(repairs, 2); // one user-merge + one stray tool drop
-    let roles: Vec<&str> = messages.iter().filter_map(|m| m.get("role").and_then(Value::as_str)).collect();
+    let roles: Vec<&str> = messages
+        .iter()
+        .filter_map(|m| m.get("role").and_then(Value::as_str))
+        .collect();
     assert_eq!(roles, vec!["user", "assistant", "tool"]);
     assert_eq!(messages[0]["content"], json!("first\n\nsecond"));
 }
@@ -371,30 +441,43 @@ fn conversation_include_ancestors_dedups_replayed_user_message() {
     create(&db, "root", "cli");
     append(&db, "root", "user", "hello");
     set_ended(&db, "root", 1_700_000_100.0, "compression");
-    db.create_session("cont", "cli", &NewSession {
-        parent_session_id: Some("root".into()),
-        ..Default::default()
-    })
+    db.create_session(
+        "cont",
+        "cli",
+        &NewSession {
+            parent_session_id: Some("root".into()),
+            ..Default::default()
+        },
+    )
     .expect("cont");
     append(&db, "cont", "user", "hello"); // replayed user turn
     append(&db, "cont", "assistant", "again");
 
     // Without ancestors: cont alone (both rows).
-    let tip_only = db.get_messages_as_conversation("cont", false, false, false, false).expect("tip");
+    let tip_only = db
+        .get_messages_as_conversation("cont", false, false, false, false)
+        .expect("tip");
     assert_eq!(tip_only.len(), 2);
     // With ancestors: the replayed "hello" user message is deduped because
     // the same user content is adjacent earlier in the lineage.
-    let lineage = db.get_messages_as_conversation("cont", true, false, false, false).expect("lineage");
-    let users: Vec<&str> = lineage.iter().filter_map(|m| {
-        if m.get("role").and_then(Value::as_str) == Some("user") {
-            m.get("content").and_then(Value::as_str)
-        } else {
-            None
-        }
-    }).collect();
+    let lineage = db
+        .get_messages_as_conversation("cont", true, false, false, false)
+        .expect("lineage");
+    let users: Vec<&str> = lineage
+        .iter()
+        .filter_map(|m| {
+            if m.get("role").and_then(Value::as_str) == Some("user") {
+                m.get("content").and_then(Value::as_str)
+            } else {
+                None
+            }
+        })
+        .collect();
     assert_eq!(users, vec!["hello"]);
     // The assistant reply survives.
-    assert!(lineage.iter().any(|m| m.get("content").and_then(Value::as_str) == Some("again")));
+    assert!(lineage
+        .iter()
+        .any(|m| m.get("content").and_then(Value::as_str) == Some("again")));
 }
 
 #[test]
@@ -404,19 +487,30 @@ fn ancestor_display_prefix_isolates_non_tip_messages() {
     append(&db, "root", "user", "old question");
     append(&db, "root", "assistant", "old answer");
     set_ended(&db, "root", 1_700_000_100.0, "compression");
-    db.create_session("tip", "cli", &NewSession {
-        parent_session_id: Some("root".into()),
-        ..Default::default()
-    })
+    db.create_session(
+        "tip",
+        "cli",
+        &NewSession {
+            parent_session_id: Some("root".into()),
+            ..Default::default()
+        },
+    )
     .expect("tip");
     append(&db, "tip", "user", "new question");
     append(&db, "tip", "assistant", "new answer");
 
     let prefix = db.get_ancestor_display_prefix("tip").expect("prefix");
     assert_eq!(prefix.len(), 2);
-    assert!(prefix.iter().all(|m| m.get("content").and_then(Value::as_str).map(|c| c.starts_with("old")).unwrap_or(false)));
+    assert!(prefix.iter().all(|m| m
+        .get("content")
+        .and_then(Value::as_str)
+        .map(|c| c.starts_with("old"))
+        .unwrap_or(false)));
     // Single-session lineage -> empty prefix.
-    assert!(db.get_ancestor_display_prefix("root").expect("root prefix").is_empty());
+    assert!(db
+        .get_ancestor_display_prefix("root")
+        .expect("root prefix")
+        .is_empty());
 }
 
 // =====================================================================
@@ -432,8 +526,13 @@ fn restore_rewound_flips_inactive_rows_back() {
     append(&db, "s1", "user", "three");
     let rows: Vec<i64> = {
         let conn = db.writer_conn();
-        let mut stmt = conn.prepare("SELECT id FROM messages WHERE session_id = 's1' ORDER BY id").expect("stmt");
-        stmt.query_map([], |r| r.get(0)).expect("map").collect::<Result<_, _>>().expect("collect")
+        let mut stmt = conn
+            .prepare("SELECT id FROM messages WHERE session_id = 's1' ORDER BY id")
+            .expect("stmt");
+        stmt.query_map([], |r| r.get(0))
+            .expect("map")
+            .collect::<Result<_, _>>()
+            .expect("collect")
     };
     // rewind to the final user row (id = rows[2]) soft-deletes rows[2].
     let result = db.rewind_to_message("s1", rows[2]).expect("rewind");
@@ -442,7 +541,9 @@ fn restore_rewound_flips_inactive_rows_back() {
     // restore from rows[1] flips the inactive row back.
     let restored = db.restore_rewound("s1", rows[1]).expect("restore");
     assert_eq!(restored, 1);
-    let conv = db.get_messages_as_conversation("s1", false, false, false, false).expect("conv");
+    let conv = db
+        .get_messages_as_conversation("s1", false, false, false, false)
+        .expect("conv");
     assert_eq!(conv.len(), 3);
 
     // Re-restoring is a no-op (0 rows flipped).
@@ -453,13 +554,20 @@ fn restore_rewound_flips_inactive_rows_back() {
 fn conversation_observed_and_platform_message_id_surface() {
     let (_dir, db) = open_db("state.db");
     create(&db, "s1", "telegram");
-    db.append_message("s1", &MessageInput {
-        role: "user".into(),
-        content: Some(json!("ping")),
-        platform_message_id: Some("tg-99".into()),
-        ..Default::default()
-    }, None).expect("append");
+    db.append_message(
+        "s1",
+        &MessageInput {
+            role: "user".into(),
+            content: Some(json!("ping")),
+            platform_message_id: Some("tg-99".into()),
+            ..Default::default()
+        },
+        None,
+    )
+    .expect("append");
 
-    let conv = db.get_messages_as_conversation("s1", false, false, false, false).expect("conv");
+    let conv = db
+        .get_messages_as_conversation("s1", false, false, false, false)
+        .expect("conv");
     assert_eq!(conv[0]["message_id"].as_str(), Some("tg-99"));
 }

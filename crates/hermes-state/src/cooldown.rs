@@ -73,12 +73,7 @@ impl SessionDB {
                 "SELECT compression_failure_cooldown_until, compression_failure_error \
                  FROM sessions WHERE id = ?",
                 rusqlite::params![session_id],
-                |r| {
-                    Ok((
-                        r.get::<_, Option<f64>>(0)?,
-                        r.get::<_, Option<String>>(1)?,
-                    ))
-                },
+                |r| Ok((r.get::<_, Option<f64>>(0)?, r.get::<_, Option<String>>(1)?)),
             )
             .optional()
             .map_err(WriteError::Sqlite)?;
@@ -119,12 +114,7 @@ impl SessionDB {
                 "SELECT compression_failure_cooldown_until, compression_failure_error \
                  FROM sessions WHERE id = ?",
                 rusqlite::params![session_id],
-                |r| {
-                    Ok((
-                        r.get::<_, Option<f64>>(0)?,
-                        r.get::<_, Option<String>>(1)?,
-                    ))
-                },
+                |r| Ok((r.get::<_, Option<f64>>(0)?, r.get::<_, Option<String>>(1)?)),
             )
             .optional()
             .map_err(WriteError::Sqlite)?;

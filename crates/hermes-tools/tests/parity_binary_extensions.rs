@@ -24,7 +24,9 @@ fn binary_matching_shape() {
 /// variants absent from BINARY_EXTENSIONS).
 #[test]
 fn opaque_document_set() {
-    for ext in [".docm", ".xlsm", ".xlsb", ".pps", ".pot", ".pptm", ".ppsx", ".ppsm", ".rtf", ".epub"] {
+    for ext in [
+        ".docm", ".xlsm", ".xlsb", ".pps", ".pot", ".pptm", ".ppsx", ".ppsm", ".rtf", ".epub",
+    ] {
         assert!(is_opaque_document_extension(&format!("file{ext}")), "{ext}");
     }
     // Shared members live in both sets.

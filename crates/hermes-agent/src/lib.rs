@@ -10,7 +10,6 @@
 //! [`jiter_preload::preload_jiter_native_extension`] explicitly at startup.
 
 pub mod auxiliary_client;
-pub mod jiter_preload;
 pub mod billing_links;
 pub mod bounded_response;
 pub mod config;
@@ -19,15 +18,16 @@ pub mod credential_store;
 pub mod errors;
 pub mod interrupt_compat;
 pub mod iteration_budget;
-pub mod proxy_sources;
+pub mod jiter_preload;
 pub mod kanban_stop;
 pub mod lmstudio_reasoning;
 pub mod managed_scope;
 pub mod manual_compression_feedback;
+pub mod markdown_tables;
 pub mod message_content;
 pub mod monitoring;
 pub mod portal_tags;
-pub mod markdown_tables;
+pub mod proxy_sources;
 pub mod reactions;
 pub mod reasoning_summaries;
 pub mod run_agent;
@@ -36,6 +36,6 @@ pub mod ssl_guard;
 pub mod think_scrubber;
 pub mod tool_result_classification;
 pub mod trajectory;
-pub mod verify;
 pub mod turn_retry_state;
+pub mod verify;
 pub mod verify_hooks;

@@ -53,7 +53,10 @@ fn propagates_approval_callback_to_worker_and_clears() {
     });
     let (saw, cleared) = worker.join().unwrap();
     assert!(saw, "worker should see the parent's approval callback");
-    assert!(cleared, "worker's approval callback should be cleared on exit");
+    assert!(
+        cleared,
+        "worker's approval callback should be cleared on exit"
+    );
 
     // The parent thread's own slot is untouched.
     assert!(get_approval_callback().is_some());
@@ -64,7 +67,10 @@ fn propagates_approval_callback_to_worker_and_clears() {
 fn propagates_sudo_callback_roundtrip() {
     set_sudo_password_callback(Some(marker()));
     let wrapped = propagate_context_to_thread(|_: ()| {
-        (get_sudo_password_callback().is_some(), get_approval_callback().is_none())
+        (
+            get_sudo_password_callback().is_some(),
+            get_approval_callback().is_none(),
+        )
     });
 
     let worker = thread::spawn(move || {
@@ -110,8 +116,9 @@ fn runs_target_under_captured_context() {
     static TEST_LOCK: Mutex<()> = Mutex::new(());
 
     let _guard = TEST_LOCK.lock().unwrap();
-    let factory: Arc<dyn Fn() -> Arc<dyn hermes_tools::thread_context::ContextSnapshot> + Send + Sync> =
-        Arc::new(|| Arc::new(FakeSnapshot));
+    let factory: Arc<
+        dyn Fn() -> Arc<dyn hermes_tools::thread_context::ContextSnapshot> + Send + Sync,
+    > = Arc::new(|| Arc::new(FakeSnapshot));
     set_context_snapshot_factory(Some(factory));
 
     let wrapped = propagate_context_to_thread(|_: ()| IN_CTX.with(|cell| cell.get()));

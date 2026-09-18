@@ -150,10 +150,7 @@ fn anthropic_model_fetch_follows_cursor_pages_with_dedup() {
     thread.join().unwrap();
 
     // Dedup across pages, order-stable (first-seen wins).
-    assert_eq!(
-        models,
-        Some(vec!["m-a".into(), "m-b".into(), "m-c".into()])
-    );
+    assert_eq!(models, Some(vec!["m-a".into(), "m-b".into(), "m-c".into()]));
     let requests = requests.lock().unwrap();
     assert_eq!(requests.len(), 2);
     assert!(requests[0].contains("limit=1000"), "{}", requests[0]);
@@ -191,9 +188,7 @@ fn spawn_server_multi(
         // early; the loop exits after serving the script (a runaway client
         // then gets connection-refused → fail-open, caught by assertions).
         // Idle deadline is a backstop only.
-        listener
-            .set_nonblocking(true)
-            .expect("nonblocking accept");
+        listener.set_nonblocking(true).expect("nonblocking accept");
         let mut bodies = bodies.into_iter();
         let mut served = 0usize;
         let deadline = std::time::Instant::now() + std::time::Duration::from_secs(20);

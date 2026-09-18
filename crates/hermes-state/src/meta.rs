@@ -137,15 +137,16 @@ impl SessionDB {
         let session = self.get_session(session_id)?;
         let raw = session.and_then(|s| s.model_config);
         let config = match raw {
-            Some(raw) if !raw.trim().is_empty() => {
-                serde_json::from_str::<Value>(&raw)
-                    .ok()
-                    .and_then(|v| v.as_object().cloned())
-                    .unwrap_or_default()
-            }
+            Some(raw) if !raw.trim().is_empty() => serde_json::from_str::<Value>(&raw)
+                .ok()
+                .and_then(|v| v.as_object().cloned())
+                .unwrap_or_default(),
             _ => Map::new(),
         };
-        Ok(config.get(key).cloned().unwrap_or(default.unwrap_or(Value::Null)))
+        Ok(config
+            .get(key)
+            .cloned()
+            .unwrap_or(default.unwrap_or(Value::Null)))
     }
 
     /// Persist a Browser / API client runtime lock without clobbering

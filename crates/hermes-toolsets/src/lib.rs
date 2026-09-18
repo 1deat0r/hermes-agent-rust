@@ -14,20 +14,18 @@
 //! without touching callers.
 
 pub mod data;
-pub mod model_tools;
 pub mod distributions;
+pub mod model_tools;
 pub mod toolsets;
 
+pub use distributions::{
+    get_distribution, list_distributions, sample_toolsets_from_distribution, validate_distribution,
+};
 pub use model_tools::{
     clear_tool_defs_cache, coerce_tool_args, compute_tool_definitions, get_tool_definitions,
     last_resolved_tool_names, sanitize_tool_error,
 };
-pub use distributions::{
-    get_distribution, list_distributions, sample_toolsets_from_distribution,
-    validate_distribution,
-};
 pub use toolsets::{
-    bundle_non_core_tools, create_custom_toolset, get_all_toolsets, get_toolset,
-    get_toolset_info, get_toolset_names, resolve_multiple_toolsets, resolve_toolset,
-    validate_toolset,
+    bundle_non_core_tools, create_custom_toolset, get_all_toolsets, get_toolset, get_toolset_info,
+    get_toolset_names, resolve_multiple_toolsets, resolve_toolset, validate_toolset,
 };

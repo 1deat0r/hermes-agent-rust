@@ -145,9 +145,11 @@ pub fn bundle_non_core_tools(toolset_name: &str) -> HashSet<String> {
     let ts_def = get_toolset(toolset_name, true);
     let ts_def = ts_def.as_ref().and_then(|v| v.as_object());
     let ts_tools: Option<Vec<String>> = ts_def.and_then(|o| {
-        o.get("tools")
-            .and_then(|v| v.as_array())
-            .map(|a| a.iter().filter_map(|x| x.as_str().map(|s| s.to_string())).collect())
+        o.get("tools").and_then(|v| v.as_array()).map(|a| {
+            a.iter()
+                .filter_map(|x| x.as_str().map(|s| s.to_string()))
+                .collect()
+        })
     });
     let Some(ts_tools) = ts_tools else {
         return resolve_toolset(toolset_name, Some(HashSet::new()), true)
@@ -161,7 +163,10 @@ pub fn bundle_non_core_tools(toolset_name: &str) -> HashSet<String> {
         .into_iter()
         .filter(|t| !core.contains(t.as_str()))
         .collect();
-    if let Some(includes) = ts_def.and_then(|o| o.get("includes")).and_then(|v| v.as_array()) {
+    if let Some(includes) = ts_def
+        .and_then(|o| o.get("includes"))
+        .and_then(|v| v.as_array())
+    {
         for inc in includes.iter().filter_map(|v| v.as_str()) {
             if let Some(inc_def) = get_toolset(inc, true).and_then(|v| v.as_object().cloned()) {
                 if let Some(inc_tools) = inc_def.get("tools").and_then(|v| v.as_array()) {
@@ -211,8 +216,10 @@ pub fn resolve_toolset(
             let registry = registry_lookup();
             let platform_name = &name["hermes-".len()..];
             if registry.platform_registered.contains(platform_name) {
-                let mut plugin_tools: HashSet<String> =
-                    crate::data::HERMES_CORE_TOOLS.iter().map(|s| s.to_string()).collect();
+                let mut plugin_tools: HashSet<String> = crate::data::HERMES_CORE_TOOLS
+                    .iter()
+                    .map(|s| s.to_string())
+                    .collect();
                 if let Some(tools) = registry.names_for_toolset.get(platform_name) {
                     plugin_tools.extend(tools.iter().cloned());
                 }
@@ -228,7 +235,11 @@ pub fn resolve_toolset(
     let mut tools: HashSet<String> = toolset
         .get("tools")
         .and_then(|v| v.as_array())
-        .map(|a| a.iter().filter_map(|x| x.as_str().map(|s| s.to_string())).collect())
+        .map(|a| {
+            a.iter()
+                .filter_map(|x| x.as_str().map(|s| s.to_string()))
+                .collect()
+        })
         .unwrap_or_default();
 
     if let Some(includes) = toolset.get("includes").and_then(|v| v.as_array()) {
@@ -260,10 +271,7 @@ pub fn resolve_multiple_toolsets(toolset_names: &[String]) -> Vec<String> {
 
 /// Static toolset names (registry-expanded once the tools crate lands).
 pub fn get_toolset_names() -> Vec<String> {
-    let mut names: Vec<String> = TOOLSETS
-        .iter()
-        .map(|(n, _)| n.to_string())
-        .collect();
+    let mut names: Vec<String> = TOOLSETS.iter().map(|(n, _)| n.to_string()).collect();
     names.sort();
     names
 }

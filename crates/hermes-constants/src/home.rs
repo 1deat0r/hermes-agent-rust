@@ -6,8 +6,8 @@
 
 use crate::platform::is_container;
 use crate::probe::{Probe, RealProbe};
-use std::path::{Path, PathBuf};
 use once_cell::sync::Lazy;
+use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
 // ── Context-local override (Python ContextVar `_HERMES_HOME_OVERRIDE`) ─────
@@ -128,9 +128,7 @@ pub(crate) fn platform_default_home_with(platform: Platform, probe: &dyn Probe) 
             if !trimmed.is_empty() {
                 PathBuf::from(trimmed).join("hermes")
             } else {
-                let home = probe
-                    .home_dir()
-                    .unwrap_or_else(|| PathBuf::from("."));
+                let home = probe.home_dir().unwrap_or_else(|| PathBuf::from("."));
                 home.join("AppData").join("Local").join("hermes")
             }
         }
@@ -297,12 +295,20 @@ pub(crate) fn get_default_hermes_root_with(platform: Platform, probe: &dyn Probe
         return native_home;
     }
     let env_path = PathBuf::from(env_home.trim());
-    if is_relative_to(&resolve_tolerant(&env_path), &resolve_tolerant(&native_home)) {
+    if is_relative_to(
+        &resolve_tolerant(&env_path),
+        &resolve_tolerant(&native_home),
+    ) {
         // HERMES_HOME is under the native home (normal or profile mode)
         return native_home;
     }
     // Docker / custom deployment: profile path `<root>/profiles/<name>`?
-    if env_path.parent().and_then(|p| p.file_name()).map(|n| n == "profiles").unwrap_or(false) {
+    if env_path
+        .parent()
+        .and_then(|p| p.file_name())
+        .map(|n| n == "profiles")
+        .unwrap_or(false)
+    {
         if let Some(grandparent) = env_path.parent().and_then(|p| p.parent()) {
             return grandparent.to_path_buf();
         }
@@ -389,13 +395,19 @@ mod tests {
     fn home_from_env_uses_env() {
         let p = probe_with("/home/user");
         p.set_env("HERMES_HOME", "/opt/hermes");
-        assert_eq!(home_from_env_with(Platform::Posix, &p), PathBuf::from("/opt/hermes"));
+        assert_eq!(
+            home_from_env_with(Platform::Posix, &p),
+            PathBuf::from("/opt/hermes")
+        );
     }
 
     #[test]
     fn home_from_env_falls_back_to_default() {
         let p = probe_with("/home/user");
-        assert_eq!(home_from_env_with(Platform::Posix, &p), PathBuf::from("/home/user/.hermes"));
+        assert_eq!(
+            home_from_env_with(Platform::Posix, &p),
+            PathBuf::from("/home/user/.hermes")
+        );
     }
 
     #[test]
@@ -404,7 +416,10 @@ mod tests {
         let p = probe_with("/home/user");
         p.set_env("HERMES_HOME", "/opt/hermes");
         let t = set_hermes_home_override(Some("/ctx/home"));
-        assert_eq!(get_hermes_home_with(Platform::Posix, &p), PathBuf::from("/ctx/home"));
+        assert_eq!(
+            get_hermes_home_with(Platform::Posix, &p),
+            PathBuf::from("/ctx/home")
+        );
         reset_hermes_home_override(t);
     }
 
@@ -414,7 +429,10 @@ mod tests {
         let p = probe_with("/home/user");
         p.set_env("HERMES_HOME", "/opt/hermes");
         let t = set_hermes_home_override(Some("/ctx/home"));
-        assert_eq!(get_process_hermes_home_with(Platform::Posix, &p), PathBuf::from("/opt/hermes"));
+        assert_eq!(
+            get_process_hermes_home_with(Platform::Posix, &p),
+            PathBuf::from("/opt/hermes")
+        );
         reset_hermes_home_override(t);
     }
 
@@ -543,7 +561,9 @@ fn absolute(path: &str) -> String {
         return resolve_tolerant(p).to_string_lossy().into_owned();
     }
     let cwd = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
-    resolve_tolerant(&cwd.join(p)).to_string_lossy().into_owned()
+    resolve_tolerant(&cwd.join(p))
+        .to_string_lossy()
+        .into_owned()
 }
 
 /// `os.path.normcase` — lowercase on Windows, identity on POSIX.
@@ -757,7 +777,10 @@ mod profile_tests {
         let td = tempfile::TempDir::new().unwrap();
         std::fs::create_dir_all(td.path().join("home")).unwrap();
         let mut env = EnvMap::new();
-        env.insert("HERMES_HOME".into(), td.path().to_string_lossy().into_owned());
+        env.insert(
+            "HERMES_HOME".into(),
+            td.path().to_string_lossy().into_owned(),
+        );
         assert_eq!(
             profile_home_path(Some(&env)),
             Some(td.path().join("home").to_string_lossy().into_owned())
@@ -768,7 +791,10 @@ mod profile_tests {
     fn profile_home_path_missing() {
         let td = tempfile::TempDir::new().unwrap();
         let mut env = EnvMap::new();
-        env.insert("HERMES_HOME".into(), td.path().to_string_lossy().into_owned());
+        env.insert(
+            "HERMES_HOME".into(),
+            td.path().to_string_lossy().into_owned(),
+        );
         assert_eq!(profile_home_path(Some(&env)), None);
     }
 
@@ -778,7 +804,10 @@ mod profile_tests {
         env.insert("HERMES_HOME".into(), "/tmp/h".into());
         let td = tempfile::TempDir::new().unwrap();
         std::fs::create_dir_all(td.path().join("home")).unwrap();
-        env.insert("HERMES_HOME".into(), td.path().to_string_lossy().into_owned());
+        env.insert(
+            "HERMES_HOME".into(),
+            td.path().to_string_lossy().into_owned(),
+        );
         let ph = profile_home_path(Some(&env)).unwrap();
         assert!(is_profile_home(Some(&ph), Some(&ph)));
         assert!(!is_profile_home(Some("/elsewhere"), Some(&ph)));
@@ -820,7 +849,10 @@ mod profile_tests {
         env.insert("HERMES_REAL_HOME".into(), "/real".into());
         env.insert("HOME".into(), "/profile".into());
         apply_subprocess_home_env(&mut env);
-        assert_eq!(env.get("HERMES_REAL_HOME").map(|s| s.as_str()), Some("/real"));
+        assert_eq!(
+            env.get("HERMES_REAL_HOME").map(|s| s.as_str()),
+            Some("/real")
+        );
         assert_eq!(env.get("HOME").map(|s| s.as_str()), Some("/real"));
     }
 

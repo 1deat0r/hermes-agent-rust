@@ -212,12 +212,9 @@ fn line_input_fancy_runtime_failure_falls_back() {
 #[test]
 fn line_input_interrupt_and_eof_propagate() {
     for failure in [LineInputFailure::Interrupted, LineInputFailure::Eof] {
-        let out = line_input_from(
-            "name: ",
-            true,
-            &mut || Err(failure.clone()),
-            &mut || Some("must-not-use".to_string()),
-        );
+        let out = line_input_from("name: ", true, &mut || Err(failure.clone()), &mut || {
+            Some("must-not-use".to_string())
+        });
         assert_eq!(out, None);
     }
 }

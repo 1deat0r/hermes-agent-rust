@@ -28,9 +28,8 @@ use std::time::{Duration, Instant};
 use hermes_tools::env_probe::{
     _probe_done_wait_for_tests, _reset_cache_for_tests, _run,
     clear_build_probe_line_override_for_tests, clear_probe_wait_timeout_override_for_tests,
-    get_environment_probe_line,
-    set_build_probe_line_override_for_tests, set_probe_wait_timeout_override_for_tests,
-    warm_environment_probe_async,
+    get_environment_probe_line, set_build_probe_line_override_for_tests,
+    set_probe_wait_timeout_override_for_tests, warm_environment_probe_async,
 };
 
 static ENV_PROBE_TEST_LOCK: Mutex<()> = Mutex::new(());
@@ -312,9 +311,7 @@ fn hung_probe_fails_open_for_concurrent_callers() {
     let start = Instant::now();
     let mut handles = Vec::new();
     for _ in 0..4 {
-        handles.push(std::thread::spawn(|| {
-            get_environment_probe_line(false)
-        }));
+        handles.push(std::thread::spawn(|| get_environment_probe_line(false)));
     }
     let results: Vec<String> = handles
         .into_iter()

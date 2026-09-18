@@ -35,9 +35,21 @@ once_cell = "1"
 reqwest = { version = "0.12", default-features = false, features = ["blocking", "rustls-tls", "socks"] }
 log = "0.4"
 sha2 = "0.10"
+aes-gcm = "0.10"
+base64 = "0.22"
+fancy-regex = "0.14"
+parking_lot = "0.12"
+rand = "0.10"
+regex = "1"
+tempfile = "3"
+url = "2"
 
 [profile.dev]
-debug = true
+# JEV efficiency: line-tables-only keeps backtraces while roughly halving
+# test-binary size vs full debuginfo; no observable behavior change.
+debug = 1
 
 [profile.release]
 lto = "thin"
+# JEV cost-efficiency: strip symbols from release artifacts.
+strip = true

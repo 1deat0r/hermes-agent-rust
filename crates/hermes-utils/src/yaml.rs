@@ -4,10 +4,13 @@
 //! PARITY: utils.py lines 319–480 (`IndentDumper`, `atomic_yaml_write`,
 //! `atomic_roundtrip_yaml_update`) and 499–524 (`fast_safe_load`).
 
-use crate::atomic::{atomic_replace, fchmod, preserve_file_mode, preserve_file_owner, restore_file_mode, restore_file_owner};
+use crate::atomic::{
+    atomic_replace, fchmod, preserve_file_mode, preserve_file_owner, restore_file_mode,
+    restore_file_owner,
+};
 use serde::Serialize;
-use std::path::{Path, PathBuf};
 use std::io::Write;
+use std::path::{Path, PathBuf};
 
 /// `yaml.safe_load` equivalent — parse a YAML document into a Value.
 ///
@@ -47,7 +50,12 @@ pub fn atomic_yaml_write(
         original_mode = create_mode;
     }
 
-    let prefix = format!(".{}_", path.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default());
+    let prefix = format!(
+        ".{}_",
+        path.file_stem()
+            .map(|s| s.to_string_lossy().into_owned())
+            .unwrap_or_default()
+    );
     let (mut tmp, tmp_path) = crate::atomic::create_temp_in(
         path.parent().unwrap_or_else(|| Path::new(".")),
         &prefix,
@@ -111,7 +119,9 @@ fn json_to_yaml(v: serde_json::Value) -> serde_yaml::Value {
             }
         }
         serde_json::Value::String(s) => serde_yaml::Value::String(s),
-        serde_json::Value::Array(items) => serde_yaml::Value::Sequence(items.into_iter().map(json_to_yaml).collect()),
+        serde_json::Value::Array(items) => {
+            serde_yaml::Value::Sequence(items.into_iter().map(json_to_yaml).collect())
+        }
         serde_json::Value::Object(map) => {
             let mut ymap = serde_yaml::Mapping::new();
             for (k, v) in map {
@@ -134,7 +144,10 @@ fn yaml_scalar_string(v: &serde_yaml::Value) -> String {
                 && !s.starts_with(char::is_whitespace)
                 && !s.ends_with(char::is_whitespace)
                 && !s.contains(':')
-                && !s.starts_with(['-', '?', '!', '&', '*', '#', '{', '}', '[', ']', ',', ']', '>', '|', '@', '`', '"', '\'', '%'])
+                && !s.starts_with([
+                    '-', '?', '!', '&', '*', '#', '{', '}', '[', ']', ',', ']', '>', '|', '@', '`',
+                    '"', '\'', '%',
+                ])
                 && !s.contains(" #")
                 && !s.contains('\n')
             {
@@ -151,9 +164,11 @@ fn yaml_scalar_string(v: &serde_yaml::Value) -> String {
             }
         }
         serde_yaml::Value::Bool(b) => b.to_string(),
-        serde_yaml::Value::Number(n) => serde_yaml::to_string(&serde_yaml::Value::Number(n.clone()))
-            .map(|s| s.trim_end().to_string())
-            .unwrap_or_default(),
+        serde_yaml::Value::Number(n) => {
+            serde_yaml::to_string(&serde_yaml::Value::Number(n.clone()))
+                .map(|s| s.trim_end().to_string())
+                .unwrap_or_default()
+        }
         serde_yaml::Value::Null => "null".to_string(),
         _ => String::new(),
     }
@@ -168,7 +183,8 @@ fn yaml_mapping_to_string(v: &serde_yaml::Value, sort_keys: bool, depth: usize) 
                 let mut ks: Vec<&serde_yaml::Value> = m.keys().collect();
                 if sort_keys {
                     ks.sort_by(|a, b| {
-                        (a.as_str().unwrap_or("").to_string()).cmp(&b.as_str().unwrap_or("").to_string())
+                        (a.as_str().unwrap_or("").to_string())
+                            .cmp(&b.as_str().unwrap_or("").to_string())
                     });
                 }
                 ks
@@ -178,7 +194,9 @@ fn yaml_mapping_to_string(v: &serde_yaml::Value, sort_keys: bool, depth: usize) 
                 let key_str = yaml_scalar_string(k);
                 let value = m.get(k).unwrap();
                 match value {
-                    serde_yaml::Value::Mapping(_) | serde_yaml::Value::Sequence(_) if !is_flow_empty(value) => {
+                    serde_yaml::Value::Mapping(_) | serde_yaml::Value::Sequence(_)
+                        if !is_flow_empty(value) =>
+                    {
                         out.push_str(&format!("{}{}:\n", indent, key_str));
                         out.push_str(&yaml_value_to_string(value, sort_keys, depth + 1));
                     }
@@ -186,7 +204,12 @@ fn yaml_mapping_to_string(v: &serde_yaml::Value, sort_keys: bool, depth: usize) 
                         out.push_str(&format!("{}{}: null\n", indent, key_str));
                     }
                     other => {
-                        out.push_str(&format!("{}{}: {}\n", indent, key_str, yaml_scalar_string(other)));
+                        out.push_str(&format!(
+                            "{}{}: {}\n",
+                            indent,
+                            key_str,
+                            yaml_scalar_string(other)
+                        ));
                     }
                 }
             }
@@ -266,7 +289,12 @@ pub fn atomic_roundtrip_yaml_update(
     let keys: Vec<&str> = key_path.split('.').filter(|s| !s.is_empty()).collect();
     let new_text = crate::yaml::roundtrip_update_text(&text, &keys, value);
 
-    let prefix = format!(".{}_", path.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default());
+    let prefix = format!(
+        ".{}_",
+        path.file_stem()
+            .map(|s| s.to_string_lossy().into_owned())
+            .unwrap_or_default()
+    );
     let (mut tmp, tmp_path) = crate::atomic::create_temp_in(
         path.parent().unwrap_or_else(|| Path::new(".")),
         &prefix,
@@ -352,7 +380,10 @@ fn render_leaf_value(value: &serde_yaml::Value) -> String {
                 && !s.contains(':')
                 && !s.contains(" #")
                 && !s.contains('\n')
-                && !s.starts_with(['-', '?', '!', '&', '*', '#', '{', '}', '[', ']', ',', '>', '|', '@', '`', '"', '\'', '%'])
+                && !s.starts_with([
+                    '-', '?', '!', '&', '*', '#', '{', '}', '[', ']', ',', '>', '|', '@', '`', '"',
+                    '\'', '%',
+                ])
             {
                 s.clone()
             } else {
@@ -366,9 +397,11 @@ fn render_leaf_value(value: &serde_yaml::Value) -> String {
             }
         }
         serde_yaml::Value::Bool(b) => b.to_string(),
-        serde_yaml::Value::Number(n) => serde_yaml::to_string(&serde_yaml::Value::Number(n.clone()))
-            .map(|s| s.trim_end().to_string())
-            .unwrap_or_else(|_| "null".into()),
+        serde_yaml::Value::Number(n) => {
+            serde_yaml::to_string(&serde_yaml::Value::Number(n.clone()))
+                .map(|s| s.trim_end().to_string())
+                .unwrap_or_else(|_| "null".into())
+        }
         serde_yaml::Value::Null => "null".to_string(),
         serde_yaml::Value::Sequence(seq) if seq.is_empty() => "[]".to_string(),
         serde_yaml::Value::Mapping(m) if m.is_empty() => "{}".to_string(),
@@ -419,7 +452,8 @@ fn update_lines(lines: &mut Vec<String>, keys: &[&str], value_line: &str) -> boo
             continue;
         }
         // Determine depth: pop while indent <= previous depth indent.
-        while depth_indent.last().map(|&d| indent <= d).unwrap_or(false) && !depth_indent.is_empty() {
+        while depth_indent.last().map(|&d| indent <= d).unwrap_or(false) && !depth_indent.is_empty()
+        {
             depth_indent.pop();
         }
         let depth = depth_indent.len(); // 0-based depth of this key
@@ -519,7 +553,9 @@ fn fallback_roundtrip(text: &str, keys: &[&str], value: &serde_yaml::Value) -> S
         if keys.len() == 1 {
             m.insert(k, value.clone());
         } else {
-            let entry = m.entry(k).or_insert_with(|| serde_yaml::Value::Mapping(serde_yaml::Mapping::new()));
+            let entry = m
+                .entry(k)
+                .or_insert_with(|| serde_yaml::Value::Mapping(serde_yaml::Mapping::new()));
             set(entry, &keys[1..], value.clone());
         }
     }
@@ -547,7 +583,10 @@ mod tests {
 
     #[test]
     fn fast_safe_load_fails_on_duplicate() {
-        assert!(fast_safe_load("a: 1\na: 2\n").is_err(), "serde_yaml rejects duplicate keys");
+        assert!(
+            fast_safe_load("a: 1\na: 2\n").is_err(),
+            "serde_yaml rejects duplicate keys"
+        );
     }
 
     #[test]
@@ -566,7 +605,11 @@ mod tests {
         let s = render_yaml(&v, true);
         assert!(s.starts_with("a: 2\nb: 1"), "got:\n{}", s);
         let s2 = render_yaml(&v, false);
-        assert!(s2.starts_with("b: 1\na: 2") || s2.starts_with("a: 2\nb: 1"), "insertion order kept: {}", s2);
+        assert!(
+            s2.starts_with("b: 1\na: 2") || s2.starts_with("a: 2\nb: 1"),
+            "insertion order kept: {}",
+            s2
+        );
     }
 
     #[test]
@@ -575,14 +618,22 @@ mod tests {
         let out = roundtrip_update_text(text, &["key"], &Value::String("new".into()));
         assert!(out.contains("# top comment"), "comments preserved: {}", out);
         assert!(out.contains("# another"), "comments preserved: {}", out);
-        assert!(out.contains("key: new  # trailing"), "scalar + trailing comment updated: {}", out);
+        assert!(
+            out.contains("key: new  # trailing"),
+            "scalar + trailing comment updated: {}",
+            out
+        );
         assert!(out.contains("next: 1"));
     }
 
     #[test]
     fn roundtrip_updates_nested_dotted_key() {
         let text = "agent:\n  reasoning_effort: high\n  other: 1\n";
-        let out = roundtrip_update_text(text, &["agent", "reasoning_effort"], &Value::String("low".into()));
+        let out = roundtrip_update_text(
+            text,
+            &["agent", "reasoning_effort"],
+            &Value::String("low".into()),
+        );
         assert!(out.contains("  reasoning_effort: low"), "got:\n{}", out);
         assert!(out.contains("  other: 1"));
     }
@@ -606,7 +657,8 @@ mod tests {
         let td = TempDir::new().unwrap();
         let p = td.path().join("cfg.yaml");
         atomic_yaml_write(&p, &serde_json::json!({"a": 1}), false, None, None).unwrap();
-        let parsed: serde_yaml::Value = serde_yaml::from_str(&std::fs::read_to_string(&p).unwrap()).unwrap();
+        let parsed: serde_yaml::Value =
+            serde_yaml::from_str(&std::fs::read_to_string(&p).unwrap()).unwrap();
         assert_eq!(parsed["a"].as_i64(), Some(1));
     }
 

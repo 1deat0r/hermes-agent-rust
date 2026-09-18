@@ -8,8 +8,13 @@ use hermes_tools::file_safety::{classify_write_denial, get_read_block_error, is_
 #[test]
 fn blocked_env_basenames() {
     for basename in [
-        ".env", ".env.local", ".env.development", ".env.production",
-        ".env.test", ".env.staging", ".envrc",
+        ".env",
+        ".env.local",
+        ".env.development",
+        ".env.production",
+        ".env.test",
+        ".env.staging",
+        ".envrc",
     ] {
         let path = format!("/tmp/project/{basename}");
         let error = get_read_block_error(&path);
@@ -44,8 +49,14 @@ fn allowed_env_example() {
 #[test]
 fn write_denies_credential_paths() {
     let home = std::env::var("HOME").unwrap_or_else(|_| "/tmp".to_string());
-    assert_eq!(classify_write_denial(&format!("{home}/.ssh/id_rsa")), Some("credential"));
-    assert_eq!(classify_write_denial(&format!("{home}/.ssh/config")), Some("credential"));
+    assert_eq!(
+        classify_write_denial(&format!("{home}/.ssh/id_rsa")),
+        Some("credential")
+    );
+    assert_eq!(
+        classify_write_denial(&format!("{home}/.ssh/config")),
+        Some("credential")
+    );
     assert_eq!(classify_write_denial("/etc/passwd"), Some("credential"));
     assert_eq!(classify_write_denial("/etc/sudoers"), Some("credential"));
     assert!(is_write_denied(&format!("{home}/.netrc")));

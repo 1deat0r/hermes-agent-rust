@@ -254,7 +254,15 @@ pub fn write_cache_entry(
     tools: Vec<Value>,
     utility_tools: Option<Vec<Value>>,
 ) {
-    write_cache_entry_at(server_name, fingerprint, tools, utility_tools, None, None, now_secs());
+    write_cache_entry_at(
+        server_name,
+        fingerprint,
+        tools,
+        utility_tools,
+        None,
+        None,
+        now_secs(),
+    );
 }
 
 // PARITY: `write_cache_entry` with explicit clock. `ttl_ms`/`cache_scope`

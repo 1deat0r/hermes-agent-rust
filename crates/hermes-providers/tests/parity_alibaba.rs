@@ -49,8 +49,14 @@ fn alibaba_sibling_profiles_match_upstream() {
     assert_eq!(cn.aliases, ["dashscope-cn", "alibaba-cloud-cn"]);
     assert_eq!(cn.display_name, "Alibaba Cloud DashScope (China)");
     assert_eq!(cn.env_vars, ["DASHSCOPE_API_KEY", "DASHSCOPE_CN_BASE_URL"]);
-    assert_eq!(cn.base_url, "https://dashscope.aliyuncs.com/compatible-mode/v1");
-    assert_eq!(get_provider_profile("dashscope-cn").unwrap().name, "alibaba-cn");
+    assert_eq!(
+        cn.base_url,
+        "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    );
+    assert_eq!(
+        get_provider_profile("dashscope-cn").unwrap().name,
+        "alibaba-cn"
+    );
 
     let tp = get_provider_profile("alibaba-token-plan").expect("token plan registered");
     assert_eq!(tp.aliases, ["dashscope-token-plan"]);

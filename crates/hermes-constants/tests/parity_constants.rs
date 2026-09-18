@@ -6,9 +6,9 @@
 //! generation, venv path layout, module identification, WSL path translation.
 
 use hermes_constants::{
-    canonical_model_variants, is_first_party_module, parse_reasoning_effort,
-    venv_bin_dir, venv_python_path, windows_path_to_wsl, wsl_unc_path_to_posix,
-    Platform, FIRST_PARTY_MODULE_ROOTS,
+    canonical_model_variants, is_first_party_module, parse_reasoning_effort, venv_bin_dir,
+    venv_python_path, windows_path_to_wsl, wsl_unc_path_to_posix, Platform,
+    FIRST_PARTY_MODULE_ROOTS,
 };
 use serde_json::Value;
 use std::sync::Mutex;
@@ -22,7 +22,8 @@ fn load_golden() -> Value {
     path.pop(); // crates/
     path.pop(); // workspace root
     path.push("upstream/golden_constants_reasoning.json");
-    let text = std::fs::read_to_string(&path).expect("golden fixture missing — run tools/gen_golden.sh");
+    let text =
+        std::fs::read_to_string(&path).expect("golden fixture missing — run tools/gen_golden.sh");
     serde_json::from_str(&text).unwrap()
 }
 
@@ -86,7 +87,12 @@ fn canonical_model_variants_matches_upstream_golden_exactly() {
         for (i, (g, e)) in got.iter().zip(expected.iter()).enumerate() {
             assert_eq!(g, e, "variant[{}] mismatch for {:?}", i, model);
         }
-        assert_eq!(&got[..], &expected[..], "exact list mismatch for {:?}", model);
+        assert_eq!(
+            &got[..],
+            &expected[..],
+            "exact list mismatch for {:?}",
+            model
+        );
     }
 }
 
@@ -102,8 +108,14 @@ fn canonical_model_variants_spot_checks() {
 fn venv_layout_matches_upstream() {
     use std::path::PathBuf;
     // upstream: venv_bin_dir("/venv", windows=False) -> /venv/bin
-    assert_eq!(venv_bin_dir("/venv", Some(Platform::Posix)), PathBuf::from("/venv/bin"));
-    assert_eq!(venv_bin_dir("/venv", Some(Platform::Windows)), PathBuf::from("/venv/Scripts"));
+    assert_eq!(
+        venv_bin_dir("/venv", Some(Platform::Posix)),
+        PathBuf::from("/venv/bin")
+    );
+    assert_eq!(
+        venv_bin_dir("/venv", Some(Platform::Windows)),
+        PathBuf::from("/venv/Scripts")
+    );
     assert_eq!(
         venv_python_path("/venv", Some(Platform::Posix)),
         PathBuf::from("/venv/bin/python")
@@ -118,11 +130,19 @@ fn venv_layout_matches_upstream() {
 fn first_party_module_roots_exact() {
     // upstream frozenset order is irrelevant; membership is the contract.
     for root in FIRST_PARTY_MODULE_ROOTS {
-        assert!(is_first_party_module(Some(root)), "{} should be first-party", root);
+        assert!(
+            is_first_party_module(Some(root)),
+            "{} should be first-party",
+            root
+        );
         assert!(is_first_party_module(Some(&format!("{}.thing", root))));
     }
     for bad in ["agents", "agentops", "toolsets_x", "hermesx", "", "unknown"] {
-        assert!(!is_first_party_module(Some(bad)), "{} should NOT be first-party", bad);
+        assert!(
+            !is_first_party_module(Some(bad)),
+            "{} should NOT be first-party",
+            bad
+        );
     }
     assert!(!is_first_party_module(None));
 }

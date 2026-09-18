@@ -26,8 +26,8 @@ use std::time::Instant;
 use serde_json::{json, Value};
 
 use super::base::{
-    reset_source_environment, set_source_environment, ErrorKind, FetchResult,
-    SecretSource, SECRET_SOURCE_API_VERSION,
+    reset_source_environment, set_source_environment, ErrorKind, FetchResult, SecretSource,
+    SECRET_SOURCE_API_VERSION,
 };
 
 /// Provenance record for one env var the orchestrator set.

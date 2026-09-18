@@ -7,8 +7,8 @@
 pub mod build_info;
 pub mod cli_output;
 pub mod colors;
-pub mod default_soul;
 pub mod dashboard_auth;
+pub mod default_soul;
 pub mod git_revision;
 pub mod input_sanitize;
 pub mod lifecycle;

@@ -31,11 +31,13 @@ fn msg(role: &str, content: &str) -> MessageInput {
 }
 
 fn create(db: &SessionDB, sid: &str, source: &str) {
-    db.create_session(sid, source, &NewSession::default()).expect("create");
+    db.create_session(sid, source, &NewSession::default())
+        .expect("create");
 }
 
 fn append(db: &SessionDB, sid: &str, role: &str, content: &str) {
-    db.append_message(sid, &msg(role, content), None).expect("append");
+    db.append_message(sid, &msg(role, content), None)
+        .expect("append");
 }
 
 // =====================================================================
@@ -58,12 +60,17 @@ fn message_count_total_and_per_session() {
 fn has_platform_message_id_dedupe_guard() {
     let (_dir, db) = open_db("state.db");
     create(&db, "s1", "telegram");
-    db.append_message("s1", &MessageInput {
-        role: "user".into(),
-        content: Some(json!("ping")),
-        platform_message_id: Some("tg-42".into()),
-        ..Default::default()
-    }, None).expect("append");
+    db.append_message(
+        "s1",
+        &MessageInput {
+            role: "user".into(),
+            content: Some(json!("ping")),
+            platform_message_id: Some("tg-42".into()),
+            ..Default::default()
+        },
+        None,
+    )
+    .expect("append");
     assert!(db.has_platform_message_id("s1", "tg-42").expect("hit"));
     assert!(!db.has_platform_message_id("s1", "tg-43").expect("miss"));
     assert!(!db.has_platform_message_id("other", "tg-42").expect("other"));
@@ -89,17 +96,25 @@ fn delete_session_removes_row_and_messages() {
 fn delete_session_cascades_delegate_and_orphans_branch() {
     let (_dir, db) = open_db("state.db");
     create(&db, "parent", "cli");
-    db.create_session("delegate", "cli", &NewSession {
-        parent_session_id: Some("parent".into()),
-        model_config: Some(json!({"_delegate_from": "parent"})),
-        ..Default::default()
-    })
+    db.create_session(
+        "delegate",
+        "cli",
+        &NewSession {
+            parent_session_id: Some("parent".into()),
+            model_config: Some(json!({"_delegate_from": "parent"})),
+            ..Default::default()
+        },
+    )
     .expect("delegate");
-    db.create_session("branch", "cli", &NewSession {
-        parent_session_id: Some("parent".into()),
-        model_config: Some(json!({"_branched_from": "parent"})),
-        ..Default::default()
-    })
+    db.create_session(
+        "branch",
+        "cli",
+        &NewSession {
+            parent_session_id: Some("parent".into()),
+            model_config: Some(json!({"_branched_from": "parent"})),
+            ..Default::default()
+        },
+    )
     .expect("branch");
 
     let targets = db.get_session_delete_targets("parent").expect("targets");
@@ -122,22 +137,31 @@ fn delete_session_expected_targets_fail_closed_on_new_delegate() {
         model_config: Some(json!({"_delegate_from": "parent"})),
         ..Default::default()
     };
-    db.create_session("delegate", "cli", &delegate("delegate")).expect("delegate");
-    db.create_session("branch", "cli", &NewSession {
-        parent_session_id: Some("parent".into()),
-        model_config: Some(json!({"_branched_from": "parent"})),
-        ..Default::default()
-    })
+    db.create_session("delegate", "cli", &delegate("delegate"))
+        .expect("delegate");
+    db.create_session(
+        "branch",
+        "cli",
+        &NewSession {
+            parent_session_id: Some("parent".into()),
+            model_config: Some(json!({"_branched_from": "parent"})),
+            ..Default::default()
+        },
+    )
     .expect("branch");
 
     let expected_ids = db.get_session_delete_targets("parent").expect("targets");
-    assert_eq!(expected_ids, vec!["parent".to_string(), "delegate".to_string()]);
-
-    db.create_session("late-delegate", "cli", &delegate("late-delegate")).expect("late");
-
-    assert!(
-        !db.delete_session("parent", None, Some(&expected_ids)).expect("fail closed")
+    assert_eq!(
+        expected_ids,
+        vec!["parent".to_string(), "delegate".to_string()]
     );
+
+    db.create_session("late-delegate", "cli", &delegate("late-delegate"))
+        .expect("late");
+
+    assert!(!db
+        .delete_session("parent", None, Some(&expected_ids))
+        .expect("fail closed"));
     assert!(db.get_session("parent").expect("parent").is_some());
     assert!(db.get_session("delegate").expect("delegate").is_some());
     assert!(db.get_session("late-delegate").expect("late").is_some());
@@ -160,20 +184,30 @@ fn delete_session_if_empty_only_when_no_resumable_content() {
 
     // A titled session is preserved even with no messages.
     create(&db, "titled", "cli");
-    db.set_session_title("titled", "A real title").expect("title");
+    db.set_session_title("titled", "A real title")
+        .expect("title");
     // A titled session is preserved even with no messages.
     create(&db, "titled", "cli");
-    db.set_session_title("titled", "A real title").expect("title");
-    assert!(!db.delete_session_if_empty("titled", None).expect("keep title"));
+    db.set_session_title("titled", "A real title")
+        .expect("title");
+    assert!(!db
+        .delete_session_if_empty("titled", None)
+        .expect("keep title"));
 
     // A parent with a child is preserved.
     create(&db, "outer", "cli");
-    db.create_session("inner", "cli", &NewSession {
-        parent_session_id: Some("outer".into()),
-        ..Default::default()
-    })
+    db.create_session(
+        "inner",
+        "cli",
+        &NewSession {
+            parent_session_id: Some("outer".into()),
+            ..Default::default()
+        },
+    )
     .expect("inner");
-    assert!(!db.delete_session_if_empty("outer", None).expect("keep child"));
+    assert!(!db
+        .delete_session_if_empty("outer", None)
+        .expect("keep child"));
 }
 
 #[test]
@@ -184,15 +218,22 @@ fn delete_sessions_bulk_transactional() {
     create(&db, "s3", "cli");
     append(&db, "s1", "user", "x");
     // Delegate child of s2 cascade-deletes too.
-    db.create_session("s2-d", "cli", &NewSession {
-        parent_session_id: Some("s2".into()),
-        model_config: Some(json!({"_delegate_from": "s2"})),
-        ..Default::default()
-    })
+    db.create_session(
+        "s2-d",
+        "cli",
+        &NewSession {
+            parent_session_id: Some("s2".into()),
+            model_config: Some(json!({"_delegate_from": "s2"})),
+            ..Default::default()
+        },
+    )
     .expect("s2d");
 
     let count = db
-        .delete_sessions(&["s1".to_string(), "s2".to_string(), "missing".to_string()], None)
+        .delete_sessions(
+            &["s1".to_string(), "s2".to_string(), "missing".to_string()],
+            None,
+        )
         .expect("bulk");
     assert_eq!(count, 2);
     assert!(db.get_session("s1").expect("s1 gone").is_none());
@@ -211,8 +252,10 @@ fn delete_empty_sessions_reaps_only_empty_ended() {
     db.end_session("has_msgs", "tui_shutdown").expect("end2");
     append(&db, "has_msgs", "user", "content");
     create(&db, "archived_empty", "cli");
-    db.end_session("archived_empty", "tui_shutdown").expect("end3");
-    db.set_session_archived("archived_empty", true).expect("archive");
+    db.end_session("archived_empty", "tui_shutdown")
+        .expect("end3");
+    db.set_session_archived("archived_empty", true)
+        .expect("archive");
 
     assert_eq!(db.count_empty_sessions().expect("count"), 1);
     let deleted = db.delete_empty_sessions(None).expect("delete empties");
@@ -220,7 +263,10 @@ fn delete_empty_sessions_reaps_only_empty_ended() {
     assert!(db.get_session("empty_ended").expect("gone").is_none());
     assert!(db.get_session("live_empty").expect("kept live").is_some());
     assert!(db.get_session("has_msgs").expect("kept msgs").is_some());
-    assert!(db.get_session("archived_empty").expect("kept archived").is_some());
+    assert!(db
+        .get_session("archived_empty")
+        .expect("kept archived")
+        .is_some());
 }
 
 #[test]
@@ -240,7 +286,8 @@ fn purge_stale_tool_call_markers_dry_run_and_write() {
         ..Default::default()
     };
     append(&db, "s1", "user", "do");
-    db.append_message("s1", &markers("s1"), None).expect("marker");
+    db.append_message("s1", &markers("s1"), None)
+        .expect("marker");
     db.append_message("s1", &clean("s1"), None).expect("clean");
 
     let dry = db.purge_stale_tool_call_markers(true, true).expect("dry");
@@ -258,7 +305,9 @@ fn purge_stale_tool_call_markers_dry_run_and_write() {
     };
     assert!(ids.iter().any(|v| v.as_i64() == Some(marker_id)));
 
-    let result = db.purge_stale_tool_call_markers(false, false).expect("purge");
+    let result = db
+        .purge_stale_tool_call_markers(false, false)
+        .expect("purge");
     assert_eq!(result["rows_affected"].as_i64(), Some(1));
     assert_eq!(result["backup_path"], Value::Null);
     // Content cleared; tool_calls untouched; clean message untouched.
@@ -273,7 +322,9 @@ fn purge_stale_tool_call_markers_dry_run_and_write() {
     assert_eq!(content, "");
     assert!(tool_calls.contains("c1"));
     // Second run no-ops.
-    let result = db.purge_stale_tool_call_markers(false, true).expect("purge2");
+    let result = db
+        .purge_stale_tool_call_markers(false, true)
+        .expect("purge2");
     // backup=true with nothing to change takes no snapshot.
     assert_eq!(result["rows_affected"].as_i64(), Some(0));
     assert_eq!(result["backup_path"], Value::Null);
@@ -303,17 +354,24 @@ fn retag_kanban_worker_sessions_gated_once() {
     assert_eq!(retagged, 1);
     let src: String = {
         let conn = db.writer_conn();
-        conn.query_row("SELECT source FROM sessions WHERE id = 'w1'", [], |r| r.get(0))
-            .expect("src")
+        conn.query_row("SELECT source FROM sessions WHERE id = 'w1'", [], |r| {
+            r.get(0)
+        })
+        .expect("src")
     };
     assert_eq!(src, "kanban");
     // Gated: second call no-ops.
-    assert_eq!(db.retag_kanban_worker_sessions(&workspaces).expect("gated"), 0);
+    assert_eq!(
+        db.retag_kanban_worker_sessions(&workspaces).expect("gated"),
+        0
+    );
     // Untouched session stays cli.
     let src: String = {
         let conn = db.writer_conn();
-        conn.query_row("SELECT source FROM sessions WHERE id = 'other'", [], |r| r.get(0))
-            .expect("src2")
+        conn.query_row("SELECT source FROM sessions WHERE id = 'other'", [], |r| {
+            r.get(0)
+        })
+        .expect("src2")
     };
     assert_eq!(src, "cli");
     // Empty root short-circuits.
@@ -354,17 +412,15 @@ fn maybe_auto_prune_and_vacuum_idempotent() {
     append(&db2, "old", "user", "x");
     db2.end_session("old", "tui_shutdown").expect("end");
     let conn = db2.writer_conn();
-    conn.execute(
-        "UPDATE sessions SET started_at = 1.0 WHERE id = 'old'",
-        [],
-    )
-    .expect("aged");
+    conn.execute("UPDATE sessions SET started_at = 1.0 WHERE id = 'old'", [])
+        .expect("aged");
     conn.execute(
         "UPDATE messages SET timestamp = 1.0 WHERE session_id = 'old'",
         [],
     )
     .expect("aged msgs");
-    conn.execute("DELETE FROM state_meta WHERE key = 'last_auto_prune'", []).expect("reset");
+    conn.execute("DELETE FROM state_meta WHERE key = 'last_auto_prune'", [])
+        .expect("reset");
     drop(conn);
     let r = db2
         .maybe_auto_prune_and_vacuum(90, 24, false, None, 30)
@@ -385,17 +441,15 @@ fn maybe_auto_archive_idempotent_and_archives_idle() {
     append(&db2, "idle", "user", "content");
     {
         let conn = db2.writer_conn();
-        conn.execute(
-            "UPDATE sessions SET started_at = 1.0 WHERE id = 'idle'",
-            [],
-        )
-        .expect("aged");
+        conn.execute("UPDATE sessions SET started_at = 1.0 WHERE id = 'idle'", [])
+            .expect("aged");
         conn.execute(
             "UPDATE messages SET timestamp = 1.0 WHERE session_id = 'idle'",
             [],
         )
         .expect("aged msgs");
-        conn.execute("DELETE FROM state_meta WHERE key = 'last_auto_archive'", []).expect("reset");
+        conn.execute("DELETE FROM state_meta WHERE key = 'last_auto_archive'", [])
+            .expect("reset");
     }
     let r = db2.maybe_auto_archive(0.1, 24, true).expect("archive run");
     assert_eq!(r["archived"].as_i64(), Some(1));
@@ -432,10 +486,14 @@ fn finalize_orphaned_compression_sessions_ends_unfinished_children() {
     }
     // Orphaned child: has messages, never ended, api_call_count=0, started
     // more than 7 days ago.
-    db.create_session("orphan", "cli", &NewSession {
-        parent_session_id: Some("parent".into()),
-        ..Default::default()
-    })
+    db.create_session(
+        "orphan",
+        "cli",
+        &NewSession {
+            parent_session_id: Some("parent".into()),
+            ..Default::default()
+        },
+    )
     .expect("orphan");
     append(&db, "orphan", "assistant", "post-compression reply");
     {
@@ -447,14 +505,20 @@ fn finalize_orphaned_compression_sessions_ends_unfinished_children() {
         .expect("aged");
     }
     // A fresh unlucky child (started recently) must NOT be finalized.
-    db.create_session("fresh", "cli", &NewSession {
-        parent_session_id: Some("parent".into()),
-        ..Default::default()
-    })
+    db.create_session(
+        "fresh",
+        "cli",
+        &NewSession {
+            parent_session_id: Some("parent".into()),
+            ..Default::default()
+        },
+    )
     .expect("fresh");
     append(&db, "fresh", "assistant", "recent");
 
-    let finalized = db.finalize_orphaned_compression_sessions().expect("finalize");
+    let finalized = db
+        .finalize_orphaned_compression_sessions()
+        .expect("finalize");
     assert_eq!(finalized, 1);
     let orphan = db.get_session("orphan").expect("get").expect("row");
     assert_eq!(orphan.end_reason.as_deref(), Some("orphaned_compression"));

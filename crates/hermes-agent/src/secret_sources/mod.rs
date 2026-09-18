@@ -12,7 +12,7 @@
 
 pub mod base;
 pub mod bitwarden;
-pub mod onepassword;
 pub mod cache;
 pub mod command;
+pub mod onepassword;
 pub mod registry;

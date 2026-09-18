@@ -23,8 +23,8 @@
 //! `jsonschema_compat` seam in delegation_output_schema.rs is wired.
 
 use hermes_tools::delegation_output_schema::{
-    MAX_SCHEMA_RETRIES, append_output_contract, build_retry_message,
-    coerce_output_schema, extract_json_candidate, validate_output,
+    append_output_contract, build_retry_message, coerce_output_schema, extract_json_candidate,
+    validate_output, MAX_SCHEMA_RETRIES,
 };
 use serde_json::{json, Value};
 
@@ -56,7 +56,10 @@ fn json_violating_schema_reports_errors() {
     let (ok, errors) = validate_output("{\"zip\": \"10115\"}", &address_schema());
     assert!(!ok);
     assert!(!errors.is_empty());
-    assert!(errors.iter().any(|e| e.contains("city")), "errors: {errors:?}");
+    assert!(
+        errors.iter().any(|e| e.contains("city")),
+        "errors: {errors:?}"
+    );
 }
 
 #[test]
@@ -184,10 +187,7 @@ fn extract_strips_fence_and_lang_tag() {
 #[test]
 fn extract_finds_outermost_bracket_span() {
     let text = "prefix text {\"a\": {\"nested\": true}} suffix";
-    assert_eq!(
-        extract_json_candidate(text),
-        "{\"a\": {\"nested\": true}}"
-    );
+    assert_eq!(extract_json_candidate(text), "{\"a\": {\"nested\": true}}");
 }
 
 #[test]

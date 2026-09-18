@@ -138,14 +138,32 @@ fn exported_tag_tables_match_upstream() {
     use hermes_agent::think_scrubber::{THINK_CLOSE_TAGS, THINK_OPEN_TAGS, THINK_TAG_NAMES};
     assert_eq!(
         THINK_TAG_NAMES,
-        ["think", "thinking", "reasoning", "thought", "REASONING_SCRATCHPAD"]
+        [
+            "think",
+            "thinking",
+            "reasoning",
+            "thought",
+            "REASONING_SCRATCHPAD"
+        ]
     );
     assert_eq!(
         THINK_OPEN_TAGS,
-        ["<think>", "<thinking>", "<reasoning>", "<thought>", "<reasoning_scratchpad>"]
+        [
+            "<think>",
+            "<thinking>",
+            "<reasoning>",
+            "<thought>",
+            "<reasoning_scratchpad>"
+        ]
     );
     assert_eq!(
         THINK_CLOSE_TAGS,
-        ["</think>", "</thinking>", "</reasoning>", "</thought>", "</reasoning_scratchpad>"]
+        [
+            "</think>",
+            "</thinking>",
+            "</reasoning>",
+            "</thought>",
+            "</reasoning_scratchpad>"
+        ]
     );
 }

@@ -58,8 +58,7 @@ fn open_db_failure_closes() {
         })),
         ..Default::default()
     };
-    let result =
-        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| open_db(&path, opts)));
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| open_db(&path, opts)));
     assert!(result.is_err());
     // Reopen works — no wedged lock from a leaked connection.
     let opts2 = DbOptions {

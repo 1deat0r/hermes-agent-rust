@@ -44,17 +44,26 @@ fn buzz_entry_registers_with_upstream_values() {
 /// Oracle: `plugins/platforms/dingtalk/__init__.py` — entry registers `dingtalk`.
 #[test]
 fn dingtalk_entry_registers_with_upstream_values() {
-    let reg = registered(platforms::dingtalk::register, platforms::dingtalk::PLATFORM_NAME);
+    let reg = registered(
+        platforms::dingtalk::register,
+        platforms::dingtalk::PLATFORM_NAME,
+    );
     assert_eq!(reg.name, "dingtalk");
     assert_eq!(reg.label, "DingTalk");
-    assert_eq!(reg.required_env, ["DINGTALK_CLIENT_ID", "DINGTALK_CLIENT_SECRET"]);
+    assert_eq!(
+        reg.required_env,
+        ["DINGTALK_CLIENT_ID", "DINGTALK_CLIENT_SECRET"]
+    );
     assert!(reg.install_hint == ("pip install 'dingtalk-stream>=0.20' httpx"));
 }
 
 /// Oracle: `plugins/platforms/discord/__init__.py` — entry registers `discord`.
 #[test]
 fn discord_entry_registers_with_upstream_values() {
-    let reg = registered(platforms::discord::register, platforms::discord::PLATFORM_NAME);
+    let reg = registered(
+        platforms::discord::register,
+        platforms::discord::PLATFORM_NAME,
+    );
     assert_eq!(reg.name, "discord");
     assert_eq!(reg.label, "Discord");
     assert_eq!(reg.required_env, ["DISCORD_BOT_TOKEN"]);
@@ -67,14 +76,20 @@ fn email_entry_registers_with_upstream_values() {
     let reg = registered(platforms::email::register, platforms::email::PLATFORM_NAME);
     assert_eq!(reg.name, "email");
     assert_eq!(reg.label, "Email");
-    assert_eq!(reg.required_env, ["EMAIL_ADDRESS", "EMAIL_PASSWORD", "EMAIL_SMTP_HOST"]);
+    assert_eq!(
+        reg.required_env,
+        ["EMAIL_ADDRESS", "EMAIL_PASSWORD", "EMAIL_SMTP_HOST"]
+    );
     assert!(reg.install_hint == ("Email uses the Python stdlib (smtplib/imaplib) — no extra deps"));
 }
 
 /// Oracle: `plugins/platforms/feishu/__init__.py` — entry registers `feishu`.
 #[test]
 fn feishu_entry_registers_with_upstream_values() {
-    let reg = registered(platforms::feishu::register, platforms::feishu::PLATFORM_NAME);
+    let reg = registered(
+        platforms::feishu::register,
+        platforms::feishu::PLATFORM_NAME,
+    );
     assert_eq!(reg.name, "feishu");
     assert_eq!(reg.label, "Feishu / Lark");
     assert_eq!(reg.required_env, ["FEISHU_APP_ID", "FEISHU_APP_SECRET"]);
@@ -84,7 +99,10 @@ fn feishu_entry_registers_with_upstream_values() {
 /// Oracle: `plugins/platforms/google_chat/__init__.py` — entry registers `google_chat`.
 #[test]
 fn google_chat_entry_registers_with_upstream_values() {
-    let reg = registered(platforms::google_chat::register, platforms::google_chat::PLATFORM_NAME);
+    let reg = registered(
+        platforms::google_chat::register,
+        platforms::google_chat::PLATFORM_NAME,
+    );
     assert_eq!(reg.name, "google_chat");
     assert_eq!(reg.label, "Google Chat");
     assert_eq!(reg.required_env, ["GOOGLE_CHAT_SERVICE_ACCOUNT_JSON"]);
@@ -94,7 +112,10 @@ fn google_chat_entry_registers_with_upstream_values() {
 /// Oracle: `plugins/platforms/homeassistant/__init__.py` — entry registers `homeassistant`.
 #[test]
 fn homeassistant_entry_registers_with_upstream_values() {
-    let reg = registered(platforms::homeassistant::register, platforms::homeassistant::PLATFORM_NAME);
+    let reg = registered(
+        platforms::homeassistant::register,
+        platforms::homeassistant::PLATFORM_NAME,
+    );
     assert_eq!(reg.name, "homeassistant");
     assert_eq!(reg.label, "Home Assistant");
     assert_eq!(reg.required_env, ["HASS_TOKEN"]);
@@ -107,7 +128,10 @@ fn irc_entry_registers_with_upstream_values() {
     let reg = registered(platforms::irc::register, platforms::irc::PLATFORM_NAME);
     assert_eq!(reg.name, "irc");
     assert_eq!(reg.label, "IRC");
-    assert_eq!(reg.required_env, ["IRC_SERVER", "IRC_CHANNEL", "IRC_NICKNAME"]);
+    assert_eq!(
+        reg.required_env,
+        ["IRC_SERVER", "IRC_CHANNEL", "IRC_NICKNAME"]
+    );
     assert!(reg.install_hint == ("No extra packages needed (stdlib only)"));
 }
 
@@ -117,24 +141,36 @@ fn line_entry_registers_with_upstream_values() {
     let reg = registered(platforms::line::register, platforms::line::PLATFORM_NAME);
     assert_eq!(reg.name, "line");
     assert_eq!(reg.label, "LINE");
-    assert_eq!(reg.required_env, ["LINE_CHANNEL_ACCESS_TOKEN", "LINE_CHANNEL_SECRET"]);
+    assert_eq!(
+        reg.required_env,
+        ["LINE_CHANNEL_ACCESS_TOKEN", "LINE_CHANNEL_SECRET"]
+    );
     assert!(reg.install_hint == ("pip install aiohttp"));
 }
 
 /// Oracle: `plugins/platforms/matrix/__init__.py` — entry registers `matrix`.
 #[test]
 fn matrix_entry_registers_with_upstream_values() {
-    let reg = registered(platforms::matrix::register, platforms::matrix::PLATFORM_NAME);
+    let reg = registered(
+        platforms::matrix::register,
+        platforms::matrix::PLATFORM_NAME,
+    );
     assert_eq!(reg.name, "matrix");
     assert_eq!(reg.label, "Matrix");
-    assert_eq!(reg.required_env, ["MATRIX_HOMESERVER", "MATRIX_ACCESS_TOKEN"]);
+    assert_eq!(
+        reg.required_env,
+        ["MATRIX_HOMESERVER", "MATRIX_ACCESS_TOKEN"]
+    );
     assert!(reg.install_hint == ("pip install 'mautrix[encryption]'"));
 }
 
 /// Oracle: `plugins/platforms/mattermost/__init__.py` — entry registers `mattermost`.
 #[test]
 fn mattermost_entry_registers_with_upstream_values() {
-    let reg = registered(platforms::mattermost::register, platforms::mattermost::PLATFORM_NAME);
+    let reg = registered(
+        platforms::mattermost::register,
+        platforms::mattermost::PLATFORM_NAME,
+    );
     assert_eq!(reg.name, "mattermost");
     assert_eq!(reg.label, "Mattermost");
     assert_eq!(reg.required_env, ["MATTERMOST_URL", "MATTERMOST_TOKEN"]);
@@ -154,10 +190,16 @@ fn ntfy_entry_registers_with_upstream_values() {
 /// Oracle: `plugins/platforms/photon/__init__.py` — entry registers `photon`.
 #[test]
 fn photon_entry_registers_with_upstream_values() {
-    let reg = registered(platforms::photon::register, platforms::photon::PLATFORM_NAME);
+    let reg = registered(
+        platforms::photon::register,
+        platforms::photon::PLATFORM_NAME,
+    );
     assert_eq!(reg.name, "photon");
     assert_eq!(reg.label, "iMessage via Photon");
-    assert_eq!(reg.required_env, ["PHOTON_PROJECT_ID", "PHOTON_PROJECT_SECRET"]);
+    assert_eq!(
+        reg.required_env,
+        ["PHOTON_PROJECT_ID", "PHOTON_PROJECT_SECRET"]
+    );
     assert!(reg.install_hint == ("Run: hermes photon setup  (logs in via device flow, creates a Spectrum project, links your phone number, installs the spectrum-ts sidecar)."));
 }
 
@@ -174,11 +216,17 @@ fn raft_entry_registers_with_upstream_values() {
 /// Oracle: `plugins/platforms/simplex/__init__.py` — entry registers `simplex`.
 #[test]
 fn simplex_entry_registers_with_upstream_values() {
-    let reg = registered(platforms::simplex::register, platforms::simplex::PLATFORM_NAME);
+    let reg = registered(
+        platforms::simplex::register,
+        platforms::simplex::PLATFORM_NAME,
+    );
     assert_eq!(reg.name, "simplex");
     assert_eq!(reg.label, "SimpleX Chat");
     assert_eq!(reg.required_env, ["SIMPLEX_WS_URL"]);
-    assert!(reg.install_hint == ("pip install websockets   # SimpleX adapter requires the websockets package"));
+    assert!(
+        reg.install_hint
+            == ("pip install websockets   # SimpleX adapter requires the websockets package")
+    );
 }
 
 /// Oracle: `plugins/platforms/sms/__init__.py` — entry registers `sms`.
@@ -187,7 +235,14 @@ fn sms_entry_registers_with_upstream_values() {
     let reg = registered(platforms::sms::register, platforms::sms::PLATFORM_NAME);
     assert_eq!(reg.name, "sms");
     assert_eq!(reg.label, "SMS (Twilio)");
-    assert_eq!(reg.required_env, ["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_PHONE_NUMBER"]);
+    assert_eq!(
+        reg.required_env,
+        [
+            "TWILIO_ACCOUNT_SID",
+            "TWILIO_AUTH_TOKEN",
+            "TWILIO_PHONE_NUMBER"
+        ]
+    );
     assert!(reg.install_hint == ("pip install aiohttp"));
 }
 
@@ -198,14 +253,22 @@ fn teams_entry_registers_with_upstream_values() {
     // Teams: only the stable prefix is pinned; upstream appends a lazy_deps-computed command.
     assert_eq!(reg.name, "teams");
     assert_eq!(reg.label, "Microsoft Teams");
-    assert_eq!(reg.required_env, ["TEAMS_CLIENT_ID", "TEAMS_CLIENT_SECRET", "TEAMS_TENANT_ID"]);
-    assert!(reg.install_hint.starts_with("Teams SDK missing — restart the gateway to auto-install, or run: "));
+    assert_eq!(
+        reg.required_env,
+        ["TEAMS_CLIENT_ID", "TEAMS_CLIENT_SECRET", "TEAMS_TENANT_ID"]
+    );
+    assert!(reg
+        .install_hint
+        .starts_with("Teams SDK missing — restart the gateway to auto-install, or run: "));
 }
 
 /// Oracle: `plugins/platforms/telegram/__init__.py` — entry registers `telegram`.
 #[test]
 fn telegram_entry_registers_with_upstream_values() {
-    let reg = registered(platforms::telegram::register, platforms::telegram::PLATFORM_NAME);
+    let reg = registered(
+        platforms::telegram::register,
+        platforms::telegram::PLATFORM_NAME,
+    );
     assert_eq!(reg.name, "telegram");
     assert_eq!(reg.label, "Telegram");
     assert_eq!(reg.required_env, ["TELEGRAM_BOT_TOKEN"]);
@@ -225,9 +288,15 @@ fn wecom_entry_registers_with_upstream_values() {
 /// Oracle: `plugins/platforms/whatsapp/__init__.py` — entry registers `whatsapp`.
 #[test]
 fn whatsapp_entry_registers_with_upstream_values() {
-    let reg = registered(platforms::whatsapp::register, platforms::whatsapp::PLATFORM_NAME);
+    let reg = registered(
+        platforms::whatsapp::register,
+        platforms::whatsapp::PLATFORM_NAME,
+    );
     assert_eq!(reg.name, "whatsapp");
     assert_eq!(reg.label, "WhatsApp");
     assert_eq!(reg.required_env, ["WHATSAPP_ENABLED"]);
-    assert!(reg.install_hint == ("WhatsApp requires a Node.js bridge — see the WhatsApp messaging docs"));
+    assert!(
+        reg.install_hint
+            == ("WhatsApp requires a Node.js bridge — see the WhatsApp messaging docs")
+    );
 }

@@ -30,7 +30,10 @@ fn a_brand_less_wire_id_gains_the_sibling_tokens() {
 /// the opaque preview slug — users find it by its public codename.
 #[test]
 fn opaque_preview_slug_gains_the_public_codename_tokens() {
-    assert_eq!(model_search_text("x-preview-f-free"), "x-preview-f-free ox-alpha ox");
+    assert_eq!(
+        model_search_text("x-preview-f-free"),
+        "x-preview-f-free ox-alpha ox"
+    );
     assert_eq!(model_alias_canonical("x-preview-f-free"), "ox-alpha");
 }
 

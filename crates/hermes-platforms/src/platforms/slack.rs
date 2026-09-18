@@ -18,10 +18,7 @@ pub fn register(ctx: &dyn PluginCtx) {
     ctx.register_platform(PlatformRegistration {
         name: PLATFORM_NAME.to_string(),
         label: "Slack".to_string(),
-        required_env: vec![
-            "SLACK_BOT_TOKEN".to_string(),
-            "SLACK_APP_TOKEN".to_string(),
-        ],
+        required_env: vec!["SLACK_BOT_TOKEN".to_string(), "SLACK_APP_TOKEN".to_string()],
         install_hint: "Run `hermes setup` to install Slack support.".to_string(),
     });
 }

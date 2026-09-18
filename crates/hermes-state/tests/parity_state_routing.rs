@@ -69,7 +69,10 @@ fn gateway_session_peer_round_trip_and_recovery() {
         .expect("append");
 
     let row = db.get_session("gw-session").expect("get").expect("row");
-    assert_eq!(row.session_key.as_deref(), Some("agent:main:telegram:dm:chat-1"));
+    assert_eq!(
+        row.session_key.as_deref(),
+        Some("agent:main:telegram:dm:chat-1")
+    );
     assert_eq!(row.chat_id.as_deref(), Some("chat-1"));
     assert_eq!(row.chat_type.as_deref(), Some("dm"));
 
@@ -97,31 +100,47 @@ fn find_session_by_origin_matching_rules() {
         chat_type: Some("group".into()),
         ..Default::default()
     };
-    db.create_session("gw-o1", "telegram", &group("gw-o1", "u1", "agent:main:telegram:group:c9:u1"))
-        .expect("o1");
-    db.create_session("gw-o2", "telegram", &group("gw-o2", "u2", "agent:main:telegram:group:c9:u2"))
-        .expect("o2");
+    db.create_session(
+        "gw-o1",
+        "telegram",
+        &group("gw-o1", "u1", "agent:main:telegram:group:c9:u1"),
+    )
+    .expect("o1");
+    db.create_session(
+        "gw-o2",
+        "telegram",
+        &group("gw-o2", "u2", "agent:main:telegram:group:c9:u2"),
+    )
+    .expect("o2");
 
     // Exact user match wins.
     assert_eq!(
-        db.find_session_by_origin("telegram", "c9", None, Some("u2")).expect("u2"),
+        db.find_session_by_origin("telegram", "c9", None, Some("u2"))
+            .expect("u2"),
         Some("gw-o2".into())
     );
     // Unknown user among multiple distinct users -> None (no contamination).
     assert_eq!(
-        db.find_session_by_origin("telegram", "c9", None, Some("u3")).expect("u3"),
+        db.find_session_by_origin("telegram", "c9", None, Some("u3"))
+            .expect("u3"),
         None
     );
     // No user given + multiple distinct users -> None.
-    assert_eq!(db.find_session_by_origin("telegram", "c9", None, None).expect("multi"), None);
+    assert_eq!(
+        db.find_session_by_origin("telegram", "c9", None, None)
+            .expect("multi"),
+        None
+    );
     // Ended sessions are ignored: only gw-o1 remains as a live candidate.
     db.end_session("gw-o2", "session_reset").expect("end o2");
     assert_eq!(
-        db.find_session_by_origin("telegram", "c9", None, Some("u2")).expect("u2b"),
+        db.find_session_by_origin("telegram", "c9", None, Some("u2"))
+            .expect("u2b"),
         Some("gw-o1".into())
     );
     assert_eq!(
-        db.find_session_by_origin("telegram", "c9", None, None).expect("single"),
+        db.find_session_by_origin("telegram", "c9", None, None)
+            .expect("single"),
         Some("gw-o1".into())
     );
     // Thread filter.
@@ -139,22 +158,33 @@ fn find_session_by_origin_matching_rules() {
     )
     .expect("th");
     assert_eq!(
-        db.find_session_by_origin("discord", "ch7", Some("t7"), None).expect("t7"),
+        db.find_session_by_origin("discord", "ch7", Some("t7"), None)
+            .expect("t7"),
         Some("gw-th".into())
     );
     assert_eq!(
-        db.find_session_by_origin("discord", "ch7", Some("other"), None).expect("other"),
+        db.find_session_by_origin("discord", "ch7", Some("other"), None)
+            .expect("other"),
         None
     );
     // Missing chat/empty platform short-circuit.
-    assert_eq!(db.find_session_by_origin("telegram", "", None, None).expect("empty chat"), None);
-    assert_eq!(db.find_session_by_origin("", "c9", None, None).expect("empty plat"), None);
+    assert_eq!(
+        db.find_session_by_origin("telegram", "", None, None)
+            .expect("empty chat"),
+        None
+    );
+    assert_eq!(
+        db.find_session_by_origin("", "c9", None, None)
+            .expect("empty plat"),
+        None
+    );
 }
 
 #[test]
 fn record_gateway_session_peer_sets_and_coalesces() {
     let (_dir, db) = open_db("state.db");
-    db.create_session("s1", "cli", &NewSession::default()).expect("create");
+    db.create_session("s1", "cli", &NewSession::default())
+        .expect("create");
 
     db.record_gateway_session_peer(
         "s1",
@@ -169,9 +199,15 @@ fn record_gateway_session_peer_sets_and_coalesces() {
         false,
     )
     .expect("record");
-    assert_eq!(col_str(&db, "session_key", "s1").as_deref(), Some("agent:main:telegram:dm:lane"));
+    assert_eq!(
+        col_str(&db, "session_key", "s1").as_deref(),
+        Some("agent:main:telegram:dm:lane")
+    );
     assert_eq!(col_str(&db, "source", "s1").as_deref(), Some("telegram"));
-    assert_eq!(col_str(&db, "display_name", "s1").as_deref(), Some("Display Name"));
+    assert_eq!(
+        col_str(&db, "display_name", "s1").as_deref(),
+        Some("Display Name")
+    );
 
     // COALESCE: None leaves the existing display_name / origin_json untouched.
     db.record_gateway_session_peer(
@@ -187,13 +223,27 @@ fn record_gateway_session_peer_sets_and_coalesces() {
         false,
     )
     .expect("record2");
-    assert_eq!(col_str(&db, "display_name", "s1").as_deref(), Some("Display Name"));
-    assert_eq!(col_str(&db, "origin_json", "s1").as_deref(), Some(r#"{"chat_title":"volleyball"}"#));
+    assert_eq!(
+        col_str(&db, "display_name", "s1").as_deref(),
+        Some("Display Name")
+    );
+    assert_eq!(
+        col_str(&db, "origin_json", "s1").as_deref(),
+        Some(r#"{"chat_title":"volleyball"}"#)
+    );
 
     // Empty session_key short-circuits.
     db.record_gateway_session_peer(
         "s1",
-        "x", None, Some(""), None, None, None, None, None, false,
+        "x",
+        None,
+        Some(""),
+        None,
+        None,
+        None,
+        None,
+        None,
+        false,
     )
     .expect("empty key no-op");
     assert_eq!(col_str(&db, "source", "s1").as_deref(), Some("telegram"));
@@ -206,8 +256,10 @@ fn record_gateway_session_peer_stamps_compression_lineage() {
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
         .as_secs_f64();
-    db.create_session("root", "cli", &NewSession::default()).expect("root");
-    db.append_message("root", &msg("user", "hi"), None).expect("append");
+    db.create_session("root", "cli", &NewSession::default())
+        .expect("root");
+    db.append_message("root", &msg("user", "hi"), None)
+        .expect("append");
     t += 100.0;
     let conn = db.writer_conn();
     conn.execute(
@@ -239,9 +291,18 @@ fn record_gateway_session_peer_stamps_compression_lineage() {
         true,
     )
     .expect("record lineage");
-    assert_eq!(col_str(&db, "session_key", "tip").as_deref(), Some("agent:main:telegram:dm:lane"));
-    assert_eq!(col_str(&db, "session_key", "root").as_deref(), Some("agent:main:telegram:dm:lane"));
-    assert_eq!(col_str(&db, "display_name", "root").as_deref(), Some("Tip Name"));
+    assert_eq!(
+        col_str(&db, "session_key", "tip").as_deref(),
+        Some("agent:main:telegram:dm:lane")
+    );
+    assert_eq!(
+        col_str(&db, "session_key", "root").as_deref(),
+        Some("agent:main:telegram:dm:lane")
+    );
+    assert_eq!(
+        col_str(&db, "display_name", "root").as_deref(),
+        Some("Tip Name")
+    );
 }
 
 #[test]
@@ -250,15 +311,26 @@ fn routing_entries_upsert_replace_load_delete() {
     let scope_a = "/tmp/state/one";
     let scope_b = "/tmp/state/two";
 
-    db.save_gateway_routing_entry("k1", r#"{"kind":"dm"}"#, scope_a).expect("save k1");
-    db.save_gateway_routing_entry("k2", r#"{"kind":"group"}"#, scope_a).expect("save k2");
-    db.save_gateway_routing_entry("other", "{}", scope_b).expect("save other");
+    db.save_gateway_routing_entry("k1", r#"{"kind":"dm"}"#, scope_a)
+        .expect("save k1");
+    db.save_gateway_routing_entry("k2", r#"{"kind":"group"}"#, scope_a)
+        .expect("save k2");
+    db.save_gateway_routing_entry("other", "{}", scope_b)
+        .expect("save other");
 
     let loaded = db.load_gateway_routing_entries(scope_a).expect("load a");
     assert_eq!(loaded.len(), 2);
-    assert_eq!(loaded.get("k1").map(|s| s.as_str()), Some(r#"{"kind":"dm"}"#));
+    assert_eq!(
+        loaded.get("k1").map(|s| s.as_str()),
+        Some(r#"{"kind":"dm"}"#)
+    );
     // Scopes are namespaced.
-    assert_eq!(db.load_gateway_routing_entries(scope_b).expect("load b").len(), 1);
+    assert_eq!(
+        db.load_gateway_routing_entries(scope_b)
+            .expect("load b")
+            .len(),
+        1
+    );
 
     // Upsert overwrites entry_json + bumps updated_at.
     let before = db.load_gateway_routing_entries(scope_a).expect("before");
@@ -274,7 +346,10 @@ fn routing_entries_upsert_replace_load_delete() {
     db.save_gateway_routing_entry("k1", r#"{"kind":"dm","pinned":true}"#, scope_a)
         .expect("upsert k1");
     let after = db.load_gateway_routing_entries(scope_a).expect("after");
-    assert_eq!(after.get("k1").map(|s| s.as_str()), Some(r#"{"kind":"dm","pinned":true}"#));
+    assert_eq!(
+        after.get("k1").map(|s| s.as_str()),
+        Some(r#"{"kind":"dm","pinned":true}"#)
+    );
     let after_upd = {
         let conn = db.writer_conn();
         conn.query_row(
@@ -290,23 +365,34 @@ fn routing_entries_upsert_replace_load_delete() {
     // Replace removes keys absent from the new map.
     let mut entries = HashMap::new();
     entries.insert("k1".to_string(), r#"{"only":true}"#.to_string());
-    db.replace_gateway_routing_entries(&entries, scope_a).expect("replace");
+    db.replace_gateway_routing_entries(&entries, scope_a)
+        .expect("replace");
     let loaded = db.load_gateway_routing_entries(scope_a).expect("reload");
     assert_eq!(loaded.len(), 1);
     assert!(loaded.contains_key("k1"));
     assert!(!loaded.contains_key("k2"));
 
     // Delete removes only the given keys.
-    db.delete_gateway_routing_entries(&["k1".to_string()], scope_a).expect("delete");
-    assert!(db.load_gateway_routing_entries(scope_a).expect("empty").is_empty());
+    db.delete_gateway_routing_entries(&["k1".to_string()], scope_a)
+        .expect("delete");
+    assert!(db
+        .load_gateway_routing_entries(scope_a)
+        .expect("empty")
+        .is_empty());
     // Other scope untouched.
-    assert_eq!(db.load_gateway_routing_entries(scope_b).expect("b intact").len(), 1);
+    assert_eq!(
+        db.load_gateway_routing_entries(scope_b)
+            .expect("b intact")
+            .len(),
+        1
+    );
 }
 
 #[test]
 fn set_expiry_finalized_roundtrip() {
     let (_dir, db) = open_db("state.db");
-    db.create_session("s1", "cli", &NewSession::default()).expect("create");
+    db.create_session("s1", "cli", &NewSession::default())
+        .expect("create");
     assert_eq!(col_int(&db, "expiry_finalized", "s1"), Some(0));
 
     db.set_expiry_finalized("s1", true).expect("finalize");

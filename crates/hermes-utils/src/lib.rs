@@ -21,15 +21,14 @@ pub mod urls;
 pub mod yaml;
 
 pub use atomic::{
-    atomic_json_write, atomic_replace, atomic_write_text, preserve_file_mode,
-    preserve_file_owner, restore_file_mode, restore_file_owner,
-    warn_if_credential_file_broadly_readable,
+    atomic_json_write, atomic_replace, atomic_write_text, preserve_file_mode, preserve_file_owner,
+    restore_file_mode, restore_file_owner, warn_if_credential_file_broadly_readable,
 };
 pub use json::{safe_json_loads, safe_json_loads_typed};
 pub use proxy::{normalize_proxy_env_vars, normalize_proxy_url, PROXY_ENV_KEYS};
 pub use truthy::{
-    env_bool, env_float, env_int, env_var_enabled, is_truthy, is_truthy_value,
-    TruthyValue, TRUTHY_STRINGS,
+    env_bool, env_float, env_int, env_var_enabled, is_truthy, is_truthy_value, TruthyValue,
+    TRUTHY_STRINGS,
 };
 pub use urls::{base_url_host_matches, base_url_hostname, model_forces_max_completion_tokens};
 pub use yaml::{

@@ -7,7 +7,9 @@
 //! the loader crosses the seam as an injected closure, and the default
 //! loader performs the Rust-side equivalent warmup (JSON engine touch).
 
-use hermes_agent::jiter_preload::{preload_jiter_native_extension as preload, preload_with, reset_for_tests, last_error};
+use hermes_agent::jiter_preload::{
+    last_error, preload_jiter_native_extension as preload, preload_with, reset_for_tests,
+};
 use std::sync::Mutex;
 
 static LOCK: Mutex<()> = Mutex::new(());

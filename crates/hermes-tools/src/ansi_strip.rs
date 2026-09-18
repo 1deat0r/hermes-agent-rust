@@ -39,10 +39,8 @@ static HAS_UNICODE_TAG: Lazy<Regex> =
     Lazy::new(|| Regex::new(r"[\u{E0000}-\u{E007F}]").expect("has unicode tag"));
 
 static UNICODE_TAG_SUB_RE: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(
-        r"(\u{1F3F4}[\u{E0020}-\u{E007E}]+\u{E007F})|[\u{E0000}-\u{E007F}]",
-    )
-    .expect("unicode tag sub re")
+    Regex::new(r"(\u{1F3F4}[\u{E0020}-\u{E007E}]+\u{E007F})|[\u{E0000}-\u{E007F}]")
+        .expect("unicode tag sub re")
 });
 
 /// Remove invisible Unicode TAG chars (a prompt-injection smuggling channel
@@ -58,7 +56,9 @@ pub fn strip_unicode_tags(text: &str) -> String {
     }
     UNICODE_TAG_SUB_RE
         .replace_all(text, |caps: &regex::Captures| {
-            caps.get(1).map(|m| m.as_str().to_string()).unwrap_or_default()
+            caps.get(1)
+                .map(|m| m.as_str().to_string())
+                .unwrap_or_default()
         })
         .into_owned()
 }

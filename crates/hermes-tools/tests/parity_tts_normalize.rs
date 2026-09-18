@@ -132,18 +132,16 @@ fn max_chars_truncates_and_trims() {
     let long = "A very long sentence that goes on and on and on and on and on and on and on and on and on and on and on and on and on and on and on.";
     let spoken = prepare_spoken_text(long, Some(40));
     assert!(spoken.chars().count() <= 40);
-    assert_eq!(
-        spoken,
-        "A very long sentence that goes on and on"
-    );
+    assert_eq!(spoken, "A very long sentence that goes on and on");
 }
 
 #[test]
 fn golden_corpus_stage_parity() {
     // Every corpus case must match the upstream module byte-for-byte at every stage.
-    let corpus: serde_json::Value =
-        serde_json::from_str(&std::fs::read_to_string("../../upstream/golden_tts_text_normalize.json").unwrap())
-            .expect("golden corpus");
+    let corpus: serde_json::Value = serde_json::from_str(
+        &std::fs::read_to_string("../../upstream/golden_tts_text_normalize.json").unwrap(),
+    )
+    .expect("golden corpus");
     let cases = corpus.as_object().expect("object");
     assert_eq!(cases.len(), 36, "golden corpus case count drift");
     let mut checked = 0;
@@ -151,19 +149,47 @@ fn golden_corpus_stage_parity() {
         let v = val.as_object().expect("case");
         let raw = b64_decode(v["raw"].as_str().expect("raw"));
         let strip = b64_decode(v["strip_nonspoken_blocks"].as_str().unwrap());
-        assert_eq!(strip_nonspoken_blocks(&raw), strip, "strip_nonspoken_blocks mismatch for {name}");
+        assert_eq!(
+            strip_nonspoken_blocks(&raw),
+            strip,
+            "strip_nonspoken_blocks mismatch for {name}"
+        );
         let md = b64_decode(v["strip_markdown_for_tts"].as_str().unwrap());
-        assert_eq!(strip_markdown_for_tts(&strip), md, "strip_markdown_for_tts mismatch for {name}");
+        assert_eq!(
+            strip_markdown_for_tts(&strip),
+            md,
+            "strip_markdown_for_tts mismatch for {name}"
+        );
         let norm = b64_decode(v["normalize_symbols_for_tts"].as_str().unwrap());
-        assert_eq!(normalize_symbols_for_tts(&md), norm, "normalize_symbols_for_tts mismatch for {name}");
+        assert_eq!(
+            normalize_symbols_for_tts(&md),
+            norm,
+            "normalize_symbols_for_tts mismatch for {name}"
+        );
         let smooth = b64_decode(v["smooth_whitespace_for_tts"].as_str().unwrap());
-        assert_eq!(smooth_whitespace_for_tts(&norm), smooth, "smooth_whitespace_for_tts mismatch for {name}");
+        assert_eq!(
+            smooth_whitespace_for_tts(&norm),
+            smooth,
+            "smooth_whitespace_for_tts mismatch for {name}"
+        );
         let flat = b64_decode(v["flatten_newlines_for_payload"].as_str().unwrap());
-        assert_eq!(flatten_newlines_for_payload(&smooth), flat, "flatten_newlines_for_payload mismatch for {name}");
+        assert_eq!(
+            flatten_newlines_for_payload(&smooth),
+            flat,
+            "flatten_newlines_for_payload mismatch for {name}"
+        );
         let prepared = b64_decode(v["prepare_spoken_text"].as_str().unwrap());
-        assert_eq!(prepare_spoken_text(&raw, None), prepared, "prepare_spoken_text mismatch for {name}");
+        assert_eq!(
+            prepare_spoken_text(&raw, None),
+            prepared,
+            "prepare_spoken_text mismatch for {name}"
+        );
         let prepared40 = b64_decode(v["prepare_spoken_text_40"].as_str().unwrap());
-        assert_eq!(prepare_spoken_text(&raw, Some(40)), prepared40, "prepare_spoken_text(40) mismatch for {name}");
+        assert_eq!(
+            prepare_spoken_text(&raw, Some(40)),
+            prepared40,
+            "prepare_spoken_text(40) mismatch for {name}"
+        );
         checked += 1;
     }
     assert_eq!(checked, 36);

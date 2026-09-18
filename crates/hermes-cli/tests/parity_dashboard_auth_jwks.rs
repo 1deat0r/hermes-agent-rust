@@ -74,7 +74,8 @@ fn subclass_failures_classify_before_parent_kinds() {
     // A DecodeError-shaped input must map to NotJwt (invalid-code), never
     // to the parent MalformedJwks (provider) bucket.
     let child = classify_jwks_lookup_error(JwksLookupFailure::NotJwt, "Not enough segments");
-    let parent = classify_jwks_lookup_error(JwksLookupFailure::MalformedJwks, "Not enough segments");
+    let parent =
+        classify_jwks_lookup_error(JwksLookupFailure::MalformedJwks, "Not enough segments");
     assert!(matches!(child, JwksClassify::InvalidCode(_)));
     assert!(matches!(parent, JwksClassify::Provider(_)));
 }

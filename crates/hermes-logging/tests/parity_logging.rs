@@ -10,8 +10,8 @@
 //!   - rotation produces .1 backups and keeps backup_count bounded
 
 use hermes_logging::{
-    clear_session_context, log, rotating_file_handlers, set_session_context, setup_logging,
-    setup::SetupOptions, Level, flush_log_queue, reset_queued_handlers,
+    clear_session_context, flush_log_queue, log, reset_queued_handlers, rotating_file_handlers,
+    set_session_context, setup::SetupOptions, setup_logging, Level,
 };
 use std::sync::Mutex;
 
@@ -55,18 +55,38 @@ fn logging_contract_end_to_end() {
     let agent = read(&dir.join("agent.log"));
     assert!(agent.contains("info line"), "agent.log: {}", agent);
     assert!(agent.contains("warn line"), "agent.log: {}", agent);
-    assert!(!agent.contains("debug line"), "DEBUG filtered at INFO level: {}", agent);
-    assert!(agent.contains(" INFO [ses-1] agent.runtime: tagged line"), "agent.log: {}", agent);
+    assert!(
+        !agent.contains("debug line"),
+        "DEBUG filtered at INFO level: {}",
+        agent
+    );
+    assert!(
+        agent.contains(" INFO [ses-1] agent.runtime: tagged line"),
+        "agent.log: {}",
+        agent
+    );
     assert!(agent.contains("gateway only line"), "agent.log: {}", agent);
 
     let errors = read(&dir.join("errors.log"));
-    assert!(!errors.contains("info line"), "errors.log must be WARNING+: {}", errors);
+    assert!(
+        !errors.contains("info line"),
+        "errors.log must be WARNING+: {}",
+        errors
+    );
     assert!(errors.contains("warn line"), "errors.log: {}", errors);
 
     let gate = read(&dir.join("gateway.log"));
     assert!(gate.contains("gateway only line"), "gateway.log: {}", gate);
-    assert!(!gate.contains("info line"), "gateway.log must be component-filtered: {}", gate);
-    assert!(!gate.contains("warn line"), "gateway.log must be component-filtered: {}", gate);
+    assert!(
+        !gate.contains("info line"),
+        "gateway.log must be component-filtered: {}",
+        gate
+    );
+    assert!(
+        !gate.contains("warn line"),
+        "gateway.log must be component-filtered: {}",
+        gate
+    );
 
     clear_session_context();
     reset_queued_handlers();
@@ -86,14 +106,21 @@ fn rotation_bounded_and_present() {
     let dir = home.join("logs");
     add_rotating_handler(dir.join("rot.log"), Level::Info, 1024, 2, None);
     for i in 0..200 {
-        log(Level::Info, "rotation", format!("rot line {:03} {}", i, "x".repeat(80)));
+        log(
+            Level::Info,
+            "rotation",
+            format!("rot line {:03} {}", i, "x".repeat(80)),
+        );
     }
     flush_log_queue();
 
     assert!(dir.join("rot.log").exists());
     assert!(dir.join("rot.log.1").exists(), "at least one backup");
     // bounded by backup_count=2: no .3
-    assert!(!dir.join("rot.log.3").exists(), "backup_count=2 must not create .3");
+    assert!(
+        !dir.join("rot.log.3").exists(),
+        "backup_count=2 must not create .3"
+    );
     reset_queued_handlers();
 }
 

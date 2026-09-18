@@ -22,11 +22,13 @@ pub fn venv_bin_dir(venv_dir: impl AsRef<Path>, windows: Option<Platform>) -> Pa
 ///
 /// PARITY: hermes_constants.py `venv_python_path` (1393–1399).
 pub fn venv_python_path(venv_dir: impl AsRef<Path>, windows: Option<Platform>) -> PathBuf {
-    venv_bin_dir(venv_dir, windows).join(if windows.unwrap_or_else(Platform::host) == Platform::Windows {
-        "python.exe"
-    } else {
-        "python"
-    })
+    venv_bin_dir(venv_dir, windows).join(
+        if windows.unwrap_or_else(Platform::host) == Platform::Windows {
+            "python.exe"
+        } else {
+            "python"
+        },
+    )
 }
 
 #[cfg(test)]

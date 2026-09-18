@@ -17,10 +17,9 @@ use std::sync::Mutex;
 static REGISTRY_TEST_LOCK: Mutex<()> = Mutex::new(());
 
 use hermes_toolsets::{
-    bundle_non_core_tools, create_custom_toolset, get_all_toolsets, get_distribution,
-    get_toolset, get_toolset_info, get_toolset_names, list_distributions,
-    resolve_multiple_toolsets, resolve_toolset, sample_toolsets_from_distribution,
-    validate_distribution, validate_toolset,
+    bundle_non_core_tools, create_custom_toolset, get_all_toolsets, get_distribution, get_toolset,
+    get_toolset_info, get_toolset_names, list_distributions, resolve_multiple_toolsets,
+    resolve_toolset, sample_toolsets_from_distribution, validate_distribution, validate_toolset,
 };
 
 fn toolset_of(name: &str) -> serde_json::Value {
@@ -30,8 +29,14 @@ fn toolset_of(name: &str) -> serde_json::Value {
 #[test]
 fn known_toolset() {
     let web = toolset_of("web");
-    assert_eq!(web["description"].as_str(), Some("Web research and content extraction tools"));
-    assert_eq!(web["tools"], serde_json::json!(["web_search", "web_extract"]));
+    assert_eq!(
+        web["description"].as_str(),
+        Some("Web research and content extraction tools")
+    );
+    assert_eq!(
+        web["tools"],
+        serde_json::json!(["web_search", "web_extract"])
+    );
     assert_eq!(web["includes"], serde_json::json!([]));
 }
 
@@ -55,7 +60,12 @@ fn composite_toolset() {
 fn cycle_detection() {
     // Resolving a self-cyclic path terminates with the already-visited guard.
     create_custom_toolset("loop_a", "A", vec![], vec!["loop_b".to_string()]);
-    create_custom_toolset("loop_b", "B", vec!["terminal".to_string()], vec!["loop_a".to_string()]);
+    create_custom_toolset(
+        "loop_b",
+        "B",
+        vec!["terminal".to_string()],
+        vec!["loop_a".to_string()],
+    );
     let tools = resolve_toolset("loop_a", None, true);
     assert!(tools.contains(&"terminal".to_string()));
 }
@@ -75,7 +85,10 @@ fn resolve_special_all_alias() {
     let all_tools = resolve_toolset("all", None, true);
     for name in get_toolset_names() {
         for tool in resolve_toolset(&name, None, true) {
-            assert!(all_tools.contains(&tool), "{name} -> {tool} missing from all");
+            assert!(
+                all_tools.contains(&tool),
+                "{name} -> {tool} missing from all"
+            );
         }
     }
 }
@@ -120,26 +133,49 @@ fn all_toolsets_have_required_keys() {
     assert!(!names.is_empty());
     for name in names {
         let def = &all[&name];
-        assert!(def.get("description").is_some(), "{name} missing description");
-        assert!(def.get("tools").and_then(|v| v.as_array()).is_some(), "{name} missing tools");
-        assert!(def.get("includes").and_then(|v| v.as_array()).is_some(), "{name} missing includes");
+        assert!(
+            def.get("description").is_some(),
+            "{name} missing description"
+        );
+        assert!(
+            def.get("tools").and_then(|v| v.as_array()).is_some(),
+            "{name} missing tools"
+        );
+        assert!(
+            def.get("includes").and_then(|v| v.as_array()).is_some(),
+            "{name} missing includes"
+        );
     }
 }
 
 #[test]
 fn hermes_platforms_share_core_tools() {
     let platform = toolset_of("hermes-telegram");
-    assert!(platform["tools"].as_array().unwrap().iter().any(|t| t.as_str() == Some("terminal")));
+    assert!(platform["tools"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|t| t.as_str() == Some("terminal")));
     let whatsapp = toolset_of("hermes-whatsapp");
-    assert!(whatsapp["tools"].as_array().unwrap().iter().any(|t| t.as_str() == Some("web_search")));
+    assert!(whatsapp["tools"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|t| t.as_str() == Some("web_search")));
 }
 
 #[test]
 fn bundle_non_core_tools_keeps_core_intact() {
     let delta = bundle_non_core_tools("hermes-gateway");
-    let core: HashSet<&str> = hermes_toolsets::data::HERMES_CORE_TOOLS.iter().copied().collect();
+    let core: HashSet<&str> = hermes_toolsets::data::HERMES_CORE_TOOLS
+        .iter()
+        .copied()
+        .collect();
     for tool in &delta {
-        assert!(!core.contains(tool.as_str()), "{tool} is core, should not be in delta");
+        assert!(
+            !core.contains(tool.as_str()),
+            "{tool} is core, should not be in delta"
+        );
     }
     let garbage = bundle_non_core_tools("hermes-unknown_platform");
     for tool in &garbage {
@@ -175,7 +211,9 @@ fn returns_copy() {
     let dist = get_distribution("default").expect("dist");
     assert!(dist.is_object());
     let mut all = list_distributions();
-    all.as_object_mut().unwrap().insert("FAKE".into(), serde_json::json!({}));
+    all.as_object_mut()
+        .unwrap()
+        .insert("FAKE".into(), serde_json::json!({}));
     let again = list_distributions();
     assert!(again.get("FAKE").is_none());
 }
@@ -249,7 +287,9 @@ fn registry_tools_merge_into_builtin_toolset() {
     // Static view excludes the registry overlay.
     let static_web = get_toolset("web", false).expect("static web");
     let static_tools = static_web["tools"].as_array().unwrap();
-    assert!(!static_tools.iter().any(|t| t.as_str() == Some("plugin_search_x")));
+    assert!(!static_tools
+        .iter()
+        .any(|t| t.as_str() == Some("plugin_search_x")));
 }
 
 #[test]

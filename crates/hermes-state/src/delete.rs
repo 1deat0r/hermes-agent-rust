@@ -29,12 +29,11 @@ use rusqlite::Connection;
 use serde_json::{json, Value};
 
 use crate::prune::{remove_session_files, PruneFilters};
-use rusqlite::OptionalExtension;
 use crate::state::{now, SessionDB, WriteError};
+use rusqlite::OptionalExtension;
 
-static STALE_TOOL_CALL_MARKER_RE: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"^\[[A-Za-z_][A-Za-z0-9_.-]*\]$").expect("stale marker re")
-});
+static STALE_TOOL_CALL_MARKER_RE: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"^\[[A-Za-z_][A-Za-z0-9_.-]*\]$").expect("stale marker re"));
 
 fn delegate_from_json_sql(col: &str) -> String {
     format!("json_extract(COALESCE({col}, '{{}}'), '$._delegate_from')")
@@ -48,7 +47,11 @@ pub(crate) fn collect_delegate_child_ids(
     conn: &Connection,
     parent_ids: &[String],
 ) -> Result<Vec<String>, WriteError> {
-    let seeds: HashSet<String> = parent_ids.iter().filter(|s| !s.is_empty()).cloned().collect();
+    let seeds: HashSet<String> = parent_ids
+        .iter()
+        .filter(|s| !s.is_empty())
+        .cloned()
+        .collect();
     let df = delegate_from_json_sql("model_config");
     let mut found: HashSet<String> = seeds.clone();
     let mut frontier: Vec<String> = seeds.iter().cloned().collect();
@@ -68,7 +71,9 @@ pub(crate) fn collect_delegate_child_ids(
         }
         let mut stmt = conn.prepare(&sql).map_err(WriteError::Sqlite)?;
         let next: Vec<String> = stmt
-            .query_map(rusqlite::params_from_iter(frontier_params.iter()), |r| r.get(0))
+            .query_map(rusqlite::params_from_iter(frontier_params.iter()), |r| {
+                r.get(0)
+            })
             .map_err(WriteError::Sqlite)?
             .collect::<Result<Vec<String>, _>>()
             .map_err(WriteError::Sqlite)?
@@ -160,7 +165,10 @@ impl SessionDB {
     pub fn clear_messages(&self, session_id: &str) -> Result<(), WriteError> {
         let sid = session_id.to_string();
         let f = |conn: &Connection| -> Result<(), WriteError> {
-            conn.execute("DELETE FROM messages WHERE session_id = ?", rusqlite::params![sid])?;
+            conn.execute(
+                "DELETE FROM messages WHERE session_id = ?",
+                rusqlite::params![sid],
+            )?;
             conn.execute(
                 "UPDATE sessions SET message_count = 0, tool_call_count = 0 WHERE id = ?",
                 rusqlite::params![sid],
@@ -206,8 +214,10 @@ impl SessionDB {
         expected_delete_ids: Option<&[String]>,
     ) -> Result<bool, WriteError> {
         let sid = session_id.to_string();
-        let expected_ids: Option<HashSet<String>> = expected_delete_ids.map(|v| v.iter().cloned().collect());
-        let removed_delegate_ids: std::cell::RefCell<Vec<String>> = std::cell::RefCell::new(Vec::new());
+        let expected_ids: Option<HashSet<String>> =
+            expected_delete_ids.map(|v| v.iter().cloned().collect());
+        let removed_delegate_ids: std::cell::RefCell<Vec<String>> =
+            std::cell::RefCell::new(Vec::new());
 
         let f = |conn: &Connection| -> Result<bool, WriteError> {
             let exists = conn
@@ -223,19 +233,27 @@ impl SessionDB {
             if let Some(expected) = &expected_ids {
                 let actual_ids: HashSet<String> = {
                     let mut s: HashSet<String> = [sid.clone()].into_iter().collect();
-                    s.extend(collect_delegate_child_ids(conn, std::slice::from_ref(&sid))?);
+                    s.extend(collect_delegate_child_ids(
+                        conn,
+                        std::slice::from_ref(&sid),
+                    )?);
                     s
                 };
                 if actual_ids != *expected {
                     return Ok(false);
                 }
             }
-            removed_delegate_ids.borrow_mut().extend(delete_delegate_children(conn, std::slice::from_ref(&sid))?);
+            removed_delegate_ids
+                .borrow_mut()
+                .extend(delete_delegate_children(conn, std::slice::from_ref(&sid))?);
             conn.execute(
                 "UPDATE sessions SET parent_session_id = NULL WHERE parent_session_id = ?",
                 rusqlite::params![sid],
             )?;
-            conn.execute("DELETE FROM messages WHERE session_id = ?", rusqlite::params![sid])?;
+            conn.execute(
+                "DELETE FROM messages WHERE session_id = ?",
+                rusqlite::params![sid],
+            )?;
             conn.execute("DELETE FROM sessions WHERE id = ?", rusqlite::params![sid])?;
             crate::crud::delete_unreferenced_system_prompts(conn)?;
             Ok(true)
@@ -310,12 +328,15 @@ impl SessionDB {
         }
         let unique_ids = sort_for_stability(unique_ids);
         let removed_ids: std::cell::RefCell<Vec<String>> = std::cell::RefCell::new(Vec::new());
-        let removed_delegate_ids: std::cell::RefCell<Vec<String>> = std::cell::RefCell::new(Vec::new());
+        let removed_delegate_ids: std::cell::RefCell<Vec<String>> =
+            std::cell::RefCell::new(Vec::new());
 
         let f = |conn: &Connection| -> Result<i64, WriteError> {
             let placeholders = vec!["?"; unique_ids.len()].join(",");
             let mut stmt = conn
-                .prepare(&format!("SELECT id FROM sessions WHERE id IN ({placeholders})"))
+                .prepare(&format!(
+                    "SELECT id FROM sessions WHERE id IN ({placeholders})"
+                ))
                 .map_err(WriteError::Sqlite)?;
             let existing: Vec<String> = stmt
                 .query_map(rusqlite::params_from_iter(unique_ids.iter()), |r| r.get(0))
@@ -326,7 +347,9 @@ impl SessionDB {
                 return Ok(0);
             }
             let existing_placeholders = vec!["?"; existing.len()].join(",");
-            removed_delegate_ids.borrow_mut().extend(delete_delegate_children(conn, &existing)?);
+            removed_delegate_ids
+                .borrow_mut()
+                .extend(delete_delegate_children(conn, &existing)?);
             conn.execute(
                 &format!(
                     "UPDATE sessions SET parent_session_id = NULL \
@@ -460,7 +483,11 @@ impl SessionDB {
             }));
         }
 
-        let backup_path: Option<PathBuf> = if backup { self.vacuum_into_backup()? } else { None };
+        let backup_path: Option<PathBuf> = if backup {
+            self.vacuum_into_backup()?
+        } else {
+            None
+        };
         let _ = affected_ids; // pre-scan exists only for dry_run / empty short-circuit
         let f = |conn: &Connection| -> Result<Vec<i64>, WriteError> {
             let ids = find_affected(conn)?;
@@ -489,7 +516,10 @@ impl SessionDB {
         let stamp = now_stamp_compact();
         let dest = db_path.with_file_name(format!(
             "{}.pre-clean-markers-backup-{}",
-            db_path.file_name().map(|s| s.to_string_lossy().into_owned()).unwrap_or_else(|| "state.db".into()),
+            db_path
+                .file_name()
+                .map(|s| s.to_string_lossy().into_owned())
+                .unwrap_or_else(|| "state.db".into()),
             stamp
         ));
         let conn = self.writer_conn();
@@ -598,14 +628,12 @@ impl SessionDB {
                     }
                 }
             }
-            let pruned = self
-                .prune_sessions(
-                    Some(retention_days as f64),
-                    None,
-                    sessions_dir,
-                    PruneFilters::default(),
-                )?
-                as i64;
+            let pruned = self.prune_sessions(
+                Some(retention_days as f64),
+                None,
+                sessions_dir,
+                PruneFilters::default(),
+            )? as i64;
             if let Some(o) = result.as_object_mut() {
                 o.insert("pruned".to_string(), json!(pruned));
             }

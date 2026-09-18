@@ -17,21 +17,46 @@ static LOGGING_INITIALIZED: AtomicBool = AtomicBool::new(false);
 ///
 /// PARITY: `COMPONENT_PREFIXES` (236–257).
 pub const COMPONENT_PREFIXES: [(&str, &[&str]); 6] = [
-    ("gateway", &["gateway", "hermes_plugins", "plugins.platforms"]),
-    ("agent", &["agent", "run_agent", "model_tools", "batch_runner"]),
+    (
+        "gateway",
+        &["gateway", "hermes_plugins", "plugins.platforms"],
+    ),
+    (
+        "agent",
+        &["agent", "run_agent", "model_tools", "batch_runner"],
+    ),
     ("tools", &["tools"]),
     ("cli", &["hermes_cli", "cli"]),
     ("cron", &["cron"]),
-    ("gui", &["hermes_cli.web_server", "hermes_cli.pty_bridge", "tui_gateway", "uvicorn"]),
+    (
+        "gui",
+        &[
+            "hermes_cli.web_server",
+            "hermes_cli.pty_bridge",
+            "tui_gateway",
+            "uvicorn",
+        ],
+    ),
 ];
 
 /// Third-party loggers suppressed at DEBUG/INFO level.
 ///
 /// PARITY: `_NOISY_LOGGERS` (143–162).
 pub const NOISY_LOGGERS: [&str; 14] = [
-    "openai", "openai._base_client", "httpx", "httpcore", "asyncio", "hpack",
-    "hpack.hpack", "grpc", "modal", "urllib3", "urllib3.connectionpool",
-    "websockets", "charset_normalizer", "markdown_it",
+    "openai",
+    "openai._base_client",
+    "httpx",
+    "httpcore",
+    "asyncio",
+    "hpack",
+    "hpack.hpack",
+    "grpc",
+    "modal",
+    "urllib3",
+    "urllib3.connectionpool",
+    "websockets",
+    "charset_normalizer",
+    "markdown_it",
 ];
 
 /// Options mirroring the keyword arguments of upstream `setup_logging`.
@@ -55,7 +80,10 @@ pub fn setup_logging(opts: SetupOptions) -> PathBuf {
     // port's process-wide redactor seam gets the same real redactor here
     // (first install wins — PARITY: hermes_logging.py formatter wiring).
     crate::record::install_redactor(Box::new(crate::redact::RedactingFormatter));
-    let home = opts.hermes_home.clone().unwrap_or_else(hermes_constants::get_hermes_home);
+    let home = opts
+        .hermes_home
+        .clone()
+        .unwrap_or_else(hermes_constants::get_hermes_home);
     let log_dir = home.join("logs");
     let _ = std::fs::create_dir_all(&log_dir);
 
@@ -72,13 +100,7 @@ pub fn setup_logging(opts: SetupOptions) -> PathBuf {
     let backups = opts.backup_count.or(cfg_backup).unwrap_or(3);
 
     // agent.log (INFO+ — the main activity log)
-    add_rotating_handler(
-        log_dir.join("agent.log"),
-        level,
-        max_bytes,
-        backups,
-        None,
-    );
+    add_rotating_handler(log_dir.join("agent.log"), level, max_bytes, backups, None);
 
     // errors.log (WARNING+ — quick triage log): fixed 2MB / 2 backups.
     add_rotating_handler(
@@ -233,7 +255,10 @@ pub fn read_logging_config() -> (Option<String>, Option<u64>, Option<usize>) {
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
     let max_size = logging.get("max_size_mb").and_then(|v| v.as_u64());
-    let backup = logging.get("backup_count").and_then(|v| v.as_u64()).map(|v| v as usize);
+    let backup = logging
+        .get("backup_count")
+        .and_then(|v| v.as_u64())
+        .map(|v| v as usize);
     (level, max_size, backup)
 }
 

@@ -12,19 +12,41 @@ fn schema() -> serde_json::Value {
 #[test]
 fn action_discriminator_enum() {
     let s = schema();
-    let actions = s["parameters"]["properties"]["action"]["enum"].as_array().unwrap();
+    let actions = s["parameters"]["properties"]["action"]["enum"]
+        .as_array()
+        .unwrap();
     // Upstream asserts this exact 24-entry set in test_computer_use_schema actions.
     let expected: Vec<&str> = vec![
-        "capture", "click", "double_click", "right_click", "middle_click",
-        "drag", "scroll", "type", "key", "set_value", "wait", "list_apps",
-        "list_windows", "focus_app", "cua_browser_state", "cua_browser_prepare",
-        "cua_browser_navigate", "cua_browser_click", "cua_browser_type",
-        "cua_browser_pointer", "cua_browser_dialog", "cua_browser_set_input_files",
+        "capture",
+        "click",
+        "double_click",
+        "right_click",
+        "middle_click",
+        "drag",
+        "scroll",
+        "type",
+        "key",
+        "set_value",
+        "wait",
+        "list_apps",
+        "list_windows",
+        "focus_app",
+        "cua_browser_state",
+        "cua_browser_prepare",
+        "cua_browser_navigate",
+        "cua_browser_click",
+        "cua_browser_type",
+        "cua_browser_pointer",
+        "cua_browser_dialog",
+        "cua_browser_set_input_files",
         "cua_browser_download",
     ];
     assert_eq!(actions.len(), expected.len());
     for a in actions {
-        assert!(expected.contains(&a.as_str().unwrap()), "unexpected action {a}");
+        assert!(
+            expected.contains(&a.as_str().unwrap()),
+            "unexpected action {a}"
+        );
     }
 }
 
@@ -49,9 +71,9 @@ fn golden_json_byte_parity() {
     // The embedded JSON is extracted verbatim from upstream COMPUTER_USE_SCHEMA;
     // confirm the parsed value round-trips to the identical serialization.
     let s = schema();
-    let raw: serde_json::Value = serde_json::from_str(
-        include_str!("../../../upstream/golden_computer_use_schema.json"),
-    )
+    let raw: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../upstream/golden_computer_use_schema.json"
+    ))
     .expect("golden");
     assert_eq!(s, raw, "computer_use schema drifted from upstream golden");
 }

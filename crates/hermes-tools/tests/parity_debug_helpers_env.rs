@@ -60,11 +60,14 @@ fn enabled_session_cases() {
             // get_session_info when enabled.
             let info = ds.get_session_info();
             assert_eq!(info["enabled"], Value::Bool(true));
-            assert_eq!(info["session_id"], Value::String(ds.session_id().to_string()));
-            assert!(info["log_path"].as_str().unwrap().ends_with(&format!(
-                "test_tool_debug_{}.json",
-                ds.session_id()
-            )));
+            assert_eq!(
+                info["session_id"],
+                Value::String(ds.session_id().to_string())
+            );
+            assert!(info["log_path"]
+                .as_str()
+                .unwrap()
+                .ends_with(&format!("test_tool_debug_{}.json", ds.session_id())));
             assert_eq!(info["total_calls"], Value::from(0));
 
             // test_save_empty_log (redirect to view dir first, mirroring
@@ -77,10 +80,9 @@ fn enabled_session_cases() {
                 .filter(|e| e.path().extension().map(|x| x == "json").unwrap_or(false))
                 .collect();
             assert_eq!(json_files.len(), 1, "expected exactly one JSON log");
-            let data: Value = serde_json::from_str(
-                &fs::read_to_string(json_files[0].path()).expect("read log"),
-            )
-            .expect("valid json");
+            let data: Value =
+                serde_json::from_str(&fs::read_to_string(json_files[0].path()).expect("read log"))
+                    .expect("valid json");
             assert_eq!(data["total_calls"], Value::from(0));
             assert_eq!(data["tool_calls"], Value::Array(vec![]));
             assert_eq!(data["debug_enabled"], Value::Bool(true));
@@ -91,13 +93,15 @@ fn enabled_session_cases() {
 
             // Supplementary (module-code oracle; upstream logs a call via
             // log_call and saves it — the save payload contract):
-            ds.log_call("web_search", serde_json::json!({"query": "q1", "results": 3}));
+            ds.log_call(
+                "web_search",
+                serde_json::json!({"query": "q1", "results": 3}),
+            );
             ds.log_call("web_search", serde_json::json!({"query": "q2"}));
             ds.save();
-            let data: Value = serde_json::from_str(
-                &fs::read_to_string(json_files[0].path()).expect("read log"),
-            )
-            .expect("valid json");
+            let data: Value =
+                serde_json::from_str(&fs::read_to_string(json_files[0].path()).expect("read log"))
+                    .expect("valid json");
             assert_eq!(data["total_calls"], Value::from(2));
             let calls = data["tool_calls"].as_array().expect("tool_calls array");
             assert_eq!(calls.len(), 2);

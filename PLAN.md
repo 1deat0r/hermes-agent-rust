@@ -3453,3 +3453,32 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   read via `git show b9aa928:<path>`. Evidence: `cargo test -p
   hermes-agent --test parity_run_agent` (unit) 32 green (sections 1–3); workspace suite
   re-run serial clean-env (see HANDOFF). `run_agent` → `partial`.
+
+- 2026-09-18 (jev-opt): JEV System One optimization pass (TypeSafe Jev,
+  2026-09-15; no TYPESAFE_API_KEY in env, so live Jev calls were
+  impossible — executed as a Jev-pattern pass: measured state → atomic
+  scored/noul decisions → confidence-gated parity-safe actions).
+  State: target/ 158G (132G stale ~90MB test-binary hashes + 26G
+  incremental); fmt debt 126 files (G3 red); 5 crates pinned serde_json
+  "1" without preserve_order (single-crate key-order divergence risk);
+  canonical_model_variants compiled 2 regexes per call on the
+  model-routing path; unsafe present (libc process mgmt) so no forbid
+  lints. Landed: (a) 8 deps centralized to [workspace.dependencies]
+  (aes-gcm/base64/fancy-regex/parking_lot/rand/regex/tempfile/url), 49
+  pins converted to workspace=true across 11 crates (serde_json now
+  preserve_order-guaranteed in every crate build); libc/rusqlite/
+  single-use crates left untouched (feature-variance risk); (b) dev
+  profile debug=true→1 + release strip=true (debuginfo-only, no
+  observable change); (c) reasoning.rs regexes hoisted to process-once
+  Lazy statics (same patterns, golden fixture green); (d) cargo fmt
+  --all (G3 check now exits 0). Validation: cargo metadata (no-deps +
+  full graph) OK, Cargo.lock untouched (zero version churn),
+  `cargo build --workspace` green (0 errors),
+  `cargo test --workspace -- --test-threads=1` green — 211 suites,
+  1,889 passed, 0 failed — incl. canonical_model_variants golden-exact,
+  cargo fmt --check clean, git diff --check clean. Ledger: NO module
+  status change — 148 done / 49 partial / 8698 missing tracked (1.66%),
+  prod 148/49/3284 (4.25%). Next: optional `cargo clean` (~158G reclaim;
+  next build then fully cold); optional live-Jev wiring needs
+  TYPESAFE_API_KEY. Evidence: workspace build + serial suite
+  (tier: unit) + gate checks.

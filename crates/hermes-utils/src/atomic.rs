@@ -7,10 +7,10 @@
 //! `warn_if_credential_file_broadly_readable`).
 
 use serde::Serialize;
+use std::io::Write;
 #[cfg(unix)]
 use std::os::unix::io::AsRawFd;
 use std::path::{Path, PathBuf};
-use std::io::Write;
 
 /// Capture the permission bits of `path` if it exists, else `None`.
 ///
@@ -143,13 +143,15 @@ pub fn atomic_replace(tmp_path: &Path, target: &Path) -> PathBuf {
 
 fn is_exdev_or_ebusy(e: &std::io::Error) -> bool {
     // EXDEV = 18, EBUSY = 16 (Linux/BSD); matches upstream errno checks.
-    matches!(
-        e.raw_os_error(),
-        Some(18) | Some(16)
-    ) || e.kind() == std::io::ErrorKind::CrossesDevices
+    matches!(e.raw_os_error(), Some(18) | Some(16))
+        || e.kind() == std::io::ErrorKind::CrossesDevices
 }
 
-pub(crate) fn create_temp_in(dir: &Path, prefix: &str, suffix: &str) -> std::io::Result<(tempfile::NamedTempFile, PathBuf)> {
+pub(crate) fn create_temp_in(
+    dir: &Path,
+    prefix: &str,
+    suffix: &str,
+) -> std::io::Result<(tempfile::NamedTempFile, PathBuf)> {
     let mut builder = tempfile::Builder::new();
     builder.prefix(prefix).suffix(suffix).rand_bytes(6);
     let tmp = builder.tempfile_in(dir)?;
@@ -171,8 +173,16 @@ pub fn atomic_write_text(
         std::fs::create_dir_all(parent)?;
     }
 
-    let original_mode = if preserve_mode { preserve_file_mode(path) } else { None };
-    let original_owner = if preserve_mode { preserve_file_owner(path) } else { None };
+    let original_mode = if preserve_mode {
+        preserve_file_mode(path)
+    } else {
+        None
+    };
+    let original_owner = if preserve_mode {
+        preserve_file_owner(path)
+    } else {
+        None
+    };
     let mut effective_mode = original_mode;
     if effective_mode.is_none() && create_mode.is_some() && !path.exists() {
         effective_mode = create_mode;
@@ -218,15 +228,29 @@ pub fn atomic_write_text(
 /// false, mirroring upstream's `ensure_ascii=False`.
 ///
 /// PARITY: utils.py `atomic_json_write` (206–275).
-pub fn atomic_json_write(path: &Path, data: &impl Serialize, indent: usize, mode: Option<u32>) -> std::io::Result<()> {
+pub fn atomic_json_write(
+    path: &Path,
+    data: &impl Serialize,
+    indent: usize,
+    mode: Option<u32>,
+) -> std::io::Result<()> {
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent)?;
     }
 
-    let original_mode = if mode.is_none() { preserve_file_mode(path) } else { None };
+    let original_mode = if mode.is_none() {
+        preserve_file_mode(path)
+    } else {
+        None
+    };
     let original_owner = preserve_file_owner(path);
 
-    let prefix = format!(".{}_", path.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default());
+    let prefix = format!(
+        ".{}_",
+        path.file_stem()
+            .map(|s| s.to_string_lossy().into_owned())
+            .unwrap_or_default()
+    );
     let (mut tmp, tmp_path) = create_temp_in(
         path.parent().unwrap_or_else(|| Path::new(".")),
         &prefix,
@@ -285,7 +309,10 @@ pub fn warn_if_credential_file_broadly_readable(path: &Path, label: Option<&str>
         if mode & (S_IRGRP | S_IROTH) == 0 {
             return false;
         }
-        let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+        let name = path
+            .file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_default();
         let label_prefix = label.map(|l| format!("{} ", l)).unwrap_or_default();
         eprintln!(
             "{}is group/world-readable (mode 0{:o}) and contains secrets. Run: chmod 600 {}",
@@ -344,8 +371,8 @@ mod tests {
     #[cfg(unix)]
     #[test]
     fn atomic_write_text_preserves_symlink() {
-        use std::os::unix::fs::PermissionsExt;
         use std::os::unix::fs::symlink;
+        use std::os::unix::fs::PermissionsExt;
         let td = TempDir::new().unwrap();
         let real = td.path().join("real.yaml");
         std::fs::write(&real, "before").unwrap();
@@ -356,7 +383,10 @@ mod tests {
         // Symlink survives and points at the updated real file.
         assert!(link.is_symlink());
         assert_eq!(std::fs::read_to_string(&link).unwrap(), "after");
-        assert_eq!(std::fs::metadata(&link).unwrap().permissions().mode() & 0o777, 0o640);
+        assert_eq!(
+            std::fs::metadata(&link).unwrap().permissions().mode() & 0o777,
+            0o640
+        );
     }
 
     #[test]
@@ -365,7 +395,8 @@ mod tests {
         let p = td.path().join("data.json");
         let v = serde_json::json!({"a": 1, "b": [true, null]});
         atomic_json_write(&p, &v, 2, None).unwrap();
-        let got: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(&p).unwrap()).unwrap();
+        let got: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(&p).unwrap()).unwrap();
         assert_eq!(got, v);
     }
 
@@ -380,6 +411,9 @@ mod tests {
         assert!(warn_if_credential_file_broadly_readable(&p, None));
         std::fs::set_permissions(&p, std::fs::Permissions::from_mode(0o600)).unwrap();
         assert!(!warn_if_credential_file_broadly_readable(&p, None));
-        assert!(!warn_if_credential_file_broadly_readable(&td.path().join("missing"), None));
+        assert!(!warn_if_credential_file_broadly_readable(
+            &td.path().join("missing"),
+            None
+        ));
     }
 }

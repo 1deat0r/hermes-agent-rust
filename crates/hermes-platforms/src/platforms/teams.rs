@@ -23,6 +23,7 @@ pub fn register(ctx: &dyn PluginCtx) {
             "TEAMS_CLIENT_SECRET".to_string(),
             "TEAMS_TENANT_ID".to_string(),
         ],
-        install_hint: "Teams SDK missing — restart the gateway to auto-install, or run: ".to_string(),
+        install_hint: "Teams SDK missing — restart the gateway to auto-install, or run: "
+            .to_string(),
     });
 }
