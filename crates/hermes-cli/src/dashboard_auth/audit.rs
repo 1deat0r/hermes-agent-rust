@@ -1,6 +1,9 @@
 //! Audit log for dashboard-auth events.
 //!
-//! PARITY: `hermes_cli/dashboard_auth/audit.py` @ b9aa928 (whole module).
+//! PARITY: `hermes_cli/dashboard_auth/audit.py` @ 5d59366 (whole module,
+//! lines 1-65 behavioral; the trailing PLUGIN-COMPAT `import os` shim at
+//! lines 68-73 is intentionally unported — a revert-scheduled no-op import
+//! with zero observable behavior).
 //!
 //! Profile-aware location: `$HERMES_HOME/logs/dashboard-auth.log`. One
 //! JSON object per line. Token-like fields are stripped before
@@ -25,7 +28,7 @@ static WRITE_LOCK: Lazy<Mutex<()>> = Lazy::new(|| Mutex::new(()));
 /// Field names that must never appear in the log raw. Any kwarg matching
 /// these is silently dropped.
 ///
-/// PARITY: `_REDACTED_FIELDS` (upstream lines 24-28).
+/// PARITY: `_REDACTED_FIELDS` (upstream lines 18-21).
 const REDACTED_FIELDS: [&str; 9] = [
     "access_token",
     "refresh_token",
@@ -41,7 +44,7 @@ const REDACTED_FIELDS: [&str; 9] = [
 /// Event types written to dashboard-auth.log. Values are the literal
 /// `event` field on the JSON line.
 ///
-/// PARITY: `AuditEvent` (upstream lines 31-59).
+/// PARITY: `AuditEvent` (upstream lines 24-42).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AuditEvent {
     LoginStart,
@@ -91,7 +94,7 @@ impl AuditEvent {
 /// profile overrides and the native-Windows `%LOCALAPPDATA%` fallback are
 /// honored.
 ///
-/// PARITY: `_resolve_log_path` (upstream lines 62-70).
+/// PARITY: `_resolve_log_path` (upstream lines 45-48).
 pub fn resolve_log_path() -> PathBuf {
     get_hermes_home().join("logs").join("dashboard-auth.log")
 }
@@ -102,7 +105,7 @@ pub fn resolve_log_path() -> PathBuf {
 /// failures are logged at WARNING but never raise — auth must not fail
 /// because the audit logger broke.
 ///
-/// PARITY: `audit_log` (upstream lines 73-96). The timestamp is
+/// PARITY: `audit_log` (upstream lines 51-65). The timestamp is
 /// timezone-aware UTC ISO-8601; the line is compact JSON
 /// (`separators=(",", ":")`).
 pub fn audit_log(event: AuditEvent, fields: &[(&str, Value)]) {

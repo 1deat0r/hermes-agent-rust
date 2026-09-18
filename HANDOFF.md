@@ -270,6 +270,21 @@ live inventory.json + port_status.json + CONVERSION-LEDGER.md agree on
 148/49. Next: optional `cargo clean`; set TYPESAFE_API_KEY for
 live-Jev decision calls.
 
+## Wave B6 audit done (2026-09-19)
+
+`hermes_cli.dashboard_auth.audit` partial → done @ 5d59366
+(line-by-line identical; compat no-op shim unported + noted; 2 oracle
+tests added). File serial: 13 passed / 0 failed (`cargo test
+-p hermes-cli --test parity_dashboard_auth_audit_token --
+--test-threads=1`); fmt + diff-check clean. KNOWN pre-existing flake:
+token_auth half races ~1-in-3 in parallel mode (reproduced at HEAD,
+unfixed — out of scope).
+**Ledger: 149/48/8698 (1.68% tracked, 4.28% prod).**
+Next: Wave B6 remainder in smallest-LOC order — `token_auth` (96),
+`ws_tickets` (97), `registry` (125), `prefix` (130) re-certs; then the
+missing HTTP siblings (middleware/routes/login_page/request_utils/
+refresh_singleflight) to close `dashboard_auth.__init__`.
+
 ## Next actions, in order
 
 1. Wave B unit 6: next smallest-DIFF partials (`agent.ssl_guard`,

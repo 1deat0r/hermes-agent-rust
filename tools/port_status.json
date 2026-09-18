@@ -1,785 +1,785 @@
 {
- "agent.__init__": {
-  "retarget_note": "package surface ported 2026-09-16 (lib.rs docs + jiter_preload surface; private-alias visibility divergence documented)",
-  "status": "done"
- },
- "agent.auxiliary_client": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (10044 -> 7673 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "agent.billing_links": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
- },
- "agent.bounded_response": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
- },
- "agent.credential_pool": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (3147 -> 2778 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "agent.errors": {
-  "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green",
-  "status": "done"
- },
- "agent.file_safety": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (693 -> 550 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "agent.interrupt_compat": {
-  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B unit 5): tool_reason + _accepts_keyword gate ported (InterruptTarget::accepts_tool_reason; introspection has no Rust analog, caller-declared); AIAgent-subclass + delegate_tool cases stay pending with those modules; suites green",
-  "status": "done"
- },
- "agent.iteration_budget": {
-  "status": "done",
-  "retarget_note": "ported 2026-09-16 autonomous: normalize_budget_warning_ratio (RatioInput seam, bool/None/range arms); 8 tests"
- },
- "agent.jiter_preload": {
-  "retarget_note": "ported 2026-09-16 Wave A batch 1 under mattpocock tdd+implement+code-review: review findings closed (name mirror, PARITY tags, thiserror seam wrapper, eager-call PENDING-with-entry-point)",
-  "status": "done"
- },
- "agent.kanban_stop": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: env-gate folds are logic-identical; 7 tests green"
- },
- "agent.lmstudio_reasoning": {
-  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): drift is cosmetic restructure only (ternary folds, docstring trims); logic identical; existing suites re-run green",
-  "status": "done"
- },
- "agent.manual_compression_feedback": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
- },
- "agent.markdown_tables": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: max() clamp already equivalent via width(); 11 tests green"
- },
- "agent.message_content": {
-  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): drift is cosmetic restructure only (ternary folds, docstring trims); logic identical; existing suites re-run green",
-  "status": "done"
- },
- "agent.monitoring.__init__": {
-  "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green",
-  "status": "done"
- },
- "agent.monitoring.cron_health": {
-  "status": "done",
-  "retarget_note": "ported 2026-09-16 autonomous: outcomes set +queued/+suppressed_acked; job_key delegates to safe_instance_id; classifier already equivalent"
- },
- "agent.monitoring.emitter": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: unsubscribe suppress-ValueError already equivalent (if-let); suite green"
- },
- "agent.monitoring.events": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: _MonitoringEvent base is structural (macro already discriminator-first, order-pinned, preserve_order); 10 tests green"
- },
- "agent.monitoring.gateway_health": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (469 -> 352 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "agent.monitoring.gateway_health_export": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (643 -> 344 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "agent.monitoring.otlp_exporter": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (272 -> 283 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "agent.monitoring.redaction": {
-  "retarget_note": "ported 2026-09-16 Wave B redaction unit: redact_for_egress (live goldens) in hermes-logging; rewired export; redact_bounded added; 5 stale expectations updated to refactor behavior across 4 files; reviews PASS",
-  "status": "done"
- },
- "agent.portal_tags": {
-  "status": "done",
-  "retarget_note": "ported 2026-09-16 autonomous: affinity-scope triple (set/reset/get) mirroring conversation pattern; 15 tests"
- },
- "agent.proxy_sources.__init__": {
-  "retarget_note": "pointer surface ported 2026-09-16; iron_proxy backend remains missing",
-  "status": "done"
- },
- "agent.reactions": {
-  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): drift is cosmetic restructure only (ternary folds, docstring trims); logic identical; existing suites re-run green",
-  "status": "done"
- },
- "agent.reasoning_summaries": {
-  "status": "done",
-  "retarget_note": "ported 2026-09-16 autonomous: Any-delta + flatten, append_streamed_reasoning_detail with backfill (live-oracle); signature migrated; reviews PASS"
- },
- "agent.redact": {
-  "retarget_note": "extended 2026-09-16 Wave B: REDACTION_UNAVAILABLE + redact_for_egress ported",
-  "status": "done"
- },
- "agent.secret_sources.__init__": {
-  "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green",
-  "status": "done"
- },
- "agent.secret_sources._cache": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
- },
- "agent.secret_sources.base": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (336 -> 255 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "agent.secret_sources.bitwarden": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (1048 -> 639 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "agent.secret_sources.command": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (501 -> 383 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "agent.secret_sources.onepassword": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (682 -> 360 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "agent.secret_sources.registry": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (470 -> 419 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "agent.session_activity": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
- },
- "agent.ssl_guard": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: is_truthy_value dedup is semantic no-op (identical 4-string set); 7 tests green"
- },
- "agent.ssl_verify": {
-  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B unit 5): insecure/env-precedence/warning/default arms identical; _context_for_ca_bundle SSLContext cache recorded as transport-owner seam (auxiliary_client resolves to CaBundle path); suites green",
-  "status": "done"
- },
- "agent.think_scrubber": {
-  "status": "done",
-  "retarget_note": "ported 2026-09-16 autonomous: THINK_TAG_NAMES/OPEN/CLOSE exports (lowercased tables); 14 tests"
- },
- "agent.tool_result_classification": {
-  "status": "done"
- },
- "agent.trajectory": {
-  "status": "done"
- },
- "agent.turn_retry_state": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
- },
- "agent.verify.__init__": {
-  "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green",
-  "status": "done"
- },
- "agent.verify.environment": {
-  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): wrapped-shape support already present; 18 tests green",
-  "status": "done"
- },
- "agent.verify.recipes": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (477 -> 296 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "agent.verify.runner": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (279 -> 255 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "agent.verify_hooks": {
-  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B unit 5): drift is docstring-only; logic identical; existing suites green",
-  "status": "done"
- },
- "gateway.builtin_hooks.__init__": {
-  "retarget_note": "always-registered contract ported 2026-09-16 (no hook impls at pin)",
-  "status": "done"
- },
- "gateway.cgroup_cleanup": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
- },
- "gateway.code_skew": {
-  "status": "done",
-  "retarget_note": "re-certified at 5d59366 autonomous: ternary folds only; 10 tests green"
- },
- "gateway.cwd_placeholder": {
-  "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): deleted _truthy_env was dead code at old pin (defined line 15, zero call sites); docker-branch fold is a logic-identical conjunction merge; parity tests re-run green",
-  "status": "done"
- },
- "gateway.platforms._http_client_limits": {
-  "status": "done",
-  "retarget_note": "re-certified at 5d59366 autonomous: _positive_env unifies env_float/env_int with identical grammar (incl NaN/inf parity); 5 tests green"
- },
- "gateway.platforms.qqbot.constants": {
-  "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green",
-  "status": "done"
- },
- "gateway.platforms.qqbot.crypto": {
-  "retarget_note": "re-certified at 5d59366 (2026-09-16): refactor-only drift (cosmetic restructure, behavior identical); existing parity tests re-run green",
-  "status": "done"
- },
- "gateway.platforms.qqbot.keyboards": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (461 -> 287 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "gateway.platforms.qqbot.utils": {
-  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): ternary-fold drift only; 10 tests green",
-  "status": "done"
- },
- "gateway.readiness": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
- },
- "gateway.rich_sent_store": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
- },
- "gateway.session_stall": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: docstring-only drift; 8 tests green"
- },
- "hermes_cli.__init__": {
-  "status": "done",
-  "retarget_note": "re-certified at 5d59366 autonomous: version bump already applied; docstring trims only; 1 test green"
- },
- "hermes_cli.build_info": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
- },
- "hermes_cli.cli_output": {
-  "status": "done",
-  "retarget_note": "ported 2026-09-16 autonomous: line_input TTY-gated triple-fallback (4 tests); KI/EOF propagate"
- },
- "hermes_cli.colors": {
-  "retarget_note": "re-certified at 5d59366 (2026-09-16): refactor-only drift (cosmetic restructure, behavior identical); existing parity tests re-run green",
-  "status": "done"
- },
- "hermes_cli.dashboard_auth.__init__": {
-  "retarget_note": "re-certified at 5d59366 except HTTP-layer siblings; classify_jwks_lookup_error ported w/ 5 oracle tests (2026-09-16)",
-  "status": "partial"
- },
- "hermes_cli.dashboard_auth.audit": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (95 -> 73 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "hermes_cli.dashboard_auth.base": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (306 -> 162 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "hermes_cli.dashboard_auth.cookies": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (338 -> 222 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "hermes_cli.dashboard_auth.native_flow": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (297 -> 165 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "hermes_cli.dashboard_auth.prefix": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (232 -> 130 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "hermes_cli.dashboard_auth.public_paths": {
-  "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green",
-  "status": "done"
- },
- "hermes_cli.dashboard_auth.registry": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (81 -> 125 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "hermes_cli.dashboard_auth.token_auth": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (194 -> 96 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "hermes_cli.dashboard_auth.ws_tickets": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (161 -> 97 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "hermes_cli.default_soul": {
-  "status": "done",
-  "retarget_note": "ported 2026-09-16 autonomous: new DEFAULT_SOUL_MD + 2 legacy entries (prev-gen + ASCII-dashed byte-exact); 5 tests"
- },
- "hermes_cli.input_sanitize": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: _BOUNDARY_SUBS table == same 4 patterns/substitutions in order; 7 tests green"
- },
- "hermes_cli.lifecycle": {
-  "status": "done"
- },
- "hermes_cli.main": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (12620 -> 3520 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "hermes_cli.managed_scope": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: file_signature import + _under_pytest guard already modeled; 12 tests green"
- },
- "hermes_cli.model_search": {
-  "retarget_note": "ported 2026-09-16 Wave B: ox-alpha alias row added (data drift) + test; refactor-only remainder",
-  "status": "done"
- },
- "hermes_cli.secret_prompt": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: ''-closed-stream folded into EOF set; None-exhaustion covers it; 14 tests green"
- },
- "hermes_cli.setup_hidden_env": {
-  "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green",
-  "status": "done"
- },
- "hermes_cli.sqlite_util": {
-  "status": "done",
-  "retarget_note": "ported 2026-09-16 autonomous: open_db (PRAGMA stack, WAL seam, close-on-error/panic) + transaction (DEFERRED/IMMEDIATE, always-close); 11 tests"
- },
- "hermes_cli.timefmt": {
-  "status": "done",
-  "retarget_note": "ported 2026-09-16 autonomous: coerce_epoch (live-oracle goldens, EPOCH bounds, warning arm) + relative_time rewired; 11 tests"
- },
- "hermes_cli.timeouts": {
-  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): _configured_timeout parameterization is logic-identical (structure differs, behavior same); 6 tests green",
-  "status": "done"
- },
- "hermes_cli.toolset_validation": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
- },
- "hermes_constants": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (1481 -> 1293 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "hermes_logging": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (800 -> 725 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "hermes_state": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (9996 -> 1662 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "hermes_state_common": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (614 -> 1218 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "hermes_state_portability": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (714 -> 615 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "hermes_state_schema": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (1126 -> 1298 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "hermes_state_search": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (2305 -> 1343 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "hermes_time": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
- },
- "model_tools": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (1569 -> 987 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "plugins.__init__": {
-  "retarget_note": "package root ported 2026-09-16 (hermes-platforms crate root declares plugins/ scope; review-clean)",
-  "status": "done"
- },
- "plugins.model-providers.actual.__init__": {
-  "status": "done",
-  "retarget_note": "ported 2026-09-16 autonomous: metadata refresh + thinking-toggle reasoning (live-oracle incl minimal-clamp); certifi/URL-norm deferred above-crate"
- },
- "plugins.model-providers.ai-gateway.__init__": {
-  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): early-return restructure is logic-identical; 2 tests green",
-  "status": "done"
- },
- "plugins.model-providers.alibaba-coding-plan.__init__": {
-  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B unit 5): added CN profile (own key first + shared fallbacks), intl row unchanged; registry 38 (sorted); suites green",
-  "status": "done"
- },
- "plugins.model-providers.alibaba.__init__": {
-  "status": "done",
-  "retarget_note": "ported 2026-09-16 autonomous: aliyun alias + alibaba-cn/token-plan/token-plan-cn profiles (4 registrations); 3 tests"
- },
- "plugins.model-providers.anthropic.__init__": {
-  "status": "done",
-  "retarget_note": "ported 2026-09-16 autonomous: cursor pagination (limit=1000/after_id/MAX_PAGES-20/repeat-guard/dedup) with 2 mock-tier tests; single-shot path refactored to shared get_json_page"
- },
- "plugins.model-providers.arcee.__init__": {
-  "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green",
-  "status": "done"
- },
- "plugins.model-providers.azure-foundry.__init__": {
-  "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green",
-  "status": "done"
- },
- "plugins.model-providers.bedrock.__init__": {
-  "retarget_note": "ported 2026-09-16 Wave B: supports_model_listing rename (base flag + 3 profiles + 4 suites); polarity audited per-site after sed inversion caught by tests",
-  "status": "done"
- },
- "plugins.model-providers.copilot-acp.__init__": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
- },
- "plugins.model-providers.copilot.__init__": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: signature/docstring folds only; 2 tests green"
- },
- "plugins.model-providers.custom.__init__": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: qwen _normalize_parts already modeled; custom/zai docstring-only drift; suites green"
- },
- "plugins.model-providers.deepinfra.__init__": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: docstring/code folds only; 3 tests green"
- },
- "plugins.model-providers.deepseek.__init__": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: docstring trims only; suite green"
- },
- "plugins.model-providers.fireworks.__init__": {
-  "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green",
-  "status": "done"
- },
- "plugins.model-providers.gemini.__init__": {
-  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): cosmetic-only drift; 3 tests green",
-  "status": "done"
- },
- "plugins.model-providers.gmi.__init__": {
-  "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green",
-  "status": "done"
- },
- "plugins.model-providers.huggingface.__init__": {
-  "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green",
-  "status": "done"
- },
- "plugins.model-providers.kilocode.__init__": {
-  "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green",
-  "status": "done"
- },
- "plugins.model-providers.kimi-coding.__init__": {
-  "status": "done",
-  "retarget_note": "ported 2026-09-16 autonomous: versioned UA HermesAgent/0.21.3 (was stale hermes-agent/1.0); suite green"
- },
- "plugins.model-providers.minimax.__init__": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
- },
- "plugins.model-providers.nous.__init__": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: profile surface green (18 tests); resolve_aux_model DEFERRED to CLI/model layer (network + hermes_cli.models, above providers crate)"
- },
- "plugins.model-providers.novita.__init__": {
-  "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green",
-  "status": "done"
- },
- "plugins.model-providers.nvidia.__init__": {
-  "status": "done",
-  "retarget_note": "re-certified at 5d59366 autonomous: prepare_messages already modeled (nvidia_tool_strip); aliases current; suite green"
- },
- "plugins.model-providers.ollama-cloud.__init__": {
-  "status": "done",
-  "retarget_note": "ported 2026-09-16 autonomous: minimal->low clamp divergence found live, fixed + tested"
- },
- "plugins.model-providers.openai-codex.__init__": {
-  "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green",
-  "status": "done"
- },
- "plugins.model-providers.qwen-oauth.__init__": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: qwen _normalize_parts already modeled; custom/zai docstring-only drift; suites green"
- },
- "plugins.model-providers.stepfun.__init__": {
-  "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green",
-  "status": "done"
- },
- "plugins.model-providers.upstage.__init__": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: clamp_effort refactor already modeled in base; suite green"
- },
- "plugins.model-providers.vertex.__init__": {
-  "status": "done",
-  "retarget_note": "re-certified at 5d59366 autonomous: cosmetic-only drift; suite green"
- },
- "plugins.model-providers.xai.__init__": {
-  "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green",
-  "status": "done"
- },
- "plugins.model-providers.xiaomi.__init__": {
-  "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green",
-  "status": "done"
- },
- "plugins.model-providers.zai.__init__": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: qwen _normalize_parts already modeled; custom/zai docstring-only drift; suites green"
- },
- "plugins.platforms.a2a.__init__": {
-  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
-  "status": "done"
- },
- "plugins.platforms.buzz.__init__": {
-  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
-  "status": "done"
- },
- "plugins.platforms.dingtalk.__init__": {
-  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
-  "status": "done"
- },
- "plugins.platforms.discord.__init__": {
-  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
-  "status": "done"
- },
- "plugins.platforms.email.__init__": {
-  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
-  "status": "done"
- },
- "plugins.platforms.feishu.__init__": {
-  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
-  "status": "done"
- },
- "plugins.platforms.google_chat.__init__": {
-  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
-  "status": "done"
- },
- "plugins.platforms.homeassistant.__init__": {
-  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
-  "status": "done"
- },
- "plugins.platforms.irc.__init__": {
-  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
-  "status": "done"
- },
- "plugins.platforms.line.__init__": {
-  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
-  "status": "done"
- },
- "plugins.platforms.matrix.__init__": {
-  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
-  "status": "done"
- },
- "plugins.platforms.mattermost.__init__": {
-  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
-  "status": "done"
- },
- "plugins.platforms.ntfy.__init__": {
-  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
-  "status": "done"
- },
- "plugins.platforms.photon.__init__": {
-  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
-  "status": "done"
- },
- "plugins.platforms.raft.__init__": {
-  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
-  "status": "done"
- },
- "plugins.platforms.simplex.__init__": {
-  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
-  "status": "done"
- },
- "plugins.platforms.slack.__init__": {
-  "retarget_note": "entry ported 2026-09-16 under mattpocock tdd+review: PluginCtx seam + 2 tests; 13 adapter kwargs deferred to plugins.platforms.slack.adapter (missing, tracked)",
-  "status": "done"
- },
- "plugins.platforms.sms.__init__": {
-  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
-  "status": "done"
- },
- "plugins.platforms.teams.__init__": {
-  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
-  "status": "done"
- },
- "plugins.platforms.telegram.__init__": {
-  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
-  "status": "done"
- },
- "plugins.platforms.wecom.__init__": {
-  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
-  "status": "done"
- },
- "plugins.platforms.whatsapp.__init__": {
-  "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
-  "status": "done"
- },
- "providers.__init__": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (198 -> 468 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "providers.base": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (238 -> 344 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "run_agent": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (8206 -> 1561 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "tools.ansi_strip": {
-  "status": "done",
-  "retarget_note": "ported 2026-09-16 autonomous: strip_unicode_tags (live-oracle, emoji preservation, BMP-vs-plane14 documented); 7 tests"
- },
- "tools.audio_container": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: docstring-only drift; 6 tests green"
- },
- "tools.binary_extensions": {
-  "retarget_note": "ported 2026-09-16 Wave B: OPAQUE_DOCUMENT_EXTENSIONS + has_extension_in + is_pdf_path (3 tests); has_->is_ rename divergence kept+documented",
-  "status": "done"
- },
- "tools.browser_camofox_state": {
-  "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): constants inlined at use-site + re-exported under PLUGIN-COMPAT block that check_compat_pointers.py forbids internal use of; uuid5 digests unchanged; parity tests re-run green",
-  "status": "done"
- },
- "tools.browser_dialog_tool": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
- },
- "tools.budget_config": {
-  "status": "done"
- },
- "tools.clarify_tool": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (266 -> 311 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "tools.close_terminal_tool": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: description trims only; 7 tests green"
- },
- "tools.computer_use.schema": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
- },
- "tools.credential_files": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (530 -> 366 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "tools.daemon_pool": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: docstring-only drift; 10 tests green (max_workers peak test timing-sensitive under parallel contention, green serial/alone)"
- },
- "tools.debug_helpers": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: structural drift only (_now helper); suite green"
- },
- "tools.delegation_output_schema": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: coerce_output_schema already ported (type-name mapping incl.); 17 tests green"
- },
- "tools.desktop_ui": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
- },
- "tools.env_probe": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (370 -> 255 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "tools.fal_common": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: ternary/factory/_dist refactors verified behavior-identical; suites green"
- },
- "tools.file_state": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (332 -> 254 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "tools.focus_pane_tool": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: description/bridge-call folds; 6 tests green"
- },
- "tools.interrupt": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
- },
- "tools.mcp_dashboard_oauth": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (145 -> 140 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "tools.mcp_death_supervisor": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
- },
- "tools.mcp_schema_cache": {
-  "status": "done",
-  "retarget_note": "ported 2026-09-16 autonomous: TTL expiry (explicit-clock, >= boundary) + ttl/written_at/scope persistence; 14 tests"
- },
- "tools.open_preview_tool": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
- },
- "tools.path_security": {
-  "retarget_note": "ported 2026-09-16 Wave B: has_traversal_component was missing \u2014 TDD-added with 2 tests; PLUGIN-COMPAT logger PENDING with tools.approval",
-  "status": "done"
- },
- "tools.read_extract": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (346 -> 551 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "tools.read_preview_tool": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: docstring folds; 8 tests green"
- },
- "tools.read_terminal_tool": {
-  "status": "done"
- },
- "tools.registry": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (956 -> 975 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "tools.schema_sanitizer": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (687 -> 386 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "tools.session_search_tool": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (1161 -> 784 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "tools.skill_provenance": {
-  "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): docstring-only drift; 5 tests green",
-  "status": "done"
- },
- "tools.slash_confirm": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
- },
- "tools.terminal_hints": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: ternary/factory/_dist refactors verified behavior-identical; suites green"
- },
- "tools.thread_context": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
- },
- "tools.threat_patterns": {
-  "status": "done",
-  "retarget_note": "ported 2026-09-16 autonomous: _SECRET_VAR refactor (boundary/API-drop, live-oracle); 25 tests"
- },
- "tools.todo_tool": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (335 -> 284 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "tools.tool_backend_helpers": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (311 -> 259 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "tools.tool_output_limits": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
- },
- "tools.tool_result_storage": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (254 -> 321 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "tools.tts_text_normalize": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
- },
- "tools.working_diff": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: docstring-only drift; suites green"
- },
- "toolset_distributions": {
-  "status": "done",
-  "retarget_note": "re-certified autonomous: ternary/factory/_dist refactors verified behavior-identical; suites green"
- },
- "toolsets": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (1029 -> 485 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- },
- "ts:apps.desktop.electron.active-runtime-state": {
-  "retarget_note": "ported 2026-09-16 under mattpocock tdd+implement+code-review skills: 9 parity tests (7 oracle + 2 hardening), UTF-16 length parity, seam contracts documented; review findings closed",
-  "status": "done"
- },
- "utils": {
-  "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (666 -> 611 LOC); re-certify line-by-line before promoting",
-  "status": "partial"
- }
+  "agent.__init__": {
+    "retarget_note": "package surface ported 2026-09-16 (lib.rs docs + jiter_preload surface; private-alias visibility divergence documented)",
+    "status": "done"
+  },
+  "agent.auxiliary_client": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (10044 -> 7673 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "agent.billing_links": {
+    "retarget_note": "re-certified autonomous: docstring-only drift; suites green",
+    "status": "done"
+  },
+  "agent.bounded_response": {
+    "retarget_note": "re-certified autonomous: docstring-only drift; suites green",
+    "status": "done"
+  },
+  "agent.credential_pool": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (3147 -> 2778 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "agent.errors": {
+    "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green",
+    "status": "done"
+  },
+  "agent.file_safety": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (693 -> 550 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "agent.interrupt_compat": {
+    "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B unit 5): tool_reason + _accepts_keyword gate ported (InterruptTarget::accepts_tool_reason; introspection has no Rust analog, caller-declared); AIAgent-subclass + delegate_tool cases stay pending with those modules; suites green",
+    "status": "done"
+  },
+  "agent.iteration_budget": {
+    "retarget_note": "ported 2026-09-16 autonomous: normalize_budget_warning_ratio (RatioInput seam, bool/None/range arms); 8 tests",
+    "status": "done"
+  },
+  "agent.jiter_preload": {
+    "retarget_note": "ported 2026-09-16 Wave A batch 1 under mattpocock tdd+implement+code-review: review findings closed (name mirror, PARITY tags, thiserror seam wrapper, eager-call PENDING-with-entry-point)",
+    "status": "done"
+  },
+  "agent.kanban_stop": {
+    "retarget_note": "re-certified autonomous: env-gate folds are logic-identical; 7 tests green",
+    "status": "done"
+  },
+  "agent.lmstudio_reasoning": {
+    "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): drift is cosmetic restructure only (ternary folds, docstring trims); logic identical; existing suites re-run green",
+    "status": "done"
+  },
+  "agent.manual_compression_feedback": {
+    "retarget_note": "re-certified autonomous: docstring-only drift; suites green",
+    "status": "done"
+  },
+  "agent.markdown_tables": {
+    "retarget_note": "re-certified autonomous: max() clamp already equivalent via width(); 11 tests green",
+    "status": "done"
+  },
+  "agent.message_content": {
+    "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): drift is cosmetic restructure only (ternary folds, docstring trims); logic identical; existing suites re-run green",
+    "status": "done"
+  },
+  "agent.monitoring.__init__": {
+    "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green",
+    "status": "done"
+  },
+  "agent.monitoring.cron_health": {
+    "retarget_note": "ported 2026-09-16 autonomous: outcomes set +queued/+suppressed_acked; job_key delegates to safe_instance_id; classifier already equivalent",
+    "status": "done"
+  },
+  "agent.monitoring.emitter": {
+    "retarget_note": "re-certified autonomous: unsubscribe suppress-ValueError already equivalent (if-let); suite green",
+    "status": "done"
+  },
+  "agent.monitoring.events": {
+    "retarget_note": "re-certified autonomous: _MonitoringEvent base is structural (macro already discriminator-first, order-pinned, preserve_order); 10 tests green",
+    "status": "done"
+  },
+  "agent.monitoring.gateway_health": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (469 -> 352 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "agent.monitoring.gateway_health_export": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (643 -> 344 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "agent.monitoring.otlp_exporter": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (272 -> 283 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "agent.monitoring.redaction": {
+    "retarget_note": "ported 2026-09-16 Wave B redaction unit: redact_for_egress (live goldens) in hermes-logging; rewired export; redact_bounded added; 5 stale expectations updated to refactor behavior across 4 files; reviews PASS",
+    "status": "done"
+  },
+  "agent.portal_tags": {
+    "retarget_note": "ported 2026-09-16 autonomous: affinity-scope triple (set/reset/get) mirroring conversation pattern; 15 tests",
+    "status": "done"
+  },
+  "agent.proxy_sources.__init__": {
+    "retarget_note": "pointer surface ported 2026-09-16; iron_proxy backend remains missing",
+    "status": "done"
+  },
+  "agent.reactions": {
+    "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): drift is cosmetic restructure only (ternary folds, docstring trims); logic identical; existing suites re-run green",
+    "status": "done"
+  },
+  "agent.reasoning_summaries": {
+    "retarget_note": "ported 2026-09-16 autonomous: Any-delta + flatten, append_streamed_reasoning_detail with backfill (live-oracle); signature migrated; reviews PASS",
+    "status": "done"
+  },
+  "agent.redact": {
+    "retarget_note": "extended 2026-09-16 Wave B: REDACTION_UNAVAILABLE + redact_for_egress ported",
+    "status": "done"
+  },
+  "agent.secret_sources.__init__": {
+    "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green",
+    "status": "done"
+  },
+  "agent.secret_sources._cache": {
+    "retarget_note": "re-certified autonomous: docstring-only drift; suites green",
+    "status": "done"
+  },
+  "agent.secret_sources.base": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (336 -> 255 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "agent.secret_sources.bitwarden": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (1048 -> 639 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "agent.secret_sources.command": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (501 -> 383 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "agent.secret_sources.onepassword": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (682 -> 360 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "agent.secret_sources.registry": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (470 -> 419 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "agent.session_activity": {
+    "retarget_note": "re-certified autonomous: docstring-only drift; suites green",
+    "status": "done"
+  },
+  "agent.ssl_guard": {
+    "retarget_note": "re-certified autonomous: is_truthy_value dedup is semantic no-op (identical 4-string set); 7 tests green",
+    "status": "done"
+  },
+  "agent.ssl_verify": {
+    "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B unit 5): insecure/env-precedence/warning/default arms identical; _context_for_ca_bundle SSLContext cache recorded as transport-owner seam (auxiliary_client resolves to CaBundle path); suites green",
+    "status": "done"
+  },
+  "agent.think_scrubber": {
+    "retarget_note": "ported 2026-09-16 autonomous: THINK_TAG_NAMES/OPEN/CLOSE exports (lowercased tables); 14 tests",
+    "status": "done"
+  },
+  "agent.tool_result_classification": {
+    "status": "done"
+  },
+  "agent.trajectory": {
+    "status": "done"
+  },
+  "agent.turn_retry_state": {
+    "retarget_note": "re-certified autonomous: docstring-only drift; suites green",
+    "status": "done"
+  },
+  "agent.verify.__init__": {
+    "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green",
+    "status": "done"
+  },
+  "agent.verify.environment": {
+    "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): wrapped-shape support already present; 18 tests green",
+    "status": "done"
+  },
+  "agent.verify.recipes": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (477 -> 296 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "agent.verify.runner": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (279 -> 255 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "agent.verify_hooks": {
+    "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B unit 5): drift is docstring-only; logic identical; existing suites green",
+    "status": "done"
+  },
+  "gateway.builtin_hooks.__init__": {
+    "retarget_note": "always-registered contract ported 2026-09-16 (no hook impls at pin)",
+    "status": "done"
+  },
+  "gateway.cgroup_cleanup": {
+    "retarget_note": "re-certified autonomous: docstring-only drift; suites green",
+    "status": "done"
+  },
+  "gateway.code_skew": {
+    "retarget_note": "re-certified at 5d59366 autonomous: ternary folds only; 10 tests green",
+    "status": "done"
+  },
+  "gateway.cwd_placeholder": {
+    "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): deleted _truthy_env was dead code at old pin (defined line 15, zero call sites); docker-branch fold is a logic-identical conjunction merge; parity tests re-run green",
+    "status": "done"
+  },
+  "gateway.platforms._http_client_limits": {
+    "retarget_note": "re-certified at 5d59366 autonomous: _positive_env unifies env_float/env_int with identical grammar (incl NaN/inf parity); 5 tests green",
+    "status": "done"
+  },
+  "gateway.platforms.qqbot.constants": {
+    "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green",
+    "status": "done"
+  },
+  "gateway.platforms.qqbot.crypto": {
+    "retarget_note": "re-certified at 5d59366 (2026-09-16): refactor-only drift (cosmetic restructure, behavior identical); existing parity tests re-run green",
+    "status": "done"
+  },
+  "gateway.platforms.qqbot.keyboards": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (461 -> 287 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "gateway.platforms.qqbot.utils": {
+    "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): ternary-fold drift only; 10 tests green",
+    "status": "done"
+  },
+  "gateway.readiness": {
+    "retarget_note": "re-certified autonomous: docstring-only drift; suites green",
+    "status": "done"
+  },
+  "gateway.rich_sent_store": {
+    "retarget_note": "re-certified autonomous: docstring-only drift; suites green",
+    "status": "done"
+  },
+  "gateway.session_stall": {
+    "retarget_note": "re-certified autonomous: docstring-only drift; 8 tests green",
+    "status": "done"
+  },
+  "hermes_cli.__init__": {
+    "retarget_note": "re-certified at 5d59366 autonomous: version bump already applied; docstring trims only; 1 test green",
+    "status": "done"
+  },
+  "hermes_cli.build_info": {
+    "retarget_note": "re-certified autonomous: docstring-only drift; suites green",
+    "status": "done"
+  },
+  "hermes_cli.cli_output": {
+    "retarget_note": "ported 2026-09-16 autonomous: line_input TTY-gated triple-fallback (4 tests); KI/EOF propagate",
+    "status": "done"
+  },
+  "hermes_cli.colors": {
+    "retarget_note": "re-certified at 5d59366 (2026-09-16): refactor-only drift (cosmetic restructure, behavior identical); existing parity tests re-run green",
+    "status": "done"
+  },
+  "hermes_cli.dashboard_auth.__init__": {
+    "retarget_note": "re-certified at 5d59366 except HTTP-layer siblings; classify_jwks_lookup_error ported w/ 5 oracle tests (2026-09-16)",
+    "status": "partial"
+  },
+  "hermes_cli.dashboard_auth.audit": {
+    "retarget_note": "re-certified at 5d59366 (2026-09-19): behavior-identical line-by-line (73 LOC); PLUGIN-COMPAT import-os shim intentionally unported (no-op, noted in header); 5 audit tests incl. 2 oracle mirrors of test_dashboard_auth_audit.py, green serial",
+    "status": "done"
+  },
+  "hermes_cli.dashboard_auth.base": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (306 -> 162 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "hermes_cli.dashboard_auth.cookies": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (338 -> 222 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "hermes_cli.dashboard_auth.native_flow": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (297 -> 165 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "hermes_cli.dashboard_auth.prefix": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (232 -> 130 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "hermes_cli.dashboard_auth.public_paths": {
+    "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green",
+    "status": "done"
+  },
+  "hermes_cli.dashboard_auth.registry": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (81 -> 125 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "hermes_cli.dashboard_auth.token_auth": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (194 -> 96 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "hermes_cli.dashboard_auth.ws_tickets": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (161 -> 97 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "hermes_cli.default_soul": {
+    "retarget_note": "ported 2026-09-16 autonomous: new DEFAULT_SOUL_MD + 2 legacy entries (prev-gen + ASCII-dashed byte-exact); 5 tests",
+    "status": "done"
+  },
+  "hermes_cli.input_sanitize": {
+    "retarget_note": "re-certified autonomous: _BOUNDARY_SUBS table == same 4 patterns/substitutions in order; 7 tests green",
+    "status": "done"
+  },
+  "hermes_cli.lifecycle": {
+    "status": "done"
+  },
+  "hermes_cli.main": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (12620 -> 3520 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "hermes_cli.managed_scope": {
+    "retarget_note": "re-certified autonomous: file_signature import + _under_pytest guard already modeled; 12 tests green",
+    "status": "done"
+  },
+  "hermes_cli.model_search": {
+    "retarget_note": "ported 2026-09-16 Wave B: ox-alpha alias row added (data drift) + test; refactor-only remainder",
+    "status": "done"
+  },
+  "hermes_cli.secret_prompt": {
+    "retarget_note": "re-certified autonomous: ''-closed-stream folded into EOF set; None-exhaustion covers it; 14 tests green",
+    "status": "done"
+  },
+  "hermes_cli.setup_hidden_env": {
+    "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green",
+    "status": "done"
+  },
+  "hermes_cli.sqlite_util": {
+    "retarget_note": "ported 2026-09-16 autonomous: open_db (PRAGMA stack, WAL seam, close-on-error/panic) + transaction (DEFERRED/IMMEDIATE, always-close); 11 tests",
+    "status": "done"
+  },
+  "hermes_cli.timefmt": {
+    "retarget_note": "ported 2026-09-16 autonomous: coerce_epoch (live-oracle goldens, EPOCH bounds, warning arm) + relative_time rewired; 11 tests",
+    "status": "done"
+  },
+  "hermes_cli.timeouts": {
+    "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): _configured_timeout parameterization is logic-identical (structure differs, behavior same); 6 tests green",
+    "status": "done"
+  },
+  "hermes_cli.toolset_validation": {
+    "retarget_note": "re-certified autonomous: docstring-only drift; suites green",
+    "status": "done"
+  },
+  "hermes_constants": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (1481 -> 1293 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "hermes_logging": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (800 -> 725 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "hermes_state": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (9996 -> 1662 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "hermes_state_common": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (614 -> 1218 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "hermes_state_portability": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (714 -> 615 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "hermes_state_schema": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (1126 -> 1298 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "hermes_state_search": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (2305 -> 1343 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "hermes_time": {
+    "retarget_note": "re-certified autonomous: docstring-only drift; suites green",
+    "status": "done"
+  },
+  "model_tools": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (1569 -> 987 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "plugins.__init__": {
+    "retarget_note": "package root ported 2026-09-16 (hermes-platforms crate root declares plugins/ scope; review-clean)",
+    "status": "done"
+  },
+  "plugins.model-providers.actual.__init__": {
+    "retarget_note": "ported 2026-09-16 autonomous: metadata refresh + thinking-toggle reasoning (live-oracle incl minimal-clamp); certifi/URL-norm deferred above-crate",
+    "status": "done"
+  },
+  "plugins.model-providers.ai-gateway.__init__": {
+    "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): early-return restructure is logic-identical; 2 tests green",
+    "status": "done"
+  },
+  "plugins.model-providers.alibaba-coding-plan.__init__": {
+    "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B unit 5): added CN profile (own key first + shared fallbacks), intl row unchanged; registry 38 (sorted); suites green",
+    "status": "done"
+  },
+  "plugins.model-providers.alibaba.__init__": {
+    "retarget_note": "ported 2026-09-16 autonomous: aliyun alias + alibaba-cn/token-plan/token-plan-cn profiles (4 registrations); 3 tests",
+    "status": "done"
+  },
+  "plugins.model-providers.anthropic.__init__": {
+    "retarget_note": "ported 2026-09-16 autonomous: cursor pagination (limit=1000/after_id/MAX_PAGES-20/repeat-guard/dedup) with 2 mock-tier tests; single-shot path refactored to shared get_json_page",
+    "status": "done"
+  },
+  "plugins.model-providers.arcee.__init__": {
+    "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green",
+    "status": "done"
+  },
+  "plugins.model-providers.azure-foundry.__init__": {
+    "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green",
+    "status": "done"
+  },
+  "plugins.model-providers.bedrock.__init__": {
+    "retarget_note": "ported 2026-09-16 Wave B: supports_model_listing rename (base flag + 3 profiles + 4 suites); polarity audited per-site after sed inversion caught by tests",
+    "status": "done"
+  },
+  "plugins.model-providers.copilot-acp.__init__": {
+    "retarget_note": "re-certified autonomous: docstring-only drift; suites green",
+    "status": "done"
+  },
+  "plugins.model-providers.copilot.__init__": {
+    "retarget_note": "re-certified autonomous: signature/docstring folds only; 2 tests green",
+    "status": "done"
+  },
+  "plugins.model-providers.custom.__init__": {
+    "retarget_note": "re-certified autonomous: qwen _normalize_parts already modeled; custom/zai docstring-only drift; suites green",
+    "status": "done"
+  },
+  "plugins.model-providers.deepinfra.__init__": {
+    "retarget_note": "re-certified autonomous: docstring/code folds only; 3 tests green",
+    "status": "done"
+  },
+  "plugins.model-providers.deepseek.__init__": {
+    "retarget_note": "re-certified autonomous: docstring trims only; suite green",
+    "status": "done"
+  },
+  "plugins.model-providers.fireworks.__init__": {
+    "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green",
+    "status": "done"
+  },
+  "plugins.model-providers.gemini.__init__": {
+    "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): cosmetic-only drift; 3 tests green",
+    "status": "done"
+  },
+  "plugins.model-providers.gmi.__init__": {
+    "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green",
+    "status": "done"
+  },
+  "plugins.model-providers.huggingface.__init__": {
+    "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green",
+    "status": "done"
+  },
+  "plugins.model-providers.kilocode.__init__": {
+    "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green",
+    "status": "done"
+  },
+  "plugins.model-providers.kimi-coding.__init__": {
+    "retarget_note": "ported 2026-09-16 autonomous: versioned UA HermesAgent/0.21.3 (was stale hermes-agent/1.0); suite green",
+    "status": "done"
+  },
+  "plugins.model-providers.minimax.__init__": {
+    "retarget_note": "re-certified autonomous: docstring-only drift; suites green",
+    "status": "done"
+  },
+  "plugins.model-providers.nous.__init__": {
+    "retarget_note": "re-certified autonomous: profile surface green (18 tests); resolve_aux_model DEFERRED to CLI/model layer (network + hermes_cli.models, above providers crate)",
+    "status": "done"
+  },
+  "plugins.model-providers.novita.__init__": {
+    "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green",
+    "status": "done"
+  },
+  "plugins.model-providers.nvidia.__init__": {
+    "retarget_note": "re-certified at 5d59366 autonomous: prepare_messages already modeled (nvidia_tool_strip); aliases current; suite green",
+    "status": "done"
+  },
+  "plugins.model-providers.ollama-cloud.__init__": {
+    "retarget_note": "ported 2026-09-16 autonomous: minimal->low clamp divergence found live, fixed + tested",
+    "status": "done"
+  },
+  "plugins.model-providers.openai-codex.__init__": {
+    "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green",
+    "status": "done"
+  },
+  "plugins.model-providers.qwen-oauth.__init__": {
+    "retarget_note": "re-certified autonomous: qwen _normalize_parts already modeled; custom/zai docstring-only drift; suites green",
+    "status": "done"
+  },
+  "plugins.model-providers.stepfun.__init__": {
+    "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green",
+    "status": "done"
+  },
+  "plugins.model-providers.upstage.__init__": {
+    "retarget_note": "re-certified autonomous: clamp_effort refactor already modeled in base; suite green",
+    "status": "done"
+  },
+  "plugins.model-providers.vertex.__init__": {
+    "retarget_note": "re-certified at 5d59366 autonomous: cosmetic-only drift; suite green",
+    "status": "done"
+  },
+  "plugins.model-providers.xai.__init__": {
+    "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green",
+    "status": "done"
+  },
+  "plugins.model-providers.xiaomi.__init__": {
+    "retarget_note": "re-certified at 5d59366 (2026-09-16, R2): raw-AST-identical to b9aa928 (zero code delta; only docstring/comment drift); existing parity tests re-run green",
+    "status": "done"
+  },
+  "plugins.model-providers.zai.__init__": {
+    "retarget_note": "re-certified autonomous: qwen _normalize_parts already modeled; custom/zai docstring-only drift; suites green",
+    "status": "done"
+  },
+  "plugins.platforms.a2a.__init__": {
+    "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
+    "status": "done"
+  },
+  "plugins.platforms.buzz.__init__": {
+    "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
+    "status": "done"
+  },
+  "plugins.platforms.dingtalk.__init__": {
+    "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
+    "status": "done"
+  },
+  "plugins.platforms.discord.__init__": {
+    "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
+    "status": "done"
+  },
+  "plugins.platforms.email.__init__": {
+    "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
+    "status": "done"
+  },
+  "plugins.platforms.feishu.__init__": {
+    "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
+    "status": "done"
+  },
+  "plugins.platforms.google_chat.__init__": {
+    "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
+    "status": "done"
+  },
+  "plugins.platforms.homeassistant.__init__": {
+    "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
+    "status": "done"
+  },
+  "plugins.platforms.irc.__init__": {
+    "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
+    "status": "done"
+  },
+  "plugins.platforms.line.__init__": {
+    "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
+    "status": "done"
+  },
+  "plugins.platforms.matrix.__init__": {
+    "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
+    "status": "done"
+  },
+  "plugins.platforms.mattermost.__init__": {
+    "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
+    "status": "done"
+  },
+  "plugins.platforms.ntfy.__init__": {
+    "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
+    "status": "done"
+  },
+  "plugins.platforms.photon.__init__": {
+    "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
+    "status": "done"
+  },
+  "plugins.platforms.raft.__init__": {
+    "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
+    "status": "done"
+  },
+  "plugins.platforms.simplex.__init__": {
+    "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
+    "status": "done"
+  },
+  "plugins.platforms.slack.__init__": {
+    "retarget_note": "entry ported 2026-09-16 under mattpocock tdd+review: PluginCtx seam + 2 tests; 13 adapter kwargs deferred to plugins.platforms.slack.adapter (missing, tracked)",
+    "status": "done"
+  },
+  "plugins.platforms.sms.__init__": {
+    "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
+    "status": "done"
+  },
+  "plugins.platforms.teams.__init__": {
+    "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
+    "status": "done"
+  },
+  "plugins.platforms.telegram.__init__": {
+    "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
+    "status": "done"
+  },
+  "plugins.platforms.wecom.__init__": {
+    "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
+    "status": "done"
+  },
+  "plugins.platforms.whatsapp.__init__": {
+    "retarget_note": "entry ported 2026-09-16 Wave A batch 3 (PluginCtx seam, literals harvested from adapter register(); Spec spot 6/6 PASS; teams prefix-only honest pin; a2a tools-half deferred to tools row)",
+    "status": "done"
+  },
+  "providers.__init__": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (198 -> 468 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "providers.base": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (238 -> 344 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "run_agent": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (8206 -> 1561 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "tools.ansi_strip": {
+    "retarget_note": "ported 2026-09-16 autonomous: strip_unicode_tags (live-oracle, emoji preservation, BMP-vs-plane14 documented); 7 tests",
+    "status": "done"
+  },
+  "tools.audio_container": {
+    "retarget_note": "re-certified autonomous: docstring-only drift; 6 tests green",
+    "status": "done"
+  },
+  "tools.binary_extensions": {
+    "retarget_note": "ported 2026-09-16 Wave B: OPAQUE_DOCUMENT_EXTENSIONS + has_extension_in + is_pdf_path (3 tests); has_->is_ rename divergence kept+documented",
+    "status": "done"
+  },
+  "tools.browser_camofox_state": {
+    "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): constants inlined at use-site + re-exported under PLUGIN-COMPAT block that check_compat_pointers.py forbids internal use of; uuid5 digests unchanged; parity tests re-run green",
+    "status": "done"
+  },
+  "tools.browser_dialog_tool": {
+    "retarget_note": "re-certified autonomous: docstring-only drift; suites green",
+    "status": "done"
+  },
+  "tools.budget_config": {
+    "status": "done"
+  },
+  "tools.clarify_tool": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (266 -> 311 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "tools.close_terminal_tool": {
+    "retarget_note": "re-certified autonomous: description trims only; 7 tests green",
+    "status": "done"
+  },
+  "tools.computer_use.schema": {
+    "retarget_note": "re-certified autonomous: docstring-only drift; suites green",
+    "status": "done"
+  },
+  "tools.credential_files": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (530 -> 366 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "tools.daemon_pool": {
+    "retarget_note": "re-certified autonomous: docstring-only drift; 10 tests green (max_workers peak test timing-sensitive under parallel contention, green serial/alone)",
+    "status": "done"
+  },
+  "tools.debug_helpers": {
+    "retarget_note": "re-certified autonomous: structural drift only (_now helper); suite green",
+    "status": "done"
+  },
+  "tools.delegation_output_schema": {
+    "retarget_note": "re-certified autonomous: coerce_output_schema already ported (type-name mapping incl.); 17 tests green",
+    "status": "done"
+  },
+  "tools.desktop_ui": {
+    "retarget_note": "re-certified autonomous: docstring-only drift; suites green",
+    "status": "done"
+  },
+  "tools.env_probe": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (370 -> 255 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "tools.fal_common": {
+    "retarget_note": "re-certified autonomous: ternary/factory/_dist refactors verified behavior-identical; suites green",
+    "status": "done"
+  },
+  "tools.file_state": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (332 -> 254 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "tools.focus_pane_tool": {
+    "retarget_note": "re-certified autonomous: description/bridge-call folds; 6 tests green",
+    "status": "done"
+  },
+  "tools.interrupt": {
+    "retarget_note": "re-certified autonomous: docstring-only drift; suites green",
+    "status": "done"
+  },
+  "tools.mcp_dashboard_oauth": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (145 -> 140 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "tools.mcp_death_supervisor": {
+    "retarget_note": "re-certified autonomous: docstring-only drift; suites green",
+    "status": "done"
+  },
+  "tools.mcp_schema_cache": {
+    "retarget_note": "ported 2026-09-16 autonomous: TTL expiry (explicit-clock, >= boundary) + ttl/written_at/scope persistence; 14 tests",
+    "status": "done"
+  },
+  "tools.open_preview_tool": {
+    "retarget_note": "re-certified autonomous: docstring-only drift; suites green",
+    "status": "done"
+  },
+  "tools.path_security": {
+    "retarget_note": "ported 2026-09-16 Wave B: has_traversal_component was missing \u2014 TDD-added with 2 tests; PLUGIN-COMPAT logger PENDING with tools.approval",
+    "status": "done"
+  },
+  "tools.read_extract": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (346 -> 551 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "tools.read_preview_tool": {
+    "retarget_note": "re-certified autonomous: docstring folds; 8 tests green",
+    "status": "done"
+  },
+  "tools.read_terminal_tool": {
+    "status": "done"
+  },
+  "tools.registry": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (956 -> 975 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "tools.schema_sanitizer": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (687 -> 386 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "tools.session_search_tool": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (1161 -> 784 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "tools.skill_provenance": {
+    "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): docstring-only drift; 5 tests green",
+    "status": "done"
+  },
+  "tools.slash_confirm": {
+    "retarget_note": "re-certified autonomous: docstring-only drift; suites green",
+    "status": "done"
+  },
+  "tools.terminal_hints": {
+    "retarget_note": "re-certified autonomous: ternary/factory/_dist refactors verified behavior-identical; suites green",
+    "status": "done"
+  },
+  "tools.thread_context": {
+    "retarget_note": "re-certified autonomous: docstring-only drift; suites green",
+    "status": "done"
+  },
+  "tools.threat_patterns": {
+    "retarget_note": "ported 2026-09-16 autonomous: _SECRET_VAR refactor (boundary/API-drop, live-oracle); 25 tests",
+    "status": "done"
+  },
+  "tools.todo_tool": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (335 -> 284 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "tools.tool_backend_helpers": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (311 -> 259 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "tools.tool_output_limits": {
+    "retarget_note": "re-certified autonomous: docstring-only drift; suites green",
+    "status": "done"
+  },
+  "tools.tool_result_storage": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (254 -> 321 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "tools.tts_text_normalize": {
+    "retarget_note": "re-certified autonomous: docstring-only drift; suites green",
+    "status": "done"
+  },
+  "tools.working_diff": {
+    "retarget_note": "re-certified autonomous: docstring-only drift; suites green",
+    "status": "done"
+  },
+  "toolset_distributions": {
+    "retarget_note": "re-certified autonomous: ternary/factory/_dist refactors verified behavior-identical; suites green",
+    "status": "done"
+  },
+  "toolsets": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (1029 -> 485 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  },
+  "ts:apps.desktop.electron.active-runtime-state": {
+    "retarget_note": "ported 2026-09-16 under mattpocock tdd+implement+code-review skills: 9 parity tests (7 oracle + 2 hardening), UTF-16 length parity, seam contracts documented; review findings closed",
+    "status": "done"
+  },
+  "utils": {
+    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (666 -> 611 LOC); re-certify line-by-line before promoting",
+    "status": "partial"
+  }
 }

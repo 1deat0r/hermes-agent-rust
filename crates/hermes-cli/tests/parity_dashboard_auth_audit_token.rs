@@ -1,8 +1,9 @@
 //! Parity tests for `hermes_cli/dashboard_auth/{audit,token_auth}.py`
-//! (partial port: middleware Request plumbing PENDING) @ b9aa928.
-//! Upstream has no dedicated test files (missing-test gap, noted in the
-//! ledger); cases derive from the upstream code as oracle. Env tests
-//! serialize behind a mutex per the workspace convention.
+//! (partial port: middleware Request plumbing PENDING) @ 5d59366.
+//! The audit half mirrors `tests/hermes_cli/test_dashboard_auth_audit.py`
+//! case-for-case (the b9aa928 missing-test gap is closed upstream); the
+//! token_auth half remains source-derived (no dedicated upstream file).
+//! Env tests serialize behind a mutex per the workspace convention.
 
 use std::sync::{Arc, Mutex};
 
@@ -71,6 +72,75 @@ fn audit_log_appends_compact_json_with_redacted_fields_stripped() {
     // Compact separators + ts first-ish shape: a UTC ISO timestamp.
     let ts = first["ts"].as_str().unwrap();
     assert!(ts.ends_with("+00:00") && ts.contains('T'), "{ts}");
+
+    unsafe { std::env::remove_var("HERMES_HOME") };
+}
+
+/// ORACLE: `test_audit_writes_jsonlines`
+/// (`tests/hermes_cli/test_dashboard_auth_audit.py` @ 5d59366) — two
+/// events land as two JSON lines under `$HERMES_HOME/logs/dashboard-auth.log`
+/// with the exact field projection (event/provider/user_id/email/ip/ts).
+#[test]
+fn audit_writes_jsonlines_profile_home_shape() {
+    let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    let td = tempfile::TempDir::new().unwrap();
+    unsafe { std::env::set_var("HERMES_HOME", td.path()) };
+
+    audit_log(
+        AuditEvent::LoginStart,
+        &[("provider", json!("nous")), ("ip", json!("1.2.3.4"))],
+    );
+    audit_log(
+        AuditEvent::LoginSuccess,
+        &[
+            ("provider", json!("nous")),
+            ("user_id", json!("u1")),
+            ("email", json!("a@b.com")),
+            ("ip", json!("1.2.3.4")),
+        ],
+    );
+
+    let path = td.path().join("logs/dashboard-auth.log");
+    assert!(path.exists(), "audit log not created at {}", path.display());
+    let raw_log = std::fs::read_to_string(&path).unwrap();
+    let lines: Vec<&str> = raw_log.lines().collect();
+    assert_eq!(lines.len(), 2);
+    let second: serde_json::Value = serde_json::from_str(lines[1]).unwrap();
+    assert_eq!(second["event"], "login_success");
+    assert_eq!(second["provider"], "nous");
+    assert_eq!(second["user_id"], "u1");
+    assert_eq!(second["email"], "a@b.com");
+    assert!(second["ts"].as_str().is_some(), "ISO-8601 timestamp");
+
+    unsafe { std::env::remove_var("HERMES_HOME") };
+}
+
+/// ORACLE: `test_audit_redacts_token_like_fields`
+/// (`tests/hermes_cli/test_dashboard_auth_audit.py` @ 5d59366) — none of
+/// the four token-like values may appear raw anywhere in the log file.
+#[test]
+fn audit_redacts_token_like_fields_oracle() {
+    let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    let td = tempfile::TempDir::new().unwrap();
+    unsafe { std::env::set_var("HERMES_HOME", td.path()) };
+
+    audit_log(
+        AuditEvent::LoginSuccess,
+        &[
+            ("provider", json!("nous")),
+            ("access_token", json!("should-not-appear")),
+            ("refresh_token", json!("also-not")),
+            ("code", json!("not-this")),
+            ("state", json!("nope")),
+        ],
+    );
+    let raw = std::fs::read_to_string(td.path().join("logs/dashboard-auth.log")).unwrap();
+    for forbidden in ["should-not-appear", "also-not", "not-this", "nope"] {
+        assert!(
+            !raw.contains(forbidden),
+            "token-like value leaked: {forbidden}"
+        );
+    }
 
     unsafe { std::env::remove_var("HERMES_HOME") };
 }

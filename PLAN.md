@@ -640,7 +640,7 @@ The gateway crate opened ahead of Phase 4 as a dependency-free leaf, the same pr
 | agent/monitoring/gateway_health_export.py (643) | 🟡 | `monitoring::gateway_health_export` partial; 9 parity tests (`unit`) for resource/diagnostic allowlists, config gates, endpoint derivation, severity mapping, plane filter; runtime/streamer orchestration PENDING |
 | hermes_cli/dashboard_auth/ base 306 + registry 81 + __init__ 48 | ✅ | `hermes-cli::dashboard_auth::{base,registry}`; 5 parity tests (`unit`, source-derived, gap noted) — provider protocol + capability flags + loud defaults, ordered registry with duplicate rejection and fail-closed token plane |
 | hermes_cli/dashboard_auth/ public_paths 60 + prefix 232 | ✅/🟡 | `public_paths` done (8-entry allowlist); `prefix` partial (7 tests; X-Forwarded-Prefix grammar, public_url precedence; config.yaml leg parameterised, PENDING hermes_cli.config) |
-| hermes_cli/dashboard_auth/ audit 95 + token_auth 194 | ✅/🟡 | `audit` done (3 tests; REDACTED_FIELDS strip, fail-open writes); `token_auth` partial (8 tests; route registry, bearer extraction, stacked (principal, unreachable) outcome; FastAPI middleware PENDING) |
+| hermes_cli/dashboard_auth/ audit 73 + token_auth 96 | ✅/🟡 | `audit` done @ 5d59366 (5 tests: REDACTED_FIELDS strip, fail-open writes, 2 oracle mirrors of `test_dashboard_auth_audit.py`; PLUGIN-COMPAT no-op shim unported, noted); `token_auth` partial (route registry, bearer extraction, stacked (principal, unreachable) outcome; FastAPI middleware PENDING; pre-existing parallel registry race in its tests, serial-green) |
 | hermes_cli/dashboard_auth/ws_tickets.py (161) + native_flow.py (297) | ✅ | `ws_tickets` (5 tests: single-use tickets, TTL boundaries, internal credential) and `native_flow` (6 tests: RFC 7636 S256 sample, brokered flow, pop-before-PKCE, TTLs, caps); `unit`, source-derived, gap noted |
 | tools/mcp_dashboard_oauth.py (145 LOC) | ✅ | `hermes-tools::mcp_dashboard_oauth`; 11 parity tests (`unit`, source-derived, gap noted) — OAuth callback bridge state machine, condvar waits, constant-time state validation |
 | tools/browser_dialog_tool.py (148) + close_terminal_tool.py (62) | ✅ | `browser_dialog_tool` (6 tests; browser-cdp toolset, DialogResponder seam) and `close_terminal_tool` (7 tests; on_close sink seam, request_close_terminal contract); process_registry/CDP supervisor themselves PENDING |
@@ -3453,6 +3453,25 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   read via `git show b9aa928:<path>`. Evidence: `cargo test -p
   hermes-agent --test parity_run_agent` (unit) 32 green (sections 1–3); workspace suite
   re-run serial clean-env (see HANDOFF). `run_agent` → `partial`.
+
+- 2026-09-19 (wave-b6-audit): `hermes_cli.dashboard_auth.audit` promoted
+  partial → done @ 5d59366. Line-by-line re-certification: 73-LOC oracle
+  identical (REDACTED_FIELDS 9 names, 16 AuditEvent values in order,
+  lazy leaf get_hermes_home path, compact-JSON append under lock,
+  warn-never-raise); trailing PLUGIN-COMPAT `import os` shim
+  intentionally unported (revert-scheduled no-op, zero observable
+  behavior, noted in header). TDD: 2 new tests mirroring upstream
+  `tests/hermes_cli/test_dashboard_auth_audit.py` case-for-case in the
+  existing `parity_dashboard_auth_audit_token.rs` (same binary/ENV_LOCK
+  convention); PARITY header re-pinned b9aa928 → 5d59366 with exact
+  lines. Validation: `cargo test -p hermes-cli --test
+  parity_dashboard_auth_audit_token -- --test-threads=1` — 13 passed,
+  0 failed; `cargo fmt --all -- --check` clean; `git diff --check`
+  clean. KNOWN (pre-existing, out of scope): token_auth half flakes
+  ~1-in-3 under default parallel threads (registry reset race —
+  reproduced at unmodified HEAD); serial suite green. Ledger: 149 done
+  / 48 partial / 8698 missing tracked (1.68%), prod 149/48/3284
+  (4.28%). Evidence tier: unit.
 
 - 2026-09-18 (jev-opt): JEV System One optimization pass (TypeSafe Jev,
   2026-09-15; no TYPESAFE_API_KEY in env, so live Jev calls were
