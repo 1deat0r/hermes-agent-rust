@@ -285,6 +285,24 @@ Next: Wave B6 remainder in smallest-LOC order — `token_auth` (96),
 missing HTTP siblings (middleware/routes/login_page/request_utils/
 refresh_singleflight) to close `dashboard_auth.__init__`.
 
+## Jev System-One layer landed (2026-09-20)
+
+Additive `hermes-jev` crate (Choice/Noul/Score transport + router /
+tool-select / stop-hook / guardrail + scrubber) with
+`hermes-agent::jev_router` and `hermes-toolsets::jev_tool_route` seams —
+all default OFF, keyless-safe, never throwing. Live-proven against
+`jev-1.13.0` with the Hermes TYPESAFE_API_KEY (sourced at call time,
+never printed): router→coding_agent @1.0, tool→read_file @0.9, stop
+0.84, guardrail 0.55/0.17; payloads locked as test fixtures.
+Validation: `cargo build --workspace` green; `cargo test --workspace
+-- --test-threads=1` green — 214 suites, 1,935 passed, 0 failed;
+`cargo fmt --all`, `git diff --check` clean. Gates
+`.unlazy/jev-systemone/GATES.md` 5/5 met.
+**Ledger: no status change — 149/48/8698 (1.68% tracked, 4.28% prod).**
+Files: `PLAN.md`, `HANDOFF.md` updated/verified; `tools/inventory.json`
++ `CONVERSION-LEDGER.md` verified unchanged (additive layer, no
+tracked-module change).
+
 ## Next actions, in order
 
 1. Wave B unit 6: next smallest-DIFF partials (`agent.ssl_guard`,

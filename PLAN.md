@@ -3499,5 +3499,28 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   status change — 148 done / 49 partial / 8698 missing tracked (1.66%),
   prod 148/49/3284 (4.25%). Next: optional `cargo clean` (~158G reclaim;
   next build then fully cold); optional live-Jev wiring needs
-  TYPESAFE_API_KEY. Evidence: workspace build + serial suite
-  (tier: unit) + gate checks.
+   TYPESAFE_API_KEY. Evidence: workspace build + serial suite
+   (tier: unit) + gate checks.
+
+- 2026-09-20 (jev-systemone): additive Jev System One layer (NOT a
+  tracked-module port — no port_status.json change; pin 5d59366 has no
+  Jev code, the live harness grew it later). New `hermes-jev` crate:
+  typed Choice/Noul/Score transport (POST api.typesafe.ai/v1/systemone,
+  model jev-latest, key ONLY from TYPESAFE_API_KEY at call time, retry
+  429/529/503, exact validate_choice port incl. 1e-6 tie slack) plus
+  router / tool-selection (none_of_these outcome) / stop-hook Noul /
+  parallel guardrail Nouls + SECRET_PATTERNS scrubber port. Seams:
+  `hermes-agent::jev_router` (FAST/FULL aux tasks, size buckets, OFF
+  default) + `hermes-toolsets::jev_tool_route`. Live-proven with the
+  Hermes TYPESAFE_API_KEY (never printed/stored): router→coding_agent
+  @1.0, tool→read_file @0.9, stop 0.84, guardrail 0.55/0.17, model
+  jev-1.13.0 — payloads locked as fixtures. Self-review caught + fixed
+  a size-bucket parity bug (negative→"m") and the tie rule. Validation:
+  `cargo build --workspace` green, `cargo test --workspace
+  --test-threads=1` green — 214 suites, 1,935 passed, 0 failed (41 new:
+  9 unit + 32 parity incl. 3 live fixtures), `cargo fmt --all`,
+  `git diff --check` clean. Gates: .unlazy/jev-systemone/GATES.md 5/5
+  met. Ledger: NO module status change — 149 done / 48 partial / 8698
+  missing tracked (1.68%), prod 149/48/3284 (4.28%). Evidence tier:
+  unit + live. Next: Wave B6 remainder (token_auth, ws_tickets,
+  registry, prefix re-certs).

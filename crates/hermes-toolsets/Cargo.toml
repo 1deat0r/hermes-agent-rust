@@ -7,6 +7,7 @@ rust-version.workspace = true
 
 [dependencies]
 hermes-tools = { path = "../hermes-tools" }
+hermes-jev = { path = "../hermes-jev" }
 once_cell = { workspace = true }
 regex.workspace = true
 serde_json = { workspace = true }

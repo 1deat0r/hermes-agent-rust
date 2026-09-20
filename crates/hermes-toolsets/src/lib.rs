@@ -15,6 +15,7 @@
 
 pub mod data;
 pub mod distributions;
+pub mod jev_tool_route;
 pub mod model_tools;
 pub mod toolsets;
 

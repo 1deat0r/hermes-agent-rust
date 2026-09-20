@@ -562,6 +562,7 @@ dependencies = [
  "chrono",
  "fs2",
  "hermes-constants",
+ "hermes-jev",
  "hermes-logging",
  "hermes-providers",
  "hermes-utils",
@@ -644,6 +645,16 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "tempfile",
+]
+
+[[package]]
+name = "hermes-jev"
+version = "0.1.0"
+dependencies = [
+ "regex",
+ "reqwest",
+ "serde_json",
+ "thiserror",
 ]
 
 [[package]]
@@ -739,6 +750,7 @@ dependencies = [
 name = "hermes-toolsets"
 version = "0.1.0"
 dependencies = [
+ "hermes-jev",
  "hermes-tools",
  "once_cell",
  "regex",
