@@ -293,8 +293,9 @@ partial → done @ 5d59366 (97 LOC, 9 oracle tests incl. concurrency,
 14/14). Unit 3/6: `registry` partial → done @ 5d59366 (full scoped
 port, 3 oracle tests, 8+14 green). Unit 4/6: `prefix` partial →
 done @ 5d59366 (130 LOC, urlparse-IPv6 fix red-green, 12/12).
-**Ledger: 153/44/8698 (1.72% tracked, 4.40% prod).** Next:
-base/cookies/native_flow → missing HTTP siblings → __init__ close.
+Unit 5/8: `base` partial → done @ 5d59366 (162 LOC, 1 oracle test,
+9/9). **Ledger: 154/43/8698 (1.73% tracked, 4.43% prod).** Next:
+cookies/native_flow → missing HTTP siblings → __init__ close.
 
 ## Jev god-tier pass landed (2026-09-20)
 

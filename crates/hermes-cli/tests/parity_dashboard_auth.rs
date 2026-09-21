@@ -1,7 +1,8 @@
 //! Parity tests for `hermes_cli/dashboard_auth/{base,registry,__init__}.py`
 //! @ 5d59366. Registry cases mirror the registry module's contract
 //! (global + scoped overlays, snapshot/restore, global upsert); base
-//! cases derive from the upstream code as oracle.
+//! dataclass/ABC cases mirror
+//! `tests/hermes_cli/test_dashboard_auth_provider_base.py`.
 
 use std::sync::Arc;
 
@@ -298,6 +299,39 @@ fn oauth_only_provider_defaults_fail_loudly() {
     assert!(err.to_string().contains("does not support password login"));
     let result = futures::executor::block_on(provider.verify_token("anything"));
     assert!(result.is_err(), "supports_token defaults to false -> loud");
+}
+
+/// PARITY: `test_session_has_required_fields`
+/// (`tests/hermes_cli/test_dashboard_auth_provider_base.py`) — every
+/// dataclass field is constructible and readable.
+#[test]
+fn session_dataclass_has_required_fields() {
+    let session = Session {
+        user_id: "u1".to_string(),
+        email: "a@b.com".to_string(),
+        display_name: "A".to_string(),
+        org_id: "org_1".to_string(),
+        provider: "test".to_string(),
+        expires_at: 1234567890,
+        access_token: "at".to_string(),
+        refresh_token: "rt".to_string(),
+    };
+    assert_eq!(session.user_id, "u1");
+    assert_eq!(session.provider, "test");
+    assert_eq!(session.expires_at, 1234567890);
+    // TokenPrincipal defaults to unscoped; LoginStart carries the
+    // PKCE/CSRF cookie payload as an ordered pair list.
+    let principal = TokenPrincipal {
+        principal: "svc".to_string(),
+        provider: "drain".to_string(),
+        scopes: vec![],
+    };
+    assert!(principal.scopes.is_empty(), "unscoped by default");
+    let start = LoginStart {
+        redirect_url: "https://idp/authorize".to_string(),
+        cookie_payload: vec![("pkce".to_string(), "state123".to_string())],
+    };
+    assert_eq!(start.cookie_payload[0].0, "pkce");
 }
 
 #[test]

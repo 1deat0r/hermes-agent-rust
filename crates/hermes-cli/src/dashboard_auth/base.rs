@@ -1,7 +1,11 @@
 //! Abstract base + dataclasses + exceptions for dashboard auth providers.
 //!
-//! PARITY: `hermes_cli/dashboard_auth/base.py` @ 5d59366 (whole module,
-//! incl. `classify_jwks_lookup_error`).
+//! PARITY: `hermes_cli/dashboard_auth/base.py` @ 5d59366 (whole
+//! module, 162 lines): `Session` (lines 9-20), `TokenPrincipal` (lines
+//! 23-30), `LoginStart` (lines 33-39), the four error kinds (lines
+//! 42-57), `classify_jwks_lookup_error` (lines 60-88),
+//! `DashboardAuthProvider` (lines 91-147),
+//! `assert_protocol_compliance` (lines 150-162).
 //!
 //! Lifecycle (see the DashboardAuthProvider docstring upstream):
 //!   1. `start_login` — user clicks "Log in with X"; the provider returns a

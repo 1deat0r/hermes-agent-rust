@@ -3591,3 +3591,11 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   0 failed; fmt + diff-check clean. Ledger: 153 done / 44 partial /
   8698 missing tracked (1.72%), prod 153/44/3284 (4.40%). Evidence
   tier: unit.
+
+- 2026-09-21 (dashboard-auth-5): `hermes_cli.dashboard_auth.base`
+  partial → done @ 5d59366 (whole module, 162 LOC, line-by-line).
+  Shapes exact; no oracle pins the NotImplementedError default kind
+  (loudness preserved). 1 new dataclass oracle test. Validation:
+  9 passed, 0 failed; fmt + diff-check clean. Ledger: 154 done /
+  43 partial / 8698 missing tracked (1.73%), prod 154/43/3284
+  (4.43%). Evidence tier: unit.

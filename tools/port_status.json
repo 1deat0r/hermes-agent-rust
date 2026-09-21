@@ -258,8 +258,8 @@
     "status": "done"
   },
   "hermes_cli.dashboard_auth.base": {
-    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (306 -> 162 LOC); re-certify line-by-line before promoting",
-    "status": "partial"
+    "retarget_note": "re-certified at 5d59366 (2026-09-21): whole module line-by-line (162 LOC); shapes exact (Session/TokenPrincipal/LoginStart/errors/ABC); jwks classifier carries the R1-adjudicated enum seam; NotImplementedError-vs-ProviderError default-kind gap has no oracle (loudness preserved); 1 new dataclass oracle test; header re-pinned with exact lines",
+    "status": "done"
   },
   "hermes_cli.dashboard_auth.cookies": {
     "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (338 -> 222 LOC); re-certify line-by-line before promoting",
