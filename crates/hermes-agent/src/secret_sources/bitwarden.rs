@@ -1,19 +1,10 @@
 //! Bitwarden Secrets Manager (`bws` CLI) secret source — pure helpers and
 //! the registry adapter contract.
 //!
-//! PARITY: `agent/secret_sources/bitwarden.py` @ b9aa928 — PARTIAL.
-//!
-//! Ported: `_classify_bws_error`, `_summarize_bws_stderr`,
-//! `_token_fingerprint`, `_cache_key_str`, `clear_caches` semantics, and
-//! the `BitwardenSource` adapter contract (bulk shape, `bws` scheme,
-//! `override_existing` default TRUE — centralized rotation is the point
-//! of BSM — and the `BWS_ACCESS_TOKEN` env protected).
-//!
-//! PENDING: `find_bws`/`install_bws` (pinned-binary download with
-//! checksum verification + zip-safe extraction), `_run_bws_list` +
-//! `fetch_bitwarden_secrets` (the bws invocation and L1/L2 cache
-//! orchestration), `_write/_read_encrypted_disk_cache` (HKDF +
-//! AES-256-GCM last-good cache keyed off the bootstrap token).
+//! PARITY: `agent/secret_sources/bitwarden.py` @ 5d59366 (whole module,
+//! 639 lines). The installer network fetch rides the `Downloader` seam
+//! (`install_bws_at`); everything else ports, including the encrypted
+//! last-good cache tier.
 
 use std::collections::BTreeMap;
 use std::io::Read;
@@ -31,7 +22,9 @@ use std::collections::HashMap;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD as B64_URL;
 use base64::Engine;
 
-use super::base::{ErrorKind, FetchResult, SecretSource};
+use super::base::{
+    classify_cli_error, coerce_float, get_source_env_var, ErrorKind, FetchResult, SecretSource,
+};
 use super::cache::{CachedFetch, DiskCache};
 
 /// PARITY: `_BWS_VERSION` (upstream line 73).
@@ -115,40 +108,50 @@ pub fn summarize_bws_stderr(raw: &str) -> String {
 
 /// Best-effort mapping of bws failure text onto the shared taxonomy.
 ///
-/// PARITY: `_classify_bws_error` (upstream lines 998-1022) — note the BSM
-/// identity endpoint rejects a revoked/expired machine-account token with
-/// an OAuth-style `[400 Bad Request] {"error":"invalid_client"}`, which
-/// lands in AUTH_FAILED.
+/// PARITY: `_classify_bws_error` (upstream lines 86-87) — first matching
+/// rule wins, via the shared engine. Note the BSM identity endpoint
+/// rejects a revoked/expired machine-account token with an OAuth-style
+/// `[400 Bad Request] {"error":"invalid_client"}`, which lands in
+/// AUTH_FAILED.
 pub fn classify_bws_error(message: &str) -> ErrorKind {
-    let lowered = message.to_lowercase();
-    if lowered.contains("timed out") {
-        return ErrorKind::Timeout;
-    }
-    if lowered.contains("binary not available") || lowered.contains("failed to invoke") {
-        return ErrorKind::BinaryMissing;
-    }
-    if [
-        "unauthorized",
-        "invalid token",
-        "access token",
-        "401",
-        "403",
-        "invalid_client",
-        "invalid_grant",
-        "400 bad request",
+    classify_cli_error(message, &bws_error_rules())
+}
+
+/// PARITY: `_BWS_ERROR_RULES` (upstream lines 77-83).
+fn bws_error_rules() -> Vec<(ErrorKind, Vec<String>)> {
+    vec![
+        (ErrorKind::Timeout, vec!["timed out".to_string()]),
+        (
+            ErrorKind::BinaryMissing,
+            vec![
+                "binary not available".to_string(),
+                "failed to invoke".to_string(),
+            ],
+        ),
+        (
+            ErrorKind::AuthFailed,
+            vec![
+                "unauthorized".to_string(),
+                "invalid token".to_string(),
+                "access token".to_string(),
+                "401".to_string(),
+                "403".to_string(),
+                "invalid_client".to_string(),
+                "invalid_grant".to_string(),
+                "400 bad request".to_string(),
+            ],
+        ),
+        (
+            ErrorKind::Network,
+            vec![
+                "network".to_string(),
+                "connection".to_string(),
+                "resolve".to_string(),
+                "download".to_string(),
+                "dns".to_string(),
+            ],
+        ),
     ]
-    .iter()
-    .any(|tok| lowered.contains(tok))
-    {
-        return ErrorKind::AuthFailed;
-    }
-    if ["network", "connection", "resolve", "download", "dns"]
-        .iter()
-        .any(|tok| lowered.contains(tok))
-    {
-        return ErrorKind::Network;
-    }
-    ErrorKind::Internal
 }
 
 /// Bitwarden Secrets Manager as a registered secret source — a **bulk**
@@ -174,10 +177,6 @@ impl SecretSource for BitwardenSource {
         Some("bws")
     }
 
-    /// Default True (matches DEFAULT_CONFIG): the point of BSM is
-    /// centralized rotation — if .env had the final say, rotating a key in
-    /// Bitwarden wouldn't take effect until the stale .env line was also
-    /// deleted.
     fn override_existing_default(&self) -> bool {
         // Bitwarden wouldn't take effect until the stale .env line was
         // also deleted (see the old override_existing body).
@@ -194,6 +193,29 @@ impl SecretSource for BitwardenSource {
         "BWS_ACCESS_TOKEN"
     }
 
+    /// PARITY: `remediation_hints` (upstream lines 459-460) — every other
+    /// kind falls through to the generic text.
+    fn remediation_hints(&self) -> std::collections::HashMap<ErrorKind, String> {
+        std::collections::HashMap::from([
+            (
+                ErrorKind::AuthFailed,
+                "Run `hermes secrets bitwarden token` to paste a fresh access token \
+             (create one in the Bitwarden web app: Secrets Manager → Machine accounts \
+             → Access tokens).  Wrong region?  Re-run `hermes secrets bitwarden setup` \
+             and pick EU/self-hosted."
+                    .to_string(),
+            ),
+            (
+                ErrorKind::AuthExpired,
+                "Run `hermes secrets bitwarden token` to paste a fresh access token \
+             (create one in the Bitwarden web app: Secrets Manager → Machine accounts \
+             → Access tokens).  Wrong region?  Re-run `hermes secrets bitwarden setup` \
+             and pick EU/self-hosted."
+                    .to_string(),
+            ),
+        ])
+    }
+
     fn config_schema(&self) -> Value {
         serde_json::json!({
             "enabled": {"description": "Master switch", "default": false},
@@ -207,19 +229,15 @@ impl SecretSource for BitwardenSource {
         })
     }
 
-    /// PARITY: `BitwardenSource.fetch` (upstream lines 912-985) — the
-    /// NOT_CONFIGURED pre-flight arms, then the full bws list orchestration
-    /// (L1/L2 cache + live fetch with stale fallback).
+    /// PARITY: `BitwardenSource.fetch` (upstream lines 476-516).
     fn fetch(&self, cfg: &Value, _home_path: &Path) -> FetchResult {
         let mut result = FetchResult::default();
         let empty = Value::Object(serde_json::Map::new());
 
-        let access_token_env = cfg
-            .get("access_token_env")
-            .and_then(Value::as_str)
-            .unwrap_or("BWS_ACCESS_TOKEN")
-            .to_string();
-        let access_token = std::env::var(&access_token_env).unwrap_or_default();
+        // Through the per-fetch view: under multiplex the launch env
+        // must not supply another profile's bootstrap token.
+        let access_token_env = self.token_env(cfg);
+        let access_token = get_source_env_var(&access_token_env).unwrap_or_default();
         if access_token.trim().is_empty() {
             result.error = Some(format!(
                 "secrets.bitwarden.enabled is true but {access_token_env} is not set.  \
@@ -254,7 +272,11 @@ impl SecretSource for BitwardenSource {
             .and_then(Value::as_f64)
             .unwrap_or(0.0);
 
-        let binary = find_bws(false);
+        let binary = find_bws(
+            cfg.get("auto_install")
+                .and_then(Value::as_bool)
+                .unwrap_or(true),
+        );
         if binary.is_none() {
             result.error = Some(
                 "bws binary not available and auto-install is disabled.  \
@@ -265,14 +287,12 @@ impl SecretSource for BitwardenSource {
             return result;
         }
 
-        let ttl = cfg
-            .get("cache_ttl_seconds")
-            .and_then(Value::as_f64)
-            .unwrap_or(300.0);
+        let ttl = coerce_float(cfg.get("cache_ttl_seconds"), 300.0);
         let server_url = cfg
             .get("server_url")
             .and_then(Value::as_str)
             .unwrap_or("")
+            .trim()
             .to_string();
 
         // PENDING: the installer (`install_bws`) and the HKDF+AESGCM
@@ -298,26 +318,18 @@ impl SecretSource for BitwardenSource {
             Err(err) => {
                 result.error = Some(err);
                 result.error_kind = Some(classify_bws_error(result.error.as_deref().unwrap_or("")));
+                // Say what the raw OAuth reject means first: a revoked /
+                // expired / wrong-region token, not a generic failure.
+                if result.error_kind == Some(ErrorKind::AuthFailed) {
+                    result.error = Some(format!(
+                        "Bitwarden rejected the machine-account access token ({access_token_env}) — it was \
+                         likely revoked, expired, or belongs to another region.  ({})",
+                        result.error.as_deref().unwrap_or("")
+                    ));
+                }
                 result
             }
         }
-    }
-
-    /// PARITY: `remediation` (upstream lines 987-996).
-    fn remediation(&self, kind: Option<ErrorKind>, _cfg: &Value) -> Option<String> {
-        if matches!(
-            kind,
-            Some(ErrorKind::AuthFailed) | Some(ErrorKind::AuthExpired)
-        ) {
-            return Some(
-                "Run `hermes secrets bitwarden token` to paste a fresh access token \
-                 (create one in the Bitwarden web app: Secrets Manager → Machine accounts \
-                 → Access tokens).  Wrong region?  Re-run `hermes secrets bitwarden setup` \
-                 and pick EU/self-hosted."
-                    .to_string(),
-            );
-        }
-        None
     }
 }
 
@@ -615,7 +627,6 @@ pub fn fetch_bitwarden_secrets(
             home_path,
             now_unix_f64(),
         ) {
-            eprintln!("DBG L2 fresh hit");
             // Promote into L1 so subsequent fetches skip the disk read.
             l1_put(cache_key.clone(), disk_cached.clone());
             return Ok((disk_cached.secrets.into_iter().collect(), Vec::new()));
@@ -631,7 +642,6 @@ pub fn fetch_bitwarden_secrets(
     let (secrets, warnings) = match fetch_result {
         Ok((secrets, warnings)) => (secrets, warnings),
         Err(err) => {
-            eprintln!("DBG live fetch err: {err}");
             // Stale disk-cache fallback ONLY for transport-level failures
             // (network down, DNS, transient outage/timeout) — never for
             // AUTH_FAILED or a malformed-output INTERNAL error.
@@ -647,7 +657,6 @@ pub fn fetch_bitwarden_secrets(
                         now_unix_f64(),
                     );
                     if let Some(stale) = stale {
-                        eprintln!("DBG fallback served {} entries", stale.secrets.len());
                         let age = (now_unix_f64() - stale.fetched_at).max(0.0) as i64;
                         l1_put(cache_key.clone(), stale.clone());
                         return Ok((
@@ -816,27 +825,52 @@ pub fn pick_zip_member(members: &[String], binary_name: &str) -> Result<String, 
     Ok(candidates[0].clone())
 }
 
-/// PARITY: `_safe_extract_member` (upstream lines 332-360) — extract one
+/// PARITY: `_safe_extract_member` (upstream lines 219-232) — extract one
 /// archive member, refusing path traversal ("zip-slip") via realpath +
 /// containment, and refusing a member that IS the destination root.
+/// Symlinks are resolved level by level as we descend (a symlink inside
+/// the tree pointing outside must not smuggle the write out — the
+/// lexical fold alone cannot see it, upstream `realpath` can).
 pub fn safe_extract_member(
     archive_path: &Path,
     member: &str,
     dest_dir: &Path,
 ) -> Result<PathBuf, String> {
     let dest_root = std::fs::canonicalize(dest_dir).map_err(|e| e.to_string())?;
-    let target = dest_root.join(member);
-    let target = target
-        .components()
-        .fold(dest_root.clone(), |acc, comp| match comp {
-            std::path::Component::ParentDir => acc
-                .parent()
-                .map(Path::to_path_buf)
-                .unwrap_or_else(|| acc.clone()),
-            other => acc.join(other),
-        });
-    let contained = target.starts_with(&dest_root);
-    if !contained || target == dest_root {
+    // Walk the member path, resolving each level against the filesystem
+    // so symlinks can't escape the root.
+    let mut current = dest_root.clone();
+    for comp in Path::new(member).components() {
+        use std::path::Component;
+        match comp {
+            Component::Prefix(_) | Component::RootDir => {
+                return Err(format!(
+                    "Refusing to extract unsafe archive member {member:?}: absolute path"
+                ));
+            }
+            Component::CurDir => {}
+            Component::ParentDir => {
+                current = current.parent().map(Path::to_path_buf).unwrap_or(current);
+            }
+            Component::Normal(part) => {
+                current = current.join(part);
+                // Resolve any symlink the archive (or a prior extract)
+                // planted at this level before descending further.
+                if let Ok(meta) = std::fs::symlink_metadata(&current) {
+                    if meta.file_type().is_symlink() {
+                        current = std::fs::canonicalize(&current).map_err(|e| e.to_string())?;
+                    }
+                }
+            }
+        }
+        if !current.starts_with(&dest_root) {
+            return Err(format!(
+                "Refusing to extract unsafe archive member {member:?}: it escapes the extraction directory"
+            ));
+        }
+    }
+    let target = current;
+    if target == dest_root {
         return Err(format!(
             "Refusing to extract unsafe archive member {member:?}: it escapes the extraction directory"
         ));
@@ -1124,12 +1158,102 @@ pub fn read_encrypted_disk_cache(
     })
 }
 
+/// Pull secrets from BSM and apply them to the process environment.
+///
+/// This is the function the dotenv loader calls after the .env files
+/// have loaded. Intentionally defensive — any failure returns a
+/// `FetchResult` with `error` set; it never raises.
+///
+/// PARITY: `apply_bitwarden_secrets` (upstream lines 537-623). Writes
+/// to the process env — scoped to this explicit entry point like the
+/// onepassword equivalent.
+#[allow(clippy::too_many_arguments)]
+pub fn apply_bitwarden_secrets(
+    enabled: bool,
+    access_token_env: &str,
+    project_id: &str,
+    override_existing: bool,
+    cache_ttl_seconds: f64,
+    auto_install: bool,
+    server_url: &str,
+    home_path: Option<&Path>,
+    encrypted_cache_enabled: bool,
+    encrypted_cache_max_stale_seconds: f64,
+) -> FetchResult {
+    let mut result = FetchResult::default();
+    if !enabled {
+        return result;
+    }
+    // Through the per-fetch view (multiplex-safe), not the launch env.
+    let access_token = get_source_env_var(access_token_env).unwrap_or_default();
+    if access_token.trim().is_empty() {
+        result.error = Some(format!(
+            "secrets.bitwarden.enabled is true but {access_token_env} is not set. \
+             Run `hermes secrets bitwarden setup`."
+        ));
+        return result;
+    }
+    if project_id.is_empty() {
+        result.error = Some(
+            "secrets.bitwarden.project_id is empty. Run `hermes secrets bitwarden setup`."
+                .to_string(),
+        );
+        return result;
+    }
+    let binary = find_bws(auto_install);
+    result.binary_path = binary.clone();
+    if binary.is_none() {
+        result.error = Some(
+            "bws binary not available and auto-install is disabled. Run \
+             `hermes secrets bitwarden setup` to install."
+                .to_string(),
+        );
+        return result;
+    }
+    let fetch_outcome = fetch_bitwarden_secrets(
+        &access_token,
+        project_id,
+        binary.as_deref(),
+        cache_ttl_seconds,
+        true,
+        server_url,
+        home_path,
+        encrypted_cache_enabled,
+        encrypted_cache_max_stale_seconds,
+    );
+    let (secrets, mut warnings) = match fetch_outcome {
+        Ok(ok) => ok,
+        Err(err) => {
+            result.error = Some(err);
+            return result;
+        }
+    };
+    result.warnings.append(&mut warnings);
+    for (key, value) in secrets {
+        if key == access_token_env {
+            // Don't let BSM clobber the very token used to fetch itself.
+            result.skipped.push(key);
+            continue;
+        }
+        if !override_existing && std::env::var(&key).map(|v| !v.is_empty()).unwrap_or(false) {
+            result.skipped.push(key);
+            continue;
+        }
+        // SAFETY: explicit sync entry point only (see docstring).
+        unsafe { std::env::set_var(&key, &value) };
+        result.secrets.insert(key.clone(), value);
+        result.applied.push(key);
+    }
+    result
+}
+
 /// Drop in-process AND disk caches (plaintext and encrypted) — used after
 /// a token rotation so the next startup fetches fresh with the new
 /// credential.
 ///
-/// PARITY: `clear_caches` (upstream lines 1025-1042).
+/// PARITY: `clear_caches` (upstream lines 519-525).
 pub fn clear_caches(home_path: Option<&Path>) {
-    // In-process L1: PENDING with the fetch orchestration.
-    let _ = home_path;
+    L1.lock().unwrap_or_else(|e| e.into_inner()).clear();
+    disk_cache().clear(home_path);
+    let _ = std::fs::remove_file(encrypted_disk_cache_path(home_path));
 }

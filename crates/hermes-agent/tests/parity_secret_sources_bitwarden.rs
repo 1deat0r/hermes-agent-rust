@@ -1,6 +1,9 @@
-//! Parity tests for `agent/secret_sources/bitwarden.py` (partial port) @
-//! b9aa928. Upstream has no dedicated test file (missing-test gap, noted
-//! in the ledger); cases derive from the upstream code as oracle.
+//! Parity tests for `agent/secret_sources/bitwarden.py` @ 5d59366
+//! (whole module, 639 lines). Upstream has no dedicated test file
+//! (missing-test gap, noted in the ledger); cases derive from the
+//! upstream code as oracle.
+
+use std::io::Write;
 
 use hermes_agent::secret_sources::base::{ErrorKind, SecretSource};
 use serde_json::json;
@@ -283,4 +286,108 @@ fn entry(
             .collect(),
         fetched_at,
     }
+}
+
+// ── 5d59366 fixes ──────────────────────────────────────────────────────
+
+#[test]
+fn classifier_runs_the_shared_engine() {
+    // Same taxonomy as the hand-rolled fork, now via classify_cli_error:
+    // first matching rule wins, INTERNAL fallback.
+    use hermes_agent::secret_sources::base::ErrorKind;
+    use hermes_agent::secret_sources::bitwarden::classify_bws_error;
+    assert_eq!(classify_bws_error("bws timed out"), ErrorKind::Timeout);
+    assert_eq!(
+        classify_bws_error("binary not available"),
+        ErrorKind::BinaryMissing
+    );
+    assert_eq!(
+        classify_bws_error("[400 Bad Request] {\"error\":\"invalid_client\"}"),
+        ErrorKind::AuthFailed
+    );
+    assert_eq!(
+        classify_bws_error("dns resolve host failed"),
+        ErrorKind::Network
+    );
+    assert_eq!(classify_bws_error("???"), ErrorKind::Internal);
+}
+
+#[test]
+fn apply_respects_token_guard_and_override() {
+    // PARITY: `apply_bitwarden_secrets` — disabled is a no-op; the
+    // bootstrap token var never applies; env wins without override.
+    use hermes_agent::secret_sources::bitwarden::apply_bitwarden_secrets;
+    static APPLY_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+    let _guard = APPLY_LOCK.lock().unwrap();
+    let empty = apply_bitwarden_secrets(
+        false,
+        "BWS_ACCESS_TOKEN",
+        "",
+        false,
+        300.0,
+        false,
+        "",
+        None,
+        false,
+        0.0,
+    );
+    assert!(empty.ok());
+    assert!(empty.secrets.is_empty());
+    // Missing token → NOT_CONFIGURED-shaped error, never a panic.
+    let missing = apply_bitwarden_secrets(
+        true,
+        "BWS_PROBE_MISSING_XYZ",
+        "proj",
+        false,
+        300.0,
+        false,
+        "",
+        None,
+        false,
+        0.0,
+    );
+    assert!(missing.error.is_some());
+}
+
+#[test]
+fn zip_slip_refuses_symlink_escape() {
+    // A symlink inside the tree pointing outside must not smuggle the
+    // write out (lexical folding alone cannot see it).
+    use hermes_agent::secret_sources::bitwarden::safe_extract_member;
+    let td = tempfile::TempDir::new().unwrap();
+    // The link target lives OUTSIDE the extraction root: writing
+    // through it escapes the tree.
+    let outside_td = tempfile::TempDir::new().unwrap();
+    let outside = outside_td.path().to_path_buf();
+    std::os::unix::fs::symlink(&outside, td.path().join("link")).unwrap();
+    let zip_path = td.path().join("evil.zip");
+    {
+        let f = std::fs::File::create(&zip_path).unwrap();
+        let mut zip = zip::ZipWriter::new(f);
+        zip.start_file::<_, ()>("link/evil.txt", zip::write::SimpleFileOptions::default())
+            .unwrap();
+        zip.write_all(b"pwned").unwrap();
+        zip.finish().unwrap();
+    }
+    let err = safe_extract_member(&zip_path, "link/evil.txt", td.path()).unwrap_err();
+    assert!(err.contains("escapes"), "{err}");
+    assert!(!outside.join("evil.txt").exists());
+}
+
+#[test]
+fn clear_caches_drops_l1_and_disk() {
+    // `clear_caches` must clear the in-process L1 too (it previously
+    // only touched disk).
+    use hermes_agent::secret_sources::bitwarden::{
+        clear_caches, read_encrypted_disk_cache, write_encrypted_disk_cache,
+    };
+    let td = tempfile::TempDir::new().unwrap();
+    let home = td.path();
+    let key = ("fp".to_string(), "proj".to_string(), String::new());
+    write_encrypted_disk_cache(&key, "tok", &entry(&[("K", "v")], 1.0), Some(home), || {
+        [7u8; 16]
+    });
+    assert!(read_encrypted_disk_cache(&key, "tok", 3600.0, Some(home), 2.0).is_some());
+    clear_caches(Some(home));
+    assert!(read_encrypted_disk_cache(&key, "tok", 3600.0, Some(home), 2.0).is_none());
 }

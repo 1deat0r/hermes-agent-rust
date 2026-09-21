@@ -3742,3 +3742,15 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   fmt + diff-check clean. Ledger: 171 done / 31 partial / 8693
   missing tracked (1.92%), prod 171/31/3279 (4.91%). Evidence tier:
   unit.
+
+- 2026-09-21 (secret-bitwarden): `agent.secret_sources.bitwarden`
+  partial → done @ 5d59366 (whole module, 639 LOC, line-by-line).
+  Classifier via shared engine; fetch via token_env/coerce_float
+  with auto_install honored; AUTH enrichment message restored;
+  remediation full-override became hints; apply_bitwarden_secrets
+  ported; zip-slip now symlink-aware (true oracle: within-tree
+  links still extract, outside links refuse); clear_caches drops
+  L1; DBG litter removed. 4 new oracle tests. Validation: 15
+  passed; warnings steady (30 = HEAD); fmt + diff-check clean.
+  Ledger: 172 done / 30 partial / 8693 missing tracked (1.93%),
+  prod 172/30/3279 (4.94%). Evidence tier: unit.

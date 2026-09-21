@@ -285,6 +285,16 @@ Next: Wave B6 remainder in smallest-LOC order — `token_auth` (96),
 missing HTTP siblings (middleware/routes/login_page/request_utils/
 refresh_singleflight) to close `dashboard_auth.__init__`.
 
+## agent.secret_sources package CLOSED (2026-09-21)
+
+onepassword (169) → command (170) → registry (171) → bitwarden
+(172): all 5 siblings done @ 5d59366 (base landed earlier).
+bitwarden: shared-engine classifier, AUTH enrichment, apply_*
+port, symlink-aware zip-slip, L1-clearing clear_caches, 4 oracle
+tests, 15/15.
+**Ledger: 172/30/8693 (1.93% tracked, 4.94% prod).**
+Next: next Wave B partial in smallest-LOC order.
+
 ## agent.secret_sources.registry done (2026-09-21)
 
 Partial → done @ 5d59366 (419 LOC; scoped port + 3 bug fixes,
