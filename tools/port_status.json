@@ -250,8 +250,8 @@
     "status": "done"
   },
   "hermes_cli.dashboard_auth.__init__": {
-    "retarget_note": "re-certified at 5d59366 except HTTP-layer siblings; classify_jwks_lookup_error ported w/ 5 oracle tests (2026-09-16)",
-    "status": "partial"
+    "retarget_note": "package closed at 5d59366 (2026-09-21): all 13 siblings ported",
+    "status": "done"
   },
   "hermes_cli.dashboard_auth.audit": {
     "retarget_note": "re-certified at 5d59366 (2026-09-19): behavior-identical line-by-line (73 LOC); PLUGIN-COMPAT import-os shim intentionally unported (no-op, noted in header); 5 audit tests incl. 2 oracle mirrors of test_dashboard_auth_audit.py, green serial",
@@ -263,6 +263,14 @@
   },
   "hermes_cli.dashboard_auth.cookies": {
     "retarget_note": "ported at 5d59366 (2026-09-21): fixed 3 divergences (PKCE SameSite=None over HTTPS, prefixed-deletion Secure/paths, bare-deletion origin shape) + added encode/parse_pkce_payload codec with compat ladder; 8 new oracle tests incl. hostile round-trip cross-checked vs live Python; header re-pinned",
+    "status": "done"
+  },
+  "hermes_cli.dashboard_auth.login_page": {
+    "retarget_note": "ported at 5d59366 (2026-09-21): escaping contract + render decisions; CSS templates ride with web surface",
+    "status": "done"
+  },
+  "hermes_cli.dashboard_auth.middleware": {
+    "retarget_note": "ported at 5d59366 (2026-09-21): decision tables + GateDecision flow (251-line module); FastAPI plumbing defers to web surface; 20 gate tests",
     "status": "done"
   },
   "hermes_cli.dashboard_auth.native_flow": {
@@ -287,6 +295,10 @@
   },
   "hermes_cli.dashboard_auth.request_utils": {
     "retarget_note": "ported at 5d59366 (2026-09-21): whole module (89 lines); scan_session_providers runs sync closures with hint-ordering + unreachable memory; 8 oracle tests",
+    "status": "done"
+  },
+  "hermes_cli.dashboard_auth.routes": {
+    "retarget_note": "ported at 5d59366 (2026-09-21): pure helpers as route_logic (validate targets, loopback, provider select, rate limit, bearer payload, pkce segments, redirect_uri, native finish); @router handlers defer to web surface",
     "status": "done"
   },
   "hermes_cli.dashboard_auth.token_auth": {

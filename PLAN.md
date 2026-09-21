@@ -3629,3 +3629,16 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   tracked (1.78%), prod 158/41/3282 (4.54%). Evidence tier: unit.
   (Both siblings were missing-tracked, so partials drop next when the
   remaining package closes.)
+
+- 2026-09-21 (dashboard-auth-9): package `hermes_cli.dashboard_auth`
+  CLOSED @ 5d59366. Ported the last three as decision layers:
+  `middleware` (251-line gate: public paths, next/login-URL shapes,
+  401-vs-302, auto-SSO, GateDecision flow), `route_logic` (pure
+  routes.py helpers: loopback boundary, provider select, rate limit,
+  bearer payload, redirect assembly), `login_page` (escaping contract
+  + render decisions; CSS templates ride with the web surface).
+  FastAPI handlers defer with the web surface (token_auth precedent).
+  20 gate tests. Validation: full workspace 218 suites, 2,036 passed,
+  0 failed; fmt + diff-check clean. Ledger: 162 done / 40 partial /
+  8693 missing tracked (1.82%), prod 162/40/3279 (4.66%). Evidence
+  tier: unit.

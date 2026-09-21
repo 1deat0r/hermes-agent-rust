@@ -285,23 +285,22 @@ Next: Wave B6 remainder in smallest-LOC order — `token_auth` (96),
 missing HTTP siblings (middleware/routes/login_page/request_utils/
 refresh_singleflight) to close `dashboard_auth.__init__`.
 
-## dashboard_auth close in progress (2026-09-21)
+## dashboard_auth package CLOSED (2026-09-21)
 
-Unit 1/6: `token_auth` partial → done @ 5d59366 (96 LOC,
-red-green-proven `catch_unwind`, 14/14 tests). Unit 2/6: `ws_tickets`
-partial → done @ 5d59366 (97 LOC, 9 oracle tests incl. concurrency,
-14/14). Unit 3/6: `registry` partial → done @ 5d59366 (full scoped
-port, 3 oracle tests, 8+14 green). Unit 4/6: `prefix` partial →
-done @ 5d59366 (130 LOC, urlparse-IPv6 fix red-green, 12/12).
-Unit 5/8: `base` partial → done @ 5d59366 (162 LOC, 1 oracle test,
-9/9). Unit 6/8: `cookies` partial → done @ 5d59366 (222 LOC, 3
-divergence fixes + PKCE codec, 8 oracle tests, 17/17). Unit 7/8:
-`native_flow` partial → done @ 5d59366 (165 LOC, 2 consume tests,
-8/8). Unit 8/10: `request_utils` + `refresh_singleflight` missing →
-done @ 5d59366 (89+107 LOC, 14 oracle tests incl. burst). **Ledger:
-158/41/8696 (1.78% tracked, 4.54% prod).** Next: middleware + routes
-+ login_page (FastAPI surfaces, decision-tables portable) → __init__
-close.
+Unit 1: `token_auth` partial → done (96 LOC, red-green `catch_unwind`,
+14/14). Unit 2: `ws_tickets` partial → done (97 LOC, 9 oracle tests,
+14/14). Unit 3: `registry` partial → done (full scoped port, 8+14).
+Unit 4: `prefix` partial → done (130 LOC, IPv6 fix, 12/12). Unit 5:
+`base` partial → done (162 LOC, 9/9). Unit 6: `cookies` partial →
+done (222 LOC, 3 fixes + codec, 17/17). Unit 7: `native_flow`
+partial → done (165 LOC, 8/8). Unit 8: `request_utils` +
+`refresh_singleflight` missing → done (89+107 LOC, 14 tests). Unit 9:
+`middleware` + `route_logic` + `login_page` decision layers (20 gate
+tests); all 13 siblings done. Full workspace: 218 suites, 2,036
+passed, 0 failed.
+**Ledger: 162/40/8693 (1.82% tracked, 4.66% prod).**
+Files: `PLAN.md`, `HANDOFF.md` updated; ledger regenerated.
+Next: next Wave B partial in smallest-LOC order.
 
 ## Jev god-tier pass landed (2026-09-20)
 
