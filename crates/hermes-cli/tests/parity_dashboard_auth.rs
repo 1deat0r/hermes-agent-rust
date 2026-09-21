@@ -1,7 +1,7 @@
 //! Parity tests for `hermes_cli/dashboard_auth/{base,registry,__init__}.py`
-//! @ b9aa928. Upstream has no dedicated test file for these leaves
-//! (missing-test gap, noted in the ledger); cases derive from the upstream
-//! code as oracle.
+//! @ 5d59366. Registry cases mirror the registry module's contract
+//! (global + scoped overlays, snapshot/restore, global upsert); base
+//! cases derive from the upstream code as oracle.
 
 use std::sync::Arc;
 
@@ -13,7 +13,8 @@ use hermes_cli::dashboard_auth::base::{
 };
 use hermes_cli::dashboard_auth::registry::{
     clear_providers, get_provider, list_providers, list_session_providers, list_token_providers,
-    register_provider,
+    register_global_provider, register_provider, restore_registration, snapshot_registration,
+    unregister_global_provider,
 };
 
 /// Minimal OAuth session provider.
@@ -177,19 +178,19 @@ fn protocol_compliance_rejects_missing_names() {
 #[test]
 fn registry_register_get_and_order() {
     clear_providers();
-    register_provider(Arc::new(OAuthProvider)).unwrap();
+    register_provider(Arc::new(OAuthProvider), None).unwrap();
     let token: Arc<dyn DashboardAuthProvider> = Arc::new(TokenProvider);
-    register_provider(Arc::clone(&token)).unwrap();
+    register_provider(Arc::clone(&token), None).unwrap();
 
     // Duplicate registration raises ValueError upstream.
-    assert!(register_provider(Arc::new(OAuthProvider))
+    assert!(register_provider(Arc::new(OAuthProvider), None)
         .unwrap_err()
         .contains("already registered"));
 
-    assert_eq!(list_providers().len(), 2);
-    assert_eq!(list_providers()[0].name(), "nous", "registration order");
-    assert_eq!(get_provider("nous").unwrap().name(), "nous");
-    assert!(get_provider("nope").is_none());
+    assert_eq!(list_providers(None).len(), 2);
+    assert_eq!(list_providers(None)[0].name(), "nous", "registration order");
+    assert_eq!(get_provider("nous", None).unwrap().name(), "nous");
+    assert!(get_provider("nope", None).is_none());
 
     // Token/session subsets filter on the capability flags.
     assert_eq!(list_token_providers().len(), 1);
@@ -197,7 +198,83 @@ fn registry_register_get_and_order() {
     assert_eq!(list_session_providers().len(), 1);
     assert_eq!(list_session_providers()[0].name(), "nous");
     clear_providers();
-    assert!(list_providers().is_empty());
+    assert!(list_providers(None).is_empty());
+}
+
+/// PARITY: scoped overlays (`_scoped_providers`, `_merged`, `_target`) —
+/// a scope sees the global map plus its own entries shadowing by name.
+#[test]
+fn registry_scoped_overlay_merges_and_shadows() {
+    clear_providers();
+    register_provider(Arc::new(OAuthProvider), None).unwrap();
+    register_provider(Arc::new(TokenProvider), Some("home-a")).unwrap();
+
+    // Scoped view: global + overlay.
+    let names: Vec<_> = list_providers(Some("home-a"))
+        .iter()
+        .map(|p| p.name().to_string())
+        .collect();
+    assert_eq!(names, vec!["nous".to_string(), "drain".to_string()]);
+    // Other scopes and the global view are unaffected.
+    assert_eq!(list_providers(Some("home-b")).len(), 1);
+    assert_eq!(list_providers(None).len(), 1);
+    assert_eq!(
+        get_provider("drain", Some("home-a")).unwrap().name(),
+        "drain"
+    );
+    assert!(get_provider("drain", None).is_none());
+
+    // A scoped same-name registration shadows the global entry and
+    // counts as a duplicate in the effective view.
+    register_provider(Arc::new(TokenProvider), None).unwrap();
+    assert!(register_provider(Arc::new(TokenProvider), Some("home-a"))
+        .unwrap_err()
+        .contains("already registered"));
+    clear_providers();
+}
+
+/// PARITY: `snapshot_registration` / `restore_registration` — the plugin
+/// manager's identity-conditional teardown seam.
+#[test]
+fn registry_snapshot_restore_is_identity_conditional() {
+    clear_providers();
+    let first: Arc<dyn DashboardAuthProvider> = Arc::new(TokenProvider);
+    register_provider(Arc::clone(&first), None).unwrap();
+
+    // Snapshot reads the slot without merging.
+    assert!(snapshot_registration("drain", None).is_some());
+    assert!(snapshot_registration("drain", Some("home-a")).is_none());
+
+    // Restoring while a *different* object is current is a no-op.
+    let second: Arc<dyn DashboardAuthProvider> = Arc::new(TokenProvider);
+    register_global_provider(Arc::clone(&second)).unwrap();
+    assert!(!restore_registration("drain", &first, None, None));
+    assert_eq!(get_provider("drain", None).unwrap().name(), "drain");
+
+    // Restoring the current object with no previous removes it.
+    assert!(restore_registration("drain", &second, None, None));
+    assert!(get_provider("drain", None).is_none());
+    clear_providers();
+}
+
+/// PARITY: `register_global_provider` upserts in place and
+/// `unregister_global_provider` only clears the still-current object.
+#[test]
+fn registry_global_upsert_and_targeted_unload() {
+    clear_providers();
+    let first: Arc<dyn DashboardAuthProvider> = Arc::new(TokenProvider);
+    register_global_provider(Arc::clone(&first)).unwrap();
+    // Re-discovery rotates in place instead of raising.
+    let second: Arc<dyn DashboardAuthProvider> = Arc::new(TokenProvider);
+    register_global_provider(Arc::clone(&second)).unwrap();
+    assert_eq!(list_providers(None).len(), 1);
+
+    // A stale handle never clears the live provider (#91701).
+    assert!(!unregister_global_provider("drain", &first));
+    assert!(get_provider("drain", None).is_some());
+    assert!(unregister_global_provider("drain", &second));
+    assert!(get_provider("drain", None).is_none());
+    clear_providers();
 }
 
 #[test]

@@ -386,7 +386,7 @@ fn reset_with(providers: Vec<Arc<dyn DashboardAuthProvider>>) {
     let _guard = REGISTRY_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     clear_providers();
     for p in providers {
-        register_provider(p).unwrap();
+        register_provider(p, None).unwrap();
     }
 }
 

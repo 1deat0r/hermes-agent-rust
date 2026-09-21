@@ -3570,3 +3570,13 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   0 failed serial + 3x parallel; fmt + diff-check clean. Ledger: 151
   done / 46 partial / 8698 missing tracked (1.70%), prod 151/46/3284
   (4.34%). Evidence tier: unit.
+
+- 2026-09-21 (dashboard-auth-3): `hermes_cli.dashboard_auth.registry`
+  partial → done @ 5d59366. NOT a re-cert: the b9aa928 port lacked the
+  whole scoped-overlay surface (scope params, snapshot/restore,
+  global upsert — 125 LOC upstream vs ~120 unscoped). Full port with
+  merge/shadow semantics exact; documented scope divergence (`None` =
+  global-only until `hermes_home_key` lands). 3 new oracle tests.
+  Validation: 8 + 14 passed serial; fmt + diff-check clean. Ledger:
+  152 done / 45 partial / 8698 missing tracked (1.71%), prod
+  152/45/3284 (4.37%). Evidence tier: unit.
