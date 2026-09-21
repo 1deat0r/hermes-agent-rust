@@ -1,6 +1,7 @@
 //! Shared helpers for tool backend selection.
 //!
-//! PARITY: tools/tool_backend_helpers.py @ b9aa928 (311 LOC, ported 1:1
+//! PARITY: tools/tool_backend_helpers.py @ 5d59366 (whole module,
+//! 259 lines, ported 1:1
 //! for the observable surfaces; fail-open paths are pinned to the upstream
 //! exception fallbacks).
 //!
@@ -173,13 +174,10 @@ pub fn normalize_modal_mode(value: Option<&str>) -> String {
 /// probe degrades to `false` exactly like the upstream `except
 /// (PermissionError, OSError)` path.
 pub fn has_direct_modal_credentials() -> bool {
-    // Upstream truthiness: an empty env value is treated as unset.
-    let token_id = std::env::var("MODAL_TOKEN_ID")
-        .map(|v| !v.is_empty())
-        .unwrap_or(false);
-    let token_secret = std::env::var("MODAL_TOKEN_SECRET")
-        .map(|v| !v.is_empty())
-        .unwrap_or(false);
+    // Upstream truthiness is post-strip: a whitespace-only value counts
+    // as unset.
+    let token_id = !scoped_credential("MODAL_TOKEN_ID").is_empty();
+    let token_secret = !scoped_credential("MODAL_TOKEN_SECRET").is_empty();
     let modal_file_exists = {
         let home = hermes_constants::get_real_home(None);
         Path::new(&home).join(".modal.toml").exists()
@@ -369,4 +367,130 @@ pub fn fal_key_is_configured() -> bool {
         value
     };
     !value.trim().is_empty()
+}
+
+/// Provider value the managed "Nous Subscription" picker rows write for
+/// every category; any other name = that vendor direct; no key = legacy
+/// autodetect.
+///
+/// PARITY: `NOUS_MANAGED_PROVIDER` (upstream line 176).
+pub const NOUS_MANAGED_PROVIDER: &str = "nous";
+
+/// Read the RAW (unmerged) config.yaml mapping for `section`, or None.
+/// Test seam: `CONFIG_OVERRIDE` stands in for `read_raw_config_readonly`.
+fn raw_section(section: &str) -> Option<Value> {
+    let config = CONFIG_OVERRIDE.with(|slot| slot.borrow().clone());
+    let Some(config) = config else {
+        return None;
+    };
+    match config.get(section) {
+        Some(Value::Object(_)) => config.get(section).cloned(),
+        _ => None,
+    }
+}
+
+/// THE single runtime read of the persisted `hermes tools` selection:
+/// `"nous"` (managed gateway row), a vendor name (direct, own
+/// credentials), or `None` (never configured → legacy autodetect
+/// allowed). Reads the RAW config so key presence means "actually
+/// written", not "schema default"; a raw `local` is therefore a real
+/// user selection. Legacy shim: `use_gateway: true` was only ever
+/// written by the managed row, so it maps to `"nous"` regardless of
+/// the name key. Never raises.
+///
+/// PARITY: `read_selection` (upstream lines 196-214).
+pub fn read_selection(section: &str) -> Option<String> {
+    let raw = raw_section(section)?;
+    let raw_map = raw.as_object()?;
+    let use_gateway = raw_map.get("use_gateway").cloned().unwrap_or(Value::Null);
+    if is_truthy_value(&use_gateway, false) {
+        return Some(NOUS_MANAGED_PROVIDER.to_string());
+    }
+    let keys: &[&str] = match section {
+        "browser" => &["cloud_provider"],
+        "web" => &["backend"],
+        _ => &["provider", "backend", "cloud_provider"],
+    };
+    for key in keys {
+        let text = match raw_map.get(*key) {
+            Some(Value::String(s)) => s.trim().to_lowercase(),
+            Some(Value::Null) | None => String::new(),
+            Some(other) => other.to_string().trim().to_lowercase(),
+        };
+        if !text.is_empty() {
+            return Some(text);
+        }
+    }
+    // `use_gateway: false` with no name key is not a usable selection
+    // shape (per-capability web keys still count via selection_exists).
+    None
+}
+
+/// True when ANY selection signal was ever written for the section
+/// (wider than `read_selection`: per-capability web keys count too).
+///
+/// PARITY: `selection_exists` (upstream lines 217-224).
+pub fn selection_exists(section: &str) -> bool {
+    if read_selection(section).is_some() {
+        return true;
+    }
+    let extra: &[&str] = match section {
+        "web" => &["search_backend", "extract_backend"],
+        _ => &[],
+    };
+    if extra.is_empty() {
+        return false;
+    }
+    let Some(raw) = raw_section(section) else {
+        return false;
+    };
+    let Some(raw_map) = raw.as_object() else {
+        return false;
+    };
+    extra.iter().any(|key| {
+        raw_map
+            .get(*key)
+            .map(|v| !v.to_string().trim().is_empty())
+            .unwrap_or(false)
+    })
+}
+
+/// Backends that once shipped in-tree but were removed; a config still
+/// pointing at one would otherwise fail silently at the FIRST tool call
+/// with a generic "no registered provider has that name". Add removals
+/// here, never as one-off string checks.
+///
+/// PARITY: `REMOVED_BACKENDS` (upstream lines 227-242). Currently
+/// empty: the Tavily removal (#99199) that introduced this registry was
+/// reverted by the #99731 restore.
+pub fn removed_backends() -> Value {
+    json!({})
+}
+
+/// Explanation for a backend that used to ship in-tree, or None.
+/// `name` tolerates the quoted form callers pass to `selection_error`.
+///
+/// PARITY: `removed_backend_note` (upstream lines 243-246).
+pub fn removed_backend_note(section: &str, name: &str) -> Option<String> {
+    removed_backends()
+        .get(section)?
+        .get(
+            name.trim()
+                .trim_matches('\'')
+                .trim_matches('"')
+                .to_lowercase(),
+        )?
+        .as_str()
+        .map(str::to_string)
+}
+
+/// The uniform honest-error contract for a selected-but-broken provider.
+///
+/// PARITY: `selection_error` (upstream lines 249-253).
+pub fn selection_error(section: &str, selection_name: &str, failure: &str) -> String {
+    let failure =
+        removed_backend_note(section, selection_name).unwrap_or_else(|| failure.to_string());
+    format!(
+        "{section} is configured to use {selection_name} (set via hermes tools), but {failure}. Run 'hermes tools' to change it."
+    )
 }

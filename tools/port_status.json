@@ -767,8 +767,8 @@
     "status": "partial"
   },
   "tools.tool_backend_helpers": {
-    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (311 -> 259 LOC); re-certify line-by-line before promoting",
-    "status": "partial"
+    "retarget_note": "ported at 5d59366 (2026-09-21): restored selection subsystem (read_selection/selection_exists/removed_backend_note/selection_error + constants); fixed whitespace-only Modal credential divergence (red-proof by code inspection: old is_empty check returned true for \"   \"); 5 new oracle tests; header re-pinned",
+    "status": "done"
   },
   "tools.tool_output_limits": {
     "retarget_note": "re-certified autonomous: docstring-only drift; suites green",

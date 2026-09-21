@@ -3698,3 +3698,14 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   passed; fmt + diff-check clean. Ledger: 167 done / 35 partial /
   8693 missing tracked (1.88%), prod 167/35/3279 (4.80%). Evidence
   tier: unit.
+
+- 2026-09-21 (tools-backend-helpers): `tools.tool_backend_helpers`
+  partial → done @ 5d59366 (whole module, 259 LOC). NOT a re-cert:
+  restored the entire selection subsystem (read_selection with the
+  use_gateway→nous shim + raw-local rule, selection_exists with
+  per-capability web keys, removed_backend_note/registry,
+  selection_error contract) and fixed a whitespace-only Modal
+  credential divergence. 5 new oracle tests. Validation: 45 passed;
+  fmt + diff-check clean. Ledger: 168 done / 34 partial / 8693
+  missing tracked (1.89%), prod 168/34/3279 (4.83%). Evidence tier:
+  unit.

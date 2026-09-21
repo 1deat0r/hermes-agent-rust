@@ -18,9 +18,10 @@ use std::sync::{Mutex, MutexGuard};
 use hermes_tools::tool_backend_helpers::{
     coerce_modal_mode, fal_key_is_configured, has_direct_modal_credentials,
     managed_nous_tools_enabled, normalize_browser_cloud_provider, normalize_modal_mode,
-    nous_tool_gateway_unavailable_message, prefers_gateway, resolve_modal_backend_state,
-    resolve_openai_audio_api_key, resolve_provider_secret, set_load_config_for_test,
-    set_nous_entitlement_for_test,
+    nous_tool_gateway_unavailable_message, prefers_gateway, read_selection, removed_backend_note,
+    resolve_modal_backend_state, resolve_openai_audio_api_key, resolve_provider_secret,
+    selection_error, selection_exists, set_load_config_for_test, set_nous_entitlement_for_test,
+    NOUS_MANAGED_PROVIDER,
 };
 use serde_json::{json, Value};
 
@@ -531,4 +532,70 @@ fn fal_key_unset_when_missing_or_whitespace() {
         let _guard = EnvGuard::lock().set("FAL_KEY", "   ");
         assert!(!fal_key_is_configured());
     }
+}
+
+// ── selection subsystem (@ 5d59366) ───────────────────────────────────────
+
+#[test]
+fn read_selection_managed_gateway_shim() {
+    // `use_gateway: true` was only ever written by the managed row.
+    set_load_config_for_test(Some(json!({"web": {"use_gateway": true}})));
+    assert_eq!(
+        read_selection("web"),
+        Some(NOUS_MANAGED_PROVIDER.to_string())
+    );
+    set_load_config_for_test(None);
+}
+
+#[test]
+fn read_selection_vendor_and_raw_local() {
+    // A raw `local` is a real user selection (key presence, not default).
+    set_load_config_for_test(Some(json!({"web": {"backend": "local"}})));
+    assert_eq!(read_selection("web"), Some("local".to_string()));
+    set_load_config_for_test(Some(json!({"browser": {"cloud_provider": "Tweaq"}})));
+    assert_eq!(read_selection("browser"), Some("tweaq".to_string()));
+    // Unconfigured section → None (legacy autodetect).
+    set_load_config_for_test(Some(json!({})));
+    assert_eq!(read_selection("web"), None);
+    // use_gateway: false with no name key is not a usable shape.
+    set_load_config_for_test(Some(json!({"web": {"use_gateway": false}})));
+    assert_eq!(read_selection("web"), None);
+    set_load_config_for_test(None);
+}
+
+#[test]
+fn selection_exists_covers_per_capability_keys() {
+    set_load_config_for_test(Some(json!({"web": {"search_backend": "tavily"}})));
+    assert_eq!(read_selection("web"), None, "no name key → no selection");
+    assert!(selection_exists("web"), "per-capability key counts");
+    set_load_config_for_test(Some(json!({"browser": {}})));
+    assert!(!selection_exists("browser"));
+    set_load_config_for_test(None);
+}
+
+#[test]
+fn removed_backend_note_empty_registry_returns_none() {
+    // The registry is currently empty (#99731 restore) — the lookup
+    // shape is pinned, including quoted-name tolerance.
+    assert_eq!(removed_backend_note("web", "tavily"), None);
+    assert_eq!(removed_backend_note("web", "'tavily'"), None);
+    assert_eq!(
+        selection_error("web", "tavily", "it broke").contains("hermes tools"),
+        true
+    );
+    assert_eq!(
+        selection_error("web", "tavily", "it broke"),
+        "web is configured to use tavily (set via hermes tools), but it broke. Run 'hermes tools' to change it."
+    );
+}
+
+#[test]
+fn whitespace_only_modal_credentials_count_as_unset() {
+    // Upstream strips before truthiness: `" "` is not a credential.
+    let _guard = EnvGuard::lock()
+        .unset("MODAL_TOKEN_ID")
+        .unset("MODAL_TOKEN_SECRET")
+        .set("MODAL_TOKEN_ID", "   ")
+        .set("MODAL_TOKEN_SECRET", "   ");
+    assert!(!has_direct_modal_credentials());
 }
