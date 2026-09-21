@@ -3546,3 +3546,16 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   .unlazy/jev-godtier/GATES.md 5/5 met. Ledger: NO module status
   change — 149/48/8698 (1.68%), prod 149/48/3284 (4.28%). Evidence
   tier: unit + live. Next: Wave B6 remainder.
+
+- 2026-09-21 (dashboard-auth-1): `hermes_cli.dashboard_auth.token_auth`
+  partial → done @ 5d59366 (whole module, 96 LOC, line-by-line).
+  Found + fixed a doc-vs-code divergence: header claimed panicking
+  providers are fail-isolated but no `catch_unwind` existed — a panic
+  would have crashed the gate, violating oracle
+  `test_authenticate_token_buggy_provider_does_not_crash`. Fix proven
+  red-green (fails stashed, passes applied). Header re-pinned
+  b9aa928 → 5d59366. Validation: `cargo test -p hermes-cli --test
+  parity_dashboard_auth_audit_token -- --test-threads=1` — 14 passed,
+  0 failed (1 new oracle test); 3x parallel runs green; fmt +
+  diff-check clean. Ledger: 150 done / 47 partial / 8698 missing
+  tracked (1.69%), prod 150/47/3284 (4.31%). Evidence tier: unit.

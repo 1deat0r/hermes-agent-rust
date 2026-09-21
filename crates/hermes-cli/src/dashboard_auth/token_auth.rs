@@ -1,15 +1,20 @@
 //! Route-agnostic non-interactive (bearer-token) auth seam for the
 //! dashboard.
 //!
-//! PARITY: `hermes_cli/dashboard_auth/token_auth.py` @ b9aa928 — PARTIAL.
-//! Ported: the token-route registry, bearer-token extraction, and the
-//! stacked provider authentication returning
-//! `(principal, unreachable_provider)`. PENDING:
-//! `token_auth_middleware`'s Request/JSONResponse plumbing — that is the
-//! FastAPI web-server surface; the decision table it implements (valid
-//! token → pass with principal, unreachable → 503, otherwise 401; the
-//! cookie gates honour `token_authenticated`) rides the same values this
-//! module returns.
+//! PARITY: `hermes_cli/dashboard_auth/token_auth.py` @ 5d59366 (whole
+//! module, 96 lines). Ported: the token-route registry (`register` /
+//! `is` / `clear`, lines 31-46), provider stacking with unreachable
+//! memory + buggy-provider isolation (`authenticate_token`, lines
+//! 49-72 — `except ProviderError` remembers, `except Exception`
+//! continues, here via `catch_unwind`), and both `TOKEN_AUTH_FAILURE`
+//! audit shapes (lines 87-95). Transport-neutral by design: bearer
+//! extraction takes the header value (`request_utils.extract_bearer`
+//! lines 25-30 semantics), and `token_auth_middleware`'s
+//! Request/JSONResponse/async plumbing (lines 75-96) belongs to the
+//! FastAPI web-server surface — the decision table it implements
+//! (valid token → pass with principal, unreachable → 503, otherwise
+//! 401; cookie gates honour `token_authenticated`) rides the values
+//! this module returns.
 //!
 //! The generic API-token capability: ANY service-to-service /
 //! machine-credential provider plugs into this seam — a route opts in by
@@ -106,11 +111,17 @@ pub fn authenticate_token(
     }
     let mut unreachable: Option<String> = None;
     for provider in list_token_providers() {
-        match futures::executor::block_on(provider.verify_token(token)) {
-            Ok(Some(principal)) => return (Some(principal), None),
+        // PARITY: upstream `except Exception: continue` — a buggy provider
+        // must not 500 the gate. `catch_unwind` is the Rust equivalent;
+        // the panic payload is dropped and the seam moves on.
+        let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            futures::executor::block_on(provider.verify_token(token))
+        }));
+        match outcome {
+            Ok(Ok(Some(principal))) => return (Some(principal), None),
             // Not recognised — the seam moves on to the next provider.
-            Ok(None) => continue,
-            Err(err) => {
+            Ok(Ok(None)) => continue,
+            Ok(Err(err)) => {
                 log::warn!(
                     "dashboard-auth: token provider {:?} unreachable during verify: {}",
                     provider.name(),
@@ -119,6 +130,13 @@ pub fn authenticate_token(
                 if unreachable.is_none() {
                     unreachable = Some(provider.name().to_string());
                 }
+                continue;
+            }
+            Err(_) => {
+                log::warn!(
+                    "dashboard-auth: token provider {:?} raised during verify",
+                    provider.name(),
+                );
                 continue;
             }
         }

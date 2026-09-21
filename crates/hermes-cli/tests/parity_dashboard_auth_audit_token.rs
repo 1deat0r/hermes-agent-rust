@@ -288,6 +288,54 @@ impl DashboardAuthProvider for RefusingProvider {
     }
 }
 
+struct PanickingProvider;
+
+#[async_trait]
+impl DashboardAuthProvider for PanickingProvider {
+    fn name(&self) -> &str {
+        "panic"
+    }
+    fn display_name(&self) -> &str {
+        "Panic"
+    }
+    fn supports_token(&self) -> bool {
+        true
+    }
+    async fn start_login(
+        &self,
+        _: &str,
+    ) -> Result<hermes_cli::dashboard_auth::base::LoginStart, ProviderError> {
+        unreachable!()
+    }
+    async fn complete_login(
+        &self,
+        _: &str,
+        _: &str,
+        _: &str,
+        _: &str,
+    ) -> Result<hermes_cli::dashboard_auth::base::Session, Box<dyn std::error::Error + Send + Sync>>
+    {
+        unreachable!()
+    }
+    async fn verify_session(
+        &self,
+        _: &str,
+    ) -> Result<Option<hermes_cli::dashboard_auth::base::Session>, ProviderError> {
+        unreachable!()
+    }
+    async fn refresh_session(
+        &self,
+        _: &str,
+    ) -> Result<hermes_cli::dashboard_auth::base::Session, Box<dyn std::error::Error + Send + Sync>>
+    {
+        unreachable!()
+    }
+    async fn revoke_session(&self, _: &str) {}
+    async fn verify_token(&self, _token: &str) -> Result<Option<TokenPrincipal>, ProviderError> {
+        panic!("kaboom")
+    }
+}
+
 #[async_trait]
 impl DashboardAuthProvider for OutageProvider {
     fn name(&self) -> &str {
@@ -389,6 +437,23 @@ fn empty_token_short_circuits_without_consulting_providers() {
     let (principal, unreachable) = authenticate_token("", "", "/api/drain");
     assert!(principal.is_none());
     assert_eq!(unreachable, None);
+}
+
+/// PARITY: `test_authenticate_token_buggy_provider_does_not_crash`
+/// (`tests/hermes_cli/test_dashboard_token_auth.py`) — a panicking
+/// provider is skipped like upstream's `except Exception: continue`,
+/// and a later provider still accepts.
+#[test]
+fn panicking_provider_does_not_crash_the_gate() {
+    clear_providers();
+    reset_with(vec![
+        Arc::new(PanickingProvider),
+        Arc::new(AcceptingProvider),
+    ]);
+    let (principal, unreachable) = authenticate_token("good", "", "/api/drain");
+    assert_eq!(principal.unwrap().principal, "svc");
+    assert_eq!(unreachable, None);
+    clear_providers();
 }
 
 #[test]

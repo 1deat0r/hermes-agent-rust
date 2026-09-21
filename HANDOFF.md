@@ -285,6 +285,13 @@ Next: Wave B6 remainder in smallest-LOC order — `token_auth` (96),
 missing HTTP siblings (middleware/routes/login_page/request_utils/
 refresh_singleflight) to close `dashboard_auth.__init__`.
 
+## dashboard_auth close in progress (2026-09-21)
+
+Unit 1/6: `token_auth` partial → done @ 5d59366 (96 LOC,
+red-green-proven `catch_unwind`, 14/14 tests). **Ledger: 150/47/8698
+(1.69% tracked, 4.31% prod).** Next: ws_tickets → registry → prefix →
+base/cookies/native_flow → missing HTTP siblings → __init__ close.
+
 ## Jev god-tier pass landed (2026-09-20)
 
 Five new `hermes-jev` modules covering every remaining live Jev use:

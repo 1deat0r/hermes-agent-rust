@@ -1,19 +1,19 @@
 {
  "generated_from": "/run/media/its1deat0r/Projects/AI Agents/Hermes-Agent-Rust/.upstream-pin/5d59366",
- "generated_at": "2026-09-21T13:54:31",
+ "generated_at": "2026-09-21T14:27:20",
  "summary": {
   "modules": 8895,
   "total_lines": 2467838,
   "production_modules": 3481,
   "production_lines": 1147748,
   "status_counts": {
-   "done": 149,
-   "partial": 48,
+   "done": 150,
+   "partial": 47,
    "missing": 8698
   },
   "prod_status_counts": {
-   "done": 149,
-   "partial": 48,
+   "done": 150,
+   "partial": 47,
    "missing": 3284
   },
   "packages": {
@@ -61,8 +61,8 @@
     "modules": 502,
     "status": {
      "missing": 476,
-     "partial": 9,
-     "done": 17
+     "partial": 8,
+     "done": 18
     }
    },
    "tests.hermes_state": {
@@ -41237,7 +41237,7 @@
   "hermes_cli.dashboard_auth.token_auth": {
    "lines": 96,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "gateway.whatsapp_identity": {
