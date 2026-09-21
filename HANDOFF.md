@@ -285,11 +285,11 @@ Next: Wave B6 remainder in smallest-LOC order — `token_auth` (96),
 missing HTTP siblings (middleware/routes/login_page/request_utils/
 refresh_singleflight) to close `dashboard_auth.__init__`.
 
-## tools.tool_backend_helpers done (2026-09-21)
+## agent.secret_sources.onepassword done (2026-09-21)
 
-Partial → done @ 5d59366 (259 LOC; selection subsystem restored,
-whitespace credential fix, 5 oracle tests, 45/45).
-**Ledger: 168/34/8693 (1.89% tracked, 4.83% prod).**
+Partial → done @ 5d59366 (360 LOC; shared-engine classifier,
+hints migration, apply_* port, 2 oracle tests, 11/11).
+**Ledger: 169/33/8693 (1.90% tracked, 4.85% prod).**
 
 ## tools.tool_backend_helpers done (2026-09-21)
 

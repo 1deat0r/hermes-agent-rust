@@ -132,8 +132,8 @@
     "status": "partial"
   },
   "agent.secret_sources.onepassword": {
-    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (682 -> 360 LOC); re-certify line-by-line before promoting",
-    "status": "partial"
+    "retarget_note": "ported at 5d59366 (2026-09-21): classify via shared engine (fork killed), fetch via token_env/coerce_float, remediation full-override -> hints (Timeout/Network generic fixed), apply_onepassword_secrets ported; 2 new oracle tests; header re-pinned",
+    "status": "done"
   },
   "agent.secret_sources.registry": {
     "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (470 -> 419 LOC); re-certify line-by-line before promoting",

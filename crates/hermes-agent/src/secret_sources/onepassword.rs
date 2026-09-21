@@ -1,6 +1,7 @@
 //! 1Password (`op` CLI) secret source.
 //!
-//! PARITY: `agent/secret_sources/onepassword.py` @ b9aa928 (whole module).
+//! PARITY: `agent/secret_sources/onepassword.py` @ 5d59366 (whole module,
+//! 360 lines).
 //!
 //! Resolve provider credentials from 1Password `op://vault/item/field`
 //! references at process startup so they don't live in plaintext in
@@ -29,7 +30,8 @@ use serde_json::Value;
 use sha2::{Digest, Sha256};
 
 use super::base::{
-    get_source_env_var, get_source_environment_snapshot, ErrorKind, FetchResult, SecretSource,
+    classify_cli_error, coerce_float, get_source_env_var, get_source_environment_snapshot,
+    ErrorKind, FetchResult, SecretSource,
 };
 use super::cache::{CachedFetch, DiskCache};
 
@@ -528,6 +530,33 @@ impl SecretSource for OnePasswordSource {
         DEFAULT_TOKEN_ENV
     }
 
+    /// PARITY: `remediation_hints` (upstream lines 281-284) — per-kind
+    /// overrides; every other kind falls through to the generic text
+    /// (Timeout/Network hints included, unlike the old full override).
+    fn remediation_hints(&self) -> HashMap<ErrorKind, String> {
+        HashMap::from([
+            (
+                ErrorKind::AuthFailed,
+                "Run `hermes secrets onepassword token` to paste a fresh service-account token \
+                 ({token_env}), or `op signin` for an interactive session."
+                    .to_string(),
+            ),
+            (
+                ErrorKind::AuthExpired,
+                "Run `hermes secrets onepassword token` to paste a fresh service-account token \
+                 ({token_env}), or `op signin` for an interactive session."
+                    .to_string(),
+            ),
+            (
+                ErrorKind::BinaryMissing,
+                "Install the 1Password CLI \
+                 (https://developer.1password.com/docs/cli/get-started/) or set \
+                 secrets.onepassword.binary_path."
+                    .to_string(),
+            ),
+        ])
+    }
+
     fn config_schema(&self) -> Value {
         serde_json::json!({
             "enabled": {"description": "Master switch", "default": false},
@@ -586,22 +615,15 @@ impl SecretSource for OnePasswordSource {
             return result;
         };
 
-        let ttl = cfg
-            .get("cache_ttl_seconds")
-            .and_then(Value::as_f64)
-            .unwrap_or(300.0);
+        let ttl = coerce_float(cfg.get("cache_ttl_seconds"), 300.0);
 
-        let token_env = cfg
-            .get("service_account_token_env")
-            .and_then(Value::as_str)
-            .filter(|s| !s.is_empty())
-            .unwrap_or(DEFAULT_TOKEN_ENV);
+        let token_env = self.token_env(cfg);
         let account = cfg.get("account").and_then(Value::as_str).unwrap_or("");
 
         match fetch_onepassword_secrets(
             &valid,
             account,
-            token_env,
+            &token_env,
             Some(&binary),
             &binary_path,
             true,
@@ -620,63 +642,155 @@ impl SecretSource for OnePasswordSource {
             }
         }
     }
-
-    fn remediation(&self, kind: Option<ErrorKind>, _cfg: &Value) -> Option<String> {
-        match kind {
-            Some(ErrorKind::AuthFailed) | Some(ErrorKind::AuthExpired) => Some(
-                "Run `hermes secrets onepassword token` to paste a fresh \
-                 service-account token (OP_SERVICE_ACCOUNT_TOKEN), or `op signin` \
-                 for an interactive session."
-                    .to_string(),
-            ),
-            Some(ErrorKind::BinaryMissing) => Some(
-                "Install the 1Password CLI \
-                 (https://developer.1password.com/docs/cli/get-started/) or set \
-                 secrets.onepassword.binary_path."
-                    .to_string(),
-            ),
-            _ => None,
-        }
-    }
 }
 
 /// Best-effort mapping of op failure text onto the shared taxonomy.
 ///
-/// PARITY: `_classify_op_error` (upstream lines 640-663).
+/// PARITY: `_classify_op_error` (upstream lines 79-80) — first matching
+/// rule wins, via the shared engine.
 pub fn classify_op_error(message: &str) -> ErrorKind {
-    let lowered = message.to_lowercase();
-    if lowered.contains("timed out") {
-        return ErrorKind::Timeout;
-    }
-    if lowered.contains("not found on path")
-        || lowered.contains("not an executable")
-        || lowered.contains("failed to invoke")
-    {
-        return ErrorKind::BinaryMissing;
-    }
-    if [
-        "unauthorized",
-        "not signed in",
-        "session expired",
-        "authentication",
-        "401",
-        "403",
+    classify_cli_error(message, &op_error_rules())
+}
+
+/// PARITY: `_OP_ERROR_RULES` (upstream lines 69-76).
+fn op_error_rules() -> Vec<(ErrorKind, Vec<String>)> {
+    vec![
+        (ErrorKind::Timeout, vec!["timed out".to_string()]),
+        (
+            ErrorKind::BinaryMissing,
+            vec![
+                "not found on path".to_string(),
+                "not an executable".to_string(),
+                "failed to invoke".to_string(),
+            ],
+        ),
+        (
+            ErrorKind::AuthFailed,
+            vec![
+                "unauthorized".to_string(),
+                "not signed in".to_string(),
+                "session expired".to_string(),
+                "authentication".to_string(),
+                "401".to_string(),
+                "403".to_string(),
+            ],
+        ),
+        (ErrorKind::EmptyValue, vec!["empty value".to_string()]),
+        (
+            ErrorKind::Network,
+            vec![
+                "network".to_string(),
+                "connection".to_string(),
+                "resolve host".to_string(),
+                "dns".to_string(),
+            ],
+        ),
     ]
-    .iter()
-    .any(|tok| lowered.contains(tok))
-    {
-        return ErrorKind::AuthFailed;
+}
+
+/// Resolve configured `op://` references and apply them to the
+/// process environment (`hermes secrets onepassword sync --apply`).
+/// Never raises. Refs already satisfied by the env (when
+/// `override_existing` is false) and the token var are skipped
+/// *before* fetching, so `op` never runs for a discarded value.
+///
+/// PARITY: `apply_onepassword_secrets` (upstream lines 217-265). The
+/// only caller is the `onepassword_secrets_cli` surface; `set_var`
+/// writes are scoped to this explicit sync entry point, never the
+/// startup fetch path.
+#[allow(clippy::too_many_arguments)]
+pub fn apply_onepassword_secrets(
+    enabled: bool,
+    env: Option<&BTreeMap<String, String>>,
+    account: &str,
+    service_account_token_env: &str,
+    binary_path: &str,
+    override_existing: bool,
+    cache_ttl_seconds: f64,
+    home_path: Option<&Path>,
+) -> FetchResult {
+    let mut result = FetchResult::default();
+    if !enabled {
+        return result;
     }
-    if lowered.contains("empty value") {
-        return ErrorKind::EmptyValue;
+    let env_value = env
+        .map(|m| {
+            Value::Object(
+                m.iter()
+                    .map(|(k, v)| (k.clone(), Value::String(v.clone())))
+                    .collect(),
+            )
+        })
+        .unwrap_or(Value::Null);
+    let (valid, warnings) = validate_references(if env.is_some() {
+        Some(&env_value)
+    } else {
+        None
+    });
+    result.warnings.extend(warnings);
+    let guarded = |name: &str| -> bool {
+        name == service_account_token_env
+            || (!override_existing && std::env::var(name).map(|v| !v.is_empty()).unwrap_or(false))
+    };
+    result
+        .skipped
+        .extend(valid.keys().filter(|n| guarded(n)).cloned());
+    let refs_to_fetch: BTreeMap<String, String> =
+        valid.into_iter().filter(|(n, _)| !guarded(n)).collect();
+    if refs_to_fetch.is_empty() {
+        return result;
     }
-    if ["network", "connection", "resolve host", "dns"]
-        .iter()
-        .any(|tok| lowered.contains(tok))
-    {
-        return ErrorKind::Network;
+    let binary = find_op(binary_path);
+    result.binary_path = binary.clone();
+    let Some(binary) = binary else {
+        result.error = Some(missing_binary_error(binary_path));
+        return result;
+    };
+    let token_value = get_source_env_var(service_account_token_env).unwrap_or_default();
+    let _ = token_value;
+    match fetch_onepassword_secrets(
+        &refs_to_fetch,
+        account,
+        service_account_token_env,
+        Some(&binary),
+        binary_path,
+        true,
+        cache_ttl_seconds,
+        home_path,
+    ) {
+        Err(err) => {
+            result.error = Some(err);
+        }
+        Ok((secrets, mut fetch_warnings)) => {
+            result.warnings.append(&mut fetch_warnings);
+            for (name, value) in secrets {
+                // Defensive re-check: keys should already be ⊆ refs_to_fetch.
+                if guarded(&name) {
+                    if !result.skipped.contains(&name) {
+                        result.skipped.push(name);
+                    }
+                    continue;
+                }
+                // SAFETY: explicit sync entry point only (see docstring).
+                unsafe { std::env::set_var(&name, &value) };
+                result.secrets.insert(name.clone(), value);
+                result.applied.push(name);
+            }
+        }
     }
-    ErrorKind::Internal
+    result
+}
+
+/// PARITY: `_missing_binary_error` (upstream lines 210-214).
+fn missing_binary_error(binary_path: &str) -> String {
+    if !binary_path.is_empty() {
+        return format!(
+            "secrets.onepassword.binary_path ({binary_path:?}) is not an executable op binary."
+        );
+    }
+    "secrets.onepassword.enabled is true but the op CLI was not found on PATH.  Install it \
+     (https://developer.1password.com/docs/cli/get-started/) or set secrets.onepassword.binary_path."
+        .to_string()
 }
 
 /// Drop in-process AND disk caches — used after a token rotation so the

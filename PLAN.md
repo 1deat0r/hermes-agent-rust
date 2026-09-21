@@ -3709,3 +3709,14 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   fmt + diff-check clean. Ledger: 168 done / 34 partial / 8693
   missing tracked (1.89%), prod 168/34/3279 (4.83%). Evidence tier:
   unit.
+
+- 2026-09-21 (secret-onepassword): `agent.secret_sources.onepassword`
+  partial → done @ 5d59366 (whole module, 360 LOC, line-by-line).
+  Classifier now delegates to the shared engine (fork killed);
+  fetch uses the restored token_env/coerce_float; remediation
+  full-override became hints (Timeout/Network generics fixed);
+  apply_onepassword_secrets ported; stdin=None→null + remediation
+  notes documented. 2 new oracle tests. Validation: 11 passed;
+  fmt + diff-check clean. Ledger: 169 done / 33 partial / 8693
+  missing tracked (1.90%), prod 169/33/3279 (4.85%). Evidence tier:
+  unit.

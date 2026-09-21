@@ -248,6 +248,91 @@ fn onepassword_source_adapter_contract() {
 }
 
 #[test]
+fn remediation_hints_fall_through_to_generic() {
+    // PARITY: `remediation_hints` (not a full override) — listed kinds
+    // use the source text with {token_env} filled; every other kind
+    // falls through to the GENERIC text (the old full override wrongly
+    // returned None for Timeout/Network).
+    let source = OnePasswordSource;
+    let cfg = serde_json::json!({});
+    let auth = source
+        .remediation(
+            Some(hermes_agent::secret_sources::base::ErrorKind::AuthFailed),
+            &cfg,
+        )
+        .unwrap();
+    assert!(auth.contains("OP_SERVICE_ACCOUNT_TOKEN"), "{auth}");
+    let timeout = source
+        .remediation(
+            Some(hermes_agent::secret_sources::base::ErrorKind::Timeout),
+            &cfg,
+        )
+        .unwrap();
+    assert!(timeout.contains("timeout_seconds"), "{timeout}");
+    let network = source
+        .remediation(
+            Some(hermes_agent::secret_sources::base::ErrorKind::Network),
+            &cfg,
+        )
+        .unwrap();
+    assert!(network.contains("Network problem"), "{network}");
+    // Custom token env fills the placeholder.
+    let custom = serde_json::json!({"service_account_token_env": "MY_OP_TOKEN"});
+    let auth = source
+        .remediation(
+            Some(hermes_agent::secret_sources::base::ErrorKind::AuthFailed),
+            &custom,
+        )
+        .unwrap();
+    assert!(auth.contains("MY_OP_TOKEN"), "{auth}");
+    assert_eq!(source.token_env(&custom), "MY_OP_TOKEN");
+    assert_eq!(source.token_env(&cfg), "OP_SERVICE_ACCOUNT_TOKEN");
+}
+
+#[test]
+fn apply_skips_guarded_refs_before_fetching() {
+    // PARITY: `apply_onepassword_secrets` — disabled is a no-op; the
+    // token var and env-satisfied refs never reach `op`.
+    use hermes_agent::secret_sources::onepassword::apply_onepassword_secrets;
+    use std::collections::BTreeMap;
+    let empty = apply_onepassword_secrets(
+        false,
+        None,
+        "",
+        "OP_SERVICE_ACCOUNT_TOKEN",
+        "",
+        true,
+        300.0,
+        None,
+    );
+    assert!(empty.ok());
+    assert!(empty.secrets.is_empty());
+    // Token var is skipped even when bound to a real-looking ref, and a
+    // pinned-missing binary errors when a real ref needs fetching.
+    let mut env = BTreeMap::new();
+    env.insert(
+        "OP_SERVICE_ACCOUNT_TOKEN".to_string(),
+        "op://vault/item/field".to_string(),
+    );
+    env.insert("MY_KEY".to_string(), "op://vault/item/key".to_string());
+    let result = apply_onepassword_secrets(
+        true,
+        Some(&env),
+        "",
+        "OP_SERVICE_ACCOUNT_TOKEN",
+        "/nonexistent-op-binary-xyz",
+        true,
+        300.0,
+        None,
+    );
+    assert!(result
+        .skipped
+        .contains(&"OP_SERVICE_ACCOUNT_TOKEN".to_string()));
+    assert!(!result.skipped.contains(&"MY_KEY".to_string()));
+    assert!(result.error.is_some(), "pinned-missing binary errors");
+}
+
+#[test]
 fn fetch_reports_missing_env_map_as_not_configured() {
     let source = OnePasswordSource;
     let result = source.fetch(&json!({"enabled": true}), std::path::Path::new("/tmp"));
