@@ -291,9 +291,10 @@ Unit 1/6: `token_auth` partial → done @ 5d59366 (96 LOC,
 red-green-proven `catch_unwind`, 14/14 tests). Unit 2/6: `ws_tickets`
 partial → done @ 5d59366 (97 LOC, 9 oracle tests incl. concurrency,
 14/14). Unit 3/6: `registry` partial → done @ 5d59366 (full scoped
-port, 3 oracle tests, 8+14 green). **Ledger: 152/45/8698 (1.71%
-tracked, 4.37% prod).** Next: prefix → base/cookies/native_flow →
-missing HTTP siblings → __init__ close.
+port, 3 oracle tests, 8+14 green). Unit 4/6: `prefix` partial →
+done @ 5d59366 (130 LOC, urlparse-IPv6 fix red-green, 12/12).
+**Ledger: 153/44/8698 (1.72% tracked, 4.40% prod).** Next:
+base/cookies/native_flow → missing HTTP siblings → __init__ close.
 
 ## Jev god-tier pass landed (2026-09-20)
 

@@ -3580,3 +3580,14 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   Validation: 8 + 14 passed serial; fmt + diff-check clean. Ledger:
   152 done / 45 partial / 8698 missing tracked (1.71%), prod
   152/45/3284 (4.37%). Evidence tier: unit.
+
+- 2026-09-21 (dashboard-auth-4): `hermes_cli.dashboard_auth.prefix`
+  partial → done @ 5d59366 (whole module, 130 LOC, line-by-line).
+  Found + fixed a urlparse divergence: Rust accepted `http://[::1`
+  (unmatched bracket) where `urlparse` raises ValueError → upstream
+  rejects. Fix proven red-green; 9-case bracket matrix verified
+  against live Python incl. userinfo+IPv6. 4 new oracle tests (HA
+  ingress, overlong, IPv6, scheme case). Validation: 12 passed,
+  0 failed; fmt + diff-check clean. Ledger: 153 done / 44 partial /
+  8698 missing tracked (1.72%), prod 153/44/3284 (4.40%). Evidence
+  tier: unit.

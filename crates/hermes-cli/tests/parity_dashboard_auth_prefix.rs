@@ -1,7 +1,8 @@
 //! Parity tests for `hermes_cli/dashboard_auth/{public_paths,prefix}.py`
-//! @ b9aa928. Upstream has no dedicated test files (missing-test gap,
-//! noted in the ledger); cases derive from the upstream code as oracle.
-//! Env tests serialize behind a mutex per the workspace convention.
+//! @ 5d59366. Prefix-normalisation and public-URL oracle cases mirror
+//! `tests/hermes_cli/test_dashboard_auth_prefix.py` (the gate/cookie
+//! HTTP cases belong to the web-server surface); env tests serialize
+//! behind a mutex per the workspace convention.
 
 use std::sync::Mutex;
 
@@ -147,4 +148,63 @@ fn resolve_without_config_is_env_only() {
     // config.yaml leg is the PENDING hermes_cli.config seam — env-only
     // resolution.
     assert_eq!(resolve_public_url(), "");
+}
+
+/// PARITY: `TestForwardedPrefixNormalisation::
+/// test_home_assistant_ingress_prefix_with_subpath_is_accepted` — HA
+/// Supervisor ingress prefixes are 63+ chars before add-ons append
+/// their own mount path; they must survive validation.
+#[test]
+fn ha_ingress_prefix_with_subpath_accepted() {
+    let prefix = "/api/hassio_ingress/8AbCdEfGhIjKlMnOpQrStUvWxYz0123456789AbCdEf/dashboard";
+    assert!(prefix.len() > 64);
+    assert_eq!(normalise_prefix(Some(prefix)), prefix);
+}
+
+/// PARITY: `TestForwardedPrefixNormalisation::
+/// test_overlong_prefix_is_rejected_with_deduplicated_warning` — the
+/// return shape (dedup is log-side, asserted upstream via caplog).
+#[test]
+fn overlong_prefix_rejected() {
+    let too_long = format!("/{}", "a".repeat(257));
+    for _ in 0..3 {
+        assert_eq!(normalise_prefix(Some(&too_long)), "");
+    }
+}
+
+/// PARITY: `urllib.parse.urlparse` rejects malformed IPv6 (`ValueError`
+/// → `""`). A public URL with an unmatched bracket is malformed, not
+/// a host.
+#[test]
+fn public_url_malformed_ipv6_rejected() {
+    let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    unsafe { std::env::set_var("HERMES_DASHBOARD_PUBLIC_URL", "http://[::1") };
+    assert_eq!(resolve_public_url_with(None), "");
+    // Matched brackets are a valid host and survive.
+    unsafe { std::env::set_var("HERMES_DASHBOARD_PUBLIC_URL", "http://[::1]/x") };
+    assert_eq!(resolve_public_url_with(None), "http://[::1]/x");
+    // Brackets rejected exactly like urlparse: stray closers, stray
+    // openers, empty/single-char hosts; userinfo + IPv6 is fine.
+    for bad in [
+        "http://example.com]/x",
+        "http://exa[mple.com/",
+        "http://[]/x",
+        "http://[a]/x",
+    ] {
+        unsafe { std::env::set_var("HERMES_DASHBOARD_PUBLIC_URL", bad) };
+        assert_eq!(resolve_public_url_with(None), "", "reject {bad}");
+    }
+    unsafe { std::env::set_var("HERMES_DASHBOARD_PUBLIC_URL", "http://user@[::1]/") };
+    assert_eq!(resolve_public_url_with(None), "http://user@[::1]");
+    unsafe { std::env::remove_var("HERMES_DASHBOARD_PUBLIC_URL") };
+}
+
+/// PARITY: scheme comparison is case-insensitive (urlparse lowercases
+/// the scheme) while the netloc keeps its case.
+#[test]
+fn public_url_scheme_case_insensitive() {
+    let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    unsafe { std::env::set_var("HERMES_DASHBOARD_PUBLIC_URL", "HTTP://EXAMPLE.COM/x") };
+    assert_eq!(resolve_public_url_with(None), "HTTP://EXAMPLE.COM/x");
+    unsafe { std::env::remove_var("HERMES_DASHBOARD_PUBLIC_URL") };
 }

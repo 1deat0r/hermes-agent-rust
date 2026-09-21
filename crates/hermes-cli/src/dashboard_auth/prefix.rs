@@ -1,7 +1,7 @@
 //! Helpers for X-Forwarded-Prefix support and the operator-declared
 //! public URL.
 //!
-//! PARITY: `hermes_cli/dashboard_auth/prefix.py` @ b9aa928 (whole module).
+//! PARITY: `hermes_cli/dashboard_auth/prefix.py` @ 5d59366 (whole module, 130 lines).
 //!
 //! Mission-control style deploys reverse-proxy the dashboard at a path
 //! prefix, injecting `X-Forwarded-Prefix: /hermes` so the backend can
@@ -26,12 +26,12 @@ use std::sync::Mutex;
 /// deployments add their own sub-path. Bounded header budget, with room
 /// for mainstream reverse-proxy path mounts.
 ///
-/// PARITY: `_MAX_PREFIX_LENGTH` (upstream line 26).
+/// PARITY: `_MAX_PREFIX_LENGTH` (upstream line 21).
 const MAX_PREFIX_LENGTH: usize = 256;
 
 /// Characters that indicate a typo or a header-injection attempt; the
 /// whole value is rejected rather than sanitised.
-/// PARITY: `_REJECT_CHARS` (upstream line 29).
+/// PARITY: `_REJECT_CHARS` (upstream line 24).
 const REJECT_CHARS: [char; 8] = ['"', '\'', '<', '>', ' ', '\n', '\r', '\t'];
 
 /// Which (source, value) pairs we've already warned about —
@@ -48,7 +48,7 @@ static WARNED_MALFORMED_PREFIXES: Lazy<Mutex<HashSet<(String, String)>>> =
 /// cause of "I set HERMES_DASHBOARD_PUBLIC_URL but the OAuth callback is
 /// still http://".
 ///
-/// PARITY: `_warn_if_malformed` (upstream lines 44-73); the message text
+/// PARITY: `_warn_if_malformed` (upstream lines 38-49); the message text
 /// is preserved verbatim so operator greps still match.
 fn warn_if_malformed(source: &str, raw: &str) {
     let cleaned = raw.trim();
@@ -82,7 +82,7 @@ fn warn_if_malformed(source: &str, raw: &str) {
 
 /// Warn once when a non-empty X-Forwarded-Prefix value is rejected.
 ///
-/// PARITY: `_warn_if_malformed_prefix` (upstream lines 76-89).
+/// PARITY: `_warn_if_malformed_prefix` (upstream lines 52-58).
 fn warn_if_malformed_prefix(raw: &str, reason: &str) {
     let cleaned = raw.trim();
     if cleaned.is_empty() {
@@ -111,7 +111,7 @@ fn warn_if_malformed_prefix(raw: &str, reason: &str) {
 /// characters is rejected so a hostile proxy can't inject HTML or
 /// path-traversal sequences via the prefix.
 ///
-/// PARITY: `normalise_prefix` (upstream lines 92-124).
+/// PARITY: `normalise_prefix` (upstream lines 61-76).
 pub fn normalise_prefix(raw: Option<&str>) -> String {
     let Some(raw) = raw else {
         return String::new();
@@ -148,7 +148,7 @@ pub fn normalise_prefix(raw: Option<&str>) -> String {
 /// "fall back to request reconstruction" — never as "the user explicitly
 /// chose no public URL".
 ///
-/// PARITY: `_normalise_public_url` (upstream lines 128-166).
+/// PARITY: `_normalise_public_url` (upstream lines 86-98).
 fn normalise_public_url(raw: Option<&str>) -> String {
     let Some(raw) = raw else {
         return String::new();
@@ -173,6 +173,20 @@ fn normalise_public_url(raw: Option<&str>) -> String {
     let netloc = rest.split(['/', '?', '#']).next().unwrap_or("");
     if netloc.is_empty() {
         return String::new();
+    }
+    // `urllib.parse.urlparse` raises ValueError on a malformed
+    // bracketed host (invalid IPv6) → upstream rejects the whole value.
+    // Mirror that on the host part (after userinfo): a bracketed host
+    // must open and close around at least one char.
+    let host = netloc.rsplit('@').next().unwrap_or("");
+    if host.contains('[') || host.contains(']') {
+        let bracketed = host.split(']').next().unwrap_or("");
+        if !(host.starts_with('[') && host.contains(']'))
+            || !bracketed.starts_with('[')
+            || bracketed.len() < 3
+        {
+            return String::new();
+        }
     }
     // Strip a single trailing slash so callers can append paths without
     // producing `//` double-slashes.
@@ -213,7 +227,7 @@ pub fn resolve_public_url_with(dashboard_section: Option<&Value>) -> String {
 /// config entry falls through to `""` — a typo in one surface doesn't
 /// prevent the other from working.
 ///
-/// PARITY: `resolve_public_url` (upstream lines 190-221), with the
+/// PARITY: `resolve_public_url` (upstream lines 117-130), with the
 /// config.yaml leg currently resolving to empty (PENDING
 /// `hermes_cli.config`).
 pub fn resolve_public_url() -> String {

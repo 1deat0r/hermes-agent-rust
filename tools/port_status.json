@@ -270,8 +270,8 @@
     "status": "partial"
   },
   "hermes_cli.dashboard_auth.prefix": {
-    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (232 -> 130 LOC); re-certify line-by-line before promoting",
-    "status": "partial"
+    "retarget_note": "re-certified at 5d59366 (2026-09-21): whole module line-by-line (130 LOC); fixed urlparse-IPv6 divergence (red-green oracle test, 9-case matrix incl. userinfo); 4 new oracle tests; header re-pinned with exact lines",
+    "status": "done"
   },
   "hermes_cli.dashboard_auth.public_paths": {
     "retarget_note": "re-certified at 5d59366 (2026-09-16, R1-adjudicated): raw-AST delta is redundant-pass removal in docstring-only bodies only (behavior-neutral); existing parity tests re-run green",
