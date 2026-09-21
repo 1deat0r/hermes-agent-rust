@@ -186,10 +186,11 @@ fn export_batch_without_a_sink_creates_nothing() {
 }
 
 #[test]
-fn a_panic_in_the_sink_is_fail_isolated() {
+fn a_panic_in_the_sink_is_fail_isolated_and_uncounted() {
+    // PARITY @ 5d59366 (`export_batch` lines 198-208): `n += 1` sits
+    // INSIDE the try — panicking maps contribute nothing but a debug
+    // log, and the panic never propagates.
     let boom = |_batch: &[Value]| panic!("collector down");
-    // `export_batch` must not propagate the panic; count still reflects the
-    // attempted maps (per-event try arm).
     let created = export_batch(
         Some(&boom),
         &[
@@ -197,5 +198,100 @@ fn a_panic_in_the_sink_is_fail_isolated() {
             json!({"event": "gateway_health"}),
         ],
     );
-    assert_eq!(created, 2);
+    assert_eq!(created, 0);
+    // Mixed batch: only the successful map counts.
+    let calls = std::sync::Arc::new(std::sync::Mutex::new(0usize));
+    let calls_cb = std::sync::Arc::clone(&calls);
+    let flaky = move |_batch: &[Value]| {
+        let mut n = calls_cb.lock().unwrap_or_else(|e| e.into_inner()); // poisoned by the first panic
+        *n += 1;
+        if *n == 1 {
+            panic!("first span fails");
+        }
+    };
+    let created = export_batch(
+        Some(&flaky),
+        &[
+            json!({"event": "gateway_health"}),
+            json!({"event": "gateway_health"}),
+        ],
+    );
+    assert_eq!(created, 1);
+}
+
+// ── signal endpoint rewrite ────────────────────────────────────────────
+
+#[test]
+fn signal_endpoint_rewrites_traces_and_metrics_paths() {
+    use hermes_agent::monitoring::otlp_exporter::signal_endpoint;
+    assert_eq!(
+        signal_endpoint("http://collector:4318/v1/traces", "logs"),
+        "http://collector:4318/v1/logs"
+    );
+    assert_eq!(
+        signal_endpoint("http://collector:4318/v1/metrics", "logs"),
+        "http://collector:4318/v1/logs"
+    );
+    // Same-signal suffix is not "rewritten" (identity).
+    assert_eq!(
+        signal_endpoint("http://collector:4318/v1/traces", "traces"),
+        "http://collector:4318/v1/traces"
+    );
+    // Other paths pass through untouched.
+    assert_eq!(
+        signal_endpoint("http://collector:4318/custom/path", "logs"),
+        "http://collector:4318/custom/path"
+    );
+    assert_eq!(
+        signal_endpoint("http://collector:4318", "logs"),
+        "http://collector:4318"
+    );
+}
+
+// ── streaming lifecycle ────────────────────────────────────────────────
+
+#[test]
+fn streamer_pushes_filtered_batches_and_detaches() {
+    use hermes_agent::monitoring::emitter::get_emitter;
+    use hermes_agent::monitoring::events::{GatewayDiagnosticEvent, GatewayHealthEvent};
+    use hermes_agent::monitoring::otlp_exporter::start_streaming;
+    use std::sync::{Arc, Mutex};
+    let seen: Arc<Mutex<Vec<Value>>> = Arc::default();
+    let seen_cb = Arc::clone(&seen);
+    let sink: Arc<hermes_agent::monitoring::otlp_exporter::SpanSink> =
+        Arc::new(move |batch: &[Value]| {
+            seen_cb.lock().unwrap().extend(batch.iter().cloned());
+        });
+    let config =
+        json!({"monitoring": {"export": {"otlp": {"enabled": true, "endpoint": "http://x:4318"}}}});
+    let filter: Arc<dyn Fn(&Value) -> bool + Send + Sync> =
+        Arc::new(|ev: &Value| ev.get("event").and_then(Value::as_str) == Some("gateway_health"));
+    let streamer = start_streaming(Some(&config), Some(sink), Some(filter)).expect("streamer");
+    // Through the live emitter: health passes the filter, diagnostic does not.
+    get_emitter().emit(&GatewayHealthEvent::new());
+    get_emitter().emit(&GatewayDiagnosticEvent::new("broker", "otlp"));
+    get_emitter().flush(2.0);
+    assert_eq!(streamer.exported(), 1);
+    assert_eq!(seen.lock().unwrap().len(), 1);
+    // Detach: further emits never reach the sink (idempotent shutdown).
+    streamer.shutdown();
+    streamer.shutdown();
+    get_emitter().emit(&GatewayHealthEvent::new());
+    get_emitter().flush(2.0);
+    assert_eq!(streamer.exported(), 1);
+    assert_eq!(seen.lock().unwrap().len(), 1);
+}
+
+#[test]
+fn start_streaming_noops_without_config_or_sink() {
+    use hermes_agent::monitoring::otlp_exporter::start_streaming;
+    let config =
+        json!({"monitoring": {"export": {"otlp": {"enabled": true, "endpoint": "http://x:4318"}}}});
+    assert!(start_streaming(None, None, None).is_none());
+    assert!(
+        start_streaming(Some(&config), None, None).is_none(),
+        "no sink → warn + no-op"
+    );
+    let off = json!({"monitoring": {"export": {"otlp": {"enabled": false, "endpoint": "http://x:4318"}}}});
+    assert!(start_streaming(Some(&off), None, None).is_none());
 }

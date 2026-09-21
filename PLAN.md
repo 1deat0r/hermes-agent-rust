@@ -3754,3 +3754,12 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   passed; warnings steady (30 = HEAD); fmt + diff-check clean.
   Ledger: 172 done / 30 partial / 8693 missing tracked (1.93%),
   prod 172/30/3279 (4.94%). Evidence tier: unit.
+
+- 2026-09-21 (monitor-otlp): `agent.monitoring.otlp_exporter`
+  partial → done @ 5d59366 (whole module, 283 LOC, line-by-line).
+  Fixed export_batch counting panics as created (oracle: n+=1 inside
+  try); added signal_endpoint, safe resource builder reuse note,
+  OtlpStreamer lifecycle + start_streaming over the sink seam.
+  4 new oracle tests. Validation: 11 passed; fmt + diff-check clean.
+  Ledger: 173 done / 29 partial / 8693 missing tracked (1.94%),
+  prod 173/29/3279 (4.97%). Evidence tier: unit.
