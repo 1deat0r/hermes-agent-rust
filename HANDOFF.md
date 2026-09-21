@@ -285,6 +285,12 @@ Next: Wave B6 remainder in smallest-LOC order — `token_auth` (96),
 missing HTTP siblings (middleware/routes/login_page/request_utils/
 refresh_singleflight) to close `dashboard_auth.__init__`.
 
+## tools.mcp_dashboard_oauth done (2026-09-21)
+
+Partial → done @ 5d59366 (140 LOC; iss carry-through + parse_qs-exact
+state parse, 3 oracle tests, 14/14).
+**Ledger: 163/39/8693 (1.83% tracked, 4.69% prod).**
+
 ## dashboard_auth package CLOSED (2026-09-21)
 
 Unit 1: `token_auth` partial → done (96 LOC, red-green `catch_unwind`,

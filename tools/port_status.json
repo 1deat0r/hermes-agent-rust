@@ -700,8 +700,8 @@
     "status": "done"
   },
   "tools.mcp_dashboard_oauth": {
-    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (145 -> 140 LOC); re-certify line-by-line before promoting",
-    "status": "partial"
+    "retarget_note": "re-certified at 5d59366 (2026-09-21): whole module line-by-line (140 LOC); added iss carry-through (was dropped), parse_qs-exact state parse (blank\u2192missing, %XX/+, first-wins \u2014 6 probes vs live Python); 3 new oracle tests; header re-pinned",
+    "status": "done"
   },
   "tools.mcp_death_supervisor": {
     "retarget_note": "re-certified autonomous: docstring-only drift; suites green",

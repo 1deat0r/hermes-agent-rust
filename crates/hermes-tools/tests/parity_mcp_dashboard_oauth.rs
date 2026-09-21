@@ -1,6 +1,7 @@
-//! Parity tests for `tools/mcp_dashboard_oauth.py` @ b9aa928. Upstream has
-//! no dedicated test file (missing-test gap, noted in the ledger); cases
-//! derive from the upstream code as oracle.
+//! Parity tests for `tools/mcp_dashboard_oauth.py` @ 5d59366 (whole
+//! module, 140 lines). Upstream has no dedicated test file
+//! (missing-test gap, noted in the ledger); cases derive from the
+//! upstream code as oracle.
 
 use std::sync::Arc;
 
@@ -64,15 +65,15 @@ fn callback_round_trip_with_state_validation() {
     let flow = make_flow();
     flow.publish_authorization_url("https://idp?state=expected")
         .unwrap();
-    flow.deliver_callback(Some("the-code"), Some("expected"), None)
+    flow.deliver_callback(Some("the-code"), Some("expected"), None, None)
         .unwrap();
-    let (code, state) = flow.wait_for_callback(1.0).unwrap();
+    let (code, state, iss) = flow.wait_for_callback(1.0).unwrap();
     assert_eq!(code, "the-code");
     assert_eq!(state.as_deref(), Some("expected"));
 
     // Second callback rejected ("already received").
     assert_eq!(
-        flow.deliver_callback(Some("c2"), Some("expected"), None),
+        flow.deliver_callback(Some("c2"), Some("expected"), None, None),
         Err(FlowError::CallbackAlreadyReceived)
     );
 }
@@ -83,12 +84,12 @@ fn state_mismatch_is_rejected() {
     flow.publish_authorization_url("https://idp?state=expected")
         .unwrap();
     assert_eq!(
-        flow.deliver_callback(Some("code"), Some("tampered"), None),
+        flow.deliver_callback(Some("code"), Some("tampered"), None, None),
         Err(FlowError::StateMismatch)
     );
     // None state with a pinned expectation also mismatches.
     assert_eq!(
-        flow.deliver_callback(Some("code"), None, None),
+        flow.deliver_callback(Some("code"), None, None, None),
         Err(FlowError::StateMismatch)
     );
 }
@@ -98,7 +99,7 @@ fn callback_error_surfaces_on_wait() {
     let flow = make_flow();
     flow.publish_authorization_url("https://idp?state=s")
         .unwrap();
-    flow.deliver_callback(None, Some("s"), Some("user_denied"))
+    flow.deliver_callback(None, Some("s"), Some("user_denied"), None)
         .unwrap();
     assert_eq!(
         flow.wait_for_callback(1.0),
@@ -111,7 +112,7 @@ fn neither_code_nor_error_is_an_error() {
     let flow = make_flow();
     flow.publish_authorization_url("https://idp?state=s")
         .unwrap();
-    flow.deliver_callback(None, Some("s"), None).unwrap();
+    flow.deliver_callback(None, Some("s"), None, None).unwrap();
     // wait_for_callback wraps the stored error in the
     // "OAuth authorization failed" raise.
     assert_eq!(
@@ -162,6 +163,50 @@ fn worker_done_flag_and_thread_local_flow() {
     }
     // Outside the guard the slot is empty (context-manager reset).
     assert!(get_dashboard_oauth_flow().is_none());
+}
+
+#[test]
+fn iss_carried_through_the_redeemed_triple() {
+    // `iss` (RFC 9207) rides the callback into the redeemed triple for
+    // `tools.mcp_oauth._parse_redirect_query`; absent iss stays None.
+    let flow = make_flow();
+    flow.publish_authorization_url("https://idp?state=s")
+        .unwrap();
+    flow.deliver_callback(
+        Some("code"),
+        Some("s"),
+        None,
+        Some("https://issuer.example"),
+    )
+    .unwrap();
+    let (code, state, iss) = flow.wait_for_callback(1.0).unwrap();
+    assert_eq!(code, "code");
+    assert_eq!(state.as_deref(), Some("s"));
+    assert_eq!(iss.as_deref(), Some("https://issuer.example"));
+}
+
+#[test]
+fn blank_state_reads_as_missing() {
+    // `parse_qs` drops blank values: `?state=` pins nothing and the
+    // publish is rejected, exactly like a missing state.
+    let flow = make_flow();
+    assert_eq!(
+        flow.publish_authorization_url("https://idp/authorize?state="),
+        Err(FlowError::MissingState)
+    );
+}
+
+#[test]
+fn state_value_decodes_like_parse_qs() {
+    // Percent-decoding + `+`-as-space, matching `parse_qs` on the
+    // authorization URL.
+    let flow = make_flow();
+    flow.publish_authorization_url("https://idp?state=a%20b%2Bc")
+        .unwrap();
+    flow.deliver_callback(Some("code"), Some("a b+c"), None, None)
+        .unwrap();
+    let (_, state, _) = flow.wait_for_callback(1.0).unwrap();
+    assert_eq!(state.as_deref(), Some("a b+c"));
 }
 
 #[test]

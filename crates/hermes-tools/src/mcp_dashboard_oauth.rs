@@ -1,6 +1,9 @@
 //! Dashboard-mediated callback bridge for MCP OAuth.
 //!
-//! PARITY: `tools/mcp_dashboard_oauth.py` @ b9aa928 (whole module).
+//! PARITY: `tools/mcp_dashboard_oauth.py` @ 5d59366 (whole module,
+//! 140 lines). `iss` (RFC 9207) rides the callback into the redeemed
+//! triple; blank `state` reads as missing and `%XX`/`+` decode exactly
+//! like `parse_qs` (verified against live Python on 6 probes).
 //!
 //! The MCP SDK remains responsible for discovery, DCR, PKCE, state
 //! validation and token exchange. This module only moves the two
@@ -104,7 +107,7 @@ pub enum FlowError {
 
 struct Inner {
     expected_state: Option<String>,
-    callback: Option<(String, Option<String>)>,
+    callback: Option<(String, Option<String>, Option<String>)>,
     callback_error: Option<String>,
     authorization_ready: bool,
     callback_ready: bool,
@@ -199,12 +202,16 @@ impl DashboardOAuthFlowHandle {
 
     /// Deliver the browser callback (code / state / error triple).
     ///
-    /// PARITY: `deliver_callback` (upstream lines 88-107).
+    /// `iss` (RFC 9207) is carried through into the redeemed triple —
+    /// see `tools.mcp_oauth._parse_redirect_query` upstream.
+    ///
+    /// PARITY: `deliver_callback` (upstream lines 73-91).
     pub fn deliver_callback(
         &self,
         code: Option<&str>,
         state: Option<&str>,
         error: Option<&str>,
+        iss: Option<&str>,
     ) -> Result<(), FlowError> {
         let mut inner = self.inner.lock().unwrap_or_else(|e| e.into_inner());
         if inner.callback_ready {
@@ -222,7 +229,11 @@ impl DashboardOAuthFlowHandle {
         if let Some(error) = error {
             inner.callback_error = Some(error.to_string());
         } else if let Some(code) = code {
-            inner.callback = Some((code.to_string(), state.map(str::to_string)));
+            inner.callback = Some((
+                code.to_string(),
+                state.map(str::to_string),
+                iss.map(str::to_string),
+            ));
         } else {
             inner.callback_error = Some("OAuth callback did not include code or error".to_string());
         }
@@ -231,10 +242,13 @@ impl DashboardOAuthFlowHandle {
         Ok(())
     }
 
-    /// Wait boundedly for the callback and return `(code, state)`.
+    /// Wait boundedly for the callback and return `(code, state, iss)`.
     ///
-    /// PARITY: `wait_for_callback` (upstream lines 109-119).
-    pub fn wait_for_callback(&self, timeout: f64) -> Result<(String, Option<String>), FlowError> {
+    /// PARITY: `wait_for_callback` (upstream lines 93-100).
+    pub fn wait_for_callback(
+        &self,
+        timeout: f64,
+    ) -> Result<(String, Option<String>, Option<String>), FlowError> {
         let deadline = std::time::Instant::now() + Duration::from_secs_f64(timeout);
         let mut inner = self.inner.lock().unwrap_or_else(|e| e.into_inner());
         while !inner.callback_ready {
@@ -347,14 +361,52 @@ fn constant_time_eq(a: &str, b: &str) -> bool {
 
 /// `parse_qs(urlparse(url).query).get("state", [None])[0]` — the first
 /// `state` value, or None.
-fn parse_query_param<'a>(url: &'a str, key: &str) -> Option<String> {
+///
+/// `parse_qs` drops blank values and percent-decodes (`+` → space), so
+/// `?state=` reads as missing and `%XX` sequences decode. Both are
+/// matched here.
+fn parse_query_param(url: &str, key: &str) -> Option<String> {
     let query = url.split_once('?')?.1.split('#').next()?;
-    let mut values: VecDeque<&str> = VecDeque::new();
+    let mut values: VecDeque<String> = VecDeque::new();
     for pair in query.split('&') {
         let (k, v) = pair.split_once('=')?;
-        if k == key {
-            values.push_back(v);
+        if k == key && !v.is_empty() {
+            values.push_back(percent_decode(v));
         }
     }
-    values.pop_front().map(|v| v.to_string())
+    values.pop_front()
+}
+
+fn percent_decode(raw: &str) -> String {
+    let bytes = raw.as_bytes();
+    let mut out: Vec<u8> = Vec::with_capacity(bytes.len());
+    let mut i = 0;
+    while i < bytes.len() {
+        if bytes[i] == b'+' {
+            out.push(b' ');
+            i += 1;
+            continue;
+        }
+        if bytes[i] == b'%' && i + 2 < bytes.len() + 1 {
+            let h = hex_val(bytes.get(i + 1).copied().unwrap_or(0));
+            let l = hex_val(bytes.get(i + 2).copied().unwrap_or(0));
+            if let (Some(h), Some(l)) = (h, l) {
+                out.push(h * 16 + l);
+                i += 3;
+                continue;
+            }
+        }
+        out.push(bytes[i]);
+        i += 1;
+    }
+    String::from_utf8_lossy(&out).into_owned()
+}
+
+fn hex_val(b: u8) -> Option<u8> {
+    match b {
+        b'0'..=b'9' => Some(b - b'0'),
+        b'a'..=b'f' => Some(b - b'a' + 10),
+        b'A'..=b'F' => Some(b - b'A' + 10),
+        _ => None,
+    }
 }

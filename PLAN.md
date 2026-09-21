@@ -3642,3 +3642,12 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   0 failed; fmt + diff-check clean. Ledger: 162 done / 40 partial /
   8693 missing tracked (1.82%), prod 162/40/3279 (4.66%). Evidence
   tier: unit.
+
+- 2026-09-21 (tools-oauth): `tools.mcp_dashboard_oauth` partial →
+  done @ 5d59366 (whole module, 140 LOC, line-by-line). Fixed two
+  divergences: `iss` (RFC 9207) was dropped from the callback triple;
+  state parse rejected nothing — now parse_qs-exact (blank→missing,
+  %XX/+, first-wins, 6 probes vs live Python). 3 new oracle tests.
+  Validation: 14 passed, 0 failed; fmt + diff-check clean. Ledger:
+  163 done / 39 partial / 8693 missing tracked (1.83%), prod
+  163/39/3279 (4.69%). Evidence tier: unit.
