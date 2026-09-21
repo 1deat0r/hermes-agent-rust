@@ -1,7 +1,7 @@
 //! Cookie helpers for dashboard auth.
 //!
-//! PARITY: `hermes_cli/dashboard_auth/cookies.py` @ b9aa928 (whole
-//! module). The FastAPI `Response`/`Request` seams become a
+//! PARITY: `hermes_cli/dashboard_auth/cookies.py` @ 5d59366 (whole
+//! module, 222 lines). The FastAPI `Response`/`Request` seams become a
 //! [`SetCookie`] directive list (the setter output) and a cookie-lookup
 //! closure (the reader input); every name/attribute decision is identical.
 //!
@@ -52,18 +52,18 @@ pub const PKCE_COOKIE: &str = "hermes_session_pkce";
 pub const SSO_ATTEMPT_COOKIE: &str = "hermes_sso_attempt";
 
 /// Possible name variants to read back. Most-strict wins on iteration.
-/// PARITY: `_NAME_VARIANTS` (upstream line 88).
+/// PARITY: `_NAME_VARIANTS` (upstream line 34).
 pub const NAME_VARIANTS: [&str; 3] = ["__Host-", "__Secure-", ""];
 
 /// RT cookie Max-Age: 30 days as a generous upper bound on the browser
 /// lifetime; the upstream rotating-RT TTL (24h) is the real authority.
-/// PARITY: `_RT_MAX_AGE` (upstream line 98).
+/// PARITY: `_RT_MAX_AGE` (upstream line 38).
 pub const RT_MAX_AGE: i64 = 30 * 24 * 60 * 60;
-/// PARITY: `_PKCE_MAX_AGE` (upstream line 99).
+/// PARITY: `_PKCE_MAX_AGE` (upstream line 39).
 pub const PKCE_MAX_AGE: i64 = 10 * 60;
 /// Auto-SSO loop-guard marker TTL: one redirect round trip, plus slack for
 /// a slow portal hop or a manual back-button.
-/// PARITY: `_SSO_ATTEMPT_MAX_AGE` (upstream line 106).
+/// PARITY: `_SSO_ATTEMPT_MAX_AGE` (upstream line 42).
 pub const SSO_ATTEMPT_MAX_AGE: i64 = 60;
 
 /// One Set-Cookie directive (the transport-agnostic stand-in for
@@ -87,7 +87,7 @@ pub type CookieLookup<'a> = &'a dyn Fn(&str) -> Option<String>;
 /// Mismatch between setter and reader would silently break sessions, so
 /// this function is the single source of truth for naming.
 ///
-/// PARITY: `_resolved_name` (upstream lines 114-128).
+/// PARITY: `_resolved_name` (upstream lines 47-51).
 pub fn resolved_name(bare: &str, use_https: bool, prefix: &str) -> String {
     if !use_https {
         return bare.to_string();
@@ -104,7 +104,7 @@ pub fn resolved_name(bare: &str, use_https: bool, prefix: &str) -> String {
 /// and it doesn't leak to sibling apps on the same origin); direct-deploy
 /// gets `Path=/`.
 ///
-/// PARITY: `_cookie_path` (upstream lines 131-144).
+/// PARITY: `_cookie_path` (upstream lines 54-56).
 pub fn cookie_path(prefix: &str) -> String {
     if prefix.is_empty() {
         "/".to_string()
@@ -113,9 +113,25 @@ pub fn cookie_path(prefix: &str) -> String {
     }
 }
 
-/// PARITY: `_common_attrs` (upstream lines 147-154).
+/// PARITY: `_common_attrs` (upstream lines 59-63).
 fn common_attrs(use_https: bool, prefix: &str) -> (String, bool, String, bool) {
     (cookie_path(prefix), true, "lax".to_string(), use_https)
+}
+
+/// Attributes shared by the PKCE set AND clear paths — a shape mismatch
+/// means the browser silently keeps the stale cookie. SameSite=None over
+/// HTTPS (the PKCE cookie is set on the /auth/login 302 and must survive
+/// the cross-site IDP redirect chain; Chromium drops Lax cookies set on
+/// such a 302, crbug 40508226); Lax without Secure over HTTP (None
+/// requires Secure, which HTTP cannot carry).
+///
+/// PARITY: `_pkce_attrs` (upstream lines 66-72).
+fn pkce_attrs(use_https: bool, prefix: &str) -> (String, bool, String, bool) {
+    if use_https {
+        (cookie_path(prefix), true, "none".to_string(), true)
+    } else {
+        (cookie_path(prefix), true, "lax".to_string(), false)
+    }
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -139,9 +155,75 @@ fn set_cookie(
     });
 }
 
+/// Push one Set-Cookie directive with explicit attributes (the PKCE
+/// setter, whose shape differs from the common one).
+fn set_cookie_with(
+    out: &mut Vec<SetCookie>,
+    name: String,
+    value: &str,
+    max_age: i64,
+    path: String,
+    httponly: bool,
+    samesite: &str,
+    secure: bool,
+) {
+    out.push(SetCookie {
+        name,
+        value: value.to_string(),
+        max_age,
+        path,
+        httponly,
+        samesite: samesite.to_string(),
+        secure,
+    });
+}
+
+/// Emit Max-Age=0 deletions for every plausible name variant (the
+/// setting request's shape is unknown). Prefixed names are rejected by
+/// the browser unless they carry `Secure` (`__Host-` additionally
+/// requires `Path=/`), so those deletions always do; the bare deletion
+/// mirrors the setter's shape via `bare_samesite`/`bare_secure`, which
+/// works on both HTTP and HTTPS origins.
+///
+/// PARITY: `_clear_cookie_variants` (upstream lines 109-120).
+fn clear_cookie_variants(
+    out: &mut Vec<SetCookie>,
+    bare_name: &str,
+    prefix: &str,
+    https_samesite: &str,
+    bare_samesite: &str,
+    bare_secure: bool,
+) {
+    for (variant, path) in [
+        ("__Host-".to_string(), "/".to_string()),
+        ("__Secure-".to_string(), cookie_path(prefix)),
+    ] {
+        set_cookie_with(
+            out,
+            format!("{variant}{bare_name}"),
+            "",
+            0,
+            path,
+            true,
+            https_samesite,
+            true,
+        );
+    }
+    set_cookie_with(
+        out,
+        bare_name.to_string(),
+        "",
+        0,
+        cookie_path(prefix),
+        true,
+        bare_samesite,
+        bare_secure,
+    );
+}
+
 /// Persist the non-secret provider routing hint for token refresh.
 ///
-/// PARITY: `set_session_provider_cookie` (upstream lines 157-168).
+/// PARITY: `set_session_provider_cookie` (upstream lines 82-87).
 pub fn set_session_provider_cookie(
     out: &mut Vec<SetCookie>,
     provider: &str,
@@ -170,7 +252,7 @@ pub fn set_session_provider_cookie(
 /// surface at worst. `prefix` is the normalised X-Forwarded-Prefix value;
 /// it influences both the cookie name and the Path attribute.
 ///
-/// PARITY: `set_session_cookies` (upstream lines 171-217).
+/// PARITY: `set_session_cookies` (upstream lines 90-106).
 #[allow(clippy::too_many_arguments)]
 pub fn set_session_cookies(
     out: &mut Vec<SetCookie>,
@@ -203,60 +285,62 @@ pub fn set_session_cookies(
     set_session_provider_cookie(out, provider, use_https, prefix);
 }
 
-/// Emit Max-Age=0 deletions for both session cookies.
+/// Emit Max-Age=0 deletions for the AT, RT and provider cookies
+/// (every name variant, active path).
 ///
-/// The deletion's `Path` must match the set path AND the name must match
-/// the variant the setter used; we don't know which variant fired, so we
-/// emit deletions for every plausible variant under the active path.
-///
-/// PARITY: `clear_session_cookies` (upstream lines 220-241).
+/// PARITY: `clear_session_cookies` (upstream lines 123-128). The bare
+/// deletion mirrors the session setter (Lax, no Secure) so it still
+/// works on plain-HTTP origins; the prefixed deletions always carry
+/// Secure (browsers reject prefixed Set-Cookie otherwise, and the
+/// session would survive logout on HTTPS origins).
 pub fn clear_session_cookies(out: &mut Vec<SetCookie>, prefix: &str) {
-    let path = cookie_path(prefix);
-    for variant in NAME_VARIANTS {
-        for bare in [
-            SESSION_AT_COOKIE,
-            SESSION_RT_COOKIE,
-            SESSION_PROVIDER_COOKIE,
-        ] {
-            out.push(SetCookie {
-                name: format!("{variant}{bare}"),
-                value: String::new(),
-                max_age: 0,
-                path: path.clone(),
-                httponly: true,
-                samesite: "lax".to_string(),
-                secure: false,
-            });
-        }
+    for bare in [
+        SESSION_AT_COOKIE,
+        SESSION_RT_COOKIE,
+        SESSION_PROVIDER_COOKIE,
+    ] {
+        clear_cookie_variants(out, bare, prefix, "lax", "lax", false);
     }
 }
 
-/// PARITY: `set_pkce_cookie` (upstream lines 244-251).
-pub fn set_pkce_cookie(out: &mut Vec<SetCookie>, payload: &str, use_https: bool, prefix: &str) {
-    set_cookie(
+/// Set the PKCE cookie (payload segment dict, encoded via
+/// [`encode_pkce_payload`]).
+///
+/// PARITY: `set_pkce_cookie` (upstream lines 140-144).
+pub fn set_pkce_cookie(
+    out: &mut Vec<SetCookie>,
+    payload: &std::collections::HashMap<String, String>,
+    use_https: bool,
+    prefix: &str,
+) {
+    let (path, httponly, samesite, secure) = pkce_attrs(use_https, prefix);
+    set_cookie_with(
         out,
         resolved_name(PKCE_COOKIE, use_https, prefix),
-        payload,
+        &encode_pkce_payload(payload),
         PKCE_MAX_AGE,
-        use_https,
-        prefix,
+        path,
+        httponly,
+        &samesite,
+        secure,
     );
 }
 
-/// PARITY: `clear_pkce_cookie` (upstream lines 254-263).
-pub fn clear_pkce_cookie(out: &mut Vec<SetCookie>, prefix: &str) {
-    let path = cookie_path(prefix);
-    for variant in NAME_VARIANTS {
-        out.push(SetCookie {
-            name: format!("{variant}{PKCE_COOKIE}"),
-            value: String::new(),
-            max_age: 0,
-            path: path.clone(),
-            httponly: true,
-            samesite: "lax".to_string(),
-            secure: false,
-        });
-    }
+/// Delete every PKCE cookie variant (prefixed ones carry
+/// `Secure; SameSite=None`, matching the HTTPS setter so the browser
+/// honours the deletion for whichever variant was actually set).
+///
+/// PARITY: `clear_pkce_cookie` (upstream lines 147-151).
+pub fn clear_pkce_cookie(out: &mut Vec<SetCookie>, use_https: bool, prefix: &str) {
+    let (_, _, bare_samesite, bare_secure) = pkce_attrs(use_https, prefix);
+    clear_cookie_variants(
+        out,
+        PKCE_COOKIE,
+        prefix,
+        "none",
+        &bare_samesite,
+        bare_secure,
+    );
 }
 
 /// Read a cookie by checking every prefix variant in order — the request
@@ -321,19 +405,10 @@ pub fn read_sso_attempt_cookie(lookup: CookieLookup<'_>) -> Option<String> {
 /// Called on a successful callback and whenever the gate falls back to
 /// /login.
 ///
-/// PARITY: `clear_sso_attempt_cookie` (upstream lines 320-331).
+/// PARITY: `clear_sso_attempt_cookie` (upstream lines 213-217).
 pub fn clear_sso_attempt_cookie(out: &mut Vec<SetCookie>, prefix: &str) {
-    let path = cookie_path(prefix);
-    for variant in NAME_VARIANTS {
-        out.push(SetCookie {
-            name: format!("{variant}{SSO_ATTEMPT_COOKIE}"),
-            value: String::new(),
-            max_age: 0,
-            path: path.clone(),
-            httponly: true,
-            samesite: "lax".to_string(),
-            secure: false,
-        });
+    for bare in [SSO_ATTEMPT_COOKIE] {
+        clear_cookie_variants(out, bare, prefix, "lax", "lax", false);
     }
 }
 
@@ -341,9 +416,109 @@ pub fn clear_sso_attempt_cookie(out: &mut Vec<SetCookie>, prefix: &str) {
 /// request URL scheme is https (which honours X-Forwarded-Proto under a
 /// proxy-headers-enabled server).
 ///
-/// PARITY: `detect_https` (upstream lines 334-341).
+/// PARITY: `detect_https` (upstream lines 220-222).
 pub fn detect_https(request_scheme: Option<&str>) -> bool {
     request_scheme == Some("https")
+}
+
+/// Wire value `base64url(JSON)`, no padding. The urlsafe alphabet is a
+/// strict subset of RFC 6265 cookie-octets, so strict proxies (Go
+/// net/http) never quote it; padding `=` would trigger quoting, the
+/// parser restores it.
+///
+/// PARITY: `encode_pkce_payload` (upstream lines 131-137). Keys sort
+/// via `BTreeMap` (`sort_keys=True`); `serde_json::to_string` emits the
+/// compact `,`/`:` separators.
+pub fn encode_pkce_payload(parts: &std::collections::HashMap<String, String>) -> String {
+    let ordered: std::collections::BTreeMap<&String, &String> = parts.iter().collect();
+    let raw = serde_json::to_string(&ordered).expect("segment map serializes");
+    base64_urlsafe_nopad(raw.as_bytes())
+}
+
+fn base64_urlsafe_nopad(input: &[u8]) -> String {
+    use base64::Engine;
+    base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(input)
+}
+
+/// Inverse of [`encode_pkce_payload`]. EVERY reader must go through
+/// this — reading the raw wire value parses zero segments and silently
+/// disables the check it feeds. Compatibility ladder for cookies minted
+/// by an older server mid-upgrade: 1. base64url(JSON); 2. flat form with
+/// raw `;` delimiters, split WITHOUT unquoting (the `next` segment
+/// carries its own URL-encoding); 3. URL-encoded flat form, unquote once
+/// then split.
+///
+/// PARITY: `parse_pkce_payload` (upstream lines 176-199).
+pub fn parse_pkce_payload(raw: &str) -> std::collections::HashMap<String, String> {
+    // Rung 1: base64url(JSON). Legacy forms always contain `%` or `;`
+    // (outside the urlsafe alphabet) so they can never match.
+    if !raw.is_empty() && raw.chars().all(is_b64url_char) {
+        let padded = format!("{raw}{}", "=".repeat((4 - raw.len() % 4) % 4));
+        if let Ok(decoded) = base64_urlsafe_decode(&padded) {
+            if let Ok(Value::Object(map)) = serde_json::from_slice::<Value>(&decoded) {
+                return map
+                    .into_iter()
+                    .filter_map(|(k, v)| v.as_str().map(|s| (k, s.to_string())))
+                    .collect();
+            }
+        }
+    }
+    // Rungs 2/3: flat form. Raw `;` present → split as-is (never unquote
+    // first: a `%3B` inside `next` would become a bogus delimiter);
+    // otherwise unquote once then split.
+    let flat = if raw.contains(';') {
+        raw.to_string()
+    } else {
+        percent_decode(raw)
+    };
+    flat.split(';')
+        .filter_map(|seg| {
+            seg.split_once('=')
+                .map(|(k, v)| (k.to_string(), v.to_string()))
+        })
+        .collect()
+}
+
+fn is_b64url_char(c: char) -> bool {
+    c.is_ascii_alphanumeric() || c == '-' || c == '_'
+}
+
+fn base64_urlsafe_decode(padded: &str) -> Result<Vec<u8>, String> {
+    use base64::Engine;
+    base64::engine::general_purpose::URL_SAFE
+        .decode(padded)
+        .map_err(|e| e.to_string())
+}
+
+/// Single-pass `%XX` decoder (the `unquote` rung of the compat ladder).
+fn percent_decode(raw: &str) -> String {
+    let bytes = raw.as_bytes();
+    let mut out: Vec<u8> = Vec::with_capacity(bytes.len());
+    let mut i = 0;
+    while i < bytes.len() {
+        if bytes[i] == b'%' && i + 2 < bytes.len() + 1 {
+            if let (Some(h), Some(l)) = (
+                hex_val(bytes.get(i + 1).copied().unwrap_or(0)),
+                hex_val(bytes.get(i + 2).copied().unwrap_or(0)),
+            ) {
+                out.push(h * 16 + l);
+                i += 3;
+                continue;
+            }
+        }
+        out.push(bytes[i]);
+        i += 1;
+    }
+    String::from_utf8_lossy(&out).into_owned()
+}
+
+fn hex_val(b: u8) -> Option<u8> {
+    match b {
+        b'0'..=b'9' => Some(b - b'0'),
+        b'a'..=b'f' => Some(b - b'a' + 10),
+        b'A'..=b'F' => Some(b - b'A' + 10),
+        _ => None,
+    }
 }
 
 /// JSON view helper for tests/logging (mirrors the attrs a Starlette

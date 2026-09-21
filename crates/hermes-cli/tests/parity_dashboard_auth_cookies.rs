@@ -1,14 +1,17 @@
-//! Parity tests for `hermes_cli/dashboard_auth/cookies.py` @ b9aa928.
-//! Upstream has no dedicated test file (missing-test gap, noted in the
-//! ledger); cases derive from the upstream code as oracle.
+//! Parity tests for `hermes_cli/dashboard_auth/cookies.py` @ 5d59366.
+//! Mirrors `tests/hermes_cli/test_dashboard_auth_cookies.py` for the
+//! transport-neutral layer (attribute shapes, PKCE codec + compat
+//! ladder, deletion shapes); the TestClient HTTP cases belong to the
+//! web-server surface.
 
 use std::collections::HashMap;
 
 use hermes_cli::dashboard_auth::cookies::{
     clear_pkce_cookie, clear_session_cookies, clear_sso_attempt_cookie, cookie_path, detect_https,
-    read_pkce_cookie, read_session_cookies, read_session_provider, resolved_name, set_pkce_cookie,
-    set_session_cookies, set_session_provider_cookie, set_sso_attempt_cookie, NAME_VARIANTS,
-    PKCE_MAX_AGE, RT_MAX_AGE, SSO_ATTEMPT_MAX_AGE,
+    encode_pkce_payload, parse_pkce_payload, read_pkce_cookie, read_session_cookies,
+    read_session_provider, resolved_name, set_pkce_cookie, set_session_cookies,
+    set_session_provider_cookie, set_sso_attempt_cookie, NAME_VARIANTS, PKCE_MAX_AGE, RT_MAX_AGE,
+    SSO_ATTEMPT_MAX_AGE,
 };
 
 fn lookup_from(map: &HashMap<String, String>) -> impl Fn(&str) -> Option<String> + '_ {
@@ -88,25 +91,39 @@ fn empty_refresh_token_degrades_to_access_token_only() {
 }
 
 #[test]
-fn clear_session_cookies_emits_all_variants_both_cookies() {
+fn clear_session_cookies_prefixed_deletions_carry_secure() {
+    // PARITY: `test_clear_session_cookies_prefixed_deletions_carry_secure`
+    // — browsers reject a prefixed Set-Cookie that violates its prefix
+    // rules, so an insecure __Host- deletion is silently ignored and the
+    // session survives logout on HTTPS origins.
     let mut out = Vec::new();
-    clear_session_cookies(&mut out, "/hermes");
-    // 3 name variants x (AT + RT + provider).
+    clear_session_cookies(&mut out, "");
+    // 3 cookies x 3 variants.
     assert_eq!(out.len(), 9);
-    for cookie in &out {
-        assert_eq!(cookie.value, "");
-        assert_eq!(cookie.max_age, 0, "Max-Age=0 deletion");
-        assert_eq!(
-            cookie.path, "/hermes",
-            "deletion Path must match the set path"
-        );
-        assert!(cookie.httponly);
-        assert_eq!(cookie.samesite, "lax");
+    for bare in [
+        "hermes_session_at",
+        "hermes_session_rt",
+        "hermes_session_provider",
+    ] {
+        let host = out
+            .iter()
+            .find(|c| c.name == format!("__Host-{bare}"))
+            .expect("host variant");
+        assert!(host.secure, "prefixed deletions always carry Secure");
+        assert_eq!(host.path, "/", "__Host- requires Path=/");
+        assert_eq!(host.max_age, 0);
+        let secure = out
+            .iter()
+            .find(|c| c.name == format!("__Secure-{bare}"))
+            .expect("secure variant");
+        assert!(secure.secure);
+        let bare_del = out.iter().find(|c| c.name == bare).expect("bare");
+        // Bare deletion mirrors the bare setter (Lax, no Secure) so it
+        // still works on plain-HTTP origins.
+        assert!(!bare_del.secure);
+        assert_eq!(bare_del.samesite, "lax");
+        assert_eq!(bare_del.max_age, 0);
     }
-    let names: Vec<&str> = out.iter().map(|c| c.name.as_str()).collect();
-    assert!(names.contains(&"__Host-hermes_session_at"));
-    assert!(names.contains(&"__Secure-hermes_session_rt"));
-    assert!(names.contains(&"hermes_session_provider"));
 }
 
 #[test]
@@ -150,12 +167,136 @@ fn provider_hint_round_trips() {
 }
 
 #[test]
-fn pkce_and_sso_attempt_cookies() {
+fn pkce_cookie_https_is_samesite_none_secure() {
+    // PARITY: `test_pkce_cookie_https_is_samesite_none_secure` — the
+    // PKCE cookie is set on the /auth/login 302 and must survive the
+    // cross-site IDP chain (crbug 40508226).
+    let mut payload = HashMap::new();
+    payload.insert("provider".to_string(), "stub".to_string());
+    payload.insert("state".to_string(), "s".to_string());
+    payload.insert("verifier".to_string(), "v".to_string());
     let mut out = Vec::new();
-    set_pkce_cookie(&mut out, "pkce-payload", true, "");
+    set_pkce_cookie(&mut out, &payload, true, "");
     assert_eq!(out[0].name, "__Host-hermes_session_pkce");
     assert_eq!(out[0].max_age, PKCE_MAX_AGE);
-    clear_pkce_cookie(&mut out, "");
+    assert_eq!(out[0].samesite, "none");
+    assert!(out[0].secure);
+    assert!(out[0].httponly);
+}
+
+#[test]
+fn pkce_cookie_http_stays_lax_without_secure() {
+    // PARITY: `test_pkce_cookie_http_stays_lax_without_secure` —
+    // SameSite=None requires Secure, which HTTP cannot carry.
+    let mut payload = HashMap::new();
+    payload.insert("provider".to_string(), "stub".to_string());
+    let mut out = Vec::new();
+    set_pkce_cookie(&mut out, &payload, false, "");
+    assert_eq!(out[0].name, "hermes_session_pkce");
+    assert_eq!(out[0].samesite, "lax");
+    assert!(!out[0].secure);
+}
+
+#[test]
+fn clear_pkce_cookie_matches_set_shape() {
+    // PARITY: `test_clear_pkce_cookie_https_matches_set_shape` +
+    // `test_clear_pkce_cookie_http_bare_deletion_is_insecure_lax`.
+    let mut out = Vec::new();
+    clear_pkce_cookie(&mut out, true, "");
+    assert_eq!(out.len(), NAME_VARIANTS.len());
+    for deletion in &out {
+        assert_eq!(deletion.max_age, 0);
+        if deletion.name.starts_with("__") {
+            // Prefixed variants require Secure to be valid at all.
+            assert!(deletion.secure);
+        }
+    }
+    let prefixed: Vec<_> = out.iter().filter(|c| c.name.starts_with("__")).collect();
+    assert!(prefixed.iter().all(|c| c.samesite == "none"));
+
+    let mut out = Vec::new();
+    clear_pkce_cookie(&mut out, false, "");
+    let bare = out
+        .iter()
+        .find(|c| c.name == "hermes_session_pkce")
+        .expect("bare");
+    assert_eq!(bare.samesite, "lax");
+    assert!(!bare.secure, "a Secure deletion is ignored on HTTP origins");
+}
+
+#[test]
+fn pkce_wire_value_is_cookie_octet_base64url_json() {
+    // PARITY: `test_set_pkce_cookie_wire_value_is_cookie_octet_base64url_json`
+    // — strict proxies (Go net/http) drop the quoted form, so the value
+    // must be pure urlsafe base64 (no `;`, quotes, backslashes, `=`).
+    let mut payload = HashMap::new();
+    payload.insert("provider".to_string(), "stub".to_string());
+    payload.insert("state".to_string(), "s".to_string());
+    payload.insert("verifier".to_string(), "v".to_string());
+    let wire = encode_pkce_payload(&payload);
+    assert!(!wire.contains(';') && !wire.contains('"') && !wire.contains('\\'));
+    assert!(!wire.contains('='));
+    let b64url: Vec<char> = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+        .chars()
+        .collect();
+    assert!(wire.chars().all(|c| b64url.contains(&c)));
+    assert_eq!(parse_pkce_payload(&wire), payload);
+}
+
+#[test]
+fn pkce_codec_round_trips_hostile_values() {
+    // PARITY: `test_encode_parse_pkce_payload_round_trips_hostile_values`
+    // — every char that broke the two previous formats.
+    let mut payload = HashMap::new();
+    payload.insert("provider".to_string(), "stub".to_string());
+    payload.insert("state".to_string(), "s;t=\"a\\te\"".to_string());
+    payload.insert("verifier".to_string(), "v=1%3B;x".to_string());
+    payload.insert(
+        "next".to_string(),
+        "/sessions?x=a;b&project=foo%25".to_string(),
+    );
+    assert_eq!(parse_pkce_payload(&encode_pkce_payload(&payload)), payload);
+}
+
+#[test]
+fn pkce_parse_old_flat_format_survives_upgrade() {
+    // PARITY: `test_parse_pkce_payload_old_format_cookie_survives_rolling_upgrade`
+    // — rung 2: split as-is, never unquote first (a `%3B` inside `next`
+    // would become a bogus delimiter).
+    let old = "provider=stub;state=s123;verifier=v456;\
+               next=%2Fsessions%3Fx%3Da%3Bb%26project%3Dfoo";
+    let parts = parse_pkce_payload(old);
+    assert_eq!(parts["provider"], "stub");
+    assert_eq!(parts["state"], "s123");
+    assert_eq!(parts["verifier"], "v456");
+    assert_eq!(
+        parts["next"], "%2Fsessions%3Fx%3Da%3Bb%26project%3Dfoo",
+        "still single-encoded, verbatim"
+    );
+}
+
+#[test]
+fn pkce_parse_url_encoded_format_survives_upgrade() {
+    // PARITY: `test_parse_pkce_payload_99176_url_encoded_format_survives_upgrade`
+    // — rung 3: no raw `;` possible, unquote once then split.
+    let wire = "provider%3Dstub%3Bstate%3Ds123%3Bverifier%3Dv456%3Bnext%3D%252Fsessions";
+    assert!(!wire.contains(';'));
+    let parts = parse_pkce_payload(wire);
+    assert_eq!(parts["provider"], "stub");
+    assert_eq!(parts["state"], "s123");
+    assert_eq!(parts["verifier"], "v456");
+    assert_eq!(parts["next"], "%2Fsessions");
+}
+
+#[test]
+fn pkce_and_sso_attempt_cookies() {
+    let mut out = Vec::new();
+    let mut payload = HashMap::new();
+    payload.insert("provider".to_string(), "stub".to_string());
+    set_pkce_cookie(&mut out, &payload, true, "");
+    assert_eq!(out[0].name, "__Host-hermes_session_pkce");
+    assert_eq!(out[0].max_age, PKCE_MAX_AGE);
+    clear_pkce_cookie(&mut out, true, "");
     let deletions = &out[1..];
     assert_eq!(deletions.len(), NAME_VARIANTS.len());
     assert!(deletions.iter().all(|c| c.max_age == 0));

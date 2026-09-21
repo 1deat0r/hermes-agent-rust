@@ -262,8 +262,8 @@
     "status": "done"
   },
   "hermes_cli.dashboard_auth.cookies": {
-    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (338 -> 222 LOC); re-certify line-by-line before promoting",
-    "status": "partial"
+    "retarget_note": "ported at 5d59366 (2026-09-21): fixed 3 divergences (PKCE SameSite=None over HTTPS, prefixed-deletion Secure/paths, bare-deletion origin shape) + added encode/parse_pkce_payload codec with compat ladder; 8 new oracle tests incl. hostile round-trip cross-checked vs live Python; header re-pinned",
+    "status": "done"
   },
   "hermes_cli.dashboard_auth.native_flow": {
     "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (297 -> 165 LOC); re-certify line-by-line before promoting",

@@ -3599,3 +3599,15 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   9 passed, 0 failed; fmt + diff-check clean. Ledger: 154 done /
   43 partial / 8698 missing tracked (1.73%), prod 154/43/3284
   (4.43%). Evidence tier: unit.
+
+- 2026-09-21 (dashboard-auth-6): `hermes_cli.dashboard_auth.cookies`
+  partial → done @ 5d59366 (whole module, 222 LOC). NOT a re-cert:
+  fixed 3 divergences — PKCE setter emitted Lax instead of
+  SameSite=None over HTTPS (crbug 40508226), prefixed deletions
+  lacked Secure/correct paths (browsers ignore them → session
+  survives logout), bare deletions ignored origin shape — plus the
+  missing `encode/parse_pkce_payload` codec with the 3-rung compat
+  ladder. Hostile round-trip cross-checked against live Python.
+  8 new oracle tests. Validation: 17 passed, 0 failed; fmt +
+  diff-check clean. Ledger: 155 done / 42 partial / 8698 missing
+  tracked (1.74%), prod 155/42/3284 (4.46%). Evidence tier: unit.
