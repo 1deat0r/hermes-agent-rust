@@ -1,7 +1,7 @@
 # Hermes Agent → Hermes Agent Rust Conversion Ledger
 
-**Current strict completion: 1.85% of all tracked upstream modules (165/8895).**
-Production-only strict completion: **4.74%** (165/3481 production modules).
+**Current strict completion: 1.87% of all tracked upstream modules (166/8895).**
+Production-only strict completion: **4.77%** (166/3481 production modules).
 
 > This file is generated from `tools/inventory.json`; update the source ledger in `tools/port_status.json`, regenerate the inventory, then run `python3 tools/conversion_ledger.py`. Only `done` counts toward the percentage. `partial` is intentionally zero credit until its stated parity seams are closed. AGENTS: generated-only — query JSON summaries per AGENTS.md §2; never read this file whole.
 
@@ -9,10 +9,10 @@ Production-only strict completion: **4.74%** (165/3481 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 165 | 37 | 8693 | 1.85% | 13,294/2,467,838 done LOC |
-| Production modules | 165 | 37 | 3279 | 4.74% | 13,294/1,147,748 done LOC |
+| All tracked modules | 166 | 36 | 8693 | 1.87% | 13,549/2,467,838 done LOC |
+| Production modules | 166 | 36 | 3279 | 4.77% | 13,549/1,147,748 done LOC |
 
-Inventory source: `/run/media/its1deat0r/Projects/AI Agents/Hermes-Agent-Rust/.upstream-pin/5d59366` at `2026-09-21T18:18:46`.
+Inventory source: `/run/media/its1deat0r/Projects/AI Agents/Hermes-Agent-Rust/.upstream-pin/5d59366` at `2026-09-21T18:24:01`.
 
 ## Definition of 100.00%
 
@@ -40,7 +40,6 @@ The conversion is complete only when all of these are true:
 | `agent.secret_sources.onepassword` | P2 | 360 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `agent.secret_sources.registry` | P2 | 419 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `agent.verify.recipes` | P2 | 296 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
-| `agent.verify.runner` | P2 | 255 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `gateway.platforms.qqbot.keyboards` | P4 | 287 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `hermes_cli.main` | P3 | 3,520 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `hermes_constants` | P1 | 1,293 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
@@ -398,7 +397,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `agent.verify.__init__` | production | P2 | 15 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.verify.environment` | production | P2 | 48 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.verify.recipes` | production | P2 | 296 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
-| `agent.verify.runner` | production | P2 | 255 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
+| `agent.verify.runner` | production | P2 | 255 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.verify_hooks` | production | P2 | 56 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.vertex_adapter` | production | P2 | 197 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `agent.video_gen_provider` | production | P2 | 283 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |

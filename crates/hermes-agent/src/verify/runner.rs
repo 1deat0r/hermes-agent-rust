@@ -1,6 +1,7 @@
 //! Verification runner: execute a Recipe's phases and smoke-test the app.
 //!
-//! PARITY: `agent/verify/runner.py` @ b9aa928 (whole module). Scoped port
+//! PARITY: `agent/verify/runner.py` @ 5d59366 (whole module, 255
+//! lines). Scoped port
 //! of the execution flow grok-cli's verify sub-agent performs
 //! (install/bootstrap → build → test → start in background → readiness
 //! loop → teardown), reimplemented as a plain subprocess runner.
@@ -27,16 +28,16 @@ use serde_json::json;
 
 use super::recipes::Recipe;
 
-/// PARITY: `DEFAULT_PHASE_TIMEOUT` (upstream line 17).
+/// PARITY: `DEFAULT_PHASE_TIMEOUT` (upstream line 23).
 pub const DEFAULT_PHASE_TIMEOUT: f64 = 600.0;
-/// PARITY: `DEFAULT_READY_TIMEOUT` (upstream line 18).
+/// PARITY: `DEFAULT_READY_TIMEOUT` (upstream line 24).
 pub const DEFAULT_READY_TIMEOUT: f64 = 60.0;
-/// PARITY: `_TAIL_CHARS` (upstream line 19).
+/// PARITY: `_TAIL_CHARS` (upstream line 25).
 const TAIL_CHARS: usize = 2000;
-/// PARITY: `PHASE_ORDER` (upstream line 20).
+/// PARITY: `PHASE_ORDER` (upstream line 26).
 pub const PHASE_ORDER: [&str; 3] = ["bootstrap", "build", "test"];
 
-/// PARITY: `PhaseResult` (upstream lines 23-45).
+/// PARITY: `PhaseResult` (upstream lines 34-52).
 #[derive(Debug, Clone)]
 pub struct PhaseResult {
     pub phase: String,
@@ -66,7 +67,7 @@ impl PhaseResult {
     }
 }
 
-/// PARITY: `ReadinessResult` (upstream lines 48-67).
+/// PARITY: `ReadinessResult` (upstream lines 55-68).
 #[derive(Debug, Clone)]
 pub struct ReadinessResult {
     pub url: String,
@@ -90,7 +91,7 @@ impl ReadinessResult {
     }
 }
 
-/// PARITY: `VerifyResult` (upstream lines 70-93).
+/// PARITY: `VerifyResult` (upstream lines 71-86).
 #[derive(Debug, Clone, Default)]
 pub struct VerifyResult {
     pub recipe_name: String,
@@ -117,7 +118,9 @@ impl VerifyResult {
     }
 }
 
-/// PARITY: `_tail` (upstream lines 96-98).
+/// PARITY: `_tail` (upstream lines 89-90) — last `limit` characters
+/// (Python `str` slicing is by code point, so char-slicing matches
+/// exactly; multi-byte output stays intact).
 fn tail(text: &str) -> String {
     if text.len() > TAIL_CHARS {
         // Python slices bytes but the payloads are text; character slicing
@@ -133,9 +136,12 @@ fn tail(text: &str) -> String {
     }
 }
 
-/// PARITY: `_run_phase_command` (upstream lines 101-135) — shell execute in
-/// the project root, stdout+stderr merged, bounded by `timeout`; a timeout
-/// kills the child and records `timed_out = true` with a `None` exit code.
+/// PARITY: `_run_phase_command` (upstream lines 93-108) — shell
+/// execute in the project root, stdout+stderr merged, bounded by
+/// `timeout`; a timeout kills the child and records `timed_out = true`
+/// with a `None` exit code. Upstream lets a spawn `OSError` propagate;
+/// here it folds to a failed (non-timeout) result so one bad `cwd`
+/// cannot crash the whole verify pass.
 /// Fold a finished child into a `PhaseResult`.
 fn finalize(
     phase: &str,
@@ -383,13 +389,14 @@ fn run_start_phase(
         .stderr(Stdio::piped())
         .process_group(0)
         .spawn();
-    let (child_pid, mut stdout_pipe) = match spawned {
+    let (child_pid, mut stdout_pipe, stderr_pipe) = match spawned {
         Ok(mut child) => {
             let pid = child.id() as i32;
             let stdout_pipe = child.stdout.take();
-            (pid, stdout_pipe)
+            let stderr_pipe = child.stderr.take();
+            (pid, stdout_pipe, stderr_pipe)
         }
-        Err(e) => (-(e.raw_os_error().unwrap_or(-1)), None),
+        Err(e) => (-(e.raw_os_error().unwrap_or(-1)), None, None),
     };
     if child_pid <= 0 {
         return ReadinessResult {
@@ -402,8 +409,26 @@ fn run_start_phase(
         };
     }
 
-    let (ready, status, error) = poll_readiness(&url, ready_timeout, 1.0);
-    terminate_process_group(child_pid);
+    let ((ready, status, error), stderr_output) = {
+        // Drain stderr concurrently (upstream merges it into stdout via
+        // `stderr=STDOUT`): an undrained pipe lets a chatty child wedge
+        // on a full buffer before readiness ever trips. Output order
+        // between streams is not preserved — the tail is diagnostic,
+        // not a transcript.
+        let stderr_handle = stderr_pipe.map(|mut pipe| {
+            std::thread::spawn(move || {
+                let mut buffer = Vec::new();
+                let _ = pipe.read_to_end(&mut buffer);
+                String::from_utf8_lossy(&buffer).into_owned()
+            })
+        });
+        let probed = poll_readiness(&url, ready_timeout, 1.0);
+        terminate_process_group(child_pid);
+        let stderr_output = stderr_handle
+            .and_then(|h| h.join().ok())
+            .unwrap_or_default();
+        (probed, stderr_output)
+    };
     let output = stdout_pipe
         .as_mut()
         .map(|pipe| {
@@ -412,6 +437,11 @@ fn run_start_phase(
             String::from_utf8_lossy(&buffer).into_owned()
         })
         .unwrap_or_default();
+    let output = if stderr_output.is_empty() {
+        output
+    } else {
+        format!("{output}{stderr_output}")
+    };
     let _ = spawned;
     ReadinessResult {
         url,
@@ -455,6 +485,34 @@ pub fn run_verify(
         ..VerifyResult::default()
     };
 
+    // A `compose` recipe refuses outright when the project already has
+    // running containers: `docker compose build` + `up` replaces them on
+    // an image-hash change, destroying container-local state (#103567).
+    let mutating = selected.contains(&"build") || (selected.contains(&"start") && !skip_start);
+    if recipe.kind == "compose" && mutating {
+        if let Some(reason) = compose_live_state_reason(root) {
+            let command = recipe
+                .build
+                .first()
+                .cloned()
+                .unwrap_or_else(|| "docker compose build".to_string());
+            result.phases.push(PhaseResult {
+                phase: "build".to_string(),
+                command,
+                exit_code: Some(1),
+                duration: 0.0,
+                output_tail: format!(
+                    "Refusing to run: {reason}. `docker compose build` + `up` would replace \
+                     live containers on an image-hash change, destroying any container-local \
+                     state they carry. If you intend to rebuild this live deployment, run \
+                     `docker compose build`/`up` yourself."
+                ),
+                timed_out: false,
+            });
+            return result;
+        }
+    }
+
     let mut failed = false;
     for phase in PHASE_ORDER {
         if !selected.contains(&phase) {
@@ -485,6 +543,97 @@ pub fn run_verify(
 
     result.readiness = Some(run_start_phase(recipe, root, ready_timeout, port_override));
     result
+}
+
+/// Why `docker compose build`/`up` must not run at *root*, or `None`
+/// to proceed.
+///
+/// Read-only `docker compose ps` probe with a 15 s budget. Only a
+/// missing docker binary proceeds — the build phase would fail the
+/// same way, so there is nothing to protect. A hung daemon or a
+/// non-zero probe refuses: containers may be live and unobservable,
+/// exactly the #103567 loss window.
+///
+/// PARITY: `_compose_live_state_reason` (upstream lines 185-206).
+pub fn compose_live_state_reason(root: &Path) -> Option<String> {
+    let mut child = match Command::new("docker")
+        .args([
+            "compose",
+            "ps",
+            "--status",
+            "running",
+            "--format",
+            "{{.Name}}",
+        ])
+        .current_dir(root)
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+    {
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return None,
+        Err(e) => {
+            return Some(format!(
+                "docker compose ps failed to spawn ({e}); live containers cannot be ruled out"
+            ));
+        }
+        Ok(child) => child,
+    };
+    let deadline = Instant::now() + Duration::from_secs(15);
+    let output = loop {
+        match child.try_wait() {
+            Ok(Some(_)) => break child.wait_with_output(),
+            Ok(None) => {
+                if Instant::now() >= deadline {
+                    let _ = child.kill();
+                    let _ = child.wait();
+                    return Some(
+                        "docker compose ps timed out after 15s; live containers cannot be ruled out"
+                            .to_string(),
+                    );
+                }
+                std::thread::sleep(Duration::from_millis(20));
+            }
+            Err(e) => {
+                return Some(format!(
+                    "docker compose ps failed ({e}); live containers cannot be ruled out"
+                ));
+            }
+        }
+    };
+    let output = match output {
+        Ok(output) => output,
+        Err(e) => {
+            return Some(format!(
+                "docker compose ps failed ({e}); live containers cannot be ruled out"
+            ));
+        }
+    };
+    if !output.status.success() {
+        let detail = format!(
+            "{}{}",
+            String::from_utf8_lossy(&output.stderr),
+            String::from_utf8_lossy(&output.stdout)
+        );
+        let last = detail.lines().last().unwrap_or("no output");
+        return Some(format!(
+            "docker compose ps failed (exit {}): {last}",
+            output.status.code().unwrap_or(-1)
+        ));
+    }
+    let stdout_text = String::from_utf8_lossy(&output.stdout).into_owned();
+    let names: Vec<&str> = stdout_text
+        .lines()
+        .filter(|l| !l.trim().is_empty())
+        .collect();
+    if names.is_empty() {
+        None
+    } else {
+        Some(format!(
+            "this compose project already has running container(s): {}",
+            names.join(", ")
+        ))
+    }
 }
 
 // Silence an unused-path helper kept for documentation parity.

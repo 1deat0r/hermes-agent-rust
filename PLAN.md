@@ -3676,3 +3676,15 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   suites); warning count unchanged (30 = HEAD); fmt + diff-check
   clean. Ledger: 165 done / 37 partial / 8693 missing tracked
   (1.85%), prod 165/37/3279 (4.74%). Evidence tier: unit.
+
+- 2026-09-21 (agent-verify-runner): `agent.verify.runner` partial →
+  done @ 5d59366 (whole module, 255 LOC). NOT a re-cert: restored the
+  compose live-state guard (#103567 — refusal arm + read-only probe
+  with 15 s budget) and fixed a real wedge (start-phase stderr never
+  drained: chatty children block on a full pipe; now concurrent drain
+  merged into the tail). Fixed a stale _tail comment (Python slices
+  code points, not bytes — behavior was already exact). 3 new oracle
+  tests (refusal via docker shim, clean-proceed, stderr tail).
+  Validation: 12 passed; warning count unchanged (30 = HEAD); fmt +
+  diff-check clean. Ledger: 166 done / 36 partial / 8693 missing
+  tracked (1.87%), prod 166/36/3279 (4.77%). Evidence tier: unit.

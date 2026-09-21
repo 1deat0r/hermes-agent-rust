@@ -1,4 +1,4 @@
-//! Parity tests for `agent/verify/runner.py` @ b9aa928. Upstream has no
+//! Parity tests for `agent/verify/runner.py` @ 5d59366. Upstream has no
 //! dedicated test file (missing-test gap, noted in the ledger); cases
 //! derive from the upstream code as oracle. Only fast shell recipes and
 //! loopback readiness probes are exercised (the same trust level the
@@ -149,6 +149,113 @@ fn start_phase_proves_readiness_and_tears_down() {
         "readiness succeeded, no full wait"
     );
     assert!(result.ok());
+}
+
+#[test]
+fn compose_recipe_refuses_live_containers() {
+    // PARITY: the #103567 guard — a compose recipe with build/start
+    // selected refuses when `docker compose ps` reports runners. The
+    // probe is faked with a `docker` shim on PATH.
+    let td = make_project();
+    let bin = td.path().join("bin");
+    std::fs::create_dir(&bin).unwrap();
+    std::fs::write(bin.join("docker"), "#!/bin/sh\necho web-1\nexit 0\n").unwrap();
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(bin.join("docker"), std::fs::Permissions::from_mode(0o755))
+            .unwrap();
+    }
+    let mut recipe = rust_recipe(None);
+    recipe.kind = "compose".to_string();
+    recipe.build = vec!["docker compose build".to_string()];
+    let old_path = std::env::var("PATH").unwrap_or_default();
+    let new_path = format!("{}:{}", bin.display(), old_path);
+    unsafe { std::env::set_var("PATH", &new_path) };
+    let result = hermes_agent::verify::runner::run_verify(
+        td.path(),
+        &recipe,
+        Some(&["build"]),
+        30.0,
+        5.0,
+        false,
+        None,
+        true,
+        None,
+    );
+    unsafe { std::env::set_var("PATH", &old_path) };
+    assert!(!result.ok(), "live containers must refuse");
+    assert_eq!(result.phases.len(), 1);
+    assert_eq!(result.phases[0].phase, "build");
+    assert_eq!(result.phases[0].exit_code, Some(1));
+    assert!(
+        result.phases[0]
+            .output_tail
+            .contains("already has running container(s): web-1"),
+        "{}",
+        result.phases[0].output_tail
+    );
+}
+
+#[test]
+fn compose_probe_clean_proceeds() {
+    // No runners reported → the build phase runs normally.
+    let td = make_project();
+    let bin = td.path().join("bin");
+    std::fs::create_dir(&bin).unwrap();
+    std::fs::write(bin.join("docker"), "#!/bin/sh\nexit 0\n").unwrap();
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(bin.join("docker"), std::fs::Permissions::from_mode(0o755))
+            .unwrap();
+    }
+    let mut recipe = rust_recipe(None);
+    recipe.kind = "compose".to_string();
+    let old_path = std::env::var("PATH").unwrap_or_default();
+    let new_path = format!("{}:{}", bin.display(), old_path);
+    unsafe { std::env::set_var("PATH", &new_path) };
+    let result = hermes_agent::verify::runner::run_verify(
+        td.path(),
+        &recipe,
+        Some(&["build"]),
+        30.0,
+        5.0,
+        false,
+        None,
+        true,
+        None,
+    );
+    unsafe { std::env::set_var("PATH", &old_path) };
+    assert!(result.ok(), "{:?}", result.phases);
+}
+
+#[test]
+fn start_phase_tail_includes_stderr() {
+    // The start child merges stderr into the output tail (upstream
+    // `stderr=STDOUT`); a stderr-only server still leaves diagnostics.
+    let td = make_project();
+    let recipe = rust_recipe(Some(
+        r#"python3 -c "import sys, time; print('boot-err', file=sys.stderr); time.sleep(30)""#,
+    ));
+    let result = run_verify(
+        td.path(),
+        &recipe,
+        Some(&["start"]),
+        30.0,
+        2.0,
+        false,
+        None,
+        true,
+        None,
+    );
+    let readiness = result.readiness.expect("readiness recorded");
+    assert!(!readiness.ready, "nothing listens on 8123");
+    assert!(
+        readiness.output_tail.contains("boot-err"),
+        "stderr merged into tail: {:?}",
+        readiness.output_tail
+    );
 }
 
 #[test]
