@@ -1,8 +1,8 @@
 //! Gateway-brokered RFC 8252 (OAuth 2.0 for Native Apps) authorization
 //! store.
 //!
-//! PARITY: `hermes_cli/dashboard_auth/native_flow.py` @ b9aa928 (whole
-//! module).
+//! PARITY: `hermes_cli/dashboard_auth/native_flow.py` @ 5d59366 (whole
+//! module, 165 lines).
 //!
 //! The desktop app is a *native* OAuth client that signs in to a gated
 //! gateway without an embedded webview or browser cookies. It cannot be a
@@ -42,22 +42,22 @@ use super::base::Session;
 
 /// Pending-authorization TTL: the whole interactive login window (mirrors
 /// the PKCE cookie lifetime).
-/// PARITY: `_PENDING_TTL_SECONDS` (upstream line 24).
+/// PARITY: `_PENDING_TTL_SECONDS` (upstream line 28).
 pub const PENDING_TTL_SECONDS: i64 = 600;
 
 /// Minted-code TTL: the loopback redirect + the desktop's immediate token
 /// POST.
-/// PARITY: `_CODE_TTL_SECONDS` (upstream line 27).
+/// PARITY: `_CODE_TTL_SECONDS` (upstream line 29).
 pub const CODE_TTL_SECONDS: i64 = 120;
 
 /// Cap on concurrent pending + issued entries (fail closed on a spamming
 /// client).
-/// PARITY: `_MAX_ENTRIES` (upstream line 31).
+/// PARITY: `_MAX_ENTRIES` (upstream line 30).
 pub const MAX_ENTRIES: usize = 256;
 
 /// Per-IP cap on concurrent PENDING authorizations — /auth/native/authorize
 /// is public/pre-auth, so one spammer must not fill the global store.
-/// PARITY: `_MAX_PENDING_PER_IP` (upstream line 37).
+/// PARITY: `_MAX_PENDING_PER_IP` (upstream line 33).
 pub const MAX_PENDING_PER_IP: usize = 8;
 
 /// Base for native-flow failures (bad/expired/replayed handle, PKCE fail).
@@ -79,7 +79,7 @@ pub enum NativeFlowError {
 
 /// An in-flight native authorization awaiting the upstream callback.
 ///
-/// PARITY: `_Pending` (upstream lines 47-59).
+/// PARITY: `_Pending` (upstream lines 38-46).
 #[derive(Debug, Clone)]
 pub struct Pending {
     /// The DESKTOP's S256 challenge (cc_d), base64url no-pad.
@@ -95,7 +95,7 @@ pub struct Pending {
 
 /// A minted one-time gateway authorization code bound to a Session.
 ///
-/// PARITY: `_IssuedCode` (upstream lines 62-67).
+/// PARITY: `_IssuedCode` (upstream lines 48-53).
 #[derive(Debug, Clone)]
 pub struct IssuedCode {
     pub code_challenge: String,
@@ -120,21 +120,24 @@ fn token_urlsafe_32() -> String {
 
 /// Base64url without `=` padding (RFC 7636 §4).
 ///
-/// PARITY: `_b64url_no_pad` (upstream line 84).
+/// PARITY: `_b64url_no_pad` (upstream lines 72-75).
 fn b64url_no_pad(raw: &[u8]) -> String {
     B64_URL.encode(raw)
 }
 
 /// RFC 7636 S256 transform: base64url(sha256(ascii(verifier))).
 ///
-/// PARITY: `_s256` (upstream lines 87-90).
+/// PARITY: `_s256` (upstream lines 72-75). Upstream
+/// `verifier.encode("ascii")` raises on non-ASCII; verifiers are RFC
+/// 7636 `[A-Za-z0-9-._~]` so that path is unreachable — UTF-8 bytes
+/// hash identically on every reachable input.
 pub fn s256(verifier: &str) -> String {
     b64url_no_pad(&Sha256::digest(verifier.as_bytes()))
 }
 
 /// Drop expired pending + issued entries. Caller holds the lock.
 ///
-/// PARITY: `_gc_locked` (upstream lines 93-101).
+/// PARITY: `_gc_locked` (upstream lines 78-86).
 fn gc_locked(state: &mut State, now: i64) {
     let expired_p: Vec<String> = state
         .pending
@@ -163,7 +166,7 @@ fn gc_locked(state: &mut State, now: i64) {
 /// is full, [`NativeFlowError::TooManyPendingForAddress`] when the caller's
 /// IP already holds [`MAX_PENDING_PER_IP`] live pending entries.
 ///
-/// PARITY: `register_pending` (upstream lines 104-150).
+/// PARITY: `register_pending` (upstream lines 101-119).
 pub fn register_pending(
     code_challenge: &str,
     redirect_uri: &str,
@@ -204,7 +207,7 @@ pub fn register_pending(
 /// it — the callback's read-only peek to learn the desktop's
 /// `redirect_uri` and `client_state` for the final 302.
 ///
-/// PARITY: `get_pending` (upstream lines 153-167).
+/// PARITY: `get_pending` (upstream lines 122-126).
 pub fn get_pending(broker_state: &str, now: i64) -> Result<Pending, NativeFlowError> {
     let mut state = STATE.lock().unwrap_or_else(|e| e.into_inner());
     gc_locked(&mut state, now);
@@ -221,7 +224,7 @@ pub fn get_pending(broker_state: &str, now: i64) -> Result<Pending, NativeFlowEr
 /// the pending entry (single use) and binds a fresh `gw_code` to the
 /// desktop's `code_challenge` + the verified session.
 ///
-/// PARITY: `complete_pending` (upstream lines 170-198).
+/// PARITY: `complete_pending` (upstream lines 129-142).
 pub fn complete_pending(
     broker_state: &str,
     session: &Session,
@@ -254,7 +257,7 @@ pub fn complete_pending(
 /// retried against the same code — on any failure the code is already
 /// consumed (no oracle, no replay).
 ///
-/// PARITY: `redeem_code` (upstream lines 201-229).
+/// PARITY: `redeem_code` (upstream lines 145-158).
 pub fn redeem_code(code: &str, code_verifier: &str, now: i64) -> Result<Session, NativeFlowError> {
     let issued = {
         let mut state = STATE.lock().unwrap_or_else(|e| e.into_inner());
@@ -289,7 +292,7 @@ fn constant_time_eq(a: &[u8], b: &[u8]) -> bool {
 
 /// Test-only: drop all pending + issued state.
 ///
-/// PARITY: `_reset_for_tests` (upstream lines 232-236).
+/// PARITY: `_reset_for_tests` (upstream lines 161-165).
 pub fn reset_for_tests() {
     let mut state = STATE.lock().unwrap_or_else(|e| e.into_inner());
     state.pending.clear();

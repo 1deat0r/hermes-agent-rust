@@ -1,6 +1,7 @@
-//! Parity tests for `hermes_cli/dashboard_auth/native_flow.py` @ b9aa928.
-//! Upstream has no dedicated test file (missing-test gap, noted in the
-//! ledger); cases derive from the upstream code as oracle.
+//! Parity tests for `hermes_cli/dashboard_auth/native_flow.py` @ 5d59366.
+//! Store-level cases derive from the module as oracle (the upstream
+//! `test_dashboard_auth_native_flow.py` exercises the HTTP routes,
+//! which belong to the web-server surface).
 
 use std::sync::Mutex;
 
@@ -136,6 +137,34 @@ fn ttl_boundaries_for_pending_and_codes() {
     assert_eq!(
         err,
         hermes_cli::dashboard_auth::native_flow::NativeFlowError::CodeInvalid
+    );
+}
+
+#[test]
+fn complete_unknown_broker_state_fails_closed() {
+    // `complete_pending` pops (consumes) before minting: an unknown
+    // broker_state is PendingNotFound, never a code.
+    let _guard = STATE_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    reset_for_tests();
+    assert_eq!(
+        complete_pending("never-minted", &session("D"), 1_000_000).unwrap_err(),
+        hermes_cli::dashboard_auth::native_flow::NativeFlowError::PendingNotFound
+    );
+}
+
+#[test]
+fn complete_consumes_pending_single_use() {
+    // A second complete on the same broker_state finds nothing — the
+    // pending entry was consumed by the first.
+    let _guard = STATE_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    reset_for_tests();
+    let (_, cc) = cv_cc("f");
+    let now = 5_000_000i64;
+    let broker_state = register_pending(&cc, "u", "st", "", now).unwrap();
+    complete_pending(&broker_state, &session("D"), now).unwrap();
+    assert_eq!(
+        complete_pending(&broker_state, &session("D"), now).unwrap_err(),
+        hermes_cli::dashboard_auth::native_flow::NativeFlowError::PendingNotFound
     );
 }
 

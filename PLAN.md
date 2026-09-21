@@ -3611,3 +3611,10 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   8 new oracle tests. Validation: 17 passed, 0 failed; fmt +
   diff-check clean. Ledger: 155 done / 42 partial / 8698 missing
   tracked (1.74%), prod 155/42/3284 (4.46%). Evidence tier: unit.
+
+- 2026-09-21 (dashboard-auth-7): `hermes_cli.dashboard_auth.native_flow`
+  partial → done @ 5d59366 (whole module, 165 LOC, line-by-line).
+  Semantics exact; 2 new consume-semantics tests. Validation: 8
+  passed, 0 failed; fmt + diff-check clean. Ledger: 156 done /
+  41 partial / 8698 missing tracked (1.75%), prod 156/41/3284
+  (4.49%). Evidence tier: unit.

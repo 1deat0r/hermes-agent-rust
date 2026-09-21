@@ -1,19 +1,19 @@
 {
  "generated_from": "/run/media/its1deat0r/Projects/AI Agents/Hermes-Agent-Rust/.upstream-pin/5d59366",
- "generated_at": "2026-09-21T15:00:43",
+ "generated_at": "2026-09-21T15:02:23",
  "summary": {
   "modules": 8895,
   "total_lines": 2467838,
   "production_modules": 3481,
   "production_lines": 1147748,
   "status_counts": {
-   "done": 155,
-   "partial": 42,
+   "done": 156,
+   "partial": 41,
    "missing": 8698
   },
   "prod_status_counts": {
-   "done": 155,
-   "partial": 42,
+   "done": 156,
+   "partial": 41,
    "missing": 3284
   },
   "packages": {
@@ -61,8 +61,8 @@
     "modules": 502,
     "status": {
      "missing": 476,
-     "partial": 3,
-     "done": 23
+     "partial": 2,
+     "done": 24
     }
    },
    "tests.hermes_state": {
@@ -28427,7 +28427,7 @@
   "hermes_cli.dashboard_auth.native_flow": {
    "lines": 165,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "ts:apps.desktop.electron.native-token-store": {

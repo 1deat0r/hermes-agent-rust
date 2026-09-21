@@ -295,9 +295,11 @@ port, 3 oracle tests, 8+14 green). Unit 4/6: `prefix` partial →
 done @ 5d59366 (130 LOC, urlparse-IPv6 fix red-green, 12/12).
 Unit 5/8: `base` partial → done @ 5d59366 (162 LOC, 1 oracle test,
 9/9). Unit 6/8: `cookies` partial → done @ 5d59366 (222 LOC, 3
-divergence fixes + PKCE codec, 8 oracle tests, 17/17).
-**Ledger: 155/42/8698 (1.74% tracked, 4.46% prod).** Next:
-native_flow → missing HTTP siblings → __init__ close.
+divergence fixes + PKCE codec, 8 oracle tests, 17/17). Unit 7/8:
+`native_flow` partial → done @ 5d59366 (165 LOC, 2 consume tests,
+8/8). **Ledger: 156/41/8698 (1.75% tracked, 4.49% prod).** Next:
+missing HTTP siblings (middleware/routes/login_page/request_utils/
+refresh_singleflight) → __init__ close.
 
 ## Jev god-tier pass landed (2026-09-20)
 
