@@ -80,8 +80,8 @@ pub use file_safety::{
     get_read_block_error, get_write_denied_error, is_write_denied, raise_if_read_blocked,
 };
 pub use file_state::{
-    check_stale, get_registry, known_reads, note_write, record_read, writes_since,
-    FileStateRegistry,
+    check_stale, forget_task, get_registry, guard_disabled, known_reads, lock_path, note_write,
+    record_read, writes_since, FileStateRegistry, PathGuard,
 };
 pub use path_security::validate_within_dir;
 pub use read_extract::{extract_document_text, is_extractable_document, ExtractionError};

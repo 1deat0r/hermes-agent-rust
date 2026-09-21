@@ -730,6 +730,7 @@ dependencies = [
  "hermes-constants",
  "hermes-state",
  "hermes-utils",
+ "indexmap",
  "libc",
  "log",
  "once_cell",

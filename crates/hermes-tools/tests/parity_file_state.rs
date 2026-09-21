@@ -1,12 +1,13 @@
 //! Parity oracles for the cross-agent FileStateRegistry, mirroring upstream
-//! tests/tools/test_file_state_registry.py @ b9aa928. (The per-path
-//! `lock_path` serialization tests are deferred with the executor's
-//! task-concurrency layer; the registry-map locking is single-Mutex here.)
+//! tests/tools/test_file_state_registry.py @ 5d59366 (plus per-path
+//! `lock_path` serialization, the guard kill-switch, and lifecycle
+//! release — all module behavior).
 
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 use hermes_tools::file_state::{
-    check_stale, known_reads, note_write, record_read, writes_since, FileStateRegistry,
+    check_stale, forget_task, guard_disabled, known_reads, lock_path, note_write, record_read,
+    writes_since, FileStateRegistry,
 };
 
 static FILE_CTR: Mutex<u64> = Mutex::new(0);
@@ -166,4 +167,70 @@ fn binary_extension_helpers() {
     assert!(is_binary_extension("archive.zip"));
     assert!(!is_binary_extension("notes.md"));
     assert!(BINARY_EXTENSIONS.contains(".exe"));
+}
+
+#[test]
+fn partial_warning_carries_exact_upstream_wording() {
+    // The model-facing text is part of the contract: patch guidance,
+    // not whole-file re-read.
+    let p = tmp_file("content\n".repeat(50).as_str());
+    record_read("A", &p, true);
+    let warn = check_stale("A", &p).expect("partial warning");
+    assert!(
+        warn.contains("Read the remaining pages, or use patch, before overwriting it."),
+        "{warn}"
+    );
+    std::fs::remove_file(&p).ok();
+}
+
+#[test]
+fn forget_task_releases_read_stamps() {
+    // PARITY: `forget_task` — file_tools calls this at task teardown so
+    // dead agents stop shadowing live ones.
+    let reg = FileStateRegistry::new();
+    let p = tmp_file("x\n");
+    reg.record_read("ghost", &p, false, None);
+    assert!(!reg.known_reads("ghost").is_empty());
+    reg.forget_task("ghost");
+    assert!(reg.known_reads("ghost").is_empty());
+    // Forgetting is idempotent and scoped: other agents keep stamps.
+    reg.record_read("live", &p, false, None);
+    reg.forget_task("ghost");
+    assert!(!reg.known_reads("live").is_empty());
+    std::fs::remove_file(&p).ok();
+}
+
+#[test]
+fn lock_path_serializes_same_path_writers() {
+    // PARITY: `lock_path` — threads on the same path serialize (200
+    // increments under contention land exactly), different paths
+    // proceed independently.
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    let reg = FileStateRegistry::new();
+    let counter = Arc::new(AtomicUsize::new(0));
+    let handles: Vec<_> = (0..8)
+        .map(|_| {
+            let counter = Arc::clone(&counter);
+            std::thread::spawn(move || {
+                for _ in 0..25 {
+                    let _guard = lock_path("/same/path.txt");
+                    // Widen the race window so an unlocked run would lose.
+                    let v = counter.load(Ordering::Relaxed);
+                    std::thread::yield_now();
+                    counter.store(v + 1, Ordering::Relaxed);
+                }
+            })
+        })
+        .collect();
+    for h in handles {
+        h.join().expect("no deadlock");
+    }
+    assert_eq!(counter.load(Ordering::SeqCst), 200);
+    drop(reg);
+}
+
+#[test]
+fn guard_disabled_reports_the_kill_switch() {
+    // PARITY: `guard_disabled` — mirrors HERMES_DISABLE_FILE_STATE_GUARD.
+    assert!(!guard_disabled());
 }

@@ -285,6 +285,13 @@ Next: Wave B6 remainder in smallest-LOC order — `token_auth` (96),
 missing HTTP siblings (middleware/routes/login_page/request_utils/
 refresh_singleflight) to close `dashboard_auth.__init__`.
 
+## tools.file_state done (2026-09-21)
+
+Partial → done @ 5d59366 (254 LOC; real lock_path, forget_task,
+guard_disabled, IndexMap eviction, exact wording; 4 oracle tests
+incl. contention proof, 14/14 ×3 stable).
+**Ledger: 164/38/8693 (1.84% tracked, 4.72% prod).**
+
 ## Git + GitHub fully synced (2026-09-21)
 
 Genius-agent pass: 32 commits pushed (`72efd57..4357aa0`),

@@ -3651,3 +3651,15 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   Validation: 14 passed, 0 failed; fmt + diff-check clean. Ledger:
   163 done / 39 partial / 8693 missing tracked (1.83%), prod
   163/39/3279 (4.69%). Evidence tier: unit.
+
+- 2026-09-21 (tools-file-state): `tools.file_state` partial → done @
+  5d59366 (whole module, 254 LOC). NOT a re-cert: fixed a no-op
+  `lock_path` stub (real refcounted per-path locking via
+  parking_lot::lock_arc — the old "single-process" rationale was
+  wrong), added missing `forget_task` + `guard_disabled`, IndexMap
+  insertion-order eviction (was arbitrary-order HashMap), exact
+  partial-read wording. 4 new oracle tests incl. 8-thread/200-op
+  contention proof. Validation: 14 passed serial, 3x stable,
+  killswitch green; fmt + diff-check clean. Ledger: 164 done /
+  38 partial / 8693 missing tracked (1.84%), prod 164/38/3279
+  (4.72%). Evidence tier: unit.

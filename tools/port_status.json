@@ -688,8 +688,8 @@
     "status": "done"
   },
   "tools.file_state": {
-    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (332 -> 254 LOC); re-certify line-by-line before promoting",
-    "status": "partial"
+    "retarget_note": "ported at 5d59366 (2026-09-21): real lock_path (was a no-op stub), forget_task, guard_disabled, IndexMap insertion-order eviction, exact partial-read wording; 4 new oracle tests incl. 8-thread contention; parking_lot arc_lock + indexmap deps added",
+    "status": "done"
   },
   "tools.focus_pane_tool": {
     "retarget_note": "re-certified autonomous: description/bridge-call folds; 6 tests green",
