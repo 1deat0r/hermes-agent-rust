@@ -3730,3 +3730,15 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   tests. Validation: 16 passed; fmt + diff-check clean. Ledger: 170
   done / 32 partial / 8693 missing tracked (1.91%), prod 170/32/3279
   (4.88%). Evidence tier: unit.
+
+- 2026-09-21 (secret-registry): `agent.secret_sources.registry`
+  partial → done @ 5d59366 (whole module, 419 LOC). NOT a re-cert:
+  ported scoped overlays + origins + lazy builtins +
+  snapshot/restore + list_plugin_sources; fixed 3 bugs — empty env
+  counted as pre-existing (upstream falsiness), alias warnings went
+  to a dead clone (now the live report row), is_enabled panics
+  contained. 3 new oracle tests (9/9 suite). Validation: 62 green
+  across all 5 secret_sources suites; warnings steady (30 = HEAD);
+  fmt + diff-check clean. Ledger: 171 done / 31 partial / 8693
+  missing tracked (1.92%), prod 171/31/3279 (4.91%). Evidence tier:
+  unit.

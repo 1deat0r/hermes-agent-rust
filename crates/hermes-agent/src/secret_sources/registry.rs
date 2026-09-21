@@ -1,6 +1,7 @@
 //! Secret-source registry + apply orchestrator.
 //!
-//! PARITY: `agent/secret_sources/registry.py` @ b9aa928 (whole module).
+//! PARITY: `agent/secret_sources/registry.py` @ 5d59366 (whole module,
+//! 419 lines).
 //!
 //! This module owns everything that must be uniform across secret
 //! backends so no individual source can get it wrong:
@@ -85,25 +86,92 @@ impl ApplyReport {
 // Registration
 // ---------------------------------------------------------------------------
 
-/// Ordered registry: name → source. Insertion order doubles as the default
-/// apply order.
-///
-/// PARITY: `_SOURCES` (upstream line 50).
-static SOURCES: OnceLock<Mutex<Vec<(String, Arc<dyn SecretSource>)>>> = OnceLock::new();
-
-fn sources() -> &'static Mutex<Vec<(String, Arc<dyn SecretSource>)>> {
-    SOURCES.get_or_init(|| Mutex::new(Vec::new()))
+/// Bundled sources, in registration order: (module constructor, label).
+/// (Upstream imports by module path; here the constructors are linked.)
+fn builtin_sources() -> Vec<(Arc<dyn SecretSource>, &'static str)> {
+    vec![
+        (
+            Arc::new(super::bitwarden::BitwardenSource::default()),
+            "Bitwarden",
+        ),
+        (Arc::new(super::onepassword::OnePasswordSource), "1Password"),
+        (Arc::new(super::command::CommandSource), "command"),
+    ]
 }
 
-/// Register a secret source. Returns true on success.
+#[derive(Default)]
+struct RegistryState {
+    /// Global sources, insertion order (the default apply order).
+    order: Vec<String>,
+    sources: HashMap<String, Arc<dyn SecretSource>>,
+    /// Origin per global name ("builtin" | "plugin").
+    origins: HashMap<String, String>,
+    /// Per-scope overlays: scope → (order, sources).
+    scoped_order: HashMap<String, Vec<String>>,
+    scoped_sources: HashMap<String, HashMap<String, Arc<dyn SecretSource>>>,
+    builtins_loaded: bool,
+}
+
+static REGISTRY: OnceLock<Mutex<RegistryState>> = OnceLock::new();
+
+fn registry() -> &'static Mutex<RegistryState> {
+    REGISTRY.get_or_init(|| Mutex::new(RegistryState::default()))
+}
+
+/// Merged view: global entries, overlaid by `scope`'s entries.
 ///
-/// Rejections are logged, never raised — a bad plugin must not take down
-/// startup. `replace` allows tests / user plugins to override a bundled
-/// source of the same name (last-writer-wins like model providers), but
-/// scheme collisions across *different* names are always rejected.
+/// PARITY: `_merged` (upstream lines 132-136). Overlay entries shadow
+/// same-name global entries; order is global-first, then overlay-only
+/// names in overlay order. `scope=None` reads the global map plus the
+/// *default-scope* overlay resolved by the caller (upstream defaults
+/// to the current `hermes_home_key()`; that helper is not yet ported,
+/// so callers pass the home key explicitly — see the dashboard_auth
+/// registry seam for the same documented divergence).
+fn merged_locked(
+    state: &RegistryState,
+    scope: Option<&str>,
+) -> Vec<(String, Arc<dyn SecretSource>)> {
+    let mut out: Vec<(String, Arc<dyn SecretSource>)> = state
+        .order
+        .iter()
+        .filter_map(|name| {
+            state
+                .sources
+                .get(name)
+                .map(|s| (name.clone(), Arc::clone(s)))
+        })
+        .collect();
+    if let Some(scope) = scope {
+        if let Some(order) = state.scoped_order.get(scope) {
+            if let Some(overlay) = state.scoped_sources.get(scope) {
+                for name in order {
+                    if let Some(s) = overlay.get(name) {
+                        if let Some(slot) = out.iter_mut().find(|(n, _)| n == name) {
+                            slot.1 = Arc::clone(s);
+                        } else {
+                            out.push((name.clone(), Arc::clone(s)));
+                        }
+                    }
+                }
+            }
+        }
+    }
+    out
+}
+
+/// Register a secret source; True on success. Rejections are logged, never
+/// raised — a bad plugin must not take down startup. `replace` allows
+/// same-name override (last-writer-wins); scheme collisions across
+/// *different* names are always rejected (checked against the effective
+/// view, so a scoped registration can't hijack a global scheme either).
 ///
-/// PARITY: `register_source` (upstream lines 92-139).
-pub fn register_source(source: Arc<dyn SecretSource>, replace: bool) -> bool {
+/// PARITY: `register_source` (upstream lines 102-129).
+pub fn register_source(
+    source: Arc<dyn SecretSource>,
+    replace: bool,
+    scope: Option<&str>,
+    builtin: bool,
+) -> bool {
     let name = source.name().to_string();
     if name.is_empty()
         || name != name.to_lowercase()
@@ -127,60 +195,238 @@ pub fn register_source(source: Arc<dyn SecretSource>, replace: bool) -> bool {
         );
         return false;
     }
-    let mut sources = sources().lock().unwrap_or_else(|e| e.into_inner());
-    if !replace {
-        if let Some(existing) = sources.iter().find(|(n, _)| *n == name) {
-            let _ = existing;
-            log::warn!("Secret source '{name}' already registered; ignoring duplicate");
-            return false;
-        }
-    } else if let Some(slot) = sources.iter_mut().find(|(n, _)| *n == name) {
-        *slot = (name.clone(), source);
-        return true;
+    let mut state = registry().lock().unwrap_or_else(|e| e.into_inner());
+    // Effective view: global map for `None`, merged view for a scope.
+    // Duplicate and scheme checks both run against it, so a scoped
+    // registration can neither shadow silently nor hijack a scheme.
+    let effective: Vec<(String, Arc<dyn SecretSource>)> = match scope {
+        None => state
+            .order
+            .iter()
+            .filter_map(|n| state.sources.get(n).map(|s| (n.clone(), Arc::clone(s))))
+            .collect(),
+        Some(scope) => merged_locked(&state, Some(scope)),
+    };
+    if !replace && effective.iter().any(|(n, _)| *n == name) {
+        log::warn!("Secret source '{name}' already registered; ignoring duplicate");
+        return false;
     }
     if let Some(scheme) = source.scheme() {
-        if let Some((other_name, _)) = sources
+        if let Some((owner, _)) = effective
             .iter()
-            .find(|(n, other)| *n != name && other.scheme() == Some(scheme))
+            .find(|(n, s)| *n != name && s.scheme() == Some(scheme))
         {
             log::warn!(
-                "Ignoring secret source '{name}': scheme '{scheme}://' is already owned by source '{other_name}'"
+                "Ignoring secret source '{name}': scheme '{scheme}://' is already owned by source '{owner}'"
             );
             return false;
         }
     }
-    sources.push((name, source));
+    match scope {
+        None => {
+            // Dict-assignment semantics: replacing keeps the original
+            // registration position (apply order is stable across
+            // re-discovery rotations).
+            if !state.order.contains(&name) {
+                state.order.push(name.clone());
+            }
+            state.sources.insert(name.clone(), source);
+            state.origins.insert(
+                name,
+                if builtin {
+                    "builtin".to_string()
+                } else {
+                    "plugin".to_string()
+                },
+            );
+        }
+        Some(scope) => {
+            let order = state.scoped_order.entry(scope.to_string()).or_default();
+            if !order.contains(&name) {
+                order.push(name.clone());
+            }
+            state
+                .scoped_sources
+                .entry(scope.to_string())
+                .or_default()
+                .insert(name, source);
+        }
+    }
     true
 }
 
 /// Return the registered source for `name`, or None.
 ///
-/// PARITY: `get_source` (upstream lines 142-145); the lazy bundled-source
-/// registration is a no-op here (no bundled backends ported yet).
-pub fn get_source(name: &str) -> Option<Arc<dyn SecretSource>> {
-    sources()
-        .lock()
-        .unwrap_or_else(|e| e.into_inner())
-        .iter()
+/// PARITY: `get_source` (upstream lines 139-142).
+pub fn get_source(name: &str, scope: Option<&str>) -> Option<Arc<dyn SecretSource>> {
+    ensure_builtin_sources();
+    let state = registry().lock().unwrap_or_else(|e| e.into_inner());
+    merged_locked(&state, scope)
+        .into_iter()
         .find(|(n, _)| n == name)
-        .map(|(_, s)| Arc::clone(s))
+        .map(|(_, s)| s)
 }
 
-/// All registered sources, in registration order.
+/// Read one scope's own slot without merging (the plugin manager's
+/// teardown seam).
 ///
-/// PARITY: `list_sources` (upstream lines 148-151).
-pub fn list_sources() -> Vec<Arc<dyn SecretSource>> {
-    sources()
-        .lock()
-        .unwrap_or_else(|e| e.into_inner())
-        .iter()
-        .map(|(_, s)| Arc::clone(s))
+/// PARITY: `snapshot_registration` (upstream lines 145-149).
+pub fn snapshot_registration(name: &str, scope: Option<&str>) -> Option<Arc<dyn SecretSource>> {
+    ensure_builtin_sources();
+    let state = registry().lock().unwrap_or_else(|e| e.into_inner());
+    match scope {
+        None => state.sources.get(name).cloned(),
+        Some(scope) => state
+            .scoped_sources
+            .get(scope)
+            .and_then(|overlay| overlay.get(name).cloned()),
+    }
+}
+
+/// Restore a host-owned source registration if it is still current.
+///
+/// Identity-conditional: returns false (no-op) when the slot no longer
+/// holds `current`. Prunes the overlay when it becomes empty.
+///
+/// PARITY: `restore_registration` (upstream lines 152-166).
+pub fn restore_registration(
+    name: &str,
+    current: &Arc<dyn SecretSource>,
+    previous: Option<Arc<dyn SecretSource>>,
+    scope: Option<&str>,
+) -> bool {
+    ensure_builtin_sources();
+    let mut state = registry().lock().unwrap_or_else(|e| e.into_inner());
+    let is_current = match scope {
+        None => state
+            .sources
+            .get(name)
+            .is_some_and(|s| Arc::ptr_eq(s, current)),
+        Some(scope) => state
+            .scoped_sources
+            .get(scope)
+            .and_then(|overlay| overlay.get(name))
+            .is_some_and(|s| Arc::ptr_eq(s, current)),
+    };
+    if !is_current {
+        return false;
+    }
+    match scope {
+        None => match previous {
+            None => {
+                state.sources.remove(name);
+                state.order.retain(|n| n != name);
+            }
+            Some(previous) => {
+                state.sources.insert(name.to_string(), previous);
+            }
+        },
+        Some(scope) => {
+            let remove_overlay = match previous {
+                None => {
+                    if let Some(overlay) = state.scoped_sources.get_mut(scope) {
+                        overlay.remove(name);
+                    }
+                    if let Some(order) = state.scoped_order.get_mut(scope) {
+                        order.retain(|n| n != name);
+                    }
+                    state
+                        .scoped_sources
+                        .get(scope)
+                        .is_some_and(|overlay| overlay.is_empty())
+                }
+                Some(previous) => {
+                    if let Some(overlay) = state.scoped_sources.get_mut(scope) {
+                        overlay.insert(name.to_string(), previous);
+                    }
+                    false
+                }
+            };
+            if remove_overlay {
+                state.scoped_sources.remove(scope);
+                state.scoped_order.remove(scope);
+            }
+        }
+    }
+    true
+}
+
+/// All registered sources in the effective view, registration order.
+///
+/// PARITY: `list_sources` (upstream lines 169-172).
+pub fn list_sources(scope: Option<&str>) -> Vec<Arc<dyn SecretSource>> {
+    ensure_builtin_sources();
+    let state = registry().lock().unwrap_or_else(|e| e.into_inner());
+    merged_locked(&state, scope)
+        .into_iter()
+        .map(|(_, s)| s)
         .collect()
 }
 
-/// PARITY: `_reset_registry_for_tests` (upstream lines 176-181).
+/// Sources registered outside the bundled set: global `"plugin"`
+/// origins plus every scoped registration (bundled sources register
+/// with `scope=None`; every scoped entry is plugin-registered by
+/// definition, #64229 profile isolation).
+///
+/// PARITY: `list_plugin_sources` (upstream lines 175-187).
+/// `home_scope` is the current-home overlay key (upstream defaults to
+/// `hermes_home_key()`; passed explicitly until that helper lands).
+pub fn list_plugin_sources(home_scope: Option<&str>) -> Vec<Arc<dyn SecretSource>> {
+    ensure_builtin_sources();
+    let state = registry().lock().unwrap_or_else(|e| e.into_inner());
+    let mut merged: Vec<(String, Arc<dyn SecretSource>)> = state
+        .order
+        .iter()
+        .filter(|n| state.origins.get(*n).is_some_and(|o| o == "plugin"))
+        .filter_map(|n| state.sources.get(n).map(|s| (n.clone(), Arc::clone(s))))
+        .collect();
+    if let Some(scope) = home_scope {
+        if let Some(order) = state.scoped_order.get(scope) {
+            if let Some(overlay) = state.scoped_sources.get(scope) {
+                for name in order {
+                    if let Some(s) = overlay.get(name) {
+                        if let Some(slot) = merged.iter_mut().find(|(n, _)| n == name) {
+                            slot.1 = Arc::clone(s);
+                        } else {
+                            merged.push((name.clone(), Arc::clone(s)));
+                        }
+                    }
+                }
+            }
+        }
+    }
+    merged.into_iter().map(|(_, s)| s).collect()
+}
+
+/// Idempotently register the bundled sources (lazy so import stays
+/// cheap; per-source guarded so one broken source can't block the
+/// others).
+///
+/// PARITY: `_ensure_builtin_sources` (upstream lines 190-203).
+pub fn ensure_builtin_sources() {
+    let mut state = registry().lock().unwrap_or_else(|e| e.into_inner());
+    if state.builtins_loaded {
+        return;
+    }
+    state.builtins_loaded = true;
+    drop(state);
+    for (source, label) in builtin_sources() {
+        let name = source.name().to_string();
+        if !register_source(source, false, None, true) {
+            log::warn!("Failed to register bundled {label} secret source ({name})");
+        }
+    }
+}
+
+/// PARITY: `_reset_registry_for_tests` (upstream lines 206-212).
 pub fn reset_registry_for_tests() {
-    sources().lock().unwrap_or_else(|e| e.into_inner()).clear();
+    let mut state = registry().lock().unwrap_or_else(|e| e.into_inner());
+    state.order.clear();
+    state.sources.clear();
+    state.origins.clear();
+    state.scoped_order.clear();
+    state.scoped_sources.clear();
+    state.builtins_loaded = false;
 }
 
 // ---------------------------------------------------------------------------
@@ -295,8 +541,15 @@ fn ordered_enabled_sources(
     for name in &order {
         if let Some((_, source)) = registered.iter().find(|(n, _)| n == name) {
             let cfg = secrets_cfg.get(name.as_str()).cloned().unwrap_or(json!({}));
-            if source.is_enabled(&cfg) {
-                enabled.push(Arc::clone(source));
+            // A raising is_enabled() skips the source — startup must
+            // never block on a misbehaving plugin (upstream try/except).
+            match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| source.is_enabled(&cfg)))
+            {
+                Ok(true) => enabled.push(Arc::clone(source)),
+                Ok(false) => {}
+                Err(_) => {
+                    log::warn!("Secret source '{name}' is_enabled() raised; skipping");
+                }
             }
         }
     }
@@ -383,11 +636,14 @@ fn profile_alias_target(var: &str, profile: &str) -> Option<String> {
 /// hydrates the canonical `FOO`; the alias obeys the same guards and is
 /// disabled with `secrets.profile_alias: false`.
 ///
-/// PARITY: `apply_all` (upstream lines 308-437).
+/// PARITY: `apply_all` (upstream lines 308-437). `home_scope` selects
+/// the per-home overlay (upstream defaults to the current
+/// `hermes_home_key()`; passed explicitly until that helper lands).
 pub fn apply_all(
     secrets_cfg: Option<&Value>,
     home_path: Option<&Path>,
     env: &mut HashMap<String, String>,
+    home_scope: Option<&str>,
 ) -> ApplyReport {
     let mut report = ApplyReport::default();
 
@@ -397,14 +653,11 @@ pub fn apply_all(
         _ => &empty,
     };
     let registered = {
-        // `_ensure_builtin_sources()` — no bundled backends ported yet, so
-        // registration order starts empty.
-        let _ = sources();
-        sources()
-            .lock()
-            .unwrap_or_else(|e| e.into_inner())
-            .iter()
-            .map(|(n, s)| (n.clone(), Arc::clone(s)))
+        ensure_builtin_sources();
+        let state = registry().lock().unwrap_or_else(|e| e.into_inner());
+        merged_locked(&state, home_scope)
+            .into_iter()
+            .map(|(n, s)| (n.clone(), Arc::clone(&s)))
             .collect::<Vec<_>>()
     };
     let enabled = ordered_enabled_sources(secrets_cfg, &registered);
@@ -478,10 +731,7 @@ pub fn apply_all(
 
     // Apply phase — sequential, first-wins, fully attributed.
     let mut claimed: HashMap<String, String> = HashMap::new();
-    // Alias-application warnings deferred until the mutable fetches pass
-    // (upstream appends into `result.warnings` inline).
-    let mut deferred_warnings: Vec<(usize, String)> = Vec::new();
-    for (fetch_idx, (source, cfg, result)) in fetches.iter().enumerate() {
+    for (source, cfg, result) in &fetches {
         let mut sr = SourceReport {
             name: source.name().to_string(),
             label: if source.label().is_empty() {
@@ -534,20 +784,19 @@ pub fn apply_all(
                         &alias,
                         value,
                     ) {
-                        deferred_warnings.push((
-                            fetch_idx,
-                            format!(
+                        // Upstream appends into the live result's
+                        // warnings inline; `sr` owns this source's
+                        // report row, so write through it directly.
+                        sr.result.as_mut().map(|r| {
+                            r.warnings.push(format!(
                                 "applied profile-scoped {var} as {alias} (active profile {profile:?})"
-                            ),
-                        ));
+                            ))
+                        });
                     }
                 }
             }
         }
         report.sources.push(sr);
-    }
-    for (fetch_idx, warning) in deferred_warnings {
-        fetches[fetch_idx].2.warnings.push(warning);
     }
     report
 }
@@ -589,7 +838,7 @@ fn try_apply(
         ));
         return false;
     }
-    let existed = ctx.env.contains_key(var);
+    let existed = ctx.env.get(var).is_some_and(|v| !v.is_empty());
     if existed && ctx.preserve.iter().any(|p| p == var) {
         sr.skipped_existing.push(var.to_string());
         return false;

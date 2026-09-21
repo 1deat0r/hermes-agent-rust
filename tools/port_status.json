@@ -136,8 +136,8 @@
     "status": "done"
   },
   "agent.secret_sources.registry": {
-    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (470 -> 419 LOC); re-certify line-by-line before promoting",
-    "status": "partial"
+    "retarget_note": "ported at 5d59366 (2026-09-21): scoped overlays + origins + builtins + snapshot/restore + list_plugin_sources; fixed empty-env existed, dead-clone alias warnings, is_enabled panics; 3 new oracle tests",
+    "status": "done"
   },
   "agent.session_activity": {
     "retarget_note": "re-certified autonomous: docstring-only drift; suites green",
