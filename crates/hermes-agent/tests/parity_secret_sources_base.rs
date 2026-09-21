@@ -123,22 +123,189 @@ fn remediation_maps_kinds_to_actionable_hints() {
     let source = Source;
     assert_eq!(
         source
-            .remediation(Some(ErrorKind::NotConfigured))
+            .remediation(Some(ErrorKind::NotConfigured), &serde_json::json!({}))
             .as_deref(),
         Some("Run `hermes secrets bitwarden setup` to finish configuration.")
     );
     assert_eq!(
         source
-            .remediation(Some(ErrorKind::BinaryMissing))
+            .remediation(Some(ErrorKind::BinaryMissing), &serde_json::json!({}))
             .as_deref(),
         Some("Run `hermes secrets bitwarden setup` to install the helper CLI.")
     );
     assert_eq!(
-        source.remediation(Some(ErrorKind::Timeout)).as_deref(),
+        source
+            .remediation(Some(ErrorKind::Timeout), &serde_json::json!({}))
+            .as_deref(),
         Some("Backend was slow — raise secrets.bitwarden.timeout_seconds if this recurs.")
     );
     // No kind -> no hint.
-    assert_eq!(source.remediation(None), None);
+    assert_eq!(source.remediation(None, &serde_json::json!({})), None);
+}
+
+// ── restored contract surface ────────────────────────────────────────
+
+#[test]
+fn fail_builder_records_error_and_kind() {
+    // PARITY: `FetchResult.fail` — chaining builder for failed fetches.
+    let result = FetchResult::default().fail("boom", ErrorKind::Network);
+    assert!(!result.ok());
+    assert_eq!(result.error.as_deref(), Some("boom"));
+    assert_eq!(result.error_kind, Some(ErrorKind::Network));
+    assert!(FetchResult::default().ok());
+}
+
+#[test]
+fn coerce_float_matches_python_float_semantics() {
+    // PARITY: `coerce_float` — numbers, numeric strings (whitespace
+    // tolerated like Python float()), bools, malformed → default.
+    use hermes_agent::secret_sources::base::coerce_float;
+    use serde_json::json;
+    assert_eq!(coerce_float(Some(&json!(3)), 9.0), 3.0);
+    assert_eq!(coerce_float(Some(&json!(" 30 ")), 9.0), 30.0);
+    assert_eq!(coerce_float(Some(&json!(true)), 9.0), 1.0);
+    assert_eq!(coerce_float(Some(&json!(false)), 9.0), 0.0);
+    assert_eq!(coerce_float(Some(&json!("abc")), 9.0), 9.0);
+    assert_eq!(coerce_float(None, 9.0), 9.0);
+    assert_eq!(coerce_float(Some(&json!(null)), 9.0), 9.0);
+}
+
+#[test]
+fn token_env_and_protected_vars_follow_config() {
+    // PARITY: `token_env` + `protected_env_vars` — the bootstrap
+    // credential can never be clobbered by its own vault.
+    struct Source;
+    impl SecretSource for Source {
+        fn name(&self) -> &str {
+            "bitwarden"
+        }
+        fn label(&self) -> &str {
+            "Bitwarden"
+        }
+        fn token_env_key(&self) -> Option<&str> {
+            Some("access_token_env")
+        }
+        fn default_token_env(&self) -> &str {
+            "BWS_ACCESS_TOKEN"
+        }
+        fn fetch(&self, _: &serde_json::Value, _: &std::path::Path) -> FetchResult {
+            FetchResult::default()
+        }
+    }
+    let source = Source;
+    use serde_json::json;
+    assert_eq!(source.token_env(&json!({})), "BWS_ACCESS_TOKEN");
+    assert_eq!(
+        source.token_env(&json!({"access_token_env": "CUSTOM"})),
+        "CUSTOM"
+    );
+    assert_eq!(
+        source.protected_env_vars(&json!({})),
+        vec!["BWS_ACCESS_TOKEN"]
+    );
+    // Sources without a token key protect nothing.
+    struct Plain;
+    impl SecretSource for Plain {
+        fn name(&self) -> &str {
+            "plain"
+        }
+        fn label(&self) -> &str {
+            "Plain"
+        }
+        fn fetch(&self, _: &serde_json::Value, _: &std::path::Path) -> FetchResult {
+            FetchResult::default()
+        }
+    }
+    assert!(Plain.protected_env_vars(&json!({})).is_empty());
+}
+
+#[test]
+fn remediation_hints_override_per_kind() {
+    // PARITY: `remediation_hints` — per-source `{name}`/`{token_env}`
+    // overrides win over the generic text.
+    use std::collections::HashMap;
+    struct Source;
+    impl SecretSource for Source {
+        fn name(&self) -> &str {
+            "mysrc"
+        }
+        fn label(&self) -> &str {
+            "MySrc"
+        }
+        fn token_env_key(&self) -> Option<&str> {
+            Some("token_env")
+        }
+        fn default_token_env(&self) -> &str {
+            "MYSRC_TOKEN"
+        }
+        fn remediation_hints(&self) -> HashMap<ErrorKind, String> {
+            HashMap::from([(
+                ErrorKind::AuthFailed,
+                "Rotate {token_env} for {name}!".to_string(),
+            )])
+        }
+        fn fetch(&self, _: &serde_json::Value, _: &std::path::Path) -> FetchResult {
+            FetchResult::default()
+        }
+    }
+    let source = Source;
+    use serde_json::json;
+    assert_eq!(
+        source
+            .remediation(Some(ErrorKind::AuthFailed), &json!({}))
+            .as_deref(),
+        Some("Rotate MYSRC_TOKEN for mysrc!")
+    );
+    // Unlisted kinds fall through to the generic text.
+    assert!(source
+        .remediation(Some(ErrorKind::Timeout), &json!({}))
+        .unwrap()
+        .contains("timeout_seconds"));
+}
+
+#[test]
+fn classify_cli_error_first_matching_rule_wins() {
+    // PARITY: `classify_cli_error` — ordered rules, case-insensitive
+    // substring, Internal fallback.
+    use hermes_agent::secret_sources::base::classify_cli_error;
+    let rules = vec![
+        (ErrorKind::Timeout, vec!["timed out".to_string()]),
+        (
+            ErrorKind::AuthFailed,
+            vec!["unauthorized".to_string(), "401".to_string()],
+        ),
+    ];
+    assert_eq!(
+        classify_cli_error("bws TIMED OUT after 30s", &rules),
+        ErrorKind::Timeout
+    );
+    assert_eq!(
+        classify_cli_error("401 Unauthorized", &rules),
+        ErrorKind::AuthFailed
+    );
+    assert_eq!(
+        classify_cli_error("something else entirely", &rules),
+        ErrorKind::Internal
+    );
+}
+
+#[test]
+fn source_child_env_returns_only_the_fetch_view() {
+    // PARITY: `source_child_env` multiplex arm — a helper child sees
+    // ONLY the per-fetch view, never sibling secrets; no view → None
+    // (the environments surface owns the single-profile arm).
+    use hermes_agent::secret_sources::base::{
+        reset_source_environment, set_source_environment, source_child_env,
+    };
+    use std::collections::HashMap;
+    assert!(source_child_env().is_none());
+    let token = set_source_environment(HashMap::from([("A".to_string(), "1".to_string())]));
+    assert_eq!(
+        source_child_env().unwrap(),
+        HashMap::from([("A".to_string(), "1".to_string())])
+    );
+    reset_source_environment(token);
+    assert!(source_child_env().is_none());
 }
 
 // ── run_secret_cli ───────────────────────────────────────────────────────

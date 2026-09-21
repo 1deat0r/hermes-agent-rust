@@ -234,14 +234,15 @@ fn onepassword_source_adapter_contract() {
     assert!(!source.override_existing(&json!({"override_existing": false})));
     // The bootstrap-auth token env is protected.
     assert_eq!(
-        source.protected_env_vars(),
+        source.protected_env_vars(&serde_json::json!({})),
         vec!["OP_SERVICE_ACCOUNT_TOKEN"]
     );
     // Remediation hints.
     assert!(source
-        .remediation(Some(
-            hermes_agent::secret_sources::base::ErrorKind::BinaryMissing
-        ))
+        .remediation(
+            Some(hermes_agent::secret_sources::base::ErrorKind::BinaryMissing),
+            &serde_json::json!({})
+        )
         .unwrap()
         .contains("1Password CLI"));
 }

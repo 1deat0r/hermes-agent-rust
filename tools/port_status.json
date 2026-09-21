@@ -120,8 +120,8 @@
     "status": "done"
   },
   "agent.secret_sources.base": {
-    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (336 -> 255 LOC); re-certify line-by-line before promoting",
-    "status": "partial"
+    "retarget_note": "ported at 5d59366 (2026-09-21): restored token_env/protected_env_vars/remediation_hints/override_existing_default/FetchResult.fail/classify_cli_error/coerce_float/source_child_env multiplex arm; backends migrated (bitwarden/onepassword/command) + registry caller; 6 new oracle tests (coerce verified vs live Python on 8 probes)",
+    "status": "done"
   },
   "agent.secret_sources.bitwarden": {
     "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (1048 -> 639 LOC); re-certify line-by-line before promoting",

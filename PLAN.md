@@ -3663,3 +3663,16 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   killswitch green; fmt + diff-check clean. Ledger: 164 done /
   38 partial / 8693 missing tracked (1.84%), prod 164/38/3279
   (4.72%). Evidence tier: unit.
+
+- 2026-09-21 (agent-secret-base): `agent.secret_sources.base`
+  partial → done @ 5d59366 (whole module, 255 LOC). NOT a re-cert:
+  restored 7 contract pieces the b9aa928 port dropped — token_env,
+  cfg-aware protected_env_vars, remediation_hints,
+  override_existing_default (both backends already overrode the old
+  method, proving the need), FetchResult.fail, classify_cli_error,
+  Python-exact coerce_float, source_child_env multiplex arm. Migrated
+  bitwarden/onepassword/command + registry caller. 6 new oracle
+  tests. Validation: 15 passed (+43 green across the 3 backend
+  suites); warning count unchanged (30 = HEAD); fmt + diff-check
+  clean. Ledger: 165 done / 37 partial / 8693 missing tracked
+  (1.85%), prod 165/37/3279 (4.74%). Evidence tier: unit.

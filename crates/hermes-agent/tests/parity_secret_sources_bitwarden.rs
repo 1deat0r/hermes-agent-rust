@@ -94,7 +94,10 @@ fn bitwarden_adapter_contract() {
     assert!(source.override_existing(&json!({})));
     assert!(!source.override_existing(&json!({"override_existing": false})));
     // The bootstrap-auth token env is protected.
-    assert_eq!(source.protected_env_vars(), vec!["BWS_ACCESS_TOKEN"]);
+    assert_eq!(
+        source.protected_env_vars(&serde_json::json!({})),
+        vec!["BWS_ACCESS_TOKEN"]
+    );
 }
 
 #[test]

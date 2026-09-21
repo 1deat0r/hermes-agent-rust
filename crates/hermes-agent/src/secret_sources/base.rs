@@ -1,6 +1,7 @@
 //! External secret source integrations — the shared contract.
 //!
-//! PARITY: `agent/secret_sources/base.py` @ b9aa928 (whole module).
+//! PARITY: `agent/secret_sources/base.py` @ 5d59366 (whole module,
+//! 255 lines).
 //!
 //! A secret source is anything that can supply environment-variable-shaped
 //! credentials at process startup, after `~/.hermes/.env` has loaded. The
@@ -66,6 +67,19 @@ pub fn get_source_environment_snapshot() -> HashMap<String, String> {
     })
 }
 
+/// Environment for a helper child that legitimately needs the caller's
+/// env: ONLY the per-fetch view under multiplex, so no sibling
+/// profile's secrets leak.
+///
+/// PARITY: `source_child_env` (upstream lines 53-62), multiplex arm.
+/// The single-profile arm (`build_subprocess_env`) belongs to the
+/// environments surface (PENDING): when no per-fetch view is installed
+/// this returns `None` so the caller falls through to that surface
+/// instead of hand-rolling a full-env copy here.
+pub fn source_child_env() -> Option<HashMap<String, String>> {
+    SOURCE_ENVIRONMENT.with(|slot| slot.borrow().clone())
+}
+
 /// Look up one variable through the active per-fetch environment, or the
 /// process environment when no view is installed.
 ///
@@ -100,7 +114,7 @@ pub const DEFAULT_CLI_TIMEOUT_SECONDS: f64 = 30.0;
 /// NETWORK/TIMEOUT but not on AUTH_FAILED) exactly once.
 ///
 /// PARITY: `ErrorKind` (upstream lines 49-67).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ErrorKind {
     NotConfigured,
     BinaryMissing,
@@ -155,6 +169,53 @@ impl FetchResult {
     pub fn ok(&self) -> bool {
         self.error.is_none()
     }
+
+    /// Record a failure and return `self` for chaining.
+    ///
+    /// PARITY: `FetchResult.fail` (upstream lines 121-124).
+    pub fn fail(mut self, error: &str, kind: ErrorKind) -> Self {
+        self.error = Some(error.to_string());
+        self.error_kind = Some(kind);
+        self
+    }
+}
+
+/// Best-effort mapping of helper-CLI failure text onto the taxonomy:
+/// ordered (kind, substrings) rules, first rule whose substring appears
+/// (case-insensitive) wins, else `Internal`.
+///
+/// PARITY: `classify_cli_error` (upstream lines 85-91).
+pub fn classify_cli_error(message: &str, rules: &[(ErrorKind, Vec<String>)]) -> ErrorKind {
+    let lowered = message.to_lowercase();
+    for (kind, tokens) in rules {
+        if tokens
+            .iter()
+            .any(|tok| lowered.contains(&tok.to_lowercase()))
+        {
+            return *kind;
+        }
+    }
+    ErrorKind::Internal
+}
+
+/// `float(value)` with `default` for malformed config values:
+/// JSON numbers, numeric strings (Python `float()` skips surrounding
+/// whitespace), and booleans (`float(True) == 1.0`).
+///
+/// PARITY: `coerce_float` (upstream lines 94-99).
+pub fn coerce_float(value: Option<&Value>, default: f64) -> f64 {
+    match value {
+        Some(Value::Number(n)) => n.as_f64().unwrap_or(default),
+        Some(Value::Bool(b)) => {
+            if *b {
+                1.0
+            } else {
+                0.0
+            }
+        }
+        Some(Value::String(s)) => s.trim().parse::<f64>().unwrap_or(default),
+        _ => default,
+    }
 }
 
 /// One external secret backend.
@@ -201,29 +262,66 @@ pub trait SecretSource: Send + Sync {
     /// NEVER extends to vars claimed by another secret source in the same
     /// startup pass.
     fn override_existing(&self, cfg: &Value) -> bool {
+        let fallback = self.override_existing_default();
         cfg.get("override_existing")
             .and_then(Value::as_bool)
-            .unwrap_or(false)
+            .unwrap_or(fallback)
+    }
+
+    /// Class-level default for [`SecretSource::override_existing`] when
+    /// the config section sets nothing.
+    fn override_existing_default(&self) -> bool {
+        false
+    }
+
+    /// Name of the env var holding this source's bootstrap credential.
+    ///
+    /// PARITY: `token_env` (upstream lines 174-178).
+    fn token_env(&self, cfg: &Value) -> String {
+        if self.token_env_key().is_some() {
+            let named = cfg
+                .get(self.token_env_key().unwrap_or(""))
+                .and_then(Value::as_str)
+                .unwrap_or("");
+            if !named.is_empty() {
+                return named.to_string();
+            }
+        }
+        self.default_token_env().to_string()
+    }
+
+    /// Config key naming the bootstrap-auth env var (e.g.
+    /// `"access_token_env"`), or `None` when the source has none.
+    fn token_env_key(&self) -> Option<&str> {
+        None
+    }
+
+    /// Default bootstrap-auth env var when the config names none.
+    fn default_token_env(&self) -> &str {
+        ""
     }
 
     /// Env vars the orchestrator must never let ANY source overwrite —
-    /// typically the source's own bootstrap-auth var (e.g.
-    /// `BWS_ACCESS_TOKEN`) so a vault containing its own access token
-    /// can't clobber the credential used to reach it.
-    fn protected_env_vars(&self) -> Vec<String> {
-        Vec::new()
+    /// typically the source's own bootstrap-auth var so a vault
+    /// containing its own access token can't clobber the credential
+    /// used to reach it.
+    ///
+    /// PARITY: `protected_env_vars` (upstream lines 180-182).
+    fn protected_env_vars(&self, cfg: &Value) -> Vec<String> {
+        if self.token_env_key().is_some() {
+            vec![self.token_env(cfg)]
+        } else {
+            Vec::new()
+        }
     }
 
     /// Wall-clock budget the orchestrator enforces around fetch().
     fn fetch_timeout_seconds(&self, cfg: &Value) -> f64 {
-        let val = cfg
-            .get("timeout_seconds")
-            .and_then(Value::as_str)
-            .and_then(|s| s.parse::<f64>().ok())
-            .or_else(|| cfg.get("timeout_seconds").and_then(Value::as_f64));
-        match val {
-            Some(v) if v > 0.0 => v,
-            _ => DEFAULT_FETCH_TIMEOUT_SECONDS,
+        let val = coerce_float(cfg.get("timeout_seconds"), DEFAULT_FETCH_TIMEOUT_SECONDS);
+        if val > 0.0 {
+            val
+        } else {
+            DEFAULT_FETCH_TIMEOUT_SECONDS
         }
     }
 
@@ -233,12 +331,28 @@ pub trait SecretSource: Send + Sync {
         json_serde_empty_object()
     }
 
+    /// Per-kind overrides of the generic remediation text
+    /// (`{name}` / `{token_env}` placeholders). Additive overrides do
+    /// NOT bump `SECRET_SOURCE_API_VERSION`.
+    fn remediation_hints(&self) -> HashMap<ErrorKind, String> {
+        HashMap::new()
+    }
+
     /// One-line, actionable next step for a failed fetch — pure
     /// kind→string mapping, never raises, no I/O. Return `None` to
     /// suppress the hint.
-    fn remediation(&self, kind: Option<ErrorKind>) -> Option<String> {
+    ///
+    /// PARITY: `remediation` (upstream lines 194-199).
+    fn remediation(&self, kind: Option<ErrorKind>, cfg: &Value) -> Option<String> {
+        let kind = kind?;
+        if let Some(hint) = self.remediation_hints().get(&kind) {
+            return Some(
+                hint.replace("{name}", self.name())
+                    .replace("{token_env}", &self.token_env(cfg)),
+            );
+        }
         let name = self.name();
-        let generic = match kind? {
+        let generic = match kind {
             ErrorKind::NotConfigured => {
                 format!("Run `hermes secrets {name} setup` to finish configuration.")
             }

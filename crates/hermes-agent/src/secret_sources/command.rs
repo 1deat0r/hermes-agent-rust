@@ -428,7 +428,7 @@ impl SecretSource for CommandSource {
         result
     }
 
-    fn remediation(&self, kind: Option<ErrorKind>) -> Option<String> {
+    fn remediation(&self, kind: Option<ErrorKind>, _cfg: &Value) -> Option<String> {
         match kind {
             Some(ErrorKind::NotConfigured) => Some(
                 "Set secrets.command.command in config.yaml to a fast, non-interactive \

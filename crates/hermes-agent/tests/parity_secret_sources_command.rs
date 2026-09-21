@@ -180,11 +180,11 @@ fn command_source_fetch_contract() {
 
     // Remediation hints.
     assert!(source
-        .remediation(Some(ErrorKind::NotConfigured))
+        .remediation(Some(ErrorKind::NotConfigured), &serde_json::json!({}))
         .unwrap()
         .contains("Set secrets.command.command"));
     assert!(source
-        .remediation(Some(ErrorKind::Internal))
+        .remediation(Some(ErrorKind::Internal), &serde_json::json!({}))
         .unwrap()
         .contains("Run the helper manually"));
 }

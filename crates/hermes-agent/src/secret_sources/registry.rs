@@ -457,7 +457,7 @@ pub fn apply_all(
             home_path.unwrap_or(Path::new(".")).to_path_buf(),
             env,
         );
-        for var in source.protected_env_vars() {
+        for var in source.protected_env_vars(&cfg) {
             protected
                 .entry(var)
                 .or_insert_with(|| source.name().to_string());

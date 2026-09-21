@@ -512,16 +512,20 @@ impl SecretSource for OnePasswordSource {
     /// Default True: an explicit VAR→op:// binding is the strongest user
     /// intent there is — leaving a stale .env line in place should not
     /// silently defeat it.
-    fn override_existing(&self, cfg: &Value) -> bool {
-        cfg.get("override_existing")
-            .and_then(Value::as_bool)
-            .unwrap_or(true)
+    fn override_existing_default(&self) -> bool {
+        // Leaving a stale .env line in place must not silently defeat
+        // an explicit override (see the old override_existing body).
+        true
     }
 
     /// The source's own bootstrap-auth var (the service-account token env)
     /// so a resolved secret can never clobber the credential used to auth.
-    fn protected_env_vars(&self) -> Vec<String> {
-        vec![DEFAULT_TOKEN_ENV.to_string()]
+    fn token_env_key(&self) -> Option<&str> {
+        Some("service_account_token_env")
+    }
+
+    fn default_token_env(&self) -> &str {
+        DEFAULT_TOKEN_ENV
     }
 
     fn config_schema(&self) -> Value {
@@ -617,7 +621,7 @@ impl SecretSource for OnePasswordSource {
         }
     }
 
-    fn remediation(&self, kind: Option<ErrorKind>) -> Option<String> {
+    fn remediation(&self, kind: Option<ErrorKind>, _cfg: &Value) -> Option<String> {
         match kind {
             Some(ErrorKind::AuthFailed) | Some(ErrorKind::AuthExpired) => Some(
                 "Run `hermes secrets onepassword token` to paste a fresh \
