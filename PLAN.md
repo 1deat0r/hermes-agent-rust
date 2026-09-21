@@ -3688,3 +3688,13 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   Validation: 12 passed; warning count unchanged (30 = HEAD); fmt +
   diff-check clean. Ledger: 166 done / 36 partial / 8693 missing
   tracked (1.87%), prod 166/36/3279 (4.77%). Evidence tier: unit.
+
+- 2026-09-21 (tools-env-probe): `tools.env_probe` partial → done @
+  5d59366 (whole module, 255 LOC, line-by-line). Fixed the #68559
+  gap: backend now resolves in the caller context with a
+  cache-bypassing remote short-circuit (was worker-only env read);
+  added the `plugin_backend_is_remote` fail-soft stub for the
+  terminal-registry surface. 1 new oracle test. Validation: 14
+  passed; fmt + diff-check clean. Ledger: 167 done / 35 partial /
+  8693 missing tracked (1.88%), prod 167/35/3279 (4.80%). Evidence
+  tier: unit.

@@ -680,8 +680,8 @@
     "status": "done"
   },
   "tools.env_probe": {
-    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (370 -> 255 LOC); re-certify line-by-line before promoting",
-    "status": "partial"
+    "retarget_note": "re-certified at 5d59366 (2026-09-21): whole module line-by-line (255 LOC); backend now resolves in caller context with cache-bypassing remote short-circuit (#68559) + plugin_backend_is_remote fail-soft stub; 1 new oracle test; header re-pinned",
+    "status": "done"
   },
   "tools.fal_common": {
     "retarget_note": "re-certified autonomous: ternary/factory/_dist refactors verified behavior-identical; suites green",

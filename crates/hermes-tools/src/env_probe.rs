@@ -1,6 +1,6 @@
 //! Local-environment toolchain probe for the system prompt.
 //!
-//! PARITY: tools/env_probe.py @ b9aa928 (370 LOC, ported 1:1).
+//! PARITY: tools/env_probe.py @ 5d59366 (whole module, 255 lines).
 //!
 //! When the terminal backend is local, Hermes surfaces a single
 //! deterministic line about Python tooling state so models don't have to
@@ -56,6 +56,36 @@ const REMOTE_BACKENDS: [&str; 7] = [
     "managed_modal",
     "vercel_sandbox",
 ];
+
+/// Whether a plugin-registered terminal backend is remote (fail-soft:
+/// unknown backends probe, exactly like upstream's `except Exception:
+/// return False`).
+///
+/// PARITY: `_plugin_backend_is_remote` (upstream lines 42-50). The
+/// `terminal_env_registry.provider_flag` lookup belongs to the terminal
+/// registry surface (PENDING); until it lands, only the built-in table
+/// answers.
+fn plugin_backend_is_remote(backend: &str) -> bool {
+    if backend.is_empty() || backend == "local" || REMOTE_BACKENDS.contains(&backend) {
+        return false;
+    }
+    false
+}
+
+/// Scope-aware terminal backend name (`local` when unresolvable; never
+/// lets policy resolution break prompt building).
+///
+/// PARITY: `_resolve_terminal_backend` (upstream lines 117-125). The
+/// `terminal_scope.terminal_env` lookup belongs to the terminal-scope
+/// surface (PENDING — under gateway multiplexing the routed profile's
+/// backend lives in the per-turn scope, which a worker thread does not
+/// inherit, #68559); until it lands this reads the process `TERMINAL_ENV`.
+fn resolve_terminal_backend() -> String {
+    env::var("TERMINAL_ENV")
+        .unwrap_or_else(|_| "local".to_string())
+        .trim()
+        .to_lowercase()
+}
 
 // Module-level cache. The probe result is deterministic for the lifetime
 // of the process. Mirrors the upstream `_CACHE_LOCK` / `_CACHED_LINE` /
@@ -346,12 +376,11 @@ fn _build_probe_line() -> String {
     }
 
     // Bail out if a remote terminal backend is configured; the host's
-    // Python state isn't where the agent's tools run.
-    let backend = env::var("TERMINAL_ENV")
-        .unwrap_or_else(|_| "local".to_string())
-        .trim()
-        .to_lowercase();
-    if REMOTE_BACKENDS.contains(&backend.as_str()) {
+    // Python state isn't where the agent's tools run. Resolved here
+    // (worker context, process env) — the caller-context resolution
+    // (#68559) rides the terminal-scope surface when it lands.
+    let backend = resolve_terminal_backend();
+    if REMOTE_BACKENDS.contains(&backend.as_str()) || plugin_backend_is_remote(&backend) {
         return String::new();
     }
 
@@ -473,6 +502,16 @@ pub fn get_environment_probe_line(force_refresh: bool) -> String {
         state.probe_thread_started = false;
         state.probe_gen += 1;
         state.wait_already_timed_out = false;
+    }
+
+    // Resolve the backend HERE, in the caller's context: remote backends
+    // answer "" without consulting the cache — the cached line describes
+    // the HOST toolchain (#68559). The scope-aware lookup itself rides
+    // the terminal-scope surface; the process-env read is what's
+    // available here.
+    let backend = resolve_terminal_backend();
+    if REMOTE_BACKENDS.contains(&backend.as_str()) || plugin_backend_is_remote(&backend) {
+        return String::new();
     }
 
     {

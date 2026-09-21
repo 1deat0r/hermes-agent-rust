@@ -1,5 +1,5 @@
 //! Parity oracles for the Python toolchain probe, mirroring upstream
-//! tests/tools/test_env_probe.py @ b9aa928.
+//! tests/tools/test_env_probe.py @ 5d59366.
 //!
 //! Tier: mock/unit. Upstream monkeypatches module functions; Rust modules
 //! are not monkeypatchable, so the probe scenarios run the REAL code
@@ -217,6 +217,27 @@ fn docker_returns_empty() {
     let line = get_environment_probe_line(false);
     _reset_cache_for_tests();
     assert_eq!(line, "");
+}
+
+#[test]
+fn remote_short_circuits_without_touching_cache() {
+    // PARITY: #68559 — the backend resolves in the CALLER's context and
+    // remote backends answer "" without consulting the cache (the cached
+    // line describes the HOST toolchain).
+    let _guard = ENV_PROBE_TEST_LOCK.lock().unwrap();
+    _reset_cache_for_tests();
+    let tb = FakeToolbox::new(&[("python3", PYTHON3_FAKE)]);
+    let _path = EnvVarGuard::set("PATH", Some(tb.path().to_str().unwrap()));
+    let _term = EnvVarGuard::set("TERMINAL_ENV", None);
+    // Prime the HOST cache with a real line.
+    let _ = get_environment_probe_line(false);
+    // Flip to remote: immediate "", cache untouched.
+    let _term = EnvVarGuard::set("TERMINAL_ENV", Some("docker"));
+    assert_eq!(get_environment_probe_line(false), "");
+    // Back to local: the HOST line is still cached (no re-probe).
+    let _term = EnvVarGuard::set("TERMINAL_ENV", None);
+    let _ = get_environment_probe_line(false);
+    _reset_cache_for_tests();
 }
 
 #[test]
