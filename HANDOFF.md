@@ -291,6 +291,20 @@ Partial → done @ 5d59366 (259 LOC; selection subsystem restored,
 whitespace credential fix, 5 oracle tests, 45/45).
 **Ledger: 168/34/8693 (1.89% tracked, 4.83% prod).**
 
+## tools.tool_backend_helpers done (2026-09-21)
+
+Partial → done @ 5d59366 (259 LOC; selection subsystem restored,
+whitespace credential fix, 5 oracle tests, 45/45).
+**Ledger: 168/34/8693 (1.89% tracked, 4.83% prod).**
+
+NOTE (infra): the Research upstream checkout had been externally
+deleted mid-session (pre-commit hook refused with "not at the pinned
+5d59366"). Recovered per recipe: re-cloned NousResearch/hermes-agent,
+fetched the pin SHA, byte-verified the fresh tree against the intact
+`.upstream-pin` oracle files (all identical — session work was sound),
+re-anchored the canonical worktree. Commit `211a0fe`, pushed,
+mirror-identical.
+
 ## tools.env_probe done (2026-09-21)
 
 Partial → done @ 5d59366 (255 LOC; caller-context backend +
