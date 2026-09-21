@@ -285,6 +285,14 @@ Next: Wave B6 remainder in smallest-LOC order — `token_auth` (96),
 missing HTTP siblings (middleware/routes/login_page/request_utils/
 refresh_singleflight) to close `dashboard_auth.__init__`.
 
+## Git + GitHub fully synced (2026-09-21)
+
+Genius-agent pass: 32 commits pushed (`72efd57..4357aa0`),
+ahead 0/behind 0, tree SHAs identical (`00c3ef6…`), description
+synced, stale `local-sha-sequence-20260824` archived as tag + deleted.
+Gates `.unlazy/git-hygiene/GATES.md` 5/5 met. Only `main` remains.
+**Ledger: 163/39/8693 (1.83% tracked, 4.69% prod).**
+
 ## tools.mcp_dashboard_oauth done (2026-09-21)
 
 Partial → done @ 5d59366 (140 LOC; iss carry-through + parse_qs-exact
