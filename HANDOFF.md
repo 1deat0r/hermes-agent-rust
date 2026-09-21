@@ -297,9 +297,11 @@ Unit 5/8: `base` partial → done @ 5d59366 (162 LOC, 1 oracle test,
 9/9). Unit 6/8: `cookies` partial → done @ 5d59366 (222 LOC, 3
 divergence fixes + PKCE codec, 8 oracle tests, 17/17). Unit 7/8:
 `native_flow` partial → done @ 5d59366 (165 LOC, 2 consume tests,
-8/8). **Ledger: 156/41/8698 (1.75% tracked, 4.49% prod).** Next:
-missing HTTP siblings (middleware/routes/login_page/request_utils/
-refresh_singleflight) → __init__ close.
+8/8). Unit 8/10: `request_utils` + `refresh_singleflight` missing →
+done @ 5d59366 (89+107 LOC, 14 oracle tests incl. burst). **Ledger:
+158/41/8696 (1.78% tracked, 4.54% prod).** Next: middleware + routes
++ login_page (FastAPI surfaces, decision-tables portable) → __init__
+close.
 
 ## Jev god-tier pass landed (2026-09-20)
 

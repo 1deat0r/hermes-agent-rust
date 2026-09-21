@@ -22,6 +22,8 @@ pub mod cookies;
 pub mod native_flow;
 pub mod prefix;
 pub mod public_paths;
+pub mod refresh_singleflight;
 pub mod registry;
+pub mod request_utils;
 pub mod token_auth;
 pub mod ws_tickets;

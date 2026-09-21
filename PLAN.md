@@ -3618,3 +3618,14 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   passed, 0 failed; fmt + diff-check clean. Ledger: 156 done /
   41 partial / 8698 missing tracked (1.75%), prod 156/41/3284
   (4.49%). Evidence tier: unit.
+
+- 2026-09-21 (dashboard-auth-8): `request_utils` + `refresh_singleflight`
+  missing → done @ 5d59366 (89 + 107 LOC, line-by-line ports).
+  Single-flight keyed on (Arc identity, sha256(token)); documented
+  hardening: panicking providers read as unreachable (upstream would
+  crash the scan). 14 oracle tests incl. 16-thread burst proving
+  exactly-one provider call. Validation: 8 + 6 passed; fmt +
+  diff-check clean. Ledger: 158 done / 39 partial / 8698 missing
+  tracked (1.78%), prod 158/41/3282 (4.54%). Evidence tier: unit.
+  (Both siblings were missing-tracked, so partials drop next when the
+  remaining package closes.)
