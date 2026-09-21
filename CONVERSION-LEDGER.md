@@ -1,7 +1,7 @@
 # Hermes Agent → Hermes Agent Rust Conversion Ledger
 
-**Current strict completion: 1.90% of all tracked upstream modules (169/8895).**
-Production-only strict completion: **4.85%** (169/3481 production modules).
+**Current strict completion: 1.91% of all tracked upstream modules (170/8895).**
+Production-only strict completion: **4.88%** (170/3481 production modules).
 
 > This file is generated from `tools/inventory.json`; update the source ledger in `tools/port_status.json`, regenerate the inventory, then run `python3 tools/conversion_ledger.py`. Only `done` counts toward the percentage. `partial` is intentionally zero credit until its stated parity seams are closed. AGENTS: generated-only — query JSON summaries per AGENTS.md §2; never read this file whole.
 
@@ -9,10 +9,10 @@ Production-only strict completion: **4.85%** (169/3481 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 169 | 33 | 8693 | 1.90% | 14,423/2,467,838 done LOC |
-| Production modules | 169 | 33 | 3279 | 4.85% | 14,423/1,147,748 done LOC |
+| All tracked modules | 170 | 32 | 8693 | 1.91% | 14,806/2,467,838 done LOC |
+| Production modules | 170 | 32 | 3279 | 4.88% | 14,806/1,147,748 done LOC |
 
-Inventory source: `/run/media/its1deat0r/Projects/AI Agents/Hermes-Agent-Rust/.upstream-pin/5d59366` at `2026-09-22T10:54:01`.
+Inventory source: `/run/media/its1deat0r/Projects/AI Agents/Hermes-Agent-Rust/.upstream-pin/5d59366` at `2026-09-22T11:02:05`.
 
 ## Definition of 100.00%
 
@@ -36,7 +36,6 @@ The conversion is complete only when all of these are true:
 | `agent.monitoring.gateway_health_export` | P2 | 344 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `agent.monitoring.otlp_exporter` | P2 | 283 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `agent.secret_sources.bitwarden` | P2 | 639 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
-| `agent.secret_sources.command` | P2 | 383 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `agent.secret_sources.registry` | P2 | 419 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `agent.verify.recipes` | P2 | 296 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `gateway.platforms.qqbot.keyboards` | P4 | 287 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
@@ -299,7 +298,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `agent.secret_sources._cache` | production | P2 | 191 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.secret_sources.base` | production | P2 | 255 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.secret_sources.bitwarden` | production | P2 | 639 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
-| `agent.secret_sources.command` | production | P2 | 383 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
+| `agent.secret_sources.command` | production | P2 | 383 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.secret_sources.onepassword` | production | P2 | 360 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `agent.secret_sources.registry` | production | P2 | 419 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
 | `agent.session_activity` | production | P1 | 91 | ✅ done | Maintain parity evidence; no remaining task in this row. |

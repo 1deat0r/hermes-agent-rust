@@ -3720,3 +3720,13 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   fmt + diff-check clean. Ledger: 169 done / 33 partial / 8693
   missing tracked (1.90%), prod 169/33/3279 (4.85%). Evidence tier:
   unit.
+
+- 2026-09-21 (secret-command): `agent.secret_sources.command`
+  partial → done @ 5d59366 (whole module, 383 LOC, line-by-line).
+  Fixed a multiplex secret leak (helper inherited the full process
+  env — now the per-fetch view), a stderr/stdout buffer merge that
+  polluted parsed secrets, signal-name logging, timeout coercion,
+  hints migration, and ported apply_command_secrets. 2 new oracle
+  tests. Validation: 16 passed; fmt + diff-check clean. Ledger: 170
+  done / 32 partial / 8693 missing tracked (1.91%), prod 170/32/3279
+  (4.88%). Evidence tier: unit.

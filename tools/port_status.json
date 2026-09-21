@@ -128,8 +128,8 @@
     "status": "partial"
   },
   "agent.secret_sources.command": {
-    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (501 -> 383 LOC); re-certify line-by-line before promoting",
-    "status": "partial"
+    "retarget_note": "ported at 5d59366 (2026-09-21): fixed child-env inheritance (multiplex leak) via source_child_env, split stdout/stderr buffers (stderr polluted secrets), signal names, coerce_float timeout, hints migration, apply_command_secrets port; 2 new oracle tests",
+    "status": "done"
   },
   "agent.secret_sources.onepassword": {
     "retarget_note": "ported at 5d59366 (2026-09-21): classify via shared engine (fork killed), fetch via token_env/coerce_float, remediation full-override -> hints (Timeout/Network generic fixed), apply_onepassword_secrets ported; 2 new oracle tests; header re-pinned",

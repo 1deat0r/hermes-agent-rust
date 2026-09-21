@@ -6,11 +6,16 @@
 
 use serde_json::json;
 
+use std::sync::Mutex;
+
 use hermes_agent::secret_sources::base::{ErrorKind, SecretSource};
 use hermes_agent::secret_sources::command::{
     get_command_secret, list_command_secrets, parse_secret_output, unquote_dotenv_value,
     CommandSource, COMMAND_TIMEOUT_SECONDS, MAX_OUTPUT_BYTES,
 };
+
+// Process-env mutations serialize (apply_* writes real env vars).
+static ENV_GUARD: Mutex<()> = Mutex::new(());
 
 // ── unquote_dotenv_value ─────────────────────────────────────────────────
 
@@ -187,4 +192,51 @@ fn command_source_fetch_contract() {
         .remediation(Some(ErrorKind::Internal), &serde_json::json!({}))
         .unwrap()
         .contains("Run the helper manually"));
+}
+
+// ── 5d59366 fixes ──────────────────────────────────────────────────────
+
+#[test]
+fn stderr_does_not_pollute_parsed_secrets() {
+    // A helper whose diagnostics go to stderr must not leak them into
+    // the parsed secrets (separate buffers; stderr discarded).
+    let cfg = serde_json::json!({
+        "command": "printf 'A=1\n' >&2; printf 'B=two\n'",
+        "helper_timeout_seconds": 5,
+    });
+    let result = CommandSource.fetch(&cfg, std::path::Path::new("/tmp"));
+    assert!(result.error.is_none(), "{result:?}");
+    assert_eq!(result.secrets.get("B").map(String::as_str), Some("two"));
+    assert!(!result.secrets.contains_key("A"), "{result:?}");
+}
+
+#[test]
+fn apply_command_secrets_applies_and_skips() {
+    // PARITY: `apply_command_secrets` — empty command errors, guarded
+    // keys skip, live values apply.
+    use hermes_agent::secret_sources::command::apply_command_secrets;
+    let empty = apply_command_secrets("", false, 3.0, 1024 * 1024);
+    assert!(empty.error.is_some());
+    let _guard = ENV_GUARD.lock();
+    unsafe { std::env::set_var("APPLY_PROBE_A", "preexisting") };
+    let result = apply_command_secrets(
+        "printf 'APPLY_PROBE_A=new\nAPPLY_PROBE_B=  \nAPPLY_PROBE_C=v\n'",
+        false,
+        5.0,
+        1024 * 1024,
+    );
+    // A keeps its env value (no override), whitespace-only B skips,
+    // C applies.
+    assert!(result.skipped.contains(&"APPLY_PROBE_A".to_string()));
+    assert!(result.skipped.contains(&"APPLY_PROBE_B".to_string()));
+    assert!(result.applied.contains(&"APPLY_PROBE_C".to_string()));
+    assert_eq!(
+        std::env::var("APPLY_PROBE_C").as_deref(),
+        Ok("v"),
+        "applied to the process env"
+    );
+    unsafe {
+        std::env::remove_var("APPLY_PROBE_A");
+        std::env::remove_var("APPLY_PROBE_C");
+    }
 }

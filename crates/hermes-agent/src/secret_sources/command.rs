@@ -1,6 +1,7 @@
 //! `command` secret source — resolve secrets via a user-configured helper.
 //!
-//! PARITY: `agent/secret_sources/command.py` @ b9aa928 (whole module; the
+//! PARITY: `agent/secret_sources/command.py` @ 5d59366 (whole module,
+//! 383 lines; the
 //! `CommandSource` registry adapter included).
 //!
 //! Ports the security semantics of the desktop app's TypeScript
@@ -30,7 +31,7 @@ use once_cell::sync::Lazy;
 use regex::Regex;
 use serde_json::Value;
 
-use super::base::{ErrorKind, FetchResult, SecretSource};
+use super::base::{coerce_float, source_child_env, ErrorKind, FetchResult, SecretSource};
 
 /// Hard cap so a hung helper can never wedge startup — a configured helper
 /// MUST be fast and NON-INTERACTIVE.
@@ -55,6 +56,25 @@ static PADDING_ONLY_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"^=*$").expect("p
 
 fn is_windows() -> bool {
     cfg!(windows)
+}
+
+/// Signal number → name for structured failure logs (upstream
+/// `Signals(-code).name`, numeric fallback).
+fn signal_name(signum: i32) -> String {
+    match signum {
+        1 => "SIGHUP".to_string(),
+        2 => "SIGINT".to_string(),
+        3 => "SIGQUIT".to_string(),
+        4 => "SIGILL".to_string(),
+        6 => "SIGABRT".to_string(),
+        8 => "SIGFPE".to_string(),
+        9 => "SIGKILL".to_string(),
+        11 => "SIGSEGV".to_string(),
+        13 => "SIGPIPE".to_string(),
+        14 => "SIGALRM".to_string(),
+        15 => "SIGTERM".to_string(),
+        n => n.to_string(),
+    }
 }
 
 /// Strip a single layer of matching surrounding quotes from a dotenv
@@ -181,9 +201,24 @@ fn run_helper(
 
     let mut spawned = {
         use std::os::unix::process::CommandExt;
-        Command::new("/bin/sh")
-            .arg("-c")
-            .arg(command)
+        // The helper legitimately gets the caller's env (it may need any
+        // credential to resolve the secret) — but a multiplex profile
+        // only its own: `source_child_env` returns the per-fetch view
+        // when one is installed, and None on the single-profile path
+        // where the process env IS the caller's env (upstream
+        // `build_subprocess_env` shape, environments surface PENDING).
+        let mut child_cmd = Command::new("/bin/sh");
+        child_cmd.arg("-c").arg(command);
+        match source_child_env() {
+            Some(view) => {
+                child_cmd.env_clear();
+                for (k, v) in &view {
+                    child_cmd.env(k, v);
+                }
+            }
+            None => {}
+        }
+        child_cmd
             .env("HERMES_SECRET_KEY", secret_key)
             .stdin(Stdio::null())
             .stdout(Stdio::piped())
@@ -204,18 +239,21 @@ fn run_helper(
     };
     let pid = child.id() as i32;
 
-    // Drain stdout on a thread; stderr is captured and discarded.
+    // Drain stdout and stderr on SEPARATE buffers (upstream pipes them
+    // separately and discards stderr): merging them would pollute the
+    // parsed secrets with helper diagnostics.
     let mut stdout_pipe = child.stdout.take();
     let mut stderr_pipe = child.stderr.take();
     let drain = std::thread::spawn(move || {
-        let mut buf = Vec::new();
-        if let Some(out) = stderr_pipe.as_mut() {
-            let _ = out.read_to_end(&mut buf);
+        let mut out = Vec::new();
+        if let Some(pipe) = stdout_pipe.as_mut() {
+            let _ = pipe.read_to_end(&mut out);
         }
-        if let Some(out) = stdout_pipe.as_mut() {
-            let _ = out.read_to_end(&mut buf);
+        let mut err = Vec::new();
+        if let Some(pipe) = stderr_pipe.as_mut() {
+            let _ = pipe.read_to_end(&mut err);
         }
-        buf
+        (out, err)
     });
 
     let deadline = Instant::now() + Duration::from_secs_f64(timeout_seconds);
@@ -260,11 +298,13 @@ fn run_helper(
     let code = exit_code.unwrap_or(-1);
     if code != 0 {
         // Structured fields ONLY — never the command string or the
-        // helper's stderr (either can carry secret material).
+        // helper's stderr (either can carry secret material). Negative
+        // codes are signals; resolve the name like upstream's
+        // `Signals(-code).name` (numeric fallback when unknown).
         if code < 0 {
             eprintln!(
                 "[secrets:command] helper failed; resolving no value: code=? signal={}",
-                -code
+                signal_name(-code)
             );
         } else {
             eprintln!(
@@ -275,7 +315,7 @@ fn run_helper(
         return None;
     }
 
-    let stdout_bytes = drain.join().unwrap_or_default();
+    let (stdout_bytes, _stderr_discarded) = drain.join().unwrap_or_default();
     if stdout_bytes.len() > max_output_bytes {
         eprintln!(
             "[secrets:command] helper output exceeded the {max_output_bytes}-byte cap; \
@@ -328,6 +368,76 @@ pub fn list_command_secrets(
         return Vec::new();
     };
     parse_dotenv_map(&stdout)
+}
+
+/// Run the helper once at startup and apply its KEY=VALUE output.
+///
+/// LEGACY shim retained for API symmetry; the startup path goes
+/// through `CommandSource` + the registry orchestrator instead (which
+/// owns precedence and the environ writes).
+///
+/// PARITY: `apply_command_secrets` (upstream lines 200-265). Writes to
+/// the process env — scoped to this explicit entry point like the
+/// onepassword equivalent.
+pub fn apply_command_secrets(
+    command: &str,
+    override_existing: bool,
+    timeout_seconds: f64,
+    max_output_bytes: usize,
+) -> FetchResult {
+    let mut result = FetchResult::default();
+    let command = command.trim();
+    if command.is_empty() {
+        result.error = Some(
+            "secrets.command.enabled is true but secrets.command.command is empty. \
+             Set the helper command in config.yaml."
+                .to_string(),
+        );
+        return result;
+    }
+    if is_windows() {
+        result.warnings.push(
+            "the 'command' secret source is POSIX-only (needs /bin/sh); skipping on Windows"
+                .to_string(),
+        );
+        return result;
+    }
+    // The list/enumerate path: run the helper exactly ONCE with an
+    // empty HERMES_SECRET_KEY and parse its stdout as a dotenv blob.
+    let Some(stdout) = run_helper(command, "", timeout_seconds, max_output_bytes) else {
+        // run_helper already logged structured fields.
+        result.warnings.push(
+            "helper command failed at startup; no secrets applied (process env / .env values remain in effect)"
+                .to_string(),
+        );
+        return result;
+    };
+    let secrets = parse_dotenv_map(&stdout);
+    if secrets.is_empty() {
+        result.warnings.push(
+            "helper output was not a KEY=VALUE map; nothing applied at startup (a bare-value helper still resolves single keys on demand)"
+                .to_string(),
+        );
+        return result;
+    }
+    for (key, value) in secrets {
+        if value.trim().is_empty() {
+            // Whitespace-only placeholders are "no value" — applying them
+            // would flow into an Authorization header → guaranteed 401.
+            result.skipped.push(key);
+            continue;
+        }
+        if !override_existing && std::env::var(&key).map(|v| !v.is_empty()).unwrap_or(false) {
+            // Process env / .env win — same precedence as bitwarden.
+            result.skipped.push(key);
+            continue;
+        }
+        // SAFETY: explicit sync entry point only (see docstring).
+        unsafe { std::env::set_var(&key, &value) };
+        result.secrets.insert(key.clone(), value);
+        result.applied.push(key);
+    }
+    result
 }
 
 /// The registry-facing `SecretSource` adapter (bulk shape: the helper
@@ -402,11 +512,16 @@ impl SecretSource for CommandSource {
             return result;
         }
 
-        let timeout = map
-            .get("helper_timeout_seconds")
-            .and_then(Value::as_f64)
-            .filter(|t| *t > 0.0)
-            .unwrap_or(COMMAND_TIMEOUT_SECONDS);
+        let timeout = coerce_float(map.get("helper_timeout_seconds"), COMMAND_TIMEOUT_SECONDS);
+        // NOTE: upstream passes coerce_float straight through (a negative
+        // config would raise in communicate()); here non-positive budgets
+        // fall back to the default — a stuck startup is worse than a
+        // loud config.
+        let timeout = if timeout > 0.0 {
+            timeout
+        } else {
+            COMMAND_TIMEOUT_SECONDS
+        };
 
         let Some(stdout) = run_helper(&command, "", timeout, MAX_OUTPUT_BYTES) else {
             result.error = Some(
@@ -428,19 +543,20 @@ impl SecretSource for CommandSource {
         result
     }
 
-    fn remediation(&self, kind: Option<ErrorKind>, _cfg: &Value) -> Option<String> {
-        match kind {
-            Some(ErrorKind::NotConfigured) => Some(
+    fn remediation_hints(&self) -> std::collections::HashMap<ErrorKind, String> {
+        std::collections::HashMap::from([
+            (
+                ErrorKind::NotConfigured,
                 "Set secrets.command.command in config.yaml to a fast, non-interactive \
                  helper that prints KEY=VALUE lines."
                     .to_string(),
             ),
-            Some(ErrorKind::Internal) => Some(
+            (
+                ErrorKind::Internal,
                 "Run the helper manually in a shell to see its real error — Hermes \
                  discards helper stderr so diagnostics can't leak secret material."
                     .to_string(),
             ),
-            _ => None,
-        }
+        ])
     }
 }
