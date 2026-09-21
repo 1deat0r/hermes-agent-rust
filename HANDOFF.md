@@ -288,9 +288,11 @@ refresh_singleflight) to close `dashboard_auth.__init__`.
 ## dashboard_auth close in progress (2026-09-21)
 
 Unit 1/6: `token_auth` partial → done @ 5d59366 (96 LOC,
-red-green-proven `catch_unwind`, 14/14 tests). **Ledger: 150/47/8698
-(1.69% tracked, 4.31% prod).** Next: ws_tickets → registry → prefix →
-base/cookies/native_flow → missing HTTP siblings → __init__ close.
+red-green-proven `catch_unwind`, 14/14 tests). Unit 2/6: `ws_tickets`
+partial → done @ 5d59366 (97 LOC, 9 oracle tests incl. concurrency,
+14/14). **Ledger: 151/46/8698 (1.70% tracked, 4.34% prod).** Next:
+registry → prefix → base/cookies/native_flow → missing HTTP siblings
+→ __init__ close.
 
 ## Jev god-tier pass landed (2026-09-20)
 

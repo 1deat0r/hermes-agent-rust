@@ -1,7 +1,16 @@
 //! WS-upgrade auth credentials for gated mode.
 //!
-//! PARITY: `hermes_cli/dashboard_auth/ws_tickets.py` @ b9aa928 (whole
-//! module).
+//! PARITY: `hermes_cli/dashboard_auth/ws_tickets.py` @ 5d59366 (whole
+//! module, 97 lines). `mint_ticket` / `consume_ticket` (lines 36-59),
+//! `_gc_expired_locked` (lines 62-66), `internal_ws_credential` /
+//! `consume_internal_credential` (lines 69-89), `TicketInvalid` (lines
+//! 32-33), `TTL_SECONDS` / `INTERNAL_*` (lines 21/27-29),
+//! `_reset_for_tests` (lines 92-97).
+//!
+//! Intentional divergence: the unknown-ticket truncation counts chars
+//! where upstream slices bytes (`ticket[:8]`). `token_urlsafe` output
+//! is always ASCII so the shapes coincide on every reachable input,
+//! and the char form can never panic on a non-boundary.
 //!
 //! Browsers cannot set `Authorization` on a WebSocket upgrade. In loopback
 //! mode the legacy `?token=` query param works because the token is
@@ -45,14 +54,14 @@ use serde_json::Value;
 /// that the SPA can call `getWsTicket()` and immediately open the WS,
 /// short enough that a leaked ticket is uninteresting.
 ///
-/// PARITY: `TTL_SECONDS` (upstream line 28).
+/// PARITY: `TTL_SECONDS` (upstream line 21).
 pub const TTL_SECONDS: i64 = 30;
 
 /// Identity recorded for connections that authenticate via the internal
 /// credential, so audit logs distinguish them from browser-initiated
 /// tickets.
 ///
-/// PARITY: `INTERNAL_USER_ID` / `INTERNAL_PROVIDER` (upstream lines 43-44).
+/// PARITY: `INTERNAL_USER_ID` / `INTERNAL_PROVIDER` (upstream lines 27-29).
 pub const INTERNAL_USER_ID: &str = "server-internal";
 pub const INTERNAL_PROVIDER: &str = "server-internal";
 
@@ -101,7 +110,7 @@ fn token_urlsafe_32() -> String {
 /// The info dict is stored for the consumer so the WS handler can carry
 /// the identity forward into its session log.
 ///
-/// PARITY: `mint_ticket` (upstream lines 62-76).
+/// PARITY: `mint_ticket` (upstream lines 36-44).
 pub fn mint_ticket(user_id: &str, provider: &str) -> String {
     mint_ticket_at(user_id, provider, now_unix())
 }
@@ -129,7 +138,7 @@ pub fn mint_ticket_at(user_id: &str, provider: &str, now: i64) -> String {
 /// `UnknownTicket` with the value truncated (misuse never logs the secret
 /// in full).
 ///
-/// PARITY: `consume_ticket` (upstream lines 79-95).
+/// PARITY: `consume_ticket` (upstream lines 47-59).
 pub fn consume_ticket(ticket: &str) -> Result<TicketInfo, TicketInvalid> {
     consume_ticket_at(ticket, now_unix())
 }
@@ -159,7 +168,7 @@ pub fn consume_ticket_at(ticket: &str, now: i64) -> Result<TicketInfo, TicketInv
 
 /// Drop expired tickets. Caller holds the lock.
 ///
-/// PARITY: `_gc_expired_locked` (upstream lines 98-103).
+/// PARITY: `_gc_expired_locked` (upstream lines 62-66).
 fn gc_expired_locked(state: &mut State, now: i64) {
     let expired: Vec<String> = state
         .tickets
@@ -179,7 +188,7 @@ fn gc_expired_locked(state: &mut State, now: i64) {
 /// indefinitely. Never injected into the SPA HTML or returned over any
 /// REST endpoint; only ever passed to a child process via its environment.
 ///
-/// PARITY: `internal_ws_credential` (upstream lines 106-124).
+/// PARITY: `internal_ws_credential` (upstream lines 69-76).
 pub fn internal_ws_credential() -> String {
     let mut state = STATE.lock().unwrap_or_else(|e| e.into_inner());
     state
@@ -195,7 +204,7 @@ pub fn internal_ws_credential() -> String {
 /// length/prefix information on mismatch. If no internal credential has
 /// been minted yet, any value is rejected.
 ///
-/// PARITY: `consume_internal_credential` (upstream lines 127-156).
+/// PARITY: `consume_internal_credential` (upstream lines 79-89).
 pub fn consume_internal_credential(value: &str) -> Result<TicketInfo, TicketInvalid> {
     let expected = STATE
         .lock()
@@ -235,7 +244,7 @@ fn constant_time_eq(a: &[u8], b: &[u8]) -> bool {
 
 /// Test-only: drop all tickets and the internal credential.
 ///
-/// PARITY: `_reset_for_tests` (upstream lines 159-164).
+/// PARITY: `_reset_for_tests` (upstream lines 92-97).
 pub fn reset_for_tests() {
     let mut state = STATE.lock().unwrap_or_else(|e| e.into_inner());
     state.tickets.clear();

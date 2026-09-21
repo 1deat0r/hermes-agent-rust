@@ -1,19 +1,19 @@
 {
  "generated_from": "/run/media/its1deat0r/Projects/AI Agents/Hermes-Agent-Rust/.upstream-pin/5d59366",
- "generated_at": "2026-09-21T14:27:20",
+ "generated_at": "2026-09-21T14:29:52",
  "summary": {
   "modules": 8895,
   "total_lines": 2467838,
   "production_modules": 3481,
   "production_lines": 1147748,
   "status_counts": {
-   "done": 150,
-   "partial": 47,
+   "done": 151,
+   "partial": 46,
    "missing": 8698
   },
   "prod_status_counts": {
-   "done": 150,
-   "partial": 47,
+   "done": 151,
+   "partial": 46,
    "missing": 3284
   },
   "packages": {
@@ -61,8 +61,8 @@
     "modules": 502,
     "status": {
      "missing": 476,
-     "partial": 8,
-     "done": 18
+     "partial": 7,
+     "done": 19
     }
    },
    "tests.hermes_state": {
@@ -40948,7 +40948,7 @@
   "hermes_cli.dashboard_auth.ws_tickets": {
    "lines": 97,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "tools.open_preview_tool": {

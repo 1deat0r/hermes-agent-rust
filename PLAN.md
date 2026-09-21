@@ -3559,3 +3559,14 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   0 failed (1 new oracle test); 3x parallel runs green; fmt +
   diff-check clean. Ledger: 150 done / 47 partial / 8698 missing
   tracked (1.69%), prod 150/47/3284 (4.31%). Evidence tier: unit.
+
+- 2026-09-21 (dashboard-auth-2): `hermes_cli.dashboard_auth.ws_tickets`
+  partial → done @ 5d59366 (whole module, 97 LOC, line-by-line).
+  Behavior identical; one intentional divergence noted (unknown-ticket
+  truncation counts chars vs upstream byte-slice — unreachable on ASCII
+  `token_urlsafe` output, panic-proof). 9 new oracle tests mirroring
+  `test_dashboard_auth_ws_tickets.py` incl. 20-thread concurrency.
+  Header re-pinned with exact 5d59366 lines. Validation: 14 passed,
+  0 failed serial + 3x parallel; fmt + diff-check clean. Ledger: 151
+  done / 46 partial / 8698 missing tracked (1.70%), prod 151/46/3284
+  (4.34%). Evidence tier: unit.

@@ -286,8 +286,8 @@
     "status": "done"
   },
   "hermes_cli.dashboard_auth.ws_tickets": {
-    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (161 -> 97 LOC); re-certify line-by-line before promoting",
-    "status": "partial"
+    "retarget_note": "re-certified at 5d59366 (2026-09-21): whole module line-by-line (97 LOC); 9 new oracle tests mirroring test_dashboard_auth_ws_tickets.py (incl. 20-thread concurrency); header re-pinned b9aa928 -> 5d59366 with exact lines; char-vs-byte truncation divergence noted",
+    "status": "done"
   },
   "hermes_cli.default_soul": {
     "retarget_note": "ported 2026-09-16 autonomous: new DEFAULT_SOUL_MD + 2 legacy entries (prev-gen + ASCII-dashed byte-exact); 5 tests",
