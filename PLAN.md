@@ -3521,6 +3521,28 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   9 unit + 32 parity incl. 3 live fixtures), `cargo fmt --all`,
   `git diff --check` clean. Gates: .unlazy/jev-systemone/GATES.md 5/5
   met. Ledger: NO module status change — 149 done / 48 partial / 8698
-  missing tracked (1.68%), prod 149/48/3284 (4.28%). Evidence tier:
-  unit + live. Next: Wave B6 remainder (token_auth, ws_tickets,
-  registry, prefix re-certs).
+   missing tracked (1.68%), prod 149/48/3284 (4.28%). Evidence tier:
+   unit + live. Next: Wave B6 remainder (token_auth, ws_tickets,
+   registry, prefix re-certs).
+
+- 2026-09-20 (jev-godtier): god-tier Jev pass — every remaining live
+  use where Jev beats code/LLM, still additive (no port_status.json
+  change). Five new `hermes-jev` modules: `compaction` (scored verbatim
+  prune: pair/collect/pin, two-noul questions, bit-equal token
+  estimator, heuristic bands, threshold decide, invariant-preserving
+  rebuild), `memory_nudge` (turn_context gate, OFF/0.5/fail-open),
+  `review_gate` (spawn + skill REVIEW/SKIP gates, capped scrubbed
+  state), `skill_route` (two-stage cookbook router: chunked Choice +
+  gate nouls + rerank Choice + fits nouls + margin arbitration),
+  `triage` (label Choice + parallel risk Nouls, one round trip). Seam:
+  `hermes-agent::jev_review`. Live-proven @ jev-1.13.0 (nudge 0.78,
+  spawn SKIP@0.72, skill code-review@1.0, triage bug@1.0 — locked as
+  fixtures). Self-review fixed an O(n²) chunk remap + per-chunk
+  nomination rewrite in suggest and a stale estimator comment.
+  Validation: `cargo build --workspace` green, `cargo test --workspace
+  -- --test-threads=1` green — 215 suites, 1,973 passed, 0 failed (50
+  new: 18 crate unit + 20 crate parity incl. 4 live fixtures + 12 agent
+  god-tier), `cargo fmt --all`, `git diff --check` clean. Gates:
+  .unlazy/jev-godtier/GATES.md 5/5 met. Ledger: NO module status
+  change — 149/48/8698 (1.68%), prod 149/48/3284 (4.28%). Evidence
+  tier: unit + live. Next: Wave B6 remainder.

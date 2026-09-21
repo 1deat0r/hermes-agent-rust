@@ -285,6 +285,21 @@ Next: Wave B6 remainder in smallest-LOC order — `token_auth` (96),
 missing HTTP siblings (middleware/routes/login_page/request_utils/
 refresh_singleflight) to close `dashboard_auth.__init__`.
 
+## Jev god-tier pass landed (2026-09-20)
+
+Five new `hermes-jev` modules covering every remaining live Jev use:
+`compaction` (scored prune), `memory_nudge`, `review_gate`
+(spawn+skill), `skill_route` (two-stage cookbook router), `triage`
+(label+flags) — plus `hermes-agent::jev_review` seam. All default OFF,
+keyless-safe, never throwing. Live-proven @ jev-1.13.0 (fixtures
+locked). Validation: `cargo build --workspace` green;
+`cargo test --workspace -- --test-threads=1` green — 215 suites,
+1,973 passed, 0 failed; fmt + diff-check clean. Gates
+`.unlazy/jev-godtier/GATES.md` 5/5 met.
+**Ledger: no status change — 149/48/8698 (1.68% tracked, 4.28% prod).**
+Files: `PLAN.md`, `HANDOFF.md` updated/verified; `tools/inventory.json`
++ `CONVERSION-LEDGER.md` verified unchanged (additive layer).
+
 ## Jev System-One layer landed (2026-09-20)
 
 Additive `hermes-jev` crate (Choice/Noul/Score transport + router /

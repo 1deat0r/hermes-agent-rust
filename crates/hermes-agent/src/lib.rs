@@ -18,6 +18,7 @@ pub mod credential_store;
 pub mod errors;
 pub mod interrupt_compat;
 pub mod iteration_budget;
+pub mod jev_review;
 pub mod jev_router;
 pub mod jiter_preload;
 pub mod kanban_stop;

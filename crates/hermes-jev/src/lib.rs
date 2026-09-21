@@ -25,12 +25,17 @@
 //! those ids, every number is finite in [0, 1], probabilities sum to
 //! ~1 (tolerance 0.02), and the top probability is the choice.
 
+pub mod compaction;
 pub mod guardrail;
+pub mod memory_nudge;
 pub mod questions;
+pub mod review_gate;
 pub mod router;
+pub mod skill_route;
 pub mod stop_hook;
 pub mod tool_route;
 pub mod transport;
+pub mod triage;
 
 pub use questions::{
     ChoiceAnswer, ChoiceQuestion, NoulAnswer, NoulQuestion, Question, ScoreAnswer, ScoreQuestion,
