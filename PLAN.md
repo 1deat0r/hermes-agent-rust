@@ -3772,3 +3772,13 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   Validation: 14 passed; fmt + diff-check clean. Ledger: 174 done
   / 28 partial / 8693 missing tracked (1.96%), prod 174/28/3279
   (5.00%). Evidence tier: unit.
+
+- 2026-09-21 (monitor-export): `agent.monitoring.gateway_health_export`
+  partial → done @ 5d59366 (whole module, 344 LOC). Ported the
+  export runtime (span + log streamers, snapshot thread, ordered
+  shutdown), exporter kwargs, observable gauge names, count helper,
+  and the log-record mapper. Its own test caught a missing plane
+  filter pre-commit. 5 new oracle tests. Validation: 14 passed;
+  fmt + diff-check clean. Ledger: 175 done / 27 partial / 8693
+  missing tracked (1.97%), prod 175/27/3279 (5.03%). Evidence tier:
+  unit. PACKAGE agent.monitoring CLOSED (all 3 siblings done).

@@ -80,8 +80,8 @@
     "status": "done"
   },
   "agent.monitoring.gateway_health_export": {
-    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (643 -> 344 LOC); re-certify line-by-line before promoting",
-    "status": "partial"
+    "retarget_note": "ported at 5d59366 (2026-09-21): export runtime (span+log streamers, snapshot thread, shutdown order), exporter kwargs, observable names, count helper, log-record mapper; 5 new oracle tests (missing plane filter caught pre-commit)",
+    "status": "done"
   },
   "agent.monitoring.otlp_exporter": {
     "retarget_note": "ported at 5d59366 (2026-09-21): fixed export_batch panic counting (oracle: only successes count), added signal_endpoint + OtlpStreamer lifecycle + start_streaming; 4 new oracle tests",

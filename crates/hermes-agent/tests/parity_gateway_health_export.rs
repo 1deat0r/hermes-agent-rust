@@ -188,3 +188,142 @@ fn gateway_health_event_filter_scopes_the_plane() {
 fn diagnostic_scope_constant_matches_upstream() {
     assert_eq!(DEFAULT_DIAGNOSTIC_SCOPE, "hermes.gateway.diagnostics");
 }
+
+// ── 5d59366 runtime ────────────────────────────────────────────────────
+
+#[test]
+fn exporter_kwargs_derive_signal_endpoints() {
+    use hermes_agent::monitoring::gateway_health_export::exporter_kwargs;
+    let config = json!({"monitoring": {"export": {"otlp": {
+        "endpoint": "http://collector:4318/v1/traces",
+        "headers_env": {"authorization": "OTLP_AUTH"},
+    }}}});
+    let (endpoint, _) = exporter_kwargs(Some(&config), "metrics");
+    assert_eq!(endpoint, "http://collector:4318/v1/metrics");
+    let (endpoint, _) = exporter_kwargs(Some(&config), "logs");
+    assert_eq!(endpoint, "http://collector:4318/v1/logs");
+    let (endpoint, headers) = exporter_kwargs(None, "traces");
+    assert_eq!(endpoint, "");
+    assert!(headers.is_none());
+}
+
+#[test]
+fn observable_metric_names_pin_the_gauge_set() {
+    use hermes_agent::monitoring::gateway_health_export::OBSERVABLE_METRIC_NAMES;
+    assert_eq!(OBSERVABLE_METRIC_NAMES.len(), 16);
+    assert!(OBSERVABLE_METRIC_NAMES.contains(&"hermes.gateway.up"));
+    assert!(OBSERVABLE_METRIC_NAMES.contains(&"hermes.cron.jobs.overdue"));
+}
+
+#[test]
+fn diagnostic_log_record_maps_and_filters() {
+    use hermes_agent::monitoring::gateway_health_export::diagnostic_log_record;
+    // Non-diagnostic events map to nothing.
+    assert!(diagnostic_log_record(&json!({"event": "gateway_health"})).is_none());
+    let record = diagnostic_log_record(&json!({
+        "event": "gateway_diagnostic",
+        "subsystem": "platform.telegram",
+        "error_class": "auth_failed",
+        "error_code": "auth_failed",
+        "severity": "error",
+        "ts_ns": 123,
+        "source_logger": "gateway.platforms.telegram",
+    }))
+    .expect("record");
+    assert_eq!(record.severity_text, "ERROR");
+    assert_eq!(record.severity_number, 17);
+    assert_eq!(record.timestamp_ns, Some(123));
+    assert_eq!(record.scope.as_deref(), Some("gateway.platforms.telegram"));
+    assert_eq!(record.attributes["hermes.subsystem"], "platform.telegram");
+    // Rendered messages stay out; default severity is warning.
+    let record = diagnostic_log_record(&json!({"event": "gateway_diagnostic"})).expect("record");
+    assert_eq!(record.severity_text, "WARNING");
+    assert_eq!(record.severity_number, 13);
+}
+
+#[test]
+fn read_count_is_non_negative_or_zero() {
+    use hermes_agent::monitoring::gateway_health_export::read_count;
+    assert_eq!(read_count(&|| Ok(5)), 5);
+    assert_eq!(read_count(&|| Ok(-3)), 0);
+    assert_eq!(read_count(&|| Err("gone".to_string())), 0);
+}
+
+#[test]
+fn export_runtime_lifecycle() {
+    use hermes_agent::monitoring::gateway_health_export::{
+        start_gateway_health_export, ExportWiring,
+    };
+    use std::sync::{Arc, Mutex};
+    // Disabled config → disabled runtime with reason.
+    let off = json!({"monitoring": {"gateway_health_export": {"enabled": false}}});
+    let mut rt = start_gateway_health_export(
+        Some(&off),
+        ExportWiring {
+            span_sink: None,
+            log_sink: None,
+            snapshot_emit: None,
+            snapshot_interval_secs: 5,
+            with_log_handler: false,
+        },
+    );
+    assert_eq!(rt.reason, "disabled");
+    assert!(rt.spans_exported().is_none());
+    rt.shutdown();
+    // Enabled but sinkless → otlp_unavailable (never raises).
+    let on = json!({"monitoring": {
+        "gateway_health_export": {"enabled": true},
+        "export": {"otlp": {"enabled": true, "endpoint": "http://x:4318"}},
+    }});
+    let mut rt = start_gateway_health_export(
+        Some(&on),
+        ExportWiring {
+            span_sink: None,
+            log_sink: None,
+            snapshot_emit: None,
+            snapshot_interval_secs: 5,
+            with_log_handler: false,
+        },
+    );
+    assert_eq!(rt.reason, "otlp_unavailable");
+    rt.shutdown();
+    // Enabled with sinks → live span streamer through the emitter.
+    let seen: Arc<Mutex<Vec<Value>>> = Arc::default();
+    let seen_cb = Arc::clone(&seen);
+    let sink: Arc<hermes_agent::monitoring::otlp_exporter::SpanSink> =
+        Arc::new(move |batch: &[Value]| {
+            seen_cb.lock().unwrap().extend(batch.iter().cloned());
+        });
+    let log_seen: Arc<Mutex<Vec<Value>>> = Arc::default();
+    let log_seen_cb = Arc::clone(&log_seen);
+    let log_sink: Arc<hermes_agent::monitoring::otlp_exporter::SpanSink> =
+        Arc::new(move |batch: &[Value]| {
+            log_seen_cb.lock().unwrap().extend(batch.iter().cloned());
+        });
+    let mut rt = start_gateway_health_export(
+        Some(&on),
+        ExportWiring {
+            span_sink: Some(sink),
+            log_sink: Some(log_sink),
+            snapshot_emit: None,
+            snapshot_interval_secs: 5,
+            with_log_handler: false,
+        },
+    );
+    assert_eq!(rt.reason, "enabled");
+    hermes_agent::monitoring::emitter::get_emitter()
+        .emit(&hermes_agent::monitoring::events::GatewayHealthEvent::new());
+    hermes_agent::monitoring::emitter::get_emitter()
+        .emit(&hermes_agent::monitoring::events::GatewayDiagnosticEvent::new("broker", "otlp"));
+    hermes_agent::monitoring::emitter::get_emitter().flush(2.0);
+    assert_eq!(rt.spans_exported(), Some(1), "health rides the span plane");
+    assert_eq!(
+        rt.logs_exported(),
+        Some(1),
+        "diagnostic rides the log plane"
+    );
+    assert_eq!(seen.lock().unwrap().len(), 1);
+    assert_eq!(log_seen.lock().unwrap().len(), 1);
+    rt.shutdown();
+    assert_eq!(rt.reason, "shut down");
+}

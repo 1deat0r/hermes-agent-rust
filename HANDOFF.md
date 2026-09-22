@@ -285,6 +285,14 @@ Next: Wave B6 remainder in smallest-LOC order — `token_auth` (96),
 missing HTTP siblings (middleware/routes/login_page/request_utils/
 refresh_singleflight) to close `dashboard_auth.__init__`.
 
+## agent.monitoring package CLOSED (2026-09-21)
+
+otlp_exporter (173) → gateway_health (174) → gateway_health_export
+(175): all 3 siblings done @ 5d59366. Export runtime with ordered
+shutdown, 5 oracle tests, 14/14.
+**Ledger: 175/27/8693 (1.97% tracked, 5.03% prod).**
+Next: next Wave B partial in smallest-LOC order.
+
 ## agent.monitoring.gateway_health done (2026-09-21)
 
 Partial → done @ 5d59366 (352 LOC; falsy/truncation/truthiness
