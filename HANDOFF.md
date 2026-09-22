@@ -473,6 +473,22 @@ Files: `PLAN.md`, `HANDOFF.md` updated/verified; `tools/inventory.json`
 + `CONVERSION-LEDGER.md` verified unchanged (additive layer, no
 tracked-module change).
 
+## toolsets + toolset_distributions compound done (2026-09-22)
+
+`toolsets` partial → done @ 5d59366 (485 LOC) + distributions
+compound re-cert (#64503, forced by data regen): data.rs
+regenerated via executed-module gen (60 toolsets/59 core; browser
+vault/exec, manage_connections, process_manage/todo_list/cronjob_manage;
+browser no longer bundles web_search → browser_tasks uses
+"browser+search"). Rewrite: resolve memo, alias-union, plugin/alias
+arms, get_all/get_names expansion, posture/module keys (fixes
+model_tools coding-posture subtraction), compound sampling +
+inject/remove overlay + verbose warnings + print_distribution_info.
+34 oracle tests. Full workspace: 2,209 passed, 0 failed.
+**Ledger: 185/17/8693 (2.08% tracked, 5.31% prod).**
+Next: next Wave B partial in smallest-LOC order
+(`agent.file_safety` 550, `tools.read_extract` 551).
+
 ## tools.schema_sanitizer done (2026-09-22)
 
 Partial → done @ 5d59366 (386 LOC; 5 recursion-table bugs fixed,
@@ -504,9 +520,9 @@ Next: next Wave B partial in smallest-LOC order
 
 ## Next actions, in order
 
-1. Wave B: next smallest-LOC partials (`agent.verify.recipes` 296,
-   `tools.schema_sanitizer` 386, `toolsets` 485 — `agent.ssl_guard`
-   and `hermes_cli.dashboard_auth.__init__` are already done).
+1. Wave B: next smallest-LOC partials (`agent.file_safety` 550,
+   `tools.read_extract` 551, `utils` 611 — `agent.ssl_guard`,
+   `hermes_cli.dashboard_auth.__init__` are already done).
 2. Wave A: trivial sweep (`__init__` 0–3 LOC, eslint configs, barrels —
    acp/cron-scripts/tui roots need crate-open decision first).
 3. Keep ownership disjoint; commit and publish each logical unit immediately.

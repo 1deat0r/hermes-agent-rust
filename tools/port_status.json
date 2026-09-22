@@ -787,12 +787,12 @@
     "status": "done"
   },
   "toolset_distributions": {
-    "retarget_note": "re-certified autonomous: ternary/factory/_dist refactors verified behavior-identical; suites green",
+    "retarget_note": "ported at 5d59366 (2026-09-22, with toolsets re-cert): '+'-grouped compound entries (#64503) were missing from the prior re-cert — members split/trim, invalid-member warning + whole-entry skip, first-max all-valid fallback, overlay inject/remove (monkeypatch.setitem analog), verbose warnings seam, print_distribution_info; 3 compound oracle tests",
     "status": "done"
   },
   "toolsets": {
-    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (1029 -> 485 LOC); re-certify line-by-line before promoting",
-    "status": "partial"
+    "retarget_note": "ported 2026-09-22 at 5d59366 (485 LOC): data.rs regenerated via executed-module gen (_ts/_bundle), resolve memo + alias-union + plugin/alias arms + posture/module keys + get_all/get_names expansion; 34 oracle tests in parity_toolsets.rs",
+    "status": "done"
   },
   "ts:apps.desktop.electron.active-runtime-state": {
     "retarget_note": "ported 2026-09-16 under mattpocock tdd+implement+code-review skills: 9 parity tests (7 oracle + 2 hardening), UTF-16 length parity, seam contracts documented; review findings closed",

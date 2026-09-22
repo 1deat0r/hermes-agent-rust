@@ -3881,3 +3881,31 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   0 failed; fmt + diff-check clean. Ledger: 184 done / 18 partial /
   8693 missing tracked (2.07%), prod 184/18/3279 (5.29%). Evidence
   tier: unit.
+
+- 2026-09-22 (toolsets + distributions): `toolsets` partial → done @
+  5d59366 (485 LOC) + `toolset_distributions` compound re-cert
+  (forced by the data regen). data.rs regenerated through an
+  executed-module gen (`_ts`/`_bundle`/`_core_without` are computed —
+  the old AST walk could not evaluate them); +60 toolsets/59 core
+  (browser vault/exec, manage_connections, todo_list, cronjob_manage,
+  process_manage renames; bfl dropped; connections/bot_room added;
+  browser no longer bundles web_search). toolsets.rs rewritten:
+  resolve memo (256 cap, all/*-skip-store, generation+scope key),
+  alias-target union in get_toolset, plugin/alias registry-only arms
+  with display-alias descriptions, get_all/get_names plugin+custom
+  expansion + static∩alias re-resolve, posture/module key presence
+  (fixes model_tools' disabled-coding-posture subtraction), custom
+  remove (del TOOLSETS test seam), _plugin_platform_bundle fail-open
+  documented. distributions.rs: '+'-compound entries (#64503 —
+  missing from the prior "done" re-cert), invalid-member warning +
+  skip, first-max all-valid fallback, overlay inject/remove
+  (monkeypatch.setitem analog), verbose warnings seam,
+  print_distribution_info. Divergences documented in PORT SEAMS:
+  memo id(registry) omitted (process-static registry), platform
+  registry not wired, display_alias sorted scan. Validation: 34
+  oracle tests in parity_toolsets.rs; crate 53 green;
+  `cargo build --workspace` green;
+  `cargo test --workspace -- --test-threads=1` — 2,209 passed,
+  0 failed; fmt + diff-check clean. Ledger: 185 done / 17 partial /
+  8693 missing tracked (2.08%), prod 185/17/3279 (5.31%). Evidence
+  tier: unit.
