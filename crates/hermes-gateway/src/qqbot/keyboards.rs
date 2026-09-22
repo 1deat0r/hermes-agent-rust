@@ -1,10 +1,30 @@
 //! QQ Bot inline keyboards + approval / update-prompt builders and parsers.
 //!
-//! PARITY: `gateway/platforms/qqbot/keyboards.py` @ b9aa928 — PARTIAL:
-//! the keyboard dataclasses, INTERACTION_CREATE parsing, keyboard builders,
-//! and the approval text renderers are ported; `ApprovalSender` (async
-//! HTTP orchestration over adapter callables) stays PENDING with the
-//! adapter transport.
+//! PARITY: `gateway/platforms/qqbot/keyboards.py` @ 5d59366 — the full
+//! module surface is ported line by line: the keyboard dataclasses and
+//! `_to_dict` wire serialization, both `button_data` parsers, both keyboard
+//! builders, `ApprovalRequest` + `build_approval_text`, the
+//! `INTERACTION_CREATE` parser, and the `ApprovalSender` orchestration
+//! (async post callables; the PLUGIN-COMPAT block is intentionally NOT
+//! ported — see below).
+//!
+//! PORT SEAMS (documented divergences):
+//! - The upstream PLUGIN-COMPAT block (`logger` lazy re-export) is an
+//!   in-tree compat pointer for external plugins; per repo fidelity rules
+//!   ("Compat pointers are OFF LIMITS in-tree") it is not ported.
+//! - Upstream `ApprovalSender.send` is `async def` over an asyncio loop.
+//!   This crate has no async runtime, so the post callables are boxed
+//!   `Fn(String, String, Option<String>, InlineKeyboard) -> Pin<Box<dyn
+//!   Future>>` and `send` is a *blocking* function that drives the future
+//!   to completion with a minimal no-op-waker executor (same pattern as
+//!   `hermes-tools::slash_confirm::resolve`). The observable contract is
+//!   identical: text + keyboard are built the same way, `c2c`/`group` route
+//!   to the matching callable, anything else returns `false`, exceptions
+//!   in the callable return `false` (upstream `try/except` → `False`).
+//! - Upstream `operator_openid` is a `@property`; here it is an inherent
+//!   method `operator_openid()` (same `or`-chain semantics).
+//! - `parse_*` take `&str` (upstream `button_data or ""` means `None` maps
+//!   to `""`; callers pass `unwrap_or_default()` — same outcome).
 //!
 //! `button_data` formats:
 //!
@@ -15,6 +35,9 @@
 //!
 //! Ported from WideLee's qqbot-agent-sdk v1.2.2 (`approval.py` + `dto.py`
 //! keyboard types). Authorship preserved via Co-authored-by.
+
+use std::future::Future;
+use std::pin::Pin;
 
 use serde_json::{json, Map, Value};
 
@@ -433,21 +456,136 @@ impl InteractionEvent {
 
 /// Parse a raw `INTERACTION_CREATE` dispatch payload (`d`).
 ///
-/// PARITY: `parse_interaction_event` (upstream lines 440-461).
+/// Coerce a JSON scalar the way Python `str(value)` does: strings pass
+/// through, `None` renders `"None"`, bools render `"True"`/`"False"`
+/// (oracle-verified: `id True` → `"True"`), floats render Python-style
+/// (`3.7` → `"3.7"`), ints plainly, containers via the Python-repr
+/// analogue — single-quoted debug formatting (`{'a': 1}` → `"{'a': 1}"`,
+/// `['x']` → `"['x']"`, oracle-verified).
+///
+/// PARITY: `str(...)` in `parse_interaction_event` (upstream lines 185-191).
+fn py_str(value: &Value) -> String {
+    match value {
+        Value::String(s) => s.clone(),
+        Value::Null => "None".to_string(),
+        Value::Bool(true) => "True".to_string(),
+        Value::Bool(false) => "False".to_string(),
+        Value::Number(n) => {
+            if let Some(i) = n.as_i64() {
+                i.to_string()
+            } else if let Some(u) = n.as_u64() {
+                u.to_string()
+            } else {
+                // Python `str(3.7)` is `"3.7"`; serde_json agrees here.
+                n.as_f64().map(|f| f.to_string()).unwrap_or_default()
+            }
+        }
+        Value::Array(items) => {
+            let inner: Vec<String> = items.iter().map(py_repr_inner).collect();
+            format!("[{}]", inner.join(", "))
+        }
+        Value::Object(map) => {
+            // Python dict repr single-quotes string keys (`{'a': 1}`).
+            let inner: Vec<String> = map
+                .iter()
+                .map(|(k, v)| format!("'{}': {}", k, py_repr_inner(v)))
+                .collect();
+            format!("{{{}}}", inner.join(", "))
+        }
+    }
+}
+
+/// Inner-repr helper for [`py_str`]: nested containers use the same
+/// Python-repr shape; nested strings are single-quoted (`'x'`).
+fn py_repr_inner(value: &Value) -> String {
+    match value {
+        Value::String(s) => format!("{s:?}").replace('"', "'"),
+        Value::Null => "None".to_string(),
+        Value::Bool(true) => "True".to_string(),
+        Value::Bool(false) => "False".to_string(),
+        Value::Number(n) => {
+            if let Some(i) = n.as_i64() {
+                i.to_string()
+            } else if let Some(u) = n.as_u64() {
+                u.to_string()
+            } else {
+                n.as_f64().map(|f| f.to_string()).unwrap_or_default()
+            }
+        }
+        Value::Array(items) => {
+            let inner: Vec<String> = items.iter().map(py_repr_inner).collect();
+            format!("[{}]", inner.join(", "))
+        }
+        Value::Object(map) => {
+            // Python dict repr single-quotes string keys (`{'a': 1}`).
+            let inner: Vec<String> = map
+                .iter()
+                .map(|(k, v)| format!("'{}': {}", k, py_repr_inner(v)))
+                .collect();
+            format!("{{{}}}", inner.join(", "))
+        }
+    }
+}
+
+/// Coerce a JSON value the way Python `int(value or 0)` does: missing/null
+/// → `0`, bools → `1`/`0`, numbers truncate toward zero (`11.9` → `11`),
+/// numeric strings parse (`"2"` → `2`, whitespace-tolerant like `int()`).
+///
+/// DIVERGENCE (documented, caller-safe): upstream `int()` *raises* on
+/// non-numeric strings (`"abc"` → `ValueError`), wrong-type payloads
+/// (lists → `TypeError`), and float-shaped strings (`"2.7"` →
+/// `ValueError`); this port returns `0` instead. The sole in-tree caller
+/// shape (`QQAdapter._on_interaction`, adapter lines 596-605) wraps the
+/// whole parse in `try/except → return`, so both behaviors land in the
+/// same "drop the event" outcome — but the port additionally survives
+/// where upstream would log-and-drop. Malformed-string cases are pinned
+/// in the parity suite as `0` so a future strictness change fails loudly.
+///
+/// PARITY: `int(raw.get("chat_type", 0) or 0)` and
+/// `int(data_raw.get("type", 0) or 0)` (upstream line 184).
+fn py_int(value: Option<&Value>) -> i64 {
+    match value {
+        None | Some(Value::Null) => 0,
+        Some(Value::Bool(true)) => 1,
+        Some(Value::Bool(false)) => 0,
+        Some(Value::Number(n)) => n
+            .as_i64()
+            .unwrap_or_else(|| n.as_f64().unwrap_or(0.0) as i64),
+        Some(Value::String(s)) => s
+            .trim()
+            .parse::<i64>()
+            .or_else(|_| s.trim().parse::<f64>().map(|f| f as i64))
+            .unwrap_or(0),
+        Some(_) => 0,
+    }
+}
+
+/// Parse a raw `INTERACTION_CREATE` dispatch payload (`d`).
+///
+/// PARITY: `parse_interaction_event` (upstream lines 181-191).
 pub fn parse_interaction_event(raw: &Value) -> InteractionEvent {
     let empty = Value::Object(Map::new());
-    let data_raw = raw.get("data").unwrap_or(&empty);
-    let resolved = data_raw.get("resolved").unwrap_or(&empty);
-    let get_str = |obj: &Value, key: &str| -> String {
-        obj.get(key)
-            .map(|v| match v {
-                Value::String(s) => s.clone(),
-                Value::Null => String::new(),
-                other => other.to_string(),
-            })
-            .unwrap_or_default()
+    // Upstream: `raw.get("data") or {}` — falsy non-dict payloads
+    // (`None`, `False`, `""`, `[]`, `0`) fall back to the empty mapping just
+    // like missing.
+    //
+    // DIVERGENCE (documented, caller-safe): a *truthy* non-dict `data`
+    // (e.g. the string `"x"`) makes upstream raise `AttributeError`
+    // (`.get` on `str`); this port falls back to empty (same "drop the
+    // event" outcome at the adapter's `try/except` boundary, adapter lines
+    // 601-605). Same for a truthy non-dict `resolved`.
+    let data_raw = match raw.get("data") {
+        Some(Value::Object(_)) => raw.get("data").unwrap(),
+        _ => &empty,
     };
-    let scene_code = raw.get("chat_type").and_then(Value::as_i64).unwrap_or(0);
+    // Upstream: `data_raw.get("resolved") or {}` — same falsy fallback.
+    let resolved = match data_raw.get("resolved") {
+        Some(Value::Object(_)) => data_raw.get("resolved").unwrap(),
+        _ => &empty,
+    };
+    let get_str =
+        |obj: &Value, key: &str| -> String { obj.get(key).map(py_str).unwrap_or_default() };
+    let scene_code = py_int(raw.get("chat_type"));
     let scene = match scene_code {
         0 => "guild",
         1 => "group",
@@ -456,7 +594,7 @@ pub fn parse_interaction_event(raw: &Value) -> InteractionEvent {
     };
     InteractionEvent {
         id: get_str(raw, "id"),
-        kind: data_raw.get("type").and_then(Value::as_i64).unwrap_or(0),
+        kind: py_int(data_raw.get("type")),
         chat_type: scene_code,
         scene: scene.to_string(),
         group_openid: get_str(raw, "group_openid"),
@@ -467,5 +605,199 @@ pub fn parse_interaction_event(raw: &Value) -> InteractionEvent {
         button_data: get_str(resolved, "button_data"),
         button_id: get_str(resolved, "button_id"),
         resolver_user_id: get_str(resolved, "user_id"),
+    }
+}
+
+// ── ApprovalSender ───────────────────────────────────────────────────
+
+/// Async post callable for [`ApprovalSender`]: `(chat_id, text, reply_to,
+/// keyboard)` — mirrors the adapter's `_send_message_with_keyboard` helper
+/// the upstream constructor takes as `post_c2c` / `post_group`.
+///
+/// PARITY: `PostMessageFn` (upstream line 207).
+pub type PostMessageFn = dyn Fn(String, String, Option<String>, InlineKeyboard) -> Pin<Box<dyn Future<Output = ()> + Send>>
+    + Send
+    + Sync;
+
+/// Send an approval-request message with an inline keyboard.
+///
+/// Decoupled from the adapter via callables so it can be unit-tested in
+/// isolation. Pass the adapter's `_send_message_with_keyboard` helper
+/// (or any equivalent) as `post_c2c` / `post_group`.
+///
+/// PARITY: `ApprovalSender` (upstream lines 209-271).
+pub struct ApprovalSender {
+    post_c2c: Box<PostMessageFn>,
+    post_group: Box<PostMessageFn>,
+    log_tag: String,
+}
+
+impl ApprovalSender {
+    /// PARITY: `ApprovalSender.__init__` (upstream lines 217-225);
+    /// `log_tag` defaults to `"QQBot"` (upstream line 221).
+    pub fn new(
+        post_c2c: impl Fn(
+                String,
+                String,
+                Option<String>,
+                InlineKeyboard,
+            ) -> Pin<Box<dyn Future<Output = ()> + Send>>
+            + Send
+            + Sync
+            + 'static,
+        post_group: impl Fn(
+                String,
+                String,
+                Option<String>,
+                InlineKeyboard,
+            ) -> Pin<Box<dyn Future<Output = ()> + Send>>
+            + Send
+            + Sync
+            + 'static,
+    ) -> Self {
+        Self::with_log_tag(post_c2c, post_group, "QQBot")
+    }
+
+    /// Constructor with an explicit log tag (upstream `log_tag="QQBot"`).
+    pub fn with_log_tag(
+        post_c2c: impl Fn(
+                String,
+                String,
+                Option<String>,
+                InlineKeyboard,
+            ) -> Pin<Box<dyn Future<Output = ()> + Send>>
+            + Send
+            + Sync
+            + 'static,
+        post_group: impl Fn(
+                String,
+                String,
+                Option<String>,
+                InlineKeyboard,
+            ) -> Pin<Box<dyn Future<Output = ()> + Send>>
+            + Send
+            + Sync
+            + 'static,
+        log_tag: &str,
+    ) -> Self {
+        Self {
+            post_c2c: Box::new(post_c2c),
+            post_group: Box::new(post_group),
+            log_tag: log_tag.to_string(),
+        }
+    }
+
+    /// Log tag carried from construction (upstream `self._log_tag`).
+    pub fn log_tag(&self) -> &str {
+        &self.log_tag
+    }
+
+    /// Send an approval message to `chat_id`.
+    ///
+    /// `chat_type`: `"c2c"` or `"group"`. `reply_to`: reply-to message id
+    /// (required for passive messages). Returns `true` on success, `false`
+    /// on failure.
+    ///
+    /// PARITY: `ApprovalSender.send` (upstream lines 227-271) — the text
+    /// and keyboard are built from `req` identically, the `c2c`/`group`
+    /// dispatch and the fail-closed unknown-`chat_type` arm match, and a
+    /// throwing post callable returns `false` (upstream `try/except`).
+    /// Note: upstream threads `req.allow_permanent` into
+    /// `build_approval_keyboard` only via the adapter's
+    /// `send_approval_request` path (adapter line 1466), not here — `send`
+    /// uses the default keyboard with the permanent button present.
+    pub fn send(
+        &self,
+        chat_type: &str,
+        chat_id: &str,
+        req: &ApprovalRequest,
+        reply_to: Option<&str>,
+    ) -> bool {
+        let text = build_approval_text(req);
+        let keyboard = build_approval_keyboard(&req.session_key, req.allow_permanent);
+
+        log::info!(
+            "[{}] Sending approval request to {}:{} (session={:.20}…)",
+            self.log_tag,
+            chat_type,
+            chat_id,
+            req.session_key,
+        );
+
+        let post = match chat_type {
+            "c2c" => &self.post_c2c,
+            "group" => &self.post_group,
+            _ => {
+                log::warn!(
+                    "[{}] Approval: unsupported chat_type {:?}",
+                    self.log_tag,
+                    chat_type,
+                );
+                return false;
+            }
+        };
+        let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            block_on(post(
+                chat_id.to_string(),
+                text,
+                reply_to.map(str::to_string),
+                keyboard,
+            ))
+        }));
+        match outcome {
+            Ok(()) => {
+                log::info!(
+                    "[{}] Approval message sent to {}:{}",
+                    self.log_tag,
+                    chat_type,
+                    chat_id,
+                );
+                true
+            }
+            Err(_) => {
+                log::error!(
+                    "[{}] Failed to send approval message to {}:{}",
+                    self.log_tag,
+                    chat_type,
+                    chat_id,
+                );
+                false
+            }
+        }
+    }
+}
+
+/// Drive a `Send`-bound future to completion on the calling thread with a
+/// no-op waker (same minimal-executor pattern as
+/// `hermes-tools::slash_confirm::resolve`; panics inside the future
+/// propagate to the caller so `ApprovalSender::send` can map them to
+/// `false`).
+fn block_on<F>(mut future: F)
+where
+    F: Future + Send,
+    F::Output: Send,
+{
+    use std::task::{Context, Poll, RawWaker, RawWakerVTable, Waker};
+
+    fn raw_waker() -> RawWaker {
+        fn no_op(_: *const ()) {}
+        fn clone(_: *const ()) -> RawWaker {
+            raw_waker()
+        }
+        let vtable = &RawWakerVTable::new(clone, no_op, no_op, no_op);
+        RawWaker::new(std::ptr::null(), vtable)
+    }
+
+    // SAFETY: the waker is a no-op that never dereferences its null data
+    // pointer; it only signals "not ready — poll again".
+    let waker = unsafe { Waker::from_raw(raw_waker()) };
+    let mut cx = Context::from_waker(&waker);
+    // SAFETY: `future` is a stack-local we never move after pinning.
+    let mut future = unsafe { Pin::new_unchecked(&mut future) };
+    loop {
+        match future.as_mut().poll(&mut cx) {
+            Poll::Ready(_) => return,
+            Poll::Pending => std::thread::yield_now(),
+        }
     }
 }

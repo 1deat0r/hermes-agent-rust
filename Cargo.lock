@@ -639,6 +639,7 @@ dependencies = [
  "hermes-state",
  "hermes-time",
  "libc",
+ "log",
  "once_cell",
  "rand",
  "rusqlite",

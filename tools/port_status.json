@@ -214,8 +214,8 @@
     "status": "done"
   },
   "gateway.platforms.qqbot.keyboards": {
-    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (461 -> 287 LOC); re-certify line-by-line before promoting",
-    "status": "partial"
+    "retarget_note": "ported 2026-09-22 at 5d59366 (287 LOC): full surface incl ApprovalSender (blocking-send seam), py int()/str() coercions, 27 oracle tests in parity_qqbot_keyboards.rs",
+    "status": "done"
   },
   "gateway.platforms.qqbot.utils": {
     "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B): ternary-fold drift only; 10 tests green",

@@ -3835,3 +3835,19 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   passed; fmt + diff-check clean. Ledger: 181 done / 21 partial /
   8693 missing tracked (2.03%), prod 181/21/3279 (5.20%). Evidence
   tier: unit.
+
+- 2026-09-22 (qqbot-keyboards): `gateway.platforms.qqbot.keyboards`
+  partial → done @ 5d59366 (whole module, 287 LOC). Full surface:
+  keyboard dataclasses + `_to_dict` wire order, both button_data
+  parsers, both builders, ApprovalRequest + text, interaction parser
+  with `int()`/`str()` coercions, ApprovalSender (blocking-send seam
+  over boxed post callables, same crate pattern as
+  `slash_confirm::resolve`). TDD caught a coercion gap (string
+  chat_type → 0) and a dict-repr gap (double vs single quotes);
+  oracle probes pinned 2 documented fail-open divergences (malformed
+  int()/truthy non-dict data). Validation: 27 passed;
+  `cargo build --workspace` green;
+  `cargo test --workspace -- --test-threads=1` — 2,139 passed,
+  0 failed (218 suites); fmt + diff-check clean. Ledger: 182 done /
+  20 partial / 8693 missing tracked (2.05%), prod 182/20/3279
+  (5.23%). Evidence tier: unit.

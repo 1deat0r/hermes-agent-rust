@@ -473,11 +473,22 @@ Files: `PLAN.md`, `HANDOFF.md` updated/verified; `tools/inventory.json`
 + `CONVERSION-LEDGER.md` verified unchanged (additive layer, no
 tracked-module change).
 
+## gateway.platforms.qqbot.keyboards done (2026-09-22)
+
+Partial → done @ 5d59366 (287 LOC; full surface incl ApprovalSender,
+int()/str() coercions, 27 oracle tests, 27/27; 2 documented fail-open
+divergences). Full workspace: 218 suites, 2,036→2,139 passed
+(+103 across the session window incl. concurrent dashboard-auth
+closure), 0 failed.
+**Ledger: 182/20/8693 (2.05% tracked, 5.23% prod).**
+Next: next Wave B partial in smallest-LOC order
+(`agent.verify.recipes` 296, `tools.schema_sanitizer` 386).
+
 ## Next actions, in order
 
-1. Wave B unit 6: next smallest-DIFF partials (`agent.ssl_guard`,
-   `plugins.model-providers.alibaba.__init__` regional set,
-   `hermes_cli.dashboard_auth.__init__` remainder).
+1. Wave B: next smallest-LOC partials (`agent.verify.recipes` 296,
+   `tools.schema_sanitizer` 386, `toolsets` 485 — `agent.ssl_guard`
+   and `hermes_cli.dashboard_auth.__init__` are already done).
 2. Wave A: trivial sweep (`__init__` 0–3 LOC, eslint configs, barrels —
    acp/cron-scripts/tui roots need crate-open decision first).
 3. Keep ownership disjoint; commit and publish each logical unit immediately.
