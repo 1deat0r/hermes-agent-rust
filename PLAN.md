@@ -3817,3 +3817,12 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   mark_recommended before commit. Validation: 25 passed; fmt +
   diff-check clean. Ledger: 179 done / 23 partial / 8693 missing
   tracked (2.01%), prod 179/23/3279 (5.14%). Evidence tier: unit.
+
+- 2026-09-21 (tools-storage): `tools.tool_result_storage` partial →
+  done @ 5d59366 (whole module, 321 LOC). Full re-port: host-side
+  spillover canonical layer, sandbox mkdir + wc verify, real
+  SHA-256 filenames, Recovery paragraph, extract_persisted_path.
+  Fixed a dirname bug + a test deadlock the suite exposed.
+  Validation: 26 passed; fmt + diff-check clean. Ledger: 180 done
+  / 22 partial / 8693 missing tracked (2.02%), prod 180/22/3279
+  (5.17%). Evidence tier: unit.
