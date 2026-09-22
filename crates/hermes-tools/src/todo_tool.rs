@@ -1,13 +1,14 @@
-//! Todo tool — planning & task management for the agent loop.
+//! Todo tool: in-memory, revisioned task list for multi-step work.
 //!
-//! PARITY: tools/todo_tool.py @ b9aa928 (335 LOC, ported 1:1). The state
-//! lives on the AIAgent instance (one per session) and is re-injected into
-//! the conversation after context-compression events. Bounds on persisted
-//! state (GHSA-5g4g-6jrg-mw3g hardening) are part of the contract.
+//! PARITY: `tools/todo_tool.py` @ 5d59366 (whole module, 284 lines).
+//! State lives on the AIAgent (one per session), is re-injected after
+//! context compression, and every write bumps a monotonic revision so
+//! UI clients can reject stale updates. One `todo_list` tool: pass
+//! `todos` to write, omit to read; every call returns the full list.
 //!
-//! Divergence note: Python `str(value)` coercion of non-string todo fields is
-//! approximated with the JSON text form (e.g. JSON `true` → "true" vs Python
-//! "True"); upstream tests do not exercise those edges.
+//! Divergence note: Python `str(value)` coercion of non-string todo
+//! fields is approximated with the JSON text form (e.g. JSON `true` →
+//! "true" vs Python "True"); upstream tests do not exercise those edges.
 
 use once_cell::sync::Lazy;
 use serde_json::{json, Value};
@@ -31,34 +32,74 @@ pub fn set_todo_store(store: Option<TodoStore>) {
 }
 
 pub const VALID_STATUSES: [&str; 4] = ["pending", "in_progress", "completed", "cancelled"];
+/// The list is re-read after every compression, so unbounded content
+/// would defeat the compression it rides through. Caps apply equally
+/// to model-authored items and caller-replayed API history.
 pub const MAX_TODO_CONTENT_CHARS: usize = 4000;
 pub const MAX_TODO_ITEMS: usize = 256;
+/// Max single todo tool-result payload accepted during history
+/// hydration, so a forged oversized result is dropped before parsing
+/// (AIAgent._hydrate_todo_store).
 pub const MAX_TODO_RESULT_CHARS: usize = 512_000;
 const TRUNCATION_MARKER: &str = "… [truncated]";
+/// Persisted as ordinary message content; the ContextCompressor keys on
+/// this stable header to tell the synthetic post-compaction row from a
+/// real user message.
 pub const TODO_INJECTION_HEADER: &str =
     "[Your active task list was preserved across context compression]";
 
+/// Status markers for injection rendering.
+fn status_marker(status: &str) -> &'static str {
+    match status {
+        "completed" => "[x]",
+        "in_progress" => "[>]",
+        "pending" => "[ ]",
+        "cancelled" => "[~]",
+        _ => "[?]",
+    }
+}
+
+/// One task item. List position is priority; `parent` nests a subtask.
+///
+/// PARITY: the `{id, content, status, parent?}` item shape (upstream
+/// lines 26-28).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TodoItem {
     pub id: String,
     pub content: String,
     pub status: String,
+    pub parent: Option<String>,
 }
 
 impl TodoItem {
-    fn from_parts(id: String, content: String, status: String) -> Self {
+    fn from_parts(id: String, content: String, status: String, parent: Option<String>) -> Self {
         TodoItem {
             id,
             content,
             status,
+            parent,
         }
+    }
+
+    fn to_json(&self) -> Value {
+        let mut map = serde_json::Map::new();
+        map.insert("id".to_string(), Value::String(self.id.clone()));
+        map.insert("content".to_string(), Value::String(self.content.clone()));
+        map.insert("status".to_string(), Value::String(self.status.clone()));
+        if let Some(parent) = &self.parent {
+            map.insert("parent".to_string(), Value::String(parent.clone()));
+        }
+        Value::Object(map)
     }
 }
 
-/// In-memory todo list. One instance per session (AIAgent).
+/// In-memory todo list, one per AIAgent.
+///
+/// PARITY: `TodoStore` (upstream lines 26-188).
 #[derive(Default)]
 pub struct TodoStore {
     items: Vec<TodoItem>,
+    revision: u64,
 }
 
 impl TodoStore {
@@ -66,66 +107,100 @@ impl TodoStore {
         Self::default()
     }
 
-    /// Write todos. `merge=false` replaces the list; `merge=true` updates
-    /// existing items by id and appends new ones. Returns the full list.
-    pub fn write(&mut self, todos: &[Value], merge: bool) -> Vec<TodoItem> {
-        if !merge {
-            self.items = Self::dedupe_by_id(todos)
+    /// Validate, dedupe and order a whole new list (replace / restore).
+    fn fresh_items(&self, todos: &[Value]) -> Vec<TodoItem> {
+        Self::normalize_order(
+            &Self::dedupe_by_id(todos)
                 .iter()
                 .map(Self::validate)
-                .collect();
+                .collect::<Vec<_>>(),
+        )
+    }
+
+    /// Replace the list (default) or merge by id; returns the full list
+    /// after writing. Every state-changing write bumps the revision.
+    ///
+    /// PARITY: `write` (upstream lines 38-49).
+    pub fn write(&mut self, todos: &[Value], merge: bool) -> Vec<TodoItem> {
+        let before = self.read();
+        if merge {
+            self.merge(todos);
         } else {
-            let mut existing: std::collections::HashMap<String, TodoItem> = self
-                .items
-                .iter()
-                .map(|i| (i.id.clone(), i.clone()))
-                .collect();
-            for t in Self::dedupe_by_id(todos) {
-                let item_id = json_str(&t, "id").trim().to_string();
-                if item_id.is_empty() {
-                    continue; // Can't merge without an id
-                }
-                if let Some(cur) = existing.get_mut(&item_id) {
-                    // Update only the fields the LLM actually provided.
-                    if let Some(v) = t.get("content") {
-                        if json_truthy(v) {
-                            cur.content = Self::cap_content(value_str(v).trim());
-                        }
-                    }
-                    if let Some(v) = t.get("status") {
-                        if json_truthy(v) {
-                            let status = value_str(v).trim().to_lowercase();
-                            if VALID_STATUSES.contains(&status.as_str()) {
-                                cur.status = status;
-                            }
-                        }
-                    }
-                } else {
-                    // New item — validate fully and append to end.
-                    let validated = Self::validate(&t);
-                    existing.insert(validated.id.clone(), validated.clone());
-                    self.items.push(validated);
-                }
-            }
-            // Rebuild _items preserving order for existing items.
-            let mut seen = std::collections::HashSet::new();
-            let mut rebuilt = Vec::with_capacity(self.items.len());
-            for item in &self.items {
-                let current = existing
-                    .get(&item.id)
-                    .cloned()
-                    .unwrap_or_else(|| item.clone());
-                if seen.insert(current.id.clone()) {
-                    rebuilt.push(current);
-                }
-            }
-            self.items = rebuilt;
+            self.items = self.fresh_items(todos);
         }
-        // Bound total item count; keep the highest-priority head.
-        if self.items.len() > MAX_TODO_ITEMS {
-            self.items.truncate(MAX_TODO_ITEMS);
+        // Keep the priority head; replays can't grow unbounded.
+        self.items.truncate(MAX_TODO_ITEMS);
+        Self::sanitize_parents(&mut self.items);
+        if self.items != before {
+            self.revision += 1;
         }
         self.read()
+    }
+
+    /// Update existing items only in the fields provided; append new
+    /// ones (validated).
+    ///
+    /// PARITY: `_merge` (upstream lines 51-76).
+    fn merge(&mut self, todos: &[Value]) {
+        let mut existing: std::collections::HashMap<String, TodoItem> = self
+            .items
+            .iter()
+            .map(|i| (i.id.clone(), i.clone()))
+            .collect();
+        for t in Self::dedupe_by_id(todos) {
+            let item_id = json_str(&t, "id").trim().to_string();
+            if item_id.is_empty() {
+                continue; // Can't merge without an id
+            }
+            if let Some(cur) = existing.get_mut(&item_id) {
+                // Update only the fields the LLM actually provided.
+                if let Some(v) = t.get("content") {
+                    if json_truthy(v) {
+                        cur.content = Self::cap_content(value_str(v).trim());
+                    }
+                }
+                if let Some(v) = t.get("status") {
+                    if json_truthy(v) {
+                        let status = value_str(v).trim().to_lowercase();
+                        if VALID_STATUSES.contains(&status.as_str()) {
+                            cur.status = status;
+                        }
+                    }
+                }
+                if let Some(v) = t.get("parent") {
+                    // Upstream `str(t["parent"] or "")`: null counts as
+                    // absent (clears), never the literal "None".
+                    let parent = match v {
+                        Value::Null => String::new(),
+                        _ => value_str(v).trim().to_string(),
+                    };
+                    if parent.is_empty() {
+                        cur.parent = None;
+                    } else {
+                        cur.parent = Some(parent);
+                    }
+                }
+            } else {
+                // New item — validate fully and append to end.
+                let validated = Self::validate(&t);
+                existing.insert(validated.id.clone(), validated.clone());
+                self.items.push(validated);
+            }
+        }
+        // Rebuild preserving original order for existing items (first
+        // occurrence wins).
+        let mut seen = std::collections::HashSet::new();
+        let mut rebuilt = Vec::with_capacity(self.items.len());
+        for item in &self.items {
+            let current = existing
+                .get(&item.id)
+                .cloned()
+                .unwrap_or_else(|| item.clone());
+            if seen.insert(current.id.clone()) {
+                rebuilt.push(current);
+            }
+        }
+        self.items = Self::normalize_order(&rebuilt);
     }
 
     /// Return a copy of the current list.
@@ -137,38 +212,95 @@ impl TodoStore {
         !self.items.is_empty()
     }
 
-    /// Render the todo list for post-compression injection; `None` when there
-    /// is nothing active to say.
+    /// Full state clients can reconcile atomically.
+    ///
+    /// PARITY: `snapshot` (upstream lines 84-86).
+    pub fn snapshot(&self) -> Value {
+        json!({
+            "todos": self.items.iter().map(TodoItem::to_json).collect::<Vec<_>>(),
+            "revision": self.revision,
+        })
+    }
+
+    /// Current monotonic revision.
+    pub fn revision(&self) -> u64 {
+        self.revision
+    }
+
+    /// Restore a trusted snapshot without manufacturing a new revision.
+    ///
+    /// PARITY: `restore` (upstream lines 88-95).
+    pub fn restore(&mut self, todos: &[Value], revision: Option<&Value>) -> Vec<TodoItem> {
+        let mut items = self.fresh_items(todos);
+        items.truncate(MAX_TODO_ITEMS);
+        self.items = items;
+        self.revision = match revision {
+            Some(Value::Number(n)) => n.as_u64().unwrap_or(0),
+            Some(Value::String(s)) => s.trim().parse::<u64>().unwrap_or(0),
+            Some(Value::Bool(true)) => 1,
+            _ => 0,
+        };
+        self.read()
+    }
+
+    /// Render the list for post-compression injection, or None if
+    /// nothing active. Only pending/in_progress items are injected —
+    /// finished ones make the model re-do work after compression. A
+    /// parent is kept (with its real status marker) when any descendant
+    /// is active so subtasks keep context.
+    ///
+    /// PARITY: `format_for_injection` (upstream lines 97-126).
     pub fn format_for_injection(&self) -> Option<String> {
         if self.items.is_empty() {
             return None;
         }
-        let active_items: Vec<&TodoItem> = self
-            .items
-            .iter()
-            .filter(|i| i.status == "pending" || i.status == "in_progress")
-            .collect();
-        if active_items.is_empty() {
-            return None;
+        let mut children: std::collections::HashMap<&str, Vec<&TodoItem>> =
+            std::collections::HashMap::new();
+        for item in &self.items {
+            if let Some(parent) = &item.parent {
+                children.entry(parent.as_str()).or_default().push(item);
+            }
+        }
+        fn render(
+            item: &TodoItem,
+            depth: usize,
+            out: &mut Vec<String>,
+            children: &std::collections::HashMap<&str, Vec<&TodoItem>>,
+        ) -> bool {
+            let mut kid_lines = Vec::new();
+            let mut has_active_kid = false;
+            for kid in children.get(item.id.as_str()).into_iter().flatten() {
+                has_active_kid |= render(kid, depth + 1, &mut kid_lines, children);
+            }
+            let keep = item.status == "pending" || item.status == "in_progress" || has_active_kid;
+            if keep {
+                out.push(format!(
+                    "{}- {} {}. {} ({})",
+                    "  ".repeat(depth),
+                    status_marker(&item.status),
+                    item.id,
+                    item.content,
+                    item.status
+                ));
+                out.extend(kid_lines);
+            }
+            keep
         }
         let mut lines = vec![TODO_INJECTION_HEADER.to_string()];
-        for item in active_items {
-            let marker = match item.status.as_str() {
-                "completed" => "[x]",
-                "in_progress" => "[>]",
-                "pending" => "[ ]",
-                "cancelled" => "[~]",
-                _ => "[?]",
-            };
-            lines.push(format!(
-                "- {marker} {}. {} ({})",
-                item.id, item.content, item.status
-            ));
+        for item in &self.items {
+            if item.parent.is_none() {
+                render(item, 0, &mut lines, &children);
+            }
         }
-        Some(lines.join("\n"))
+        if lines.len() > 1 {
+            Some(lines.join("\n"))
+        } else {
+            None
+        }
     }
 
-    /// Truncate oversized todo content, keeping the head plus a marker.
+    /// Truncate to MAX_TODO_CONTENT_CHARS keeping the head (the
+    /// actionable part) + marker.
     pub fn cap_content(content: &str) -> String {
         if content.chars().count() > MAX_TODO_CONTENT_CHARS {
             let keep = MAX_TODO_CONTENT_CHARS - TRUNCATION_MARKER.chars().count();
@@ -178,13 +310,17 @@ impl TodoStore {
         content.to_string()
     }
 
-    /// Validate and normalize a todo item.
+    /// Normalize one item to `{id, content, status, parent?}`
+    /// (placeholders when missing).
+    ///
+    /// PARITY: `_validate` (upstream lines 135-149).
     fn validate(item: &Value) -> TodoItem {
         if !item.is_object() {
             return TodoItem::from_parts(
                 "?".to_string(),
                 "(invalid item)".to_string(),
                 "pending".to_string(),
+                None,
             );
         }
         let item_id = json_str(item, "id").trim().to_string();
@@ -202,16 +338,67 @@ impl TodoStore {
         }
 
         let status = json_str(item, "status").trim().to_lowercase();
+        // Upstream defaults a missing status to pending: `str(item.get(
+        // "status", "pending"))` — json_str already yields "" when
+        // missing, which falls through to pending below.
         let status = if VALID_STATUSES.contains(&status.as_str()) {
             status
         } else {
             "pending".to_string()
         };
 
-        TodoItem::from_parts(item_id, content, status)
+        // Upstream `str(item.get("parent") or "")`: any falsy parent
+        // (None, "", False, 0, [], {}) drops; self-parent drops.
+        let parent_raw = item.get("parent");
+        let parent = match parent_raw {
+            Some(v) if json_truthy(v) => value_str(v).trim().to_string(),
+            _ => String::new(),
+        };
+        let parent = if parent.is_empty() || parent == item_id {
+            None
+        } else {
+            Some(parent)
+        };
+
+        TodoItem::from_parts(item_id, content, status, parent)
+    }
+
+    /// Drop dangling parent refs and break cycles in place (such items
+    /// become roots).
+    ///
+    /// PARITY: `_sanitize_parents` (upstream lines 151-165).
+    fn sanitize_parents(items: &mut [TodoItem]) {
+        let ids: std::collections::HashSet<String> = items.iter().map(|i| i.id.clone()).collect();
+        for item in items.iter_mut() {
+            if let Some(parent) = &item.parent {
+                if !ids.contains(parent) {
+                    item.parent = None;
+                }
+            }
+        }
+        for i in 0..items.len() {
+            let mut seen = std::collections::HashSet::new();
+            seen.insert(items[i].id.clone());
+            let mut node_parent = items[i].parent.clone();
+            // Walk up; a missing parent can't happen post-sanitize, but
+            // guard anyway (upstream indexes by_id directly).
+            while let Some(parent) = node_parent {
+                if !seen.insert(parent.clone()) {
+                    items[i].parent = None;
+                    break;
+                }
+                node_parent = items
+                    .iter()
+                    .find(|it| it.id == parent)
+                    .and_then(|it| it.parent.clone());
+            }
+        }
     }
 
     /// Collapse duplicate ids, keeping the last occurrence in its position.
+    ///
+    /// PARITY: `_dedupe_by_id` (upstream lines 167-174). Non-dicts get a
+    /// synthetic key; `_validate` handles them downstream.
     fn dedupe_by_id(todos: &[Value]) -> Vec<Value> {
         let mut last_index: Vec<(String, usize)> = Vec::new();
         for (i, item) in todos.iter().enumerate() {
@@ -240,9 +427,38 @@ impl TodoStore {
         final_last.sort_by_key(|(_, i)| *i);
         final_last.iter().map(|(_, i)| todos[*i].clone()).collect()
     }
+
+    /// Lift the in_progress step ahead of any earlier pending
+    /// placeholder. Nested lists keep authored order — reordering would
+    /// tear a subtask from its siblings.
+    ///
+    /// PARITY: `_normalize_order` (upstream lines 176-188).
+    fn normalize_order(items: &[TodoItem]) -> Vec<TodoItem> {
+        let has_parent = items.iter().any(|i| i.parent.is_some());
+        let active_index = items.iter().position(|i| i.status == "in_progress");
+        let Some(active_index) = active_index else {
+            return items.to_vec();
+        };
+        if has_parent {
+            return items.to_vec();
+        }
+        let pending_before = items[..active_index]
+            .iter()
+            .position(|i| i.status == "pending");
+        let Some(pending_pos) = pending_before else {
+            return items.to_vec();
+        };
+        let mut normalized = items.to_vec();
+        let active = normalized.remove(active_index);
+        normalized.insert(pending_pos, active);
+        normalized
+    }
 }
 
 /// Single entry point for the todo tool: reads or writes depending on params.
+///
+/// PARITY: `todo_tool` (upstream lines 191-211) — write returns the
+/// full list + revision + summary; read returns the same shape.
 pub fn todo_tool(todos: Option<Value>, merge: bool, store: Option<&mut TodoStore>) -> String {
     let Some(store) = store else {
         return tool_error("TodoStore not initialized", &[]);
@@ -268,7 +484,7 @@ pub fn todo_tool(todos: Option<Value>, merge: bool, store: Option<&mut TodoStore
                 );
             }
             let items = store.write(todos.as_array().unwrap(), merge);
-            return todos_json(&items);
+            return todos_json(store, &items);
         }
         if !todos.is_array() {
             return tool_error(
@@ -277,19 +493,20 @@ pub fn todo_tool(todos: Option<Value>, merge: bool, store: Option<&mut TodoStore
             );
         }
         let items = store.write(todos.as_array().unwrap(), merge);
-        return todos_json(&items);
+        return todos_json(store, &items);
     }
     let items = store.read();
-    todos_json(&items)
+    todos_json(store, &items)
 }
 
-fn todos_json(items: &[TodoItem]) -> String {
+fn todos_json(store: &TodoStore, items: &[TodoItem]) -> String {
     let pending = items.iter().filter(|i| i.status == "pending").count();
     let in_progress = items.iter().filter(|i| i.status == "in_progress").count();
     let completed = items.iter().filter(|i| i.status == "completed").count();
     let cancelled = items.iter().filter(|i| i.status == "cancelled").count();
     serde_json::to_string(&json!({
-        "todos": items.iter().map(|i| json!({"id": i.id, "content": i.content, "status": i.status})).collect::<Vec<_>>(),
+        "todos": items.iter().map(TodoItem::to_json).collect::<Vec<_>>(),
+        "revision": store.revision(),
         "summary": {
             "total": items.len(),
             "pending": pending,
@@ -356,7 +573,8 @@ fn py_type_name(v: &Value) -> &'static str {
 }
 
 /// The upstream TODO_SCHEMA, extracted verbatim from
-/// `tools/todo_tool.py` TODO_SCHEMA @ b9aa928 (golden: upstream/golden_todo_schema.json).
+/// `tools/todo_tool.py` TODO_SCHEMA @ 5d59366 (golden:
+/// upstream/golden_todo_schema.json).
 pub fn todo_schema() -> &'static Value {
     static SCHEMA: Lazy<Value> = Lazy::new(|| {
         serde_json::from_str(include_str!("../../../upstream/golden_todo_schema.json"))
@@ -365,12 +583,13 @@ pub fn todo_schema() -> &'static Value {
     &SCHEMA
 }
 
-/// Register the `todo` tool (mirrors upstream module-level registry.register;
-/// the agent loop calls this when the todo toolset is enabled).
+/// Register the `todo_list` tool (mirrors upstream module-level
+/// registry.register; the agent loop calls this when the todo toolset
+/// is enabled).
 pub fn register_todo() {
     registry()
         .register(
-            "todo",
+            "todo_list",
             "todo",
             todo_schema().clone(),
             Arc::new(TodoHandler),

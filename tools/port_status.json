@@ -763,8 +763,8 @@
     "status": "done"
   },
   "tools.todo_tool": {
-    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (335 -> 284 LOC); re-certify line-by-line before promoting",
-    "status": "partial"
+    "retarget_note": "re-ported at 5d59366 (2026-09-21): parents, revision/snapshot/restore, hierarchical injection, normalize order, parent sanitize, todo_list rename + schema; 3 stale order expectations corrected to oracle; 34 tests incl. 12 nested/revision",
+    "status": "done"
   },
   "tools.tool_backend_helpers": {
     "retarget_note": "ported at 5d59366 (2026-09-21): restored selection subsystem (read_selection/selection_exists/removed_backend_note/selection_error + constants); fixed whitespace-only Modal credential divergence (red-proof by code inspection: old is_empty check returned true for \"   \"); 5 new oracle tests; header re-pinned",

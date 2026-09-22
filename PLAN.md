@@ -3800,3 +3800,12 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   diff-check clean. Ledger: 177 done / 25 partial / 8693 missing
   tracked (1.99%), prod 177/25/3279 (5.08%). Evidence tier: unit.
   PACKAGE providers root CLOSED (base + __init__ done).
+
+- 2026-09-21 (tools-todo): `tools.todo_tool` partial → done @
+  5d59366 (whole module, 284 LOC). Full re-port: parent subtasks,
+  revision/snapshot/restore, hierarchical injection, normalize
+  order, parent sanitize, todo_list rename + schema. 3 stale order
+  expectations corrected to the oracle. Validation: 34 passed;
+  fmt + diff-check clean. Ledger: 178 done / 24 partial / 8693
+  missing tracked (2.00%), prod 178/24/3279 (5.11%). Evidence tier:
+  unit.

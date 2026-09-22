@@ -1,18 +1,17 @@
 {
-  "name": "todo",
-  "description": "Manage your task list for the current session. Use for complex tasks with 3+ steps or when the user provides multiple tasks. Call with no parameters to read the current list.\n\nWriting:\n- Provide 'todos' array to create/update items\n- merge=false (default): replace the entire list with a fresh plan\n- merge=true: update existing items by id, add any new ones\n\nEach item: {id: string, content: string, status: pending|in_progress|completed|cancelled}\nList order is priority. Only ONE item in_progress at a time.\nMark items completed immediately when done. If something fails, cancel it and add a revised item.\n\nAlways returns the full current list.",
+  "name": "todo_list",
+  "description": "Track a task list for multi-step work (3+ steps). Use for complex tasks with 3+ steps or when the user provides multiple tasks. For 'all N items' tasks, enumerate every instance as its own checklist item so none are silently dropped. Call with no parameters to read the current list.\nList order is priority. Only ONE item in_progress at a time. Break large phases into subtasks via parent. Mark an item completed only after the work is verified done, never based on intent. If something fails, cancel it and add a revised item. Always returns the full current list.",
   "parameters": {
     "type": "object",
     "properties": {
       "todos": {
         "type": "array",
-        "description": "Task items to write. Omit to read current list.",
+        "description": "Task items to write.",
         "items": {
           "type": "object",
           "properties": {
             "id": {
-              "type": "string",
-              "description": "Unique item identifier"
+              "type": "string"
             },
             "content": {
               "type": "string",
@@ -25,8 +24,11 @@
                 "in_progress",
                 "completed",
                 "cancelled"
-              ],
-              "description": "Current status"
+              ]
+            },
+            "parent": {
+              "type": "string",
+              "description": "Optional id of another item, making this a nested subtask. Omit for top-level."
             }
           },
           "required": [
@@ -38,7 +40,7 @@
       },
       "merge": {
         "type": "boolean",
-        "description": "true: update existing items by id, add new ones. false (default): replace the entire list.",
+        "description": "true: update existing items by id, add new ones. false (default): replace the entire list with a fresh plan.",
         "default": false
       }
     },
