@@ -32,3 +32,4 @@ hermes-utils = { version = "0.1.0", path = "../hermes-utils" }
 
 sha1 = "0.10"
 sha2.workspace = true
+tempfile.workspace = true

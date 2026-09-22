@@ -3931,3 +3931,26 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   tier: unit. (Known pre-existing flake, unrelated:
   `parity_browser_dialog` races under parallel threads; green ×3
   serial — workspace protocol is serial.)
+
+- 2026-09-22 (read-extract): `tools.read_extract` partial → done @
+  5d59366 (whole non-compat module, 551 LOC; was a 346-LOC stdlib-only
+  port). Full re-port: anydoc provider seam with live cooldown/cache
+  state machine (default loader = package unavailable, matching the
+  real upstream ImportError path; fal_common-style provider slot),
+  notebook OUTPUTS rendering (v3/v4, jq-pointer truncation at the 20k
+  per-cell cap, ANSI/\r frame collapse, widget/image/html placeholders,
+  half-even `_human_size`), hosted-OCR wiring seam (secret-scope/config
+  upward imports can't cross crate layers), PDF coverage note with
+  gap-map + label scan (pure texts seam for the oracle's page-text
+  mocks; pdftotext lookup override drives the real spawn path),
+  extract_document_bytes + temp-copy, ns-strict OOXML walking,
+  Python-comma size messages. TDD caught a poisoned-lock cascade +
+  hardcoded jq-filename in the new tests (fixed pre-green via poison-
+  tolerant lock + dynamic basename). 50 oracle tests. Validation:
+  `cargo build --workspace` green;
+  `cargo test --workspace -- --test-threads=1` — 2,265 passed,
+  0 failed; fmt + diff-check clean. Ledger: 187 done / 15 partial /
+  8693 missing tracked (2.10%), prod 187/15/3279 (5.37%). Evidence
+  tier: unit. (Pre-existing parallel-only flakes noted this session:
+  `parity_browser_dialog`, `parity_tool_result_storage` — both green
+  ×3 serial; workspace protocol is serial.)

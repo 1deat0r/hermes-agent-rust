@@ -720,8 +720,8 @@
     "status": "done"
   },
   "tools.read_extract": {
-    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (346 -> 551 LOC); re-certify line-by-line before promoting",
-    "status": "partial"
+    "retarget_note": "ported 2026-09-22 at 5d59366 (551 LOC): anydoc provider seam + cooldown state machine, notebook outputs (v3/v4, jq hints, 20k cap), hosted-OCR wiring seam, PDF coverage gap-map, extract_document_bytes/temp-copy, ns-strict OOXML; 50 oracle tests in parity_read_extract.rs",
+    "status": "done"
   },
   "tools.read_preview_tool": {
     "retarget_note": "re-certified autonomous: docstring folds; 8 tests green",

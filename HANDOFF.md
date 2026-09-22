@@ -473,6 +473,24 @@ Files: `PLAN.md`, `HANDOFF.md` updated/verified; `tools/inventory.json`
 + `CONVERSION-LEDGER.md` verified unchanged (additive layer, no
 tracked-module change).
 
+## tools.read_extract done (2026-09-22)
+
+Partial → done @ 5d59366 (551 LOC; was stdlib-only 346): anydoc
+provider seam + cooldown state machine (default = unavailable, the
+real ImportError path), notebook outputs (v3/v4 + jq hints + 20k
+cap + ANSI/\r collapse + placeholders), hosted-OCR wiring seam, PDF
+coverage gap-map (pure-texts + pdftotext-override seams),
+extract_document_bytes/temp-copy, ns-strict OOXML, comma size
+messages. 50 oracle tests (poison-tolerant binary lock). Full
+workspace: 2,265 passed, 0 failed.
+**Ledger: 187/15/8693 (2.10% tracked, 5.37% prod).**
+Next: next Wave B partial in smallest-LOC order
+(`utils` 611, `hermes_state_portability` 615).
+Note (pre-existing parallel-only flakes, unrelated; both green ×3
+serial under the workspace protocol): `parity_browser_dialog`,
+`parity_tool_result_storage` (HomeGuard env races under
+default test threads).
+
 ## agent.file_safety done (2026-09-22)
 
 Partial → done @ 5d59366 (550 LOC): full non-compat surface —
@@ -537,9 +555,10 @@ Next: next Wave B partial in smallest-LOC order
 
 ## Next actions, in order
 
-1. Wave B: next smallest-LOC partials (`tools.read_extract` 551,
-   `utils` 611, `hermes_state_portability` 615 — `agent.ssl_guard`,
-   `hermes_cli.dashboard_auth.__init__` are already done).
+1. Wave B: next smallest-LOC partials (`utils` 611,
+   `hermes_state_portability` 615, `hermes_logging` 725 —
+   `agent.ssl_guard`, `hermes_cli.dashboard_auth.__init__` are
+   already done).
 2. Wave A: trivial sweep (`__init__` 0–3 LOC, eslint configs, barrels —
    acp/cron-scripts/tui roots need crate-open decision first).
 3. Keep ownership disjoint; commit and publish each logical unit immediately.

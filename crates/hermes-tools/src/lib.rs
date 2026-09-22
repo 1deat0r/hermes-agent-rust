@@ -89,7 +89,16 @@ pub use file_state::{
     record_read, writes_since, FileStateRegistry, PathGuard,
 };
 pub use path_security::validate_within_dir;
-pub use read_extract::{extract_document_text, is_extractable_document, ExtractionError};
+pub use read_extract::{
+    anydoc, anydoc_cache_is_unset, anydoc_retry_seconds, coverage_note_from_texts, extract_anydoc,
+    extract_anydoc_bytes, extract_document_bytes, extract_document_text, hosted_ocr_available,
+    is_extractable_document, max_anydoc_bytes, needs_ocr_warning, parse_pdftotext_output,
+    pdf_coverage_note, pdf_coverage_note_from_bytes, pdf_page_texts, reset_anydoc_cache,
+    reset_hosted_ocr_for_test, set_anydoc_provider, set_anydoc_retry_seconds, set_max_anydoc_bytes,
+    set_pdftotext_override_for_test, wire_hosted_ocr, AnydocConverter, AnydocError,
+    ExtractionError, ANYDOC_EXTENSIONS, EXTRACTABLE_EXTENSIONS, MAX_DOCUMENT_BYTES,
+    PDF_GAP_MAP_MAX_ENTRIES,
+};
 pub use registry::{
     registry, tool_error, tool_result, CheckFnCache, ToolEntry, ToolHandler, ToolRegistry,
     ToolResult,
