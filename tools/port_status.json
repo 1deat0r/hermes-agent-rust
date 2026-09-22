@@ -174,8 +174,8 @@
     "status": "done"
   },
   "agent.verify.recipes": {
-    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (477 -> 296 LOC); re-certify line-by-line before promoting",
-    "status": "partial"
+    "retarget_note": "ported 2026-09-22 at 5d59366 (296 LOC): fixed nextjs default-port 3000 + bool-port truthiness bugs, 26 oracle tests in parity_verify_recipes.rs",
+    "status": "done"
   },
   "agent.verify.runner": {
     "retarget_note": "ported at 5d59366 (2026-09-21): restored compose live-state guard (#103567), start-phase stderr drain (wedge fix); fixed stale _tail comment; 3 new oracle tests (compose refusal via docker shim, clean-proceed, stderr tail); header re-pinned",

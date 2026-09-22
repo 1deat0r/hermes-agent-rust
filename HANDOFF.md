@@ -473,6 +473,16 @@ Files: `PLAN.md`, `HANDOFF.md` updated/verified; `tools/inventory.json`
 + `CONVERSION-LEDGER.md` verified unchanged (additive layer, no
 tracked-module change).
 
+## agent.verify.recipes done (2026-09-22)
+
+Partial → done @ 5d59366 (296 LOC; every oracle case mirrored,
+2 real bugs fixed — nextjs default 3000, bool-port truthiness —
+1 documented fail-open divergence, 26 oracle tests, 26/26).
+Full workspace: 2,156 passed, 0 failed.
+**Ledger: 183/19/8693 (2.06% tracked, 5.26% prod).**
+Next: next Wave B partial in smallest-LOC order
+(`tools.schema_sanitizer` 386, `toolsets` 485).
+
 ## gateway.platforms.qqbot.keyboards done (2026-09-22)
 
 Partial → done @ 5d59366 (287 LOC; full surface incl ApprovalSender,

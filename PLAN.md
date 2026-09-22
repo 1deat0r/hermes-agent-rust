@@ -3851,3 +3851,17 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   0 failed (218 suites); fmt + diff-check clean. Ledger: 182 done /
   20 partial / 8693 missing tracked (2.05%), prod 182/20/3279
   (5.23%). Evidence tier: unit.
+
+- 2026-09-22 (verify-recipes): `agent.verify.recipes` partial → done @
+  5d59366 (whole module, 296 LOC). Mirrored every oracle case in
+  `tests/verify/test_recipes.py` + live-probe edges (bool/float ports,
+  alias first-wins, regex boundaries, ecosystem subtleties). TDD
+  caught 2 real port bugs pre-commit: nextjs default port was None
+  (must be 3000) and bool ports rejected (upstream keeps `True` via
+  int-subclass truthiness). 1 documented fail-open divergence:
+  non-string start scripts → None here vs TypeError upstream.
+  Validation: 26 passed; `cargo build --workspace` green;
+  `cargo test --workspace -- --test-threads=1` — 2,156 passed,
+  0 failed; fmt + diff-check clean. Ledger: 183 done / 19 partial /
+  8693 missing tracked (2.06%), prod 183/19/3279 (5.26%). Evidence
+  tier: unit.

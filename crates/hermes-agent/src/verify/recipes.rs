@@ -1,6 +1,6 @@
 //! Static run-recipe detection for project verification.
 //!
-//! PARITY: `agent/verify/recipes.py` @ b9aa928 (whole module). Ported
+//! PARITY: `agent/verify/recipes.py` @ 5d59366 (whole module). Ported
 //! nearly 1:1 from superagent-ai/grok-cli `src/verify/recipes.ts`; grok's
 //! detection order and command choices are the oracle.
 //!
@@ -8,6 +8,15 @@
 //! prompt-time facts*; this module owns the *deep runtime recipe* —
 //! framework identification, bootstrap/build/test command inference, and
 //! the start command, port, and readiness path.
+//!
+//! PORT SEAMS (documented divergences):
+//! - A non-string `scripts[start]` entry (e.g. `"dev": 5`) returns `None`
+//!   for start/port here; upstream crashes with `TypeError` in
+//!   `_infer_port_from_command`. No caller feeds non-string scripts
+//!   (they come from parsed package.json authorial content), and failing
+//!   open matches every other malformed-manifest path in this module.
+//!   Pinned in the parity suite as `None` so a strictness change fails
+//!   loudly.
 
 use std::path::Path;
 
@@ -22,7 +31,7 @@ use serde_json::{json, Value};
 /// `appKind`), and command lists are shell strings executed in the project
 /// root.
 ///
-/// PARITY: `Recipe` (upstream lines 36-115).
+/// PARITY: `Recipe` (upstream lines 26-77).
 #[derive(Debug, Clone, PartialEq)]
 pub struct Recipe {
     pub name: String,
@@ -37,7 +46,7 @@ pub struct Recipe {
 }
 
 impl Recipe {
-    /// PARITY: `to_dict` (upstream lines 49-60) — camelCase keys.
+    /// PARITY: `to_dict` (upstream lines 42-47) — camelCase keys.
     pub fn to_dict(&self) -> Value {
         json!({
             "name": self.name,
@@ -54,7 +63,7 @@ impl Recipe {
 
     /// Tolerant loader mirroring grok's `normalizeVerifyRecipe`.
     ///
-    /// PARITY: `from_dict` (upstream lines 62-113): accepts both the grok
+    /// PARITY: `from_dict` (upstream lines 49-77): accepts both the grok
     /// aliases (`appLabel`, `appKind`, `installCommands`, `buildCommands`,
     /// `testCommands`, `startCommand`, `startPort`) and the canonical
     /// names; a missing/blank name rejects the whole recipe; the port must
@@ -104,7 +113,12 @@ impl Recipe {
 
         let port_raw = get(&["port", "startPort"]);
         let port = match port_raw {
-            Some(Value::Number(n)) => {
+            // PARITY: `isinstance(port_raw, int)` — Python `bool` IS an
+            // `int` subclass, so `port True` is kept (`0 < True < 65536`).
+            // `as_i64` covers both; floats are not ints upstream → None.
+            Some(Value::Bool(true)) => Some(1),
+            Some(Value::Bool(false)) => None,
+            Some(Value::Number(n)) if n.is_i64() || n.is_u64() => {
                 let port = n.as_i64()?;
                 if 0 < port && port < 65536 {
                     Some(port)
@@ -112,6 +126,7 @@ impl Recipe {
                     None
                 }
             }
+            Some(Value::Number(_)) => None,
             Some(Value::String(s))
                 if !s.trim().is_empty() && s.trim().chars().all(|c| c.is_ascii_digit()) =>
             {
@@ -149,12 +164,12 @@ impl Recipe {
 // helpers
 // ---------------------------------------------------------------------------
 
-/// PARITY: `_read_text` (upstream lines 121-125).
+/// PARITY: `_read_text` (upstream lines 80-84).
 fn read_text(root: &Path, name: &str) -> Option<String> {
     std::fs::read_to_string(root.join(name)).ok()
 }
 
-/// PARITY: `_read_package_json` (upstream lines 128-137).
+/// PARITY: `_read_package_json` (upstream lines 87-92).
 fn read_package_json(root: &Path) -> Option<Value> {
     let raw = read_text(root, "package.json")?;
     let parsed: Value = serde_json::from_str(&raw).ok()?;
@@ -167,7 +182,7 @@ fn read_package_json(root: &Path) -> Option<Value> {
 
 /// Lockfile-based package-manager detection (grok's detectPackageManager).
 ///
-/// PARITY: `detect_package_manager` (upstream lines 140-155).
+/// PARITY: `detect_package_manager` (upstream lines 108-110).
 pub fn detect_package_manager(root: &Path) -> Option<String> {
     let candidates = [
         ("pnpm-lock.yaml", "pnpm"),
@@ -189,7 +204,7 @@ pub fn detect_package_manager(root: &Path) -> Option<String> {
 
 /// Port inference from a start command (grok's inferPortFromCommand).
 ///
-/// PARITY: `_infer_port_from_command` (upstream lines 158-168).
+/// PARITY: `_infer_port_from_command` (upstream lines 113-118).
 fn infer_port_from_command(command: Option<&str>) -> Option<i64> {
     static FLAG_RE: Lazy<Regex> =
         Lazy::new(|| Regex::new(r"(?:--port|-p)\s+(\d{2,5})").expect("port flag re"));
@@ -207,7 +222,7 @@ fn infer_port_from_command(command: Option<&str>) -> Option<i64> {
         .and_then(|caps| caps[1].parse::<i64>().ok())
 }
 
-/// PARITY: `_dedupe` (upstream lines 171-177) — first-occurrence order,
+/// PARITY: `_dedupe` (upstream lines 121-123) — first-occurrence order,
 /// stripped, blank values dropped.
 fn dedupe(values: Vec<Option<String>>) -> Vec<String> {
     let mut seen: Vec<String> = Vec::new();
@@ -224,7 +239,7 @@ fn dedupe(values: Vec<Option<String>>) -> Vec<String> {
 // Node
 // ---------------------------------------------------------------------------
 
-/// PARITY: `_script_runner` (upstream lines 182-188).
+/// PARITY: `_script_runner` (upstream lines 137-138).
 fn script_runner(package_manager: Option<&str>, entry: &str) -> String {
     match package_manager {
         Some("pnpm") => format!("pnpm {entry}"),
@@ -234,7 +249,7 @@ fn script_runner(package_manager: Option<&str>, entry: &str) -> String {
     }
 }
 
-/// PARITY: `_detect_node_recipe` (upstream lines 191-267).
+/// PARITY: `_detect_node_recipe` (upstream lines 141-169).
 fn detect_node_recipe(root: &Path, pkg: &Value) -> Recipe {
     let scripts: serde_json::Map<String, Value> = pkg
         .get("scripts")
@@ -253,7 +268,7 @@ fn detect_node_recipe(root: &Path, pkg: &Value) -> Recipe {
     let package_manager = detect_package_manager(root);
 
     let (kind, label, default_port) = if deps.contains_key("next") {
-        ("nextjs", "Next.js", None)
+        ("nextjs", "Next.js", Some(3000))
     } else if deps.contains_key("@sveltejs/kit") {
         ("sveltekit", "SvelteKit", Some(5173))
     } else if deps.contains_key("astro") {
@@ -347,7 +362,7 @@ fn detect_node_recipe(root: &Path, pkg: &Value) -> Recipe {
 // Python
 // ---------------------------------------------------------------------------
 
-/// PARITY: `_detect_python_recipe` (upstream lines 272-360).
+/// PARITY: `_detect_python_recipe` (upstream lines 175-214).
 fn detect_python_recipe(root: &Path) -> Option<Recipe> {
     let pyproject = read_text(root, "pyproject.toml");
     let requirements = read_text(root, "requirements.txt");
@@ -484,7 +499,7 @@ fn detect_python_recipe(root: &Path) -> Option<Recipe> {
 // Go / Rust / Java / Make / docker-compose
 // ---------------------------------------------------------------------------
 
-/// PARITY: `_detect_go_recipe` (upstream lines 365-377).
+/// PARITY: `_SIMPLE_TOOLCHAINS` Go row (upstream lines 217-231).
 fn detect_go_recipe(root: &Path) -> Option<Recipe> {
     if !root.join("go.mod").exists() {
         return None;
@@ -506,7 +521,7 @@ fn detect_go_recipe(root: &Path) -> Option<Recipe> {
     })
 }
 
-/// PARITY: `_detect_rust_recipe` (upstream lines 380-392).
+/// PARITY: `_SIMPLE_TOOLCHAINS` Rust row (upstream lines 217-231).
 fn detect_rust_recipe(root: &Path) -> Option<Recipe> {
     if !root.join("Cargo.toml").exists() {
         return None;
@@ -528,7 +543,7 @@ fn detect_rust_recipe(root: &Path) -> Option<Recipe> {
     })
 }
 
-/// PARITY: `_detect_java_recipe` (upstream lines 395-412).
+/// PARITY: `_detect_java_recipe` (upstream lines 234-243).
 fn detect_java_recipe(root: &Path) -> Option<Recipe> {
     if root.join("pom.xml").exists() {
         return Some(Recipe {
@@ -568,7 +583,7 @@ fn detect_java_recipe(root: &Path) -> Option<Recipe> {
 static MAKE_TARGET_RE: Lazy<Regex> =
     Lazy::new(|| Regex::new(r"^([A-Za-z0-9_.-]+):(?:\s|$)").expect("make target re"));
 
-/// PARITY: `_parse_make_targets` (upstream lines 418-425).
+/// PARITY: make target scan (upstream lines 256-269).
 fn parse_make_targets(raw: &str) -> Vec<String> {
     raw.lines()
         .filter_map(|line| MAKE_TARGET_RE.captures(line))
@@ -576,7 +591,7 @@ fn parse_make_targets(raw: &str) -> Vec<String> {
         .collect()
 }
 
-/// PARITY: `_detect_make_recipe` (upstream lines 428-458).
+/// PARITY: `_detect_make_recipe` (upstream lines 256-269).
 fn detect_make_recipe(root: &Path) -> Option<Recipe> {
     let makefile = read_text(root, "Makefile")?;
     let targets = parse_make_targets(&makefile);
@@ -617,7 +632,7 @@ fn detect_make_recipe(root: &Path) -> Option<Recipe> {
     })
 }
 
-/// PARITY: `_COMPOSE_FILES` (upstream lines 461-466).
+/// PARITY: `_COMPOSE_FILES` (upstream lines 272).
 const COMPOSE_FILES: [&str; 4] = [
     "docker-compose.yml",
     "docker-compose.yaml",
@@ -625,7 +640,7 @@ const COMPOSE_FILES: [&str; 4] = [
     "compose.yaml",
 ];
 
-/// PARITY: `_detect_compose_recipe` (upstream lines 469-483).
+/// PARITY: `_detect_compose_recipe` (upstream lines 275-280).
 fn detect_compose_recipe(root: &Path) -> Option<Recipe> {
     let compose_file = COMPOSE_FILES
         .iter()
@@ -654,7 +669,7 @@ fn detect_compose_recipe(root: &Path) -> Option<Recipe> {
 /// wins, then Python, Go, Rust, Java, then Makefile / docker-compose
 /// fallbacks. Returns `None` when nothing recognizable is found.
 ///
-/// PARITY: `detect_recipe` (upstream lines 488-504).
+/// PARITY: `detect_recipe` (upstream lines 283-296).
 pub fn detect_recipe(root: &Path) -> Option<Recipe> {
     if let Some(pkg) = read_package_json(root) {
         return Some(detect_node_recipe(root, &pkg));
