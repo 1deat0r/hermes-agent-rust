@@ -3809,3 +3809,11 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   fmt + diff-check clean. Ledger: 178 done / 24 partial / 8693
   missing tracked (2.00%), prod 178/24/3279 (5.11%). Evidence tier:
   unit.
+
+- 2026-09-21 (tools-clarify): `tools.clarify_tool` partial → done @
+  5d59366 (whole module, 311 LOC). Full re-port: batch system,
+  recommended labels, timeout sentinel, batch-capable callbacks, new
+  questions-array schema. Oracle tests caught an inverted
+  mark_recommended before commit. Validation: 25 passed; fmt +
+  diff-check clean. Ledger: 179 done / 23 partial / 8693 missing
+  tracked (2.01%), prod 179/23/3279 (5.14%). Evidence tier: unit.

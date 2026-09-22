@@ -648,8 +648,8 @@
     "status": "done"
   },
   "tools.clarify_tool": {
-    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (266 -> 311 LOC); re-certify line-by-line before promoting",
-    "status": "partial"
+    "retarget_note": "re-ported at 5d59366 (2026-09-21): batch system, recommended labels, timeout sentinel, batch-capable callbacks, new schema; inverted mark_recommended caught by oracle tests; 25 tests",
+    "status": "done"
   },
   "tools.close_terminal_tool": {
     "retarget_note": "re-certified autonomous: description trims only; 7 tests green",

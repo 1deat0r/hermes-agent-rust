@@ -1,7 +1,7 @@
 # Hermes Agent → Hermes Agent Rust Conversion Ledger
 
-**Current strict completion: 2.00% of all tracked upstream modules (178/8895).**
-Production-only strict completion: **5.11%** (178/3481 production modules).
+**Current strict completion: 2.01% of all tracked upstream modules (179/8895).**
+Production-only strict completion: **5.14%** (179/3481 production modules).
 
 > This file is generated from `tools/inventory.json`; update the source ledger in `tools/port_status.json`, regenerate the inventory, then run `python3 tools/conversion_ledger.py`. Only `done` counts toward the percentage. `partial` is intentionally zero credit until its stated parity seams are closed. AGENTS: generated-only — query JSON summaries per AGENTS.md §2; never read this file whole.
 
@@ -9,10 +9,10 @@ Production-only strict completion: **5.11%** (178/3481 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 178 | 24 | 8693 | 2.00% | 17,939/2,467,838 done LOC |
-| Production modules | 178 | 24 | 3279 | 5.11% | 17,939/1,147,748 done LOC |
+| All tracked modules | 179 | 23 | 8693 | 2.01% | 18,250/2,467,838 done LOC |
+| Production modules | 179 | 23 | 3279 | 5.14% | 18,250/1,147,748 done LOC |
 
-Inventory source: `/run/media/its1deat0r/Projects/AI Agents/Hermes-Agent-Rust/.upstream-pin/5d59366` at `2026-09-22T19:01:14`.
+Inventory source: `/run/media/its1deat0r/Projects/AI Agents/Hermes-Agent-Rust/.upstream-pin/5d59366` at `2026-09-22T19:09:10`.
 
 ## Definition of 100.00%
 
@@ -44,7 +44,6 @@ The conversion is complete only when all of these are true:
 | `hermes_state_search` | P1 | 1,343 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `model_tools` | P2 | 987 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `run_agent` | P2 | 1,561 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
-| `tools.clarify_tool` | P2 | 311 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `tools.credential_files` | P2 | 366 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `tools.read_extract` | P2 | 551 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `tools.registry` | P2 | 975 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
@@ -6098,7 +6097,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `tools.budget_config` | production | P2 | 114 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `tools.checkpoint_manager` | production | P2 | 1,264 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.clarify_gateway` | production | P2 | 308 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `tools.clarify_tool` | production | P2 | 311 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
+| `tools.clarify_tool` | production | P2 | 311 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `tools.close_preview_tool` | production | P2 | 64 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `tools.close_terminal_tool` | production | P2 | 52 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `tools.code_execution_env` | production | P2 | 280 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
