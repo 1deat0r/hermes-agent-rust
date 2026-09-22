@@ -473,6 +473,23 @@ Files: `PLAN.md`, `HANDOFF.md` updated/verified; `tools/inventory.json`
 + `CONVERSION-LEDGER.md` verified unchanged (additive layer, no
 tracked-module change).
 
+## agent.file_safety done (2026-09-22)
+
+Partial → done @ 5d59366 (550 LOC): full non-compat surface —
+NT-namespace guard, approval-gated `.ssh/config`, vault/
+browser-profile read+write denies, google_oauth+bws_cache write
+denies, active-profile resolver, sandbox+container mirror guards
+(py_repr warnings); resolver missing-segment-sibling fix; compat
+block skipped (off-limits, no caller/oracle). 22 oracle tests
+(ENV_LOCK-serialized env binary). Full workspace: 2,224 passed,
+0 failed.
+**Ledger: 186/16/8693 (2.09% tracked, 5.34% prod).**
+Next: next Wave B partial in smallest-LOC order
+(`tools.read_extract` 551, `utils` 611).
+Note (pre-existing flake, unrelated): `parity_browser_dialog`
+cross-talks under parallel test threads; green ×3 with
+`--test-threads=1` (the workspace protocol).
+
 ## toolsets + toolset_distributions compound done (2026-09-22)
 
 `toolsets` partial → done @ 5d59366 (485 LOC) + distributions
@@ -520,8 +537,8 @@ Next: next Wave B partial in smallest-LOC order
 
 ## Next actions, in order
 
-1. Wave B: next smallest-LOC partials (`agent.file_safety` 550,
-   `tools.read_extract` 551, `utils` 611 — `agent.ssl_guard`,
+1. Wave B: next smallest-LOC partials (`tools.read_extract` 551,
+   `utils` 611, `hermes_state_portability` 615 — `agent.ssl_guard`,
    `hermes_cli.dashboard_auth.__init__` are already done).
 2. Wave A: trivial sweep (`__init__` 0–3 LOC, eslint configs, barrels —
    acp/cron-scripts/tui roots need crate-open decision first).

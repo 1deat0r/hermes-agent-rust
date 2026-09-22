@@ -77,7 +77,12 @@ pub use binary_extensions::{is_binary_extension, BINARY_EXTENSIONS};
 pub use budget_config::{budget_for_context_window, BudgetConfig, BudgetThreshold};
 pub use clarify::{register_clarify, set_clarify_callback};
 pub use file_safety::{
-    get_read_block_error, get_write_denied_error, is_write_denied, raise_if_read_blocked,
+    build_write_approval_paths, build_write_denied_paths, build_write_denied_prefixes,
+    classify_container_mirror_target, classify_sandbox_mirror_target, classify_write_denial,
+    get_container_mirror_warning, get_nt_namespace_error, get_read_block_error,
+    get_safe_write_roots, get_sandbox_mirror_warning, get_write_denied_error, hermes_dirs,
+    hermes_home_path, hermes_root_path, is_nt_namespace_path, is_write_approval_required,
+    is_write_denied, raise_if_read_blocked, resolve_active_profile_name, MirrorInfo,
 };
 pub use file_state::{
     check_stale, forget_task, get_registry, guard_disabled, known_reads, lock_path, note_write,

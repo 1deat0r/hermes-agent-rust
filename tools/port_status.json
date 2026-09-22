@@ -24,8 +24,8 @@
     "status": "done"
   },
   "agent.file_safety": {
-    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (693 -> 550 LOC); re-certify line-by-line before promoting",
-    "status": "partial"
+    "retarget_note": "ported 2026-09-22 at 5d59366 (550 LOC): NT-namespace guard, approval-gated .ssh/config, vault/browser-profile read+write denies, google_oauth+bws_cache write denies, active-profile resolver, sandbox+container mirror guards; compat block skipped (off-limits); 22 oracle tests",
+    "status": "done"
   },
   "agent.interrupt_compat": {
     "retarget_note": "re-certified at 5d59366 (2026-09-16 Wave B unit 5): tool_reason + _accepts_keyword gate ported (InterruptTarget::accepts_tool_reason; introspection has no Rust analog, caller-declared); AIAgent-subclass + delegate_tool cases stay pending with those modules; suites green",

@@ -3909,3 +3909,25 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   0 failed; fmt + diff-check clean. Ledger: 185 done / 17 partial /
   8693 missing tracked (2.08%), prod 185/17/3279 (5.31%). Evidence
   tier: unit.
+
+- 2026-09-22 (file-safety): `agent.file_safety` partial → done @
+  5d59366 (whole non-compat module, 550 LOC). Re-ported the full
+  surface beyond the b9aa928 write/read-denial subset: NT-namespace
+  guard (raw-string chokepoints in read + write), approval-gated
+  `~/.ssh/config` (moved out of the hard deny; approval checked
+  before the `.ssh/` prefix), `auth/google_oauth.json` +
+  `cache/bws_cache.json` write denies, `vault/` + `browser-profile/`
+  in the protected-subpath and read-dir tables, active-profile
+  resolver (system_prompt/skill_manager caller), sandbox + container
+  mirror classifiers with `py_repr` warning rendering; resolved the
+  missing-segment sibling trap in the tolerant resolver (once a
+  component fails, later components never re-probe as siblings).
+  Compat block skipped (off-limits; no in-tree caller / oracle).
+  env tests serialize on an ENV_LOCK (HERMES_HOME race). Validation:
+  22 oracle tests (14 pure + 8 env); `cargo build --workspace` green;
+  `cargo test --workspace -- --test-threads=1` — 2,224 passed,
+  0 failed; fmt + diff-check clean. Ledger: 186 done / 16 partial /
+  8693 missing tracked (2.09%), prod 186/16/3279 (5.34%). Evidence
+  tier: unit. (Known pre-existing flake, unrelated:
+  `parity_browser_dialog` races under parallel threads; green ×3
+  serial — workspace protocol is serial.)
