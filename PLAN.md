@@ -3865,3 +3865,19 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   0 failed; fmt + diff-check clean. Ledger: 183 done / 19 partial /
   8693 missing tracked (2.06%), prod 183/19/3279 (5.26%). Evidence
   tier: unit.
+
+- 2026-09-22 (schema-sanitizer): `tools.schema_sanitizer` partial →
+  done @ 5d59366 (whole module, 386 LOC). Mirrored both oracle files
+  (`test_schema_sanitizer.py` + `test_schema_boolean_required.py`) +
+  live-probe recursion-table edges. TDD caught 5 real port bugs
+  pre-commit: patternProperties/$defs/definitions/dependentSchemas
+  not recursing, child-key table narrowed (contains/if/then/
+  unevaluated*/prefixItems passed through), legacy boolean
+  `required` kept instead of dropped, property-level `required: true`
+  lift missing below top level, `dependencies` dict mishandled,
+  `required` names recursed as schemas. Validation: 38 passed;
+  `cargo build --workspace` green;
+  `cargo test --workspace -- --test-threads=1` — 2,194 passed,
+  0 failed; fmt + diff-check clean. Ledger: 184 done / 18 partial /
+  8693 missing tracked (2.07%), prod 184/18/3279 (5.29%). Evidence
+  tier: unit.

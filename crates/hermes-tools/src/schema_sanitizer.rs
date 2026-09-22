@@ -1,6 +1,6 @@
 //! Tool schema sanitization for strict backend compatibility.
 //!
-//! PARITY: tools/schema_sanitizer.py @ b9aa928 (687 LOC, ported 1:1).
+//! PARITY: tools/schema_sanitizer.py @ 5d59366 (whole module, ported 1:1).
 //!
 //! - Property keys are renamed to the `[a-zA-Z0-9_.-]{1,64}` pattern
 //!   (Anthropic/Bedrock/Vertex/Azure reject keys like `issue_class~neq`).
@@ -374,6 +374,60 @@ pub fn collapse_const_unions(schema: &Value) -> Value {
     }
 }
 
+/// Schema-child keys whose values always recurse (upstream
+/// `_SCHEMA_CHILD_KEYS`, lines 220-223).
+fn is_schema_child_key(key: &str) -> bool {
+    matches!(
+        key,
+        "items"
+            | "additionalItems"
+            | "additionalProperties"
+            | "unevaluatedItems"
+            | "unevaluatedProperties"
+            | "contains"
+            | "propertyNames"
+            | "not"
+            | "if"
+            | "then"
+            | "else"
+            | "anyOf"
+            | "oneOf"
+            | "allOf"
+            | "prefixItems"
+    )
+}
+
+/// Normalize a `type: [...]` array into `out` (upstream
+/// `_normalize_type_array`, lines 226-240): one non-null type → `type: X`
+/// (+ `nullable` if `null` present); several → `anyOf` of single-type
+/// schemas; none → `null`/object fallback. Non-string entries drop.
+fn normalize_type_array(types: &[Value], out: &mut Map<String, Value>) {
+    let has_null = types.iter().any(|t| t.as_str() == Some("null"));
+    let non_null: Vec<&str> = types
+        .iter()
+        .filter_map(|t| t.as_str())
+        .filter(|t| *t != "null")
+        .collect();
+    if non_null.is_empty() {
+        out.insert(
+            "type".to_string(),
+            json!(if has_null { "null" } else { "object" }),
+        );
+        return;
+    }
+    if non_null.len() == 1 {
+        out.insert("type".to_string(), json!(non_null[0]));
+    } else {
+        out.insert(
+            "anyOf".to_string(),
+            Value::Array(non_null.iter().map(|t| json!({"type": t})).collect()),
+        );
+    }
+    if has_null {
+        out.entry("nullable".to_string()).or_insert(json!(true));
+    }
+}
+
 /// Recursively sanitize a JSON-Schema fragment.
 fn sanitize_node(node: &Value, path: &str) -> Value {
     match node {
@@ -407,40 +461,24 @@ fn sanitize_node(node: &Value, path: &str) -> Value {
                 .unwrap_or_default();
             let mut out = Map::new();
             for (key, value) in map {
-                if key == "type" {
-                    if let Value::Array(types) = value {
-                        let has_null = types.iter().any(|t| t.as_str() == Some("null"));
-                        let non_null: Vec<&str> = types
-                            .iter()
-                            .filter_map(|t| t.as_str())
-                            .filter(|t| *t != "null")
-                            .collect();
-                        if non_null.len() == 1 {
-                            out.insert("type".to_string(), json!(non_null[0]));
-                            if has_null {
-                                out.entry("nullable".to_string()).or_insert(json!(true));
-                            }
-                            continue;
-                        }
-                        if non_null.len() >= 2 {
-                            out.insert(
-                                "anyOf".to_string(),
-                                Value::Array(non_null.iter().map(|t| json!({"type": t})).collect()),
-                            );
-                            if has_null {
-                                out.entry("nullable".to_string()).or_insert(json!(true));
-                            }
-                            continue;
-                        }
-                        out.insert(
-                            "type".to_string(),
-                            json!(if has_null { "null" } else { "object" }),
-                        );
-                        continue;
-                    }
+                // PARITY: `type: [...]` array normalization (upstream
+                // `_normalize_type_array`, lines 226-240) — non-string
+                // entries drop; unknown names survive as branches.
+                if key == "type" && value.is_array() {
+                    let types = value.as_array().cloned().unwrap_or_default();
+                    normalize_type_array(&types, &mut out);
+                    continue;
                 }
-                if matches!(key.as_str(), "properties" | "$defs" | "definitions")
-                    && value.is_object()
+                // PARITY: schema-map keys (upstream `_SCHEMA_MAP_KEYS`,
+                // line 219) — renames apply ONLY to `properties`.
+                if matches!(
+                    key.as_str(),
+                    "properties"
+                        | "$defs"
+                        | "definitions"
+                        | "patternProperties"
+                        | "dependentSchemas"
+                ) && value.is_object()
                 {
                     let empty_renames: std::collections::HashMap<String, String> =
                         Default::default();
@@ -461,23 +499,41 @@ fn sanitize_node(node: &Value, path: &str) -> Value {
                         }
                     }
                     out.insert(key.clone(), Value::Object(new_props));
+                } else if key == "dependencies" && value.is_object() {
+                    // PARITY: legacy `dependencies` — dict values recurse
+                    // only when dicts, lists pass through deep-copied.
+                    let mut new_deps = Map::new();
+                    if let Some(deps) = value.as_object() {
+                        for (dep_k, dep_v) in deps {
+                            let sub_path = format!("{path}.{key}.{dep_k}");
+                            new_deps.insert(
+                                dep_k.clone(),
+                                if dep_v.is_object() {
+                                    sanitize_node(dep_v, &sub_path)
+                                } else {
+                                    deep_clone(dep_v)
+                                },
+                            );
+                        }
+                    }
+                    out.insert(key.clone(), Value::Object(new_deps));
                 } else if matches!(key.as_str(), "items" | "additionalProperties") {
                     if value.is_boolean() {
                         out.insert(key.clone(), value.clone());
                     } else {
                         out.insert(key.clone(), sanitize_node(value, &format!("{path}.{key}")));
                     }
-                } else if matches!(key.as_str(), "anyOf" | "oneOf" | "allOf") && value.is_array() {
-                    let items = value.as_array().unwrap();
-                    let mut arr = Vec::with_capacity(items.len());
-                    for (i, item) in items.iter().enumerate() {
-                        arr.push(sanitize_node(item, &format!("{path}.{key}[{i}]")));
-                    }
-                    out.insert(key.clone(), Value::Array(arr));
                 } else if matches!(
                     key.as_str(),
                     "required" | "enum" | "examples" | "dependentRequired"
                 ) {
+                    // PARITY: non-schema list keys (upstream
+                    // `_NON_SCHEMA_LIST_KEYS`, line 218) — literal data.
+                    // Legacy boolean `required` flags are dropped here; the
+                    // parent lifts property-level `true` flags below.
+                    if key == "required" && value.is_boolean() {
+                        continue;
+                    }
                     if key == "required" && !prop_renames.is_empty() {
                         if let Value::Array(reqs) = value {
                             out.insert(
@@ -498,19 +554,49 @@ fn sanitize_node(node: &Value, path: &str) -> Value {
                                         .collect(),
                                 ),
                             );
+                            continue;
                         }
-                    } else {
-                        out.insert(key.clone(), deep_clone(value));
                     }
+                    out.insert(key.clone(), deep_clone(value));
+                } else if key.as_str() == "required" {
+                    // `required` with no renames still needs the deep copy
+                    // (and must not fall into the child-recursion arm —
+                    // a required NAME is literal data, not a schema).
+                    out.insert(key.clone(), deep_clone(value));
+                } else if is_schema_child_key(key) {
+                    // PARITY: schema-child keys (upstream
+                    // `_SCHEMA_CHILD_KEYS`, lines 220-223) — every value
+                    // recurses, including bare strings (`contains: "oops"`
+                    // → object schema) and non-array combinators.
+                    out.insert(key.clone(), sanitize_node(value, &format!("{path}.{key}")));
                 } else {
-                    out.insert(
-                        key.clone(),
-                        if value.is_object() || value.is_array() {
-                            sanitize_node(value, &format!("{path}.{key}"))
-                        } else {
-                            value.clone()
-                        },
-                    );
+                    // Defaults, consts and extension metadata are literal
+                    // data, not schemas.
+                    out.insert(key.clone(), deep_clone(value));
+                }
+            }
+            // PARITY: legacy property-level `required: true` lifts into the
+            // parent list (upstream lines 307-313) — runs on EVERY dict
+            // node with a properties map, not just `type: object` ones.
+            if let Some(props_in) = map.get("properties").and_then(Value::as_object) {
+                let lifted: Vec<String> = props_in
+                    .iter()
+                    .filter(|(_, v)| {
+                        matches!(v, Value::Object(o) if o.get("required") == Some(&json!(true)))
+                    })
+                    .map(|(k, _)| prop_renames.get(k).cloned().unwrap_or_else(|| k.clone()))
+                    .collect();
+                if !lifted.is_empty() {
+                    let mut required: Vec<Value> = match out.get("required") {
+                        Some(Value::Array(reqs)) => reqs.clone(),
+                        _ => Vec::new(),
+                    };
+                    for key in lifted {
+                        if !required.iter().any(|r| r.as_str() == Some(&key)) {
+                            required.push(Value::String(key));
+                        }
+                    }
+                    out.insert("required".to_string(), Value::Array(required));
                 }
             }
             // Object nodes without properties: inject empty properties dict.

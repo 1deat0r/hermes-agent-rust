@@ -473,6 +473,14 @@ Files: `PLAN.md`, `HANDOFF.md` updated/verified; `tools/inventory.json`
 + `CONVERSION-LEDGER.md` verified unchanged (additive layer, no
 tracked-module change).
 
+## tools.schema_sanitizer done (2026-09-22)
+
+Partial → done @ 5d59366 (386 LOC; 5 recursion-table bugs fixed,
+38 oracle tests, 38/38). Full workspace: 2,194 passed, 0 failed.
+**Ledger: 184/18/8693 (2.07% tracked, 5.29% prod).**
+Next: next Wave B partial in smallest-LOC order
+(`toolsets` 485, `agent.file_safety` 550).
+
 ## agent.verify.recipes done (2026-09-22)
 
 Partial → done @ 5d59366 (296 LOC; every oracle case mirrored,

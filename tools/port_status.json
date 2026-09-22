@@ -735,8 +735,8 @@
     "status": "partial"
   },
   "tools.schema_sanitizer": {
-    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (687 -> 386 LOC); re-certify line-by-line before promoting",
-    "status": "partial"
+    "retarget_note": "ported 2026-09-22 at 5d59366 (386 LOC): 5 recursion-table bugs fixed (map/child keys, bool-required lift, dependencies, required-literal), 38 oracle tests in parity_schema_sanitizer.rs",
+    "status": "done"
   },
   "tools.session_search_tool": {
     "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (1161 -> 784 LOC); re-certify line-by-line before promoting",
