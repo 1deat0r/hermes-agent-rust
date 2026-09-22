@@ -3782,3 +3782,12 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   fmt + diff-check clean. Ledger: 175 done / 27 partial / 8693
   missing tracked (1.97%), prod 175/27/3279 (5.03%). Evidence tier:
   unit. PACKAGE agent.monitoring CLOSED (all 3 siblings done).
+
+- 2026-09-21 (providers-base): `providers.base` partial → done @
+  5d59366 (whole module, 344 LOC, line-by-line). Fixed endpoint
+  order: custom caller base beats models_url (the existing test
+  asserted the opposite — the upstream oracle test proves it;
+  test rewritten to mirror the oracle cases). Hook absences
+  documented (no speculative surface). Validation: 10 passed; fmt
+  + diff-check clean. Ledger: 176 done / 26 partial / 8693 missing
+  tracked (1.98%), prod 176/26/3279 (5.06%). Evidence tier: unit.

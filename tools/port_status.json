@@ -617,8 +617,8 @@
     "status": "partial"
   },
   "providers.base": {
-    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (238 -> 344 LOC); re-certify line-by-line before promoting",
-    "status": "partial"
+    "retarget_note": "re-certified at 5d59366 (2026-09-21): endpoint order fixed to custom-caller-first per upstream oracle test (existing test contradicted it); hook absences documented; header re-pinned",
+    "status": "done"
   },
   "run_agent": {
     "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (8206 -> 1561 LOC); re-certify line-by-line before promoting",

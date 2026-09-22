@@ -193,16 +193,36 @@ fn fetch_models_uses_caller_base_url_override() {
 }
 
 #[test]
-fn fetch_models_prefers_explicit_models_url() {
+fn fetch_models_custom_caller_base_beats_models_url() {
+    // PARITY: `test_custom_base_url_beats_models_url`
+    // (tests/providers/test_fetch_models_base_url.py) — a
+    // user-configured proxy must win over the profile's hardcoded
+    // catalog endpoint.
     let (server_url, _, thread) = spawn_server(1, |_request| {
-        response("200 OK", r#"[{"id":"explicit-model"}]"#, "")
+        response("200 OK", r#"{"data":[{"id":"proxy-model-b"}]}"#, "")
     });
     let mut profile = ProviderProfile::new("test");
     profile.base_url = "http://127.0.0.1:1".into();
-    profile.models_url = server_url;
-    let models = profile.fetch_models(None, Some("http://127.0.0.1:2"), 8.0);
+    profile.models_url = "http://127.0.0.1:1/models".into(); // unreachable
+    let models = profile.fetch_models(Some("test-key"), Some(&server_url), 8.0);
     thread.join().unwrap();
-    assert_eq!(models, Some(vec!["explicit-model".into()]));
+    assert_eq!(models, Some(vec!["proxy-model-b".into()]));
+}
+
+#[test]
+fn fetch_models_default_caller_base_does_not_shadow_models_url() {
+    // PARITY: `test_default_base_url_does_not_shadow_models_url` —
+    // callers pass base_url unconditionally; echoing the profile
+    // default means "not customised" and keeps models_url.
+    let (server_url, _, thread) = spawn_server(1, |_request| {
+        response("200 OK", r#"{"data":[{"id":"catalog-model"}]}"#, "")
+    });
+    let mut profile = ProviderProfile::new("test");
+    profile.base_url = "http://127.0.0.1:1".into(); // unreachable
+    profile.models_url = format!("{server_url}/models");
+    let models = profile.fetch_models(Some("test-key"), Some("http://127.0.0.1:1/"), 8.0);
+    thread.join().unwrap();
+    assert_eq!(models, Some(vec!["catalog-model".into()]));
 }
 
 #[test]

@@ -285,6 +285,12 @@ Next: Wave B6 remainder in smallest-LOC order — `token_auth` (96),
 missing HTTP siblings (middleware/routes/login_page/request_utils/
 refresh_singleflight) to close `dashboard_auth.__init__`.
 
+## providers.base done (2026-09-21)
+
+Partial → done @ 5d59366 (344 LOC; endpoint order fixed per
+oracle, 10/10).
+**Ledger: 176/26/8693 (1.98% tracked, 5.06% prod).**
+
 ## agent.monitoring package CLOSED (2026-09-21)
 
 otlp_exporter (173) → gateway_health (174) → gateway_health_export

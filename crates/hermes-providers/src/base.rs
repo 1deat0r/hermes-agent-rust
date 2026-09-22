@@ -1,7 +1,16 @@
 //! Provider profile base surface.
 //!
-//! PARITY: `providers/base.py` @ b9aa928. Profiles are declarative; provider
-//! clients, credential rotation, and streaming remain outside this module.
+//! PARITY: `providers/base.py` @ 5d59366 (whole module, 344 lines).
+//! Profiles are declarative; provider clients, credential rotation, and
+//! streaming remain outside this module.
+//!
+//! Provider-specific hook overrides from subclasses fold into boolean
+//! dispatch flags + free functions here (the file's established pattern).
+//! Three base hooks have no Rust surface by design: `resolve_aux_model`,
+//! `supported_reasoning_efforts`, and `create_client` all default to
+//! absence (`""` / `None` / `None`), which Rust expresses by not having
+//! the method — no transport consults them yet, and an unused flag
+//! would be speculative surface.
 
 use std::collections::{BTreeMap, HashMap};
 use std::sync::{Mutex, OnceLock};
@@ -379,19 +388,34 @@ impl ProviderProfile {
             };
         }
 
-        // PARITY: Python's `base_url or self.base_url` treats an empty caller
-        // override as absent, and `models_url` wins over either base URL.
-        let effective_base = base_url
-            .filter(|value| !value.is_empty())
-            .unwrap_or(&self.base_url);
+        // PARITY: endpoint resolution order (providers/base.py
+        // `fetch_models` @ 5d59366 + tests/providers/
+        // test_fetch_models_base_url.py):
+        // 1. caller base differing from the profile default (a
+        //    user-configured proxy) beats everything, including an
+        //    explicit models_url;
+        // 2. explicit models_url (a caller echo of the profile default
+        //    means "not customised" and must not shadow it);
+        // 3. profile base_url + "/models".
+        let caller_base = base_url.unwrap_or("").trim();
+        let profile_base = self.base_url.trim();
+        let custom_base = !caller_base.is_empty()
+            && caller_base.trim_end_matches('/') != profile_base.trim_end_matches('/');
         let explicit_models_url = self.models_url.trim();
-        let endpoint = if explicit_models_url.is_empty() {
+        let endpoint = if custom_base {
+            format!("{}/models", caller_base.trim_end_matches('/'))
+        } else if !explicit_models_url.is_empty() {
+            explicit_models_url.to_owned()
+        } else {
+            let effective_base = if caller_base.is_empty() {
+                profile_base
+            } else {
+                caller_base
+            };
             if effective_base.is_empty() {
                 return None;
             }
             format!("{}/models", effective_base.trim_end_matches('/'))
-        } else {
-            explicit_models_url.to_owned()
         };
 
         match self.fetch_models_inner(api_key, &endpoint, timeout, ModelsFetchMode::Standard) {
