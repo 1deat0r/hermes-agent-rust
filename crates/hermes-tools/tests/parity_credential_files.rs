@@ -1,6 +1,6 @@
-//! Parity oracles for tools/credential_files.py, mirroring upstream
-//! tests/tools/test_credential_files.py @ b9aa928 (config-based cases use the
-//! set_terminal_credential_files seam since the config crate is P3).
+//! Parity oracles for tools/credential_files.py @ 5d59366, mirroring
+//! upstream tests/tools/test_credential_files.py (config-based cases use
+//! the set_terminal_credential_files seam since the config crate is P3).
 
 use hermes_tools::credential_files::{
     clear_credential_files, get_cache_directory_mounts, get_credential_file_mounts,
@@ -324,10 +324,14 @@ fn cache_legacy_dir_names_resolved() {
 }
 
 #[test]
-fn cache_empty_home() {
+fn cache_empty_home_creates_mounts() {
+    // Upstream `_cache_dir_roots(create_missing=True)`: Docker snapshots
+    // mounts at creation, so absent dirs are created, not skipped.
     let home = init_home("cache_empty");
     with_home(&home, || {
-        assert_eq!(get_cache_directory_mounts("/root/.hermes").len(), 0);
+        let mounts = get_cache_directory_mounts("/root/.hermes");
+        assert_eq!(mounts.len(), 10);
+        assert!(home.join("cache/documents").is_dir());
     });
     let _ = std::fs::remove_dir_all(&home);
 }
@@ -384,7 +388,8 @@ fn map_cache_path_under_cache_dir() {
             ),
             None
         );
-        // No cache dirs at all → None.
+        // Mounts are created on demand: even a fresh home maps
+        // (the remap path creates the dirs like the mount path).
         let empty = init_home("map_empty");
         with_home(&empty, || {
             assert_eq!(
@@ -392,7 +397,7 @@ fn map_cache_path_under_cache_dir() {
                     &empty.join("cache/images/x.png").to_string_lossy(),
                     "/root/.hermes"
                 ),
-                None
+                Some("/root/.hermes/cache/images/x.png".to_string())
             );
         });
         let _ = std::fs::remove_dir_all(&empty);
@@ -533,4 +538,106 @@ fn traversal_guard_still_applies() {
         ));
     });
     let _ = std::fs::remove_dir_all(&home);
+}
+
+// ── 5d59366 additions ──────────────────────────────────────────────────
+
+#[test]
+fn cache_dirs_include_spillover_and_attachments() {
+    // New container layout entries (spillover canonical home +
+    // desktop attachments) mount when present.
+    let h = init_home("cache_new");
+    with_home(&h, || {
+        std::fs::create_dir_all(h.join("cache/spillover")).unwrap();
+        std::fs::create_dir_all(h.join("attachments")).unwrap();
+        let mounts = get_cache_directory_mounts("/root/.hermes");
+        let containers: Vec<_> = mounts.iter().map(|m| m.container_path.clone()).collect();
+        assert!(containers.contains(&"/root/.hermes/cache/spillover".to_string()));
+        assert!(containers.contains(&"/root/.hermes/attachments".to_string()));
+    });
+    let _ = std::fs::remove_dir_all(&h);
+}
+
+#[test]
+fn missing_cache_dirs_are_created_for_mounts() {
+    // Docker snapshots mounts at creation: absent dirs are created, not skipped.
+    let h = init_home("cache_create");
+    with_home(&h, || {
+        let mounts = get_cache_directory_mounts("/root/.hermes");
+        assert!(h.join("cache/documents").is_dir());
+        assert!(mounts
+            .iter()
+            .any(|m| m.container_path == "/root/.hermes/cache/documents"));
+    });
+    let _ = std::fs::remove_dir_all(&h);
+}
+
+#[test]
+fn skill_walk_prunes_excluded_dirs() {
+    // node_modules/.git trees are never walked (sync agrees with
+    // discovery on skill content).
+    use hermes_tools::credential_files::EXCLUDED_SKILL_DIRS;
+    assert!(EXCLUDED_SKILL_DIRS.contains(&"node_modules"));
+    let h = init_home("skills_prune");
+    with_home(&h, || {
+        let skills = h.join("skills");
+        std::fs::create_dir_all(skills.join("s1/node_modules/dep")).unwrap();
+        std::fs::write(skills.join("s1/SKILL.md"), "x").unwrap();
+        std::fs::write(skills.join("s1/node_modules/dep/f.js"), "y").unwrap();
+        let files = iter_skills_files("/root/.hermes");
+        assert!(files.iter().any(|m| m.host_path.ends_with("SKILL.md")));
+        assert!(!files.iter().any(|m| m.host_path.contains("node_modules")));
+    });
+    let _ = std::fs::remove_dir_all(&h);
+}
+
+#[test]
+fn project_skills_mount_under_own_namespace() {
+    use hermes_tools::credential_files::{get_skills_directory_mount, set_project_skills_dirs};
+    let h = init_home("proj_skills");
+    with_home(&h, || {
+        let proj = h.join("proj");
+        std::fs::create_dir_all(&proj).unwrap();
+        set_project_skills_dirs(vec![proj]);
+        let mounts = get_skills_directory_mount("/root/.hermes");
+        assert!(mounts
+            .iter()
+            .any(|m| m.container_path == "/root/.hermes/project_skills/0"));
+        set_project_skills_dirs(vec![]);
+    });
+    let _ = std::fs::remove_dir_all(&h);
+}
+
+#[test]
+fn ssh_backend_maps_under_remote_home() {
+    // ssh/daytona/vercel_sandbox sync under ~/.hermes (shell-expanded).
+    use hermes_tools::credential_files::to_agent_visible_cache_path;
+    let h = init_home("ssh_map");
+    with_home(&h, || {
+        std::fs::create_dir_all(h.join("cache/images")).unwrap();
+        unsafe { std::env::set_var("TERMINAL_ENV", "ssh") };
+        let host = h.join("cache/images/a.png").to_string_lossy().into_owned();
+        assert_eq!(
+            to_agent_visible_cache_path(&host, "/root/.hermes"),
+            "~/.hermes/cache/images/a.png"
+        );
+        unsafe { std::env::remove_var("TERMINAL_ENV") };
+    });
+    let _ = std::fs::remove_dir_all(&h);
+}
+
+#[test]
+fn dict_path_is_not_stripped() {
+    // Upstream strips string entries but NOT dict path values.
+    let h = init_home("dict_trim");
+    with_home(&h, || {
+        std::fs::write(h.join("tok.json"), "{}").unwrap();
+        let missing = register_credential_files(
+            &[serde_json::json!({"path": " tok.json "})],
+            "/root/.hermes",
+        );
+        // Untrimmed " tok.json " fails containment → reported missing.
+        assert_eq!(missing, vec![" tok.json ".to_string()]);
+    });
+    let _ = std::fs::remove_dir_all(&h);
 }

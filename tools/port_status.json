@@ -660,8 +660,8 @@
     "status": "done"
   },
   "tools.credential_files": {
-    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (530 -> 366 LOC); re-certify line-by-line before promoting",
-    "status": "partial"
+    "retarget_note": "re-ported at 5d59366 (2026-09-21): per-home config cache, spillover+attachments dirs, create-missing mounts, skill exclusions, project skills, ssh mapping, dict-path exactness; 2 stale mount expectations corrected; 33 tests",
+    "status": "done"
   },
   "tools.daemon_pool": {
     "retarget_note": "re-certified autonomous: docstring-only drift; 10 tests green (max_workers peak test timing-sensitive under parallel contention, green serial/alone)",

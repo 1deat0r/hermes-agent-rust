@@ -1,19 +1,19 @@
 {
  "generated_from": "/run/media/its1deat0r/Projects/AI Agents/Hermes-Agent-Rust/.upstream-pin/5d59366",
- "generated_at": "2026-09-22T19:40:20",
+ "generated_at": "2026-09-22T19:48:09",
  "summary": {
   "modules": 8895,
   "total_lines": 2467838,
   "production_modules": 3481,
   "production_lines": 1147748,
   "status_counts": {
-   "done": 180,
-   "partial": 22,
+   "done": 181,
+   "partial": 21,
    "missing": 8693
   },
   "prod_status_counts": {
-   "done": 180,
-   "partial": 22,
+   "done": 181,
+   "partial": 21,
    "missing": 3279
   },
   "packages": {
@@ -163,8 +163,8 @@
     "modules": 310,
     "status": {
      "missing": 269,
-     "partial": 5,
-     "done": 36
+     "partial": 4,
+     "done": 37
     }
    },
    "tests.conftest": {
@@ -13335,7 +13335,7 @@
    "imports": [
     "hermes_constants"
    ],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "ts:apps.desktop.electron.windows-sandbox-fallback.test": {

@@ -3826,3 +3826,12 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   Validation: 26 passed; fmt + diff-check clean. Ledger: 180 done
   / 22 partial / 8693 missing tracked (2.02%), prod 180/22/3279
   (5.17%). Evidence tier: unit.
+
+- 2026-09-21 (tools-credential): `tools.credential_files` partial →
+  done @ 5d59366 (whole module, 366 LOC). Re-port: per-home config
+  cache, spillover+attachments dirs, create-missing mounts, skill
+  exclusions, project skills, ssh mapping, dict-path exactness. 2
+  stale mount expectations corrected to the oracle. Validation: 33
+  passed; fmt + diff-check clean. Ledger: 181 done / 21 partial /
+  8693 missing tracked (2.03%), prod 181/21/3279 (5.20%). Evidence
+  tier: unit.
