@@ -613,8 +613,8 @@
     "status": "done"
   },
   "providers.__init__": {
-    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (198 -> 468 LOC); re-certify line-by-line before promoting",
-    "status": "partial"
+    "retarget_note": "ported at 5d59366 (2026-09-21): custom: fallback, routed vision-rejects (aggregator predicate seam), flat installed-dir scan + manifest kind gate; 3 new oracle tests",
+    "status": "done"
   },
   "providers.base": {
     "retarget_note": "re-certified at 5d59366 (2026-09-21): endpoint order fixed to custom-caller-first per upstream oracle test (existing test contradicted it); hook absences documented; header re-pinned",

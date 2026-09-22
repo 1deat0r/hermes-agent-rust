@@ -285,6 +285,13 @@ Next: Wave B6 remainder in smallest-LOC order — `token_auth` (96),
 missing HTTP siblings (middleware/routes/login_page/request_utils/
 refresh_singleflight) to close `dashboard_auth.__init__`.
 
+## providers root package CLOSED (2026-09-21)
+
+base (176) → __init__ (177): registry fallback, routed rejects,
+installed-dir scan, 3 oracle tests, 11/11.
+**Ledger: 177/25/8693 (1.99% tracked, 5.08% prod).**
+Next: next Wave B partial in smallest-LOC order.
+
 ## providers.base done (2026-09-21)
 
 Partial → done @ 5d59366 (344 LOC; endpoint order fixed per

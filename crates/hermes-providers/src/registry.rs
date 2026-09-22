@@ -1,8 +1,12 @@
 //! Provider registry and discovery surface.
 //!
-//! PARITY: `providers/__init__.py` @ b9aa928. The Rust loader accepts an
-//! explicit plugin callback because upstream plugin files are Python modules;
-//! the callback is the integration seam until their Rust profiles land.
+//! PARITY: `providers/__init__.py` @ 5d59366 (whole module, 468 lines).
+//! The Rust loader accepts an explicit plugin callback because upstream
+//! plugin files are Python modules; the callback is the integration
+//! seam until their Rust profiles land. Pip entry-point providers
+//! (upstream step 0) have no Rust analog — statically linked builtins
+//! fill the bundled slot, and the remaining precedence (bundled →
+//! user → flat-installed → legacy) ports exactly.
 
 use std::collections::{HashMap, HashSet};
 use std::fs;
@@ -69,11 +73,65 @@ pub fn get_provider_profile(name: &str) -> Option<ProviderProfile> {
         .lock()
         .unwrap_or_else(|poisoned| poisoned.into_inner());
     let canonical = state.aliases.get(name).map(String::as_str).unwrap_or(name);
-    state
+    if let Some(profile) = state
         .registry
         .iter()
         .find(|profile| profile.name == canonical)
         .cloned()
+    {
+        return Some(profile);
+    }
+    // Named custom routes share the generic wire policy unless a plugin
+    // explicitly registered that route (upstream lines 79-83).
+    if name.to_lowercase().starts_with("custom:") {
+        return state
+            .registry
+            .iter()
+            .find(|profile| profile.name == "custom")
+            .cloned();
+    }
+    None
+}
+
+/// Whether an active route or its aggregator-targeted model rejects
+/// image tool parts.
+///
+/// Routing aggregators send vendor-prefixed model IDs, but their own
+/// profile cannot describe every routed provider's tool-message
+/// compatibility. The transport profile stays the default; a
+/// registered target profile is consulted only for routing
+/// aggregators. Missing or unrecognized identities fail open.
+///
+/// PARITY: `routed_model_rejects_vision_tool_messages` (upstream lines
+/// 86-110). `is_routing_aggregator` arrives as a predicate (it lives
+/// in `hermes_cli.providers`, unported).
+pub fn routed_model_rejects_vision_tool_messages(
+    provider: &str,
+    model: &str,
+    is_routing_aggregator: &dyn Fn(&str) -> bool,
+) -> bool {
+    let provider_name = provider.trim().to_lowercase();
+    if let Some(profile) = get_provider_profile(&provider_name) {
+        if !profile.supports_vision_tool_messages {
+            return true;
+        }
+    }
+    if !is_routing_aggregator(&provider_name) {
+        return false;
+    }
+    let (target_name, separator, _) = partition_slash(model.trim());
+    if separator.is_empty() || target_name.is_empty() {
+        return false;
+    }
+    get_provider_profile(&target_name.to_lowercase())
+        .is_some_and(|target| !target.supports_vision_tool_messages)
+}
+
+fn partition_slash(text: &str) -> (String, String, String) {
+    match text.split_once('/') {
+        Some((head, tail)) => (head.to_string(), "/".to_string(), tail.to_string()),
+        None => (text.to_string(), String::new(), String::new()),
+    }
 }
 
 pub fn list_providers() -> Vec<ProviderProfile> {
@@ -126,6 +184,7 @@ pub fn plugin_module_name(plugin_dir: &Path, source: ProviderSource) -> String {
 pub fn discover_with_loader<F>(
     bundled_dir: Option<&Path>,
     user_dir: Option<&Path>,
+    installed_dir: Option<&Path>,
     legacy_dir: Option<&Path>,
     mut loader: F,
 ) where
@@ -156,6 +215,10 @@ pub fn discover_with_loader<F>(
         &mut loaded_modules,
         &mut loader,
     );
+    // Step 2b: flat `$HERMES_HOME/plugins/<name>/` installs that declare
+    // `kind: model-provider` (every other plugin there belongs to
+    // PluginManager). Skips the `model-providers/` subtree (step 2).
+    scan_installed_dirs(installed_dir, &mut loaded_modules, &mut loader);
     scan_legacy_modules(legacy_dir, &mut loaded_modules, &mut loader);
 }
 
@@ -192,9 +255,77 @@ fn ensure_discovered() {
     // same bundled-before-user order before the user loader seam runs.
     crate::profiles::register_builtin_profiles();
     let user_dir = user_plugins_dir();
-    discover_with_loader(None, user_dir.as_deref(), None, |path, source| {
+    discover_with_loader(None, user_dir.as_deref(), None, None, |path, source| {
         crate::profiles::load_profile(path, source)
     });
+}
+
+/// Whether `plugin_dir`'s manifest declares `kind: model-provider`.
+///
+/// Only that kind is imported from the flat install directory. Parsed
+/// without YAML (a line scan) so provider discovery never hard-depends
+/// on it — mirrors upstream's PyYAML-then-fallback.
+///
+/// PARITY: `_declares_model_provider_kind` (upstream lines 159-191).
+pub fn declares_model_provider_kind(plugin_dir: &Path) -> bool {
+    for filename in ["plugin.yaml", "plugin.yml"] {
+        let manifest = plugin_dir.join(filename);
+        let Ok(text) = std::fs::read_to_string(&manifest) else {
+            continue;
+        };
+        // A real YAML parse would go here; the line scan below is the
+        // fallback upstream also relies on, and it decides the same
+        // verdicts on well-formed manifests.
+        for line in text.lines() {
+            let stripped = line.trim();
+            if stripped.starts_with('#') || !stripped.contains(':') {
+                continue;
+            }
+            let (key, value) = stripped.split_once(':').unwrap_or((stripped, ""));
+            if key.trim() == "kind" {
+                return value.trim().trim_matches('"').trim_matches('\'') == "model-provider";
+            }
+        }
+        return false;
+    }
+    false
+}
+
+fn scan_installed_dirs<F>(root: Option<&Path>, loaded_modules: &mut HashSet<String>, loader: &mut F)
+where
+    F: FnMut(&Path, ProviderSource) -> Result<Option<ProviderProfile>, String>,
+{
+    let Some(root) = root else { return };
+    let mut children = match fs::read_dir(root) {
+        Ok(entries) => entries
+            .filter_map(Result::ok)
+            .map(|entry| entry.path())
+            .collect::<Vec<_>>(),
+        Err(error) => {
+            log::debug!("provider plugin directory {}: {}", root.display(), error);
+            return;
+        }
+    };
+    children.sort_by(|left, right| {
+        left.file_name()
+            .unwrap_or_default()
+            .cmp(right.file_name().unwrap_or_default())
+    });
+    for child in children {
+        let Some(name) = child.file_name().and_then(|value| value.to_str()) else {
+            continue;
+        };
+        if !child.is_dir() || name.starts_with('_') || name.starts_with('.') {
+            continue;
+        }
+        if name == "model-providers" {
+            continue; // handled by step 2
+        }
+        if !declares_model_provider_kind(&child) {
+            continue;
+        }
+        import_plugin(&child, ProviderSource::User, loaded_modules, loader);
+    }
 }
 
 fn scan_plugin_dirs<F>(

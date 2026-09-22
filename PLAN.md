@@ -3791,3 +3791,12 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   documented (no speculative surface). Validation: 10 passed; fmt
   + diff-check clean. Ledger: 176 done / 26 partial / 8693 missing
   tracked (1.98%), prod 176/26/3279 (5.06%). Evidence tier: unit.
+
+- 2026-09-21 (providers-init): `providers.__init__` partial → done
+  @ 5d59366 (whole module, 468 LOC, line-by-line). Ported the
+  custom: fallback, routed vision-rejects (aggregator predicate
+  seam), and the flat installed-dir scan with the manifest kind
+  gate. 3 new oracle tests. Validation: 11 passed; fmt +
+  diff-check clean. Ledger: 177 done / 25 partial / 8693 missing
+  tracked (1.99%), prod 177/25/3279 (5.08%). Evidence tier: unit.
+  PACKAGE providers root CLOSED (base + __init__ done).

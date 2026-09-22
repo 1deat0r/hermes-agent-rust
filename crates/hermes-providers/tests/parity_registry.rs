@@ -9,9 +9,10 @@ use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
 use hermes_providers::registry::{
-    discover_with_loader, discovered_for_tests, get_provider_profile, list_providers,
-    mark_discovered_for_tests, plugin_module_name, register_provider, reset_registry_for_tests,
-    user_plugins_dir, ProviderSource,
+    declares_model_provider_kind, discover_with_loader, discovered_for_tests, get_provider_profile,
+    list_providers, mark_discovered_for_tests, plugin_module_name, register_provider,
+    reset_registry_for_tests, routed_model_rejects_vision_tool_messages, user_plugins_dir,
+    ProviderSource,
 };
 use hermes_providers::ProviderProfile;
 
@@ -205,7 +206,7 @@ fn bundled_then_user_discovery_is_sorted_and_user_wins() {
     fs::write(bundled.join("plain-file"), "not a directory").unwrap();
 
     let mut calls = Vec::new();
-    discover_with_loader(Some(&bundled), Some(&user), None, |path, source| {
+    discover_with_loader(Some(&bundled), Some(&user), None, None, |path, source| {
         calls.push((
             source,
             path.file_name().unwrap().to_string_lossy().into_owned(),
@@ -249,7 +250,7 @@ fn broken_plugins_fail_open_and_do_not_block_later_plugins() {
     plugin_dir(&bundled, "broken");
     plugin_dir(&bundled, "healthy");
 
-    discover_with_loader(Some(&bundled), None, None, |path, _| {
+    discover_with_loader(Some(&bundled), None, None, None, |path, _| {
         if path.file_name().unwrap() == "broken" {
             Err("synthetic import failure".into())
         } else {
@@ -272,7 +273,7 @@ fn legacy_files_skip_private_base_and_non_python_entries() {
     fs::write(temp.path().join("README.md"), "# skip\n").unwrap();
 
     let mut seen = Vec::new();
-    discover_with_loader(None, None, Some(temp.path()), |path, source| {
+    discover_with_loader(None, None, None, Some(temp.path()), |path, source| {
         seen.push((
             source,
             path.file_name().unwrap().to_string_lossy().into_owned(),
@@ -316,4 +317,108 @@ fn user_plugins_dir_resolves_under_hermes_home_and_fails_open_when_absent() {
     fs::create_dir_all(&expected).unwrap();
     assert_eq!(user_plugins_dir(), Some(expected));
     hermes_constants::reset_hermes_home_override(token);
+}
+
+// ── 5d59366 restored behaviors ─────────────────────────────────────────
+
+#[test]
+fn custom_route_falls_back_to_generic_profile() {
+    // PARITY: `get_provider_profile` custom: fallback — named custom
+    // routes share the generic wire policy unless explicitly registered.
+    let _guard = REGISTRY_TEST_LOCK.lock().unwrap();
+    reset_registry_for_tests();
+    mark_discovered_for_tests();
+    register_provider(profile("custom", &[]));
+    assert!(get_provider_profile("custom:my-route").is_some());
+    assert!(get_provider_profile("custom:other").is_some());
+    assert!(get_provider_profile("unknown").is_none());
+    reset_registry_for_tests();
+}
+
+#[test]
+fn routed_vision_rejects_follow_the_oracle() {
+    // PARITY: `routed_model_rejects_vision_tool_messages` — transport
+    // profile default, target consulted only for aggregators, fail open.
+    let _guard = REGISTRY_TEST_LOCK.lock().unwrap();
+    reset_registry_for_tests();
+    mark_discovered_for_tests();
+    let mut strict = profile("strict-vendor", &[]);
+    strict.supports_vision_tool_messages = false;
+    register_provider(strict);
+    let agg: &dyn Fn(&str) -> bool = &|p| p == "openrouter";
+    // Direct hit on a strict profile rejects.
+    assert!(routed_model_rejects_vision_tool_messages(
+        "strict-vendor",
+        "m",
+        agg
+    ));
+    // Unknown identities fail open.
+    assert!(!routed_model_rejects_vision_tool_messages(
+        "ghost", "m", agg
+    ));
+    // Aggregator with strict target rejects; without one it passes.
+    assert!(routed_model_rejects_vision_tool_messages(
+        "openrouter",
+        "strict-vendor/mimo",
+        agg
+    ));
+    assert!(!routed_model_rejects_vision_tool_messages(
+        "openrouter",
+        "ghost/m",
+        agg
+    ));
+    // Non-aggregator never consults the target.
+    assert!(!routed_model_rejects_vision_tool_messages(
+        "plain",
+        "strict-vendor/m",
+        agg
+    ));
+    // Malformed model ids fail open.
+    assert!(!routed_model_rejects_vision_tool_messages(
+        "openrouter",
+        "noslash",
+        agg
+    ));
+    reset_registry_for_tests();
+}
+
+#[test]
+fn flat_installed_dir_gates_on_manifest_kind() {
+    // PARITY: step 2b — only dirs declaring `kind: model-provider`
+    // import; `model-providers/` subtree and other kinds are skipped.
+    let _guard = REGISTRY_TEST_LOCK.lock().unwrap();
+    reset_registry_for_tests();
+    let temp = tempfile::tempdir().unwrap();
+    let flat = temp.path().join("flat");
+    fs::create_dir_all(&flat).unwrap();
+    let good = plugin_dir(&flat, "acme");
+    fs::write(
+        good.join("plugin.yaml"),
+        "name: acme\nkind: model-provider\n",
+    )
+    .unwrap();
+    let bad = plugin_dir(&flat, "other");
+    fs::write(
+        bad.join("plugin.yaml"),
+        "name: other\nkind: generic-plugin\n",
+    )
+    .unwrap();
+    plugin_dir(&flat, "nokind");
+    fs::create_dir_all(flat.join("model-providers")).unwrap();
+    assert!(declares_model_provider_kind(&good));
+    assert!(!declares_model_provider_kind(&bad));
+    let mut seen = Vec::new();
+    discover_with_loader(None, None, Some(&flat), None, |path, source| {
+        seen.push((
+            source,
+            path.file_name().unwrap().to_string_lossy().into_owned(),
+        ));
+        Ok(Some(profile(
+            path.file_name().unwrap().to_string_lossy().as_ref(),
+            &[],
+        )))
+    });
+    assert_eq!(seen, vec![(ProviderSource::User, "acme".into())]);
+    assert!(get_provider_profile("acme").is_some());
+    reset_registry_for_tests();
 }
