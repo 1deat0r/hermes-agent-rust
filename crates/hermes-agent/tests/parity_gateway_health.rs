@@ -353,3 +353,92 @@ fn diagnostic_log_event_gating_and_derivation() {
         "non-gateway loggers never export"
     );
 }
+
+// ── 5d59366 falsy/truncation parity ────────────────────────────────────
+
+#[test]
+fn falsy_values_collapse_before_redaction() {
+    // `str(raw or "")`: 0, False, "" and null all hash/render as
+    // "unknown" — never "0"/"false".
+    use hermes_agent::monitoring::gateway_health::build_gateway_health_snapshot;
+    // (The version/install-id travel as string params; "" is the falsy
+    // shape that must collapse. Numeric falsy paths are pinned in the
+    // int-coercion test below.)
+    let snap = build_gateway_health_snapshot(
+        Some(&serde_json::json!({"gateway_state": "running"})),
+        true,
+        "default",
+        "install-1",
+        "",
+        "unknown",
+    );
+    let versions: Vec<&str> = snap
+        .metrics
+        .iter()
+        .flat_map(|m| m.attributes.get("service.version"))
+        .map(String::as_str)
+        .collect();
+    assert!(versions.iter().all(|v| *v == "unknown"), "{versions:?}");
+    // Falsy instance ids hash as "unknown": sha256("unknown")[:24].
+    let snap = build_gateway_health_snapshot(
+        Some(&serde_json::json!({"gateway_state": "running"})),
+        true,
+        "default",
+        "",
+        "9.9.9",
+        "unknown",
+    );
+    assert_eq!(
+        snap.metrics[0].attributes["service.instance.id"],
+        "sha256:b23a6a8439c0dde5515893e7"
+    );
+}
+
+#[test]
+fn int_coercion_truncates_floats() {
+    // Python `int(3.7) == 3`; non-integers fail to 0/None.
+    use hermes_agent::monitoring::gateway_health::build_gateway_health_snapshot;
+    let snap = build_gateway_health_snapshot(
+        Some(&serde_json::json!({"gateway_state": "running", "active_agents": 3.7, "pid": 42.9})),
+        true,
+        "default",
+        "i",
+        "v",
+        "unknown",
+    );
+    let health = snap
+        .events
+        .iter()
+        .find_map(|e| match e {
+            hermes_agent::monitoring::gateway_health::GatewayHealthSnapshotEvent::Health(h)
+                if h.name == "gateway.health_snapshot" =>
+            {
+                Some(h)
+            }
+            _ => None,
+        })
+        .expect("health event");
+    assert_eq!(health.active_agents, 3);
+    assert_eq!(health.pid, Some(42));
+}
+
+#[test]
+fn restart_requested_uses_truthiness() {
+    // `int(bool(...))`: ANY truthy value counts — including the string
+    // "false".
+    use hermes_agent::monitoring::gateway_health::build_gateway_health_snapshot;
+    let snap = build_gateway_health_snapshot(
+        Some(&serde_json::json!({"gateway_state": "running", "restart_requested": "false"})),
+        true,
+        "default",
+        "i",
+        "v",
+        "unknown",
+    );
+    let up = snap
+        .metrics
+        .iter()
+        .find(|m| m.name == "hermes.gateway.restart_requested")
+        .expect("metric");
+    assert_eq!(up.value, 1.0);
+}

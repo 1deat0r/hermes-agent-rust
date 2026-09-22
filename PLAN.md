@@ -3763,3 +3763,12 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   4 new oracle tests. Validation: 11 passed; fmt + diff-check clean.
   Ledger: 173 done / 29 partial / 8693 missing tracked (1.94%),
   prod 173/29/3279 (4.97%). Evidence tier: unit.
+
+- 2026-09-21 (monitor-health): `agent.monitoring.gateway_health`
+  partial → done @ 5d59366 (whole module, 352 LOC, line-by-line).
+  Fixed falsy collapse (0/False → "unknown"), float truncation in
+  int coercion (3.7 → 3), restart_requested truthiness ("false"
+  counts), fail-open emit via catch_unwind. 3 new oracle tests.
+  Validation: 14 passed; fmt + diff-check clean. Ledger: 174 done
+  / 28 partial / 8693 missing tracked (1.96%), prod 174/28/3279
+  (5.00%). Evidence tier: unit.

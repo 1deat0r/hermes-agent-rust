@@ -1,6 +1,7 @@
 //! Gateway health and diagnostics signal producer.
 //!
-//! PARITY: `agent/monitoring/gateway_health.py` @ b9aa928 (whole module).
+//! PARITY: `agent/monitoring/gateway_health.py` @ 5d59366 (whole module,
+//! 352 lines).
 //!
 //! This module keeps the plane narrow: service health monitoring plus
 //! redacted operational diagnostics. It reuses the existing gateway
@@ -31,7 +32,7 @@ use sha2::{Digest, Sha256};
 use super::events::{GatewayDiagnosticEvent, GatewayHealthEvent};
 use super::redaction::redact_for_export;
 
-/// PARITY: `GatewayMetric` (upstream lines 22-26).
+/// PARITY: `GatewayMetric` (upstream lines 23-27).
 #[derive(Debug, Clone, PartialEq)]
 pub struct GatewayMetric {
     pub name: String,
@@ -57,7 +58,7 @@ impl GatewayHealthSnapshotEvent {
     }
 }
 
-/// PARITY: `GatewayHealthSnapshot` (upstream lines 28-31).
+/// PARITY: `GatewayHealthSnapshot` (upstream lines 30-33).
 #[derive(Debug, Clone, Default)]
 pub struct GatewayHealthSnapshot {
     pub metrics: Vec<GatewayMetric>,
@@ -104,14 +105,14 @@ const SUPERVISION_MODES: [&str; 6] = ["systemd", "s6", "container", "launchd", "
 static SOURCE_LOGGER_RE: Lazy<Regex> =
     Lazy::new(|| Regex::new(r"^gateway(?:\.[A-Za-z_][A-Za-z0-9_]*)*$").expect("logger re"));
 
-/// PARITY: `_allowed_logger` (upstream lines 40-42).
+/// PARITY: `_allowed_logger` (upstream lines 36-40).
 fn allowed_logger(name: &str) -> bool {
     name == "gateway" || name.starts_with("gateway.")
 }
 
 /// Return a bounded source-controlled gateway logger name for OTLP scope.
 ///
-/// PARITY: `source_logger_for_export` (upstream lines 45-48).
+/// PARITY: `source_logger_for_export` (upstream lines 44-48).
 pub fn source_logger_for_export(name: Option<&str>) -> Option<String> {
     let value = name.unwrap_or("");
     if value.len() <= 128 && SOURCE_LOGGER_RE.is_match(value) {
@@ -127,7 +128,7 @@ pub fn source_logger_for_export(name: Option<&str>) -> Option<String> {
 /// [`redact_for_export`] (unconditional secrets + PII), then is
 /// length-bounded.
 ///
-/// PARITY: `redact_gateway_message` (upstream lines 51-62).
+/// PARITY: `redact_gateway_message` (upstream lines 339-351).
 pub fn redact_gateway_message(message: Option<&str>) -> String {
     let out = redact_for_export(Some(message.unwrap_or("")));
     out.unwrap_or_else(|| "[redaction-unavailable]".to_string())
@@ -136,7 +137,7 @@ pub fn redact_gateway_message(message: Option<&str>) -> String {
         .collect()
 }
 
-/// PARITY: `classify_gateway_error` (upstream lines 65-90) — substring
+/// PARITY: `classify_gateway_error` (upstream lines 67-69) — substring
 /// cascade over the lowercased text.
 pub fn classify_gateway_error(raw: Option<&Value>) -> String {
     let s = match raw {
@@ -181,7 +182,7 @@ pub fn classify_gateway_error(raw: Option<&Value>) -> String {
 
 /// Reduce free-form shutdown text to a bounded operational class.
 ///
-/// PARITY: `classify_exit_reason` (upstream lines 93-112).
+/// PARITY: `classify_exit_reason` (upstream lines 72-87).
 pub fn classify_exit_reason(
     raw: Option<&Value>,
     state: Option<&Value>,
@@ -220,7 +221,7 @@ pub fn classify_exit_reason(
     Some(classified)
 }
 
-/// PARITY: `_bounded_state` (upstream lines 115-118) — `str(raw or
+/// PARITY: `_bounded_state` (upstream lines 90-92) — `str(raw or
 /// "unknown").lower()`, kept only when in the allowed vocabulary.
 fn bounded_state(raw: Option<&Value>, allowed: &[&str]) -> String {
     let state = match raw {
@@ -235,12 +236,16 @@ fn bounded_state(raw: Option<&Value>, allowed: &[&str]) -> String {
     }
 }
 
-/// PARITY: `_safe_metric_value` (upstream lines 121-128) — redacted then
-/// length-bounded, defaulting to "unknown".
+/// PARITY: `_safe_metric_value` (upstream lines 100-101) —
+/// `redact_bounded(raw, ...)` where `str(raw or "")` collapses every
+/// falsy value (0, False, "", None) to "unknown" before redaction.
 fn safe_metric_value(raw: Option<&Value>, limit: usize) -> String {
+    if !json_truthy(raw) {
+        return "unknown".to_string();
+    }
     let text = match raw {
         Some(Value::String(s)) => s.clone(),
-        Some(other) if !other.is_null() => other.to_string(),
+        Some(other) => other.to_string(),
         _ => String::new(),
     };
     let redacted = redact_for_export(Some(&text)).unwrap_or_else(|| "unknown".to_string());
@@ -254,13 +259,12 @@ fn safe_metric_value(raw: Option<&Value>, limit: usize) -> String {
 
 /// Return a stable opaque instance key without exporting the source ID.
 ///
-/// PARITY: `_safe_instance_id` (upstream lines 131-135). Private upstream;
-/// public here because `gateway_health_export._runtime_resource_attributes`
-/// imports it across the module boundary.
+/// PARITY: `_safe_instance_id` (upstream lines 104-107) —
+/// `str(raw or "unknown")`: falsy values hash as "unknown".
 pub fn safe_instance_id(raw: Option<&Value>) -> String {
     let text = match raw {
         Some(Value::String(s)) if !s.is_empty() => s.clone(),
-        Some(other) if !other.is_null() => other.to_string(),
+        Some(other) if json_truthy(Some(other)) => other.to_string(),
         _ => "unknown".to_string(),
     };
     let digest = Sha256::digest(text.as_bytes());
@@ -268,7 +272,7 @@ pub fn safe_instance_id(raw: Option<&Value>) -> String {
     format!("sha256:{}", &hex[..24])
 }
 
-/// PARITY: `subsystem_for_logger` (upstream lines 146-158).
+/// PARITY: `subsystem_for_logger` (upstream lines 110-116).
 pub fn subsystem_for_logger(logger_name: &str) -> String {
     if logger_name == "gateway.relay" || logger_name.starts_with("gateway.relay.") {
         return "platform.relay".to_string();
@@ -288,7 +292,7 @@ pub fn subsystem_for_logger(logger_name: &str) -> String {
     "gateway".to_string()
 }
 
-/// PARITY: `platform_for_subsystem` (upstream lines 161-165).
+/// PARITY: `platform_for_subsystem` (upstream lines 119-120).
 pub fn platform_for_subsystem(subsystem: &str) -> Option<String> {
     if let Some(rest) = subsystem.strip_prefix("platform.") {
         let platform = rest.split_once('.').map_or(rest, |(head, _)| head);
@@ -301,34 +305,50 @@ pub fn platform_for_subsystem(subsystem: &str) -> Option<String> {
     None
 }
 
-/// PARITY: `_parse_active_agents` (upstream lines 168-178) — the fallback
-/// arm of the try/except (`max(0, int(raw))`) is the code path here.
+/// PARITY: `_parse_active_agents` (upstream lines 140-147) — the fallback
+/// arm of the try/except (`max(0, int(raw))`). Python `int()` truncates
+/// floats (`int(3.7) == 3`) and parses integer strings; anything else is 0.
 fn parse_active_agents(raw: Option<&Value>) -> i64 {
+    coerce_int(raw).unwrap_or(0).max(0)
+}
+
+/// Python `int(raw)` over JSON values: bools → 0/1, numbers truncate
+/// toward zero, integer strings parse, everything else fails (None).
+fn coerce_int(raw: Option<&Value>) -> Option<i64> {
     match raw {
-        Some(Value::Number(n)) => n.as_i64().unwrap_or(0).max(0),
-        Some(Value::String(s)) => s.trim().parse::<i64>().unwrap_or(0).max(0),
-        Some(Value::Bool(b)) => {
-            if *b {
-                1
-            } else {
-                0
-            }
-        }
-        _ => 0,
+        Some(Value::Bool(b)) => Some(i64::from(*b)),
+        Some(Value::Number(n)) => n.as_f64().map(|f| f.trunc() as i64),
+        Some(Value::String(s)) => s.trim().parse::<i64>().ok(),
+        _ => None,
     }
 }
 
-/// PARITY: `_derive_busy` fallback (upstream lines 186-188).
+/// Python truthiness over JSON values (`bool(raw)`): null/false/0/""/[]
+/// /{} are falsy, everything else is truthy. Upstream leans on this in
+/// `restart_requested`, `_safe_metric_value`, and `_safe_instance_id`,
+/// where falsy values collapse to "unknown"/False.
+fn json_truthy(raw: Option<&Value>) -> bool {
+    match raw {
+        None | Some(Value::Null) | Some(Value::Bool(false)) => false,
+        Some(Value::Bool(true)) => true,
+        Some(Value::Number(n)) => n.as_f64().is_some_and(|f| f != 0.0),
+        Some(Value::String(s)) => !s.is_empty(),
+        Some(Value::Array(a)) => !a.is_empty(),
+        Some(Value::Object(m)) => !m.is_empty(),
+    }
+}
+
+/// PARITY: `_derive_busy` fallback (upstream lines 167-173).
 fn derive_busy(gateway_running: bool, gateway_state: &str, active_agents: i64) -> bool {
     gateway_running && gateway_state == "running" && active_agents > 0
 }
 
-/// PARITY: `_derive_drainable` fallback (upstream lines 198-199).
+/// PARITY: `_derive_drainable` fallback (upstream lines 171-173).
 fn derive_drainable(gateway_running: bool, gateway_state: &str) -> bool {
     gateway_running && gateway_state == "running"
 }
 
-/// PARITY: `_base_attrs` (upstream lines 202-210). Upstream accepts
+/// PARITY: `_base_attrs` (upstream lines 175-180). Upstream accepts
 /// `profile` in its keyword signature but never places it in the attribute
 /// dict; the parameter is likewise dropped here.
 fn base_attrs(install_id: &str, version: &str, supervision_mode: &str) -> BTreeMap<String, String> {
@@ -358,7 +378,7 @@ fn base_attrs(install_id: &str, version: &str, supervision_mode: &str) -> BTreeM
     attrs
 }
 
-/// PARITY: `_metric` (upstream lines 213-219) — `None` extras are skipped.
+/// PARITY: `_metric` (upstream lines 182-187) — `None` extras are skipped.
 #[allow(clippy::too_many_arguments)]
 fn metric(
     name: &str,
@@ -382,13 +402,10 @@ fn metric(
     }
 }
 
-/// PARITY: `_coerce_pid` (upstream lines 333-340).
+/// PARITY: `_coerce_pid` (upstream lines 123-128) — `int(raw)` truncates
+/// floats and parses integer strings; non-positive results are None.
 fn coerce_pid(raw: Option<&Value>) -> Option<i64> {
-    let pid = match raw {
-        Some(Value::Number(n)) => n.as_i64()?,
-        Some(Value::String(s)) => s.parse::<i64>().ok()?,
-        _ => return None,
-    };
+    let pid = coerce_int(raw)?;
     if pid > 0 {
         Some(pid)
     } else {
@@ -398,7 +415,7 @@ fn coerce_pid(raw: Option<&Value>) -> Option<i64> {
 
 /// Convert gateway_state.json-compatible runtime state into P0 signals.
 ///
-/// PARITY: `build_gateway_health_snapshot` (upstream lines 222-298). The
+/// PARITY: `build_gateway_health_snapshot` (upstream lines 158-220). The
 /// `runtime or {}` guard maps a `None`/non-object runtime to empty.
 pub fn build_gateway_health_snapshot(
     runtime: Option<&Value>,
@@ -451,11 +468,9 @@ pub fn build_gateway_health_snapshot(
         ),
         metric(
             "hermes.gateway.restart_requested",
-            if runtime
-                .get("restart_requested")
-                .map(|v| v.as_bool().unwrap_or(false))
-                .unwrap_or(false)
-            {
+            // Upstream `int(bool(...))`: ANY truthy value counts
+            // (including the string "false").
+            if json_truthy(runtime.get("restart_requested")) {
                 1.0
             } else {
                 0.0
@@ -554,12 +569,24 @@ pub fn build_gateway_health_snapshot(
 /// Emit immediate content-free gateway events for runtime status changes.
 ///
 /// Called by gateway.status.write_runtime_status after persisting the new
-/// status. Fully fail-open: failures never affect gateway status writes.
+/// status. Fully fail-open: failures (including panics) never affect
+/// gateway status writes.
 ///
-/// PARITY: `emit_runtime_status_transition` (upstream lines 315-331). The
-/// profile/version resolution seams (`hermes_cli.profiles` /
+/// PARITY: `emit_runtime_status_transition` (upstream lines 293-300).
+/// The profile/version resolution seams (`hermes_cli.profiles` /
 /// `hermes_cli.__version__`) arrive as parameters here.
 pub fn emit_runtime_status_transition(
+    previous: Option<&Value>,
+    current: &Value,
+    profile: &str,
+    version: &str,
+) {
+    let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        emit_runtime_status_transition_inner(previous, current, profile, version)
+    }));
+}
+
+fn emit_runtime_status_transition_inner(
     previous: Option<&Value>,
     current: &Value,
     profile: &str,
@@ -723,7 +750,7 @@ pub fn emit_runtime_status_transition(
 /// Build the diagnostic event a [`GatewayDiagnosticLogHandler`] would emit
 /// for one log record.
 ///
-/// PARITY: `GatewayDiagnosticLogHandler.emit` (upstream lines 343-375):
+/// PARITY: `GatewayDiagnosticLogHandler.emit` (upstream lines 304-325):
 /// warning/error levels only, gateway-owned logger names only, the
 /// subsystem/platform derived from the logger, error class from the
 /// message, and the level name as severity. The log-facade subscriber that
