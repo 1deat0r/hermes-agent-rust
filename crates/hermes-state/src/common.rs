@@ -12,6 +12,20 @@
 mod constants;
 pub use constants::*;
 
+/// Accidental end reasons recovery treats as resumable (also interpolated
+/// into the recovery/promotion SQL so literals cannot drift).
+///
+/// HOMED for the adoption oracle (`test_stranded_session_adoption` asserts
+/// `adopted_by_profile` ∉ this set); upstream value list is
+/// `hermes_state_common._RECOVERABLE_END_REASONS` (line 164).
+/// PARITY: hermes_state_common.py @ 5d59366.
+pub const RECOVERABLE_END_REASONS: [&str; 4] = [
+    "agent_close",
+    "ws_orphan_reap",
+    "superseded_by_resume",
+    "startup_orphan_reap",
+];
+
 // ── Preview shaping ─────────────────────────────────────────────────────────
 
 pub const _PREVIEW_HEAD_CHARS: usize = 63;

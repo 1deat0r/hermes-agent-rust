@@ -10,7 +10,11 @@ libc = "0.2"
 regex.workspace = true
 hermes-constants = { path = "../hermes-constants" }
 hermes-utils = { path = "../hermes-utils" }
+hermes-time = { path = "../hermes-time" }
 once_cell.workspace = true
+chrono.workspace = true
+rand.workspace = true
+log.workspace = true
 rusqlite = { version = "0.37", features = ["bundled", "load_extension"] }
 serde.workspace = true
 serde_json.workspace = true

@@ -3989,3 +3989,34 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   tier: unit. (Pre-existing parallel-only flakes noted this session:
   `parity_browser_dialog`, `parity_tool_result_storage` — both green
   ×3 serial; workspace protocol is serial.)
+
+- 2026-09-22 (state-portability + ids): `hermes_state_portability`
+  partial → done @ 5d59366 (615 LOC) + `hermes_state_ids` missing →
+  done (28 LOC — landed here because the portability oracles need the
+  ONE mint helper). Full surface: `_export_timings` (coerce_epoch,
+  py-round gap/wall math, Python-iso8601 µs formatting, first-seen
+  role_counts, tool_calls truthy counting) wired into
+  export_session/lineage/export_all; import strips the derived
+  `timings` key from the size budget (oracle pads it to 6 MiB) and
+  runs `started_at` through coerce_epoch; validation + INSERT
+  factored into shared `validate_import_entry`/`import_session_row`
+  (also serves foreign import); `find_foreign_import` +
+  `import_foreign_history` (12-hex mint via ids::new_session_id,
+  title-collision suffix, origin_json/profile_name stamp);
+  `adopt_session_lineage_from` + `_retire_donor_segment` (divergence
+  guard, honest donor_retired, TOCTOU retire-time re-read) with the
+  unit-level adoption oracle mirrored; RECOVERABLE_END_REASONS
+  (common) + unarchive_recoverable_session (sessions) landed early
+  under this unit — their umbrella rows stay partial/missing.
+  coerce_epoch MOVED hermes_cli::timefmt → hermes-time (shared floor
+  for the state layer; CLI re-exports, parity tests unchanged).
+  Skipped-with-note: the export-patch TOCTOU adoption case (needs a
+  donor-method monkeypatch) and the gateway-handler adoption half
+  (tui_gateway row); the Pattern-C read-lock gate has no Rust analog
+  (RefCell borrow, no per-method writer mutex — see PORT SEAMS).
+  Validation: 31 oracle tests in parity_state_portability.rs + 3 ids
+  unit tests; `cargo build --workspace` green;
+  `cargo test --workspace -- --test-threads=1` — 2,338 passed,
+  0 failed; fmt + diff-check clean; clippy clean on touched files.
+  Ledger: 190 done / 13 partial / 8692 missing tracked (2.14%),
+  prod 190/13/3278 (5.46%). Evidence tier: unit.

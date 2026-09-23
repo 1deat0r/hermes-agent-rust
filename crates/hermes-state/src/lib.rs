@@ -11,6 +11,7 @@ pub mod cooldown;
 pub mod crud;
 pub mod delete;
 pub mod handoff;
+pub mod ids;
 pub mod locks;
 pub mod meta;
 pub mod portability;

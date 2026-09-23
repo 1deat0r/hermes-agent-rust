@@ -583,3 +583,647 @@ fn export_all_lists_message_bearing_sessions() {
     assert_eq!(cli[0]["id"], json!("one"));
     db.close();
 }
+
+// =====================================================================
+// Oracle: tests/hermes_state/test_hermes_state_ids.py (SITES entry for
+// hermes_state_portability) + the shared mint helper.
+// =====================================================================
+
+#[test]
+fn oracle_new_session_id_shapes_match_salvage_pattern() {
+    // test_minted_ids_are_what_salvage_classifies_as_session_ids — the
+    // fixed `YYYYMMDD_HHMMSS_` prefix plus the caller-chosen hex width.
+    use hermes_state::ids::{new_session_id, SESSION_ID_PATTERN};
+    for hex_len in [6usize, 8, 12] {
+        let id = new_session_id(hex_len);
+        let re = regex::Regex::new(&format!(r"^\d{{8}}_\d{{6}}_[0-9a-f]{{{hex_len}}}$")).unwrap();
+        assert!(re.is_match(&id), "hex_len {hex_len}: {id}");
+        assert!(SESSION_ID_PATTERN.is_match(&id), "{id}");
+    }
+    // The portability module re-exports THE one helper (oracle SITES entry:
+    // `("hermes_state_portability", None)` — minting there must resolve to
+    // the ids-module function).
+    let from_portability = hermes_state::portability::new_session_id(12);
+    let re = regex::Regex::new(r"^\d{8}_\d{6}_[0-9a-f]{12}$").unwrap();
+    assert!(re.is_match(&from_portability), "{from_portability}");
+    let re8 = regex::Regex::new(r"^\d{8}_\d{6}_[0-9a-f]{8}$").unwrap();
+    assert!(re8.is_match(&hermes_state::ids::new_session_id(8)));
+}
+
+// =====================================================================
+// Oracle: tests/hermes_state/test_session_export_timings.py
+// =====================================================================
+
+fn ts_msg(role: &str, content: &str, timestamp: f64) -> MessageInput {
+    MessageInput {
+        role: role.to_string(),
+        content: Some(json!(content)),
+        timestamp: Some(timestamp),
+        ..Default::default()
+    }
+}
+
+#[test]
+fn oracle_export_session_includes_text_free_timing_evidence() {
+    let (_dir, path) = tmp_db("state.db");
+    let db = SessionDB::open(Some(path), false).expect("open");
+    db.create_session("s1", "cli", &NewSession::default())
+        .unwrap();
+    db.append_message("s1", &ts_msg("user", "secret prompt", 1000.0), None)
+        .unwrap();
+    let mut tool_turn = ts_msg("assistant", "", 1001.25);
+    tool_turn.tool_calls = Some(json!([{"id": "call-1", "function": {"name": "terminal"}}]));
+    db.append_message("s1", &tool_turn, None).unwrap();
+    let mut tool_result = ts_msg("tool", "secret tool output", 1003.0);
+    tool_result.tool_name = Some("terminal".to_string());
+    tool_result.tool_call_id = Some("call-1".to_string());
+    db.append_message("s1", &tool_result, None).unwrap();
+    db.append_message("s1", &ts_msg("assistant", "done", 1003.5), None)
+        .unwrap();
+
+    let exported = db.export_session("s1").unwrap().expect("exported");
+    db.close();
+
+    let timings = &exported["timings"];
+    assert_eq!(timings["source"], json!("message_timestamps"));
+    assert_eq!(timings["available"], json!(true));
+    assert_eq!(timings["complete"], json!(false));
+    assert_eq!(timings["unavailable_reason"], Value::Null);
+    assert_eq!(timings["wall_clock_ms"], json!(3500));
+    assert_eq!(timings["largest_gap_ms"], json!(1750));
+    assert_eq!(
+        timings["message_timestamps"],
+        json!({"available": 4, "missing": 0})
+    );
+    assert_eq!(
+        timings["role_counts"],
+        json!({"user": 1, "assistant": 2, "tool": 1})
+    );
+    assert_eq!(timings["tool_calls_emitted"], json!(1));
+    assert_eq!(timings["tool_result_count"], json!(1));
+    assert_eq!(
+        timings["intervals"],
+        json!([
+            {"from_message_id": 1, "to_message_id": 2,
+             "from_role": "user", "to_role": "assistant", "gap_ms": 1250},
+            {"from_message_id": 2, "to_message_id": 3,
+             "from_role": "assistant", "to_role": "tool", "gap_ms": 1750},
+            {"from_message_id": 3, "to_message_id": 4,
+             "from_role": "tool", "to_role": "assistant", "gap_ms": 500},
+        ])
+    );
+    // Text-free contract: ids/roles/counts/durations only.
+    let blob = timings.to_string();
+    assert!(!blob.contains("secret prompt"), "{blob}");
+    assert!(!blob.contains("secret tool output"), "{blob}");
+}
+
+#[test]
+fn oracle_lineage_timings_span_merged_and_import_ignores_their_size() {
+    let (_dir, path) = tmp_db("state.db");
+    let db = SessionDB::open(Some(path), false).expect("open");
+    db.create_session("root", "cli", &NewSession::default())
+        .unwrap();
+    db.append_message("root", &ts_msg("user", "first", 100.0), None)
+        .unwrap();
+    db.append_message("root", &ts_msg("assistant", "ok", 101.0), None)
+        .unwrap();
+    db.end_session("root", "compression").unwrap();
+    db.create_session(
+        "child",
+        "cli",
+        &NewSession {
+            parent_session_id: Some("root".to_string()),
+            ..Default::default()
+        },
+    )
+    .unwrap();
+    db.append_message("child", &ts_msg("user", "second", 200.0), None)
+        .unwrap();
+    db.append_message("child", &ts_msg("assistant", "done", 200.5), None)
+        .unwrap();
+
+    let mut exported = db
+        .export_session_lineage("child")
+        .unwrap()
+        .expect("lineage");
+    assert_eq!(exported["lineage_session_ids"], json!(["root", "child"]));
+    assert_eq!(exported["timings"]["wall_clock_ms"], json!(100_500));
+    assert_eq!(
+        exported["timings"]["message_timestamps"],
+        json!({"available": 4, "missing": 0})
+    );
+    assert_eq!(
+        exported["segments"][1]["timings"]["wall_clock_ms"],
+        json!(500)
+    );
+
+    // A padded timings block (~6 MiB) must not eat the 5 MiB session budget
+    // — import strips the derived key before measuring.
+    exported["timings"]["intervals"] = Value::Array(vec![json!({"pad": "x".repeat(100)}); 60_000]);
+    let (_dir2, path2) = tmp_db("target.db");
+    let target = SessionDB::open(Some(path2), false).expect("open");
+    let report = target
+        .import_sessions(std::slice::from_ref(&exported))
+        .unwrap();
+    assert!(report.errors.is_empty());
+    assert_eq!(report.imported, 1);
+    target.close();
+    db.close();
+}
+
+#[test]
+fn oracle_corrupt_timestamp_rows_count_as_missing_instead_of_aborting_export() {
+    let (_dir, path) = tmp_db("state.db");
+    let db = SessionDB::open(Some(path), false).expect("open");
+    db.create_session("s1", "cli", &NewSession::default())
+        .unwrap();
+    db.append_message("s1", &ts_msg("user", "hello", 10.0), None)
+        .unwrap();
+    db.append_message("s1", &ts_msg("assistant", "hi", 11.0), None)
+        .unwrap();
+    // Writers refuse bad stamps; emulate a pre-existing corrupt row directly
+    // (8.4e252 is finite f64 but far past the EPOCH_MAX bound).
+    db.writer_conn()
+        .execute("UPDATE messages SET timestamp = 8.4e252 WHERE id = 2", [])
+        .unwrap();
+    let exported = db.export_session("s1").unwrap().expect("export");
+    db.close();
+
+    let timings = &exported["timings"];
+    assert_eq!(
+        timings["message_timestamps"],
+        json!({"available": 1, "missing": 1})
+    );
+    assert_eq!(timings["wall_clock_ms"], json!(0));
+    assert_eq!(timings["intervals"], json!([]));
+}
+
+// =====================================================================
+// Oracle (code-is-oracle): foreign import — hermes_state_portability
+// lines 128–173; consumer shape from tests/hermes_cli
+// test_foreign_sessions.py::test_import_*.
+// =====================================================================
+
+#[test]
+fn foreign_import_mints_12hex_id_stamps_origin_and_is_idempotent() {
+    let (_dir, path) = tmp_db("state.db");
+    let db = SessionDB::open(Some(path), false).expect("open");
+    let origin = json!({
+        "tool": "claude-code",
+        "path": "/home/user/.claude/sessions/x.jsonl",
+        "foreign_session_id": "sess-abc",
+    });
+    let turns = [
+        json!({"role": "user", "content": "q1", "timestamp": 10.0}),
+        json!({"role": "assistant", "content": "a1", "timestamp": 11.0}),
+    ];
+
+    let result = db
+        .import_foreign_history(
+            &origin,
+            &turns,
+            "Imported from Claude Code: please fix",
+            Some("/home/user/proj"),
+            "developer",
+        )
+        .expect("import");
+    assert_eq!(result["already_imported"], json!(false));
+    let session_id = result["session_id"].as_str().unwrap().to_string();
+    // Portability imports mint 12-hex ids (oracle: `new_session_id(hex_len=12)`).
+    let re = regex::Regex::new(r"^\d{8}_\d{6}_[0-9a-f]{12}$").unwrap();
+    assert!(re.is_match(&session_id), "{session_id}");
+
+    let row = db.get_session_dict(&session_id).unwrap().expect("row");
+    assert_eq!(row["source"], json!("claude-code"));
+    assert_eq!(row["cwd"], json!("/home/user/proj"));
+    assert_eq!(row["message_count"], json!(2));
+    assert_eq!(row["profile_name"], json!("developer"));
+    let imported_from = &row["origin_json"]
+        .as_str()
+        .and_then(|s| serde_json::from_str::<Value>(s).ok())
+        .unwrap()["imported_from"];
+    assert_eq!(imported_from["tool"], json!("claude-code"));
+    assert_eq!(
+        imported_from["path"],
+        json!("/home/user/.claude/sessions/x.jsonl")
+    );
+    assert_eq!(imported_from["foreign_session_id"], json!("sess-abc"));
+    assert_eq!(
+        db.get_messages_dicts(&session_id, false, None, 0)
+            .unwrap()
+            .len(),
+        2
+    );
+
+    // find_foreign_import locates the adopted row by foreign id…
+    assert_eq!(
+        db.find_foreign_import(&origin).unwrap().as_deref(),
+        Some(session_id.as_str())
+    );
+    // …and by path when no foreign id is supplied.
+    let by_path = json!({"tool": "claude-code", "path": "/home/user/.claude/sessions/x.jsonl"});
+    assert_eq!(
+        db.find_foreign_import(&by_path).unwrap().as_deref(),
+        Some(session_id.as_str())
+    );
+    // A different tool never matches an existing import.
+    let other = json!({"tool": "codex-cli", "path": "/elsewhere.jsonl"});
+    assert!(db.find_foreign_import(&other).unwrap().is_none());
+
+    // Second click: already-imported, same id, no duplicate row.
+    let again = db
+        .import_foreign_history(
+            &origin,
+            &turns,
+            "Imported from Claude Code: please fix",
+            Some("/home/user/proj"),
+            "developer",
+        )
+        .unwrap();
+    assert_eq!(again["already_imported"], json!(true));
+    assert_eq!(again["session_id"], json!(session_id));
+    db.close();
+}
+
+#[test]
+fn foreign_import_disambiguates_duplicate_titles() {
+    // Titles are globally unique within a profile; a collision mints
+    // `"{title} ({session_id[-12:]})"`.
+    let (_dir, path) = tmp_db("state.db");
+    let db = SessionDB::open(Some(path), false).expect("open");
+    db.create_session("existing", "cli", &NewSession::default())
+        .unwrap();
+    db.set_session_title("existing", "Bot Chat").unwrap();
+
+    let origin = json!({"tool": "codex-cli", "path": "/x.jsonl"});
+    let turns = [json!({"role": "user", "content": "hi"})];
+    let first = db
+        .import_foreign_history(&origin, &turns, "Bot Chat", None, "")
+        .unwrap();
+    let new_id = first["session_id"].as_str().unwrap().to_string();
+    let title = db.get_session_title(&new_id).unwrap().expect("title");
+    assert!(
+        title.starts_with("Bot Chat (") && title.ends_with(')'),
+        "collided title carries the id suffix: {title}"
+    );
+    assert_eq!(title.len(), "Bot Chat ()".len() + 12);
+    // The original keeps its title.
+    assert_eq!(
+        db.get_session_title("existing").unwrap().as_deref(),
+        Some("Bot Chat")
+    );
+    db.close();
+}
+
+#[test]
+fn foreign_import_rejects_bad_roles() {
+    // `_normalize_import_session`: role must be a non-empty string —
+    // upstream raises ValueError before any write.
+    let (_dir, path) = tmp_db("state.db");
+    let db = SessionDB::open(Some(path), false).expect("open");
+    let origin = json!({"tool": "claude-code", "path": "/x.jsonl"});
+    let turns = [json!({"role": "", "content": "hi"})];
+    let err = db
+        .import_foreign_history(&origin, &turns, "T", None, "")
+        .expect_err("must reject");
+    assert!(
+        err.to_string()
+            .contains("messages[0].role must be a non-empty string"),
+        "{err}"
+    );
+    db.close();
+}
+
+// =====================================================================
+// Oracle: tests/tui_gateway/test_stranded_session_adoption.py
+// (unit-level `stores` fixture half — handler/gateway rows skipped).
+// The TOCTOU export-patch case is skipped: Python monkeypatches the
+// donor's instance method mid-call; the Rust `&SessionDB` seam has no
+// equivalent without a trait split (see PORT SEAMS in portability.rs).
+// =====================================================================
+
+fn seed_stranded(db: &SessionDB, session_id: &str, turns: usize, title: &str) {
+    db.create_session(session_id, "tui", &NewSession::default())
+        .unwrap();
+    db.set_session_title(session_id, title).unwrap();
+    for i in 1..=turns {
+        db.append_message(session_id, &msg("user", &format!("question {i}")), None)
+            .unwrap();
+        db.append_message(session_id, &msg("assistant", &format!("answer {i}")), None)
+            .unwrap();
+    }
+}
+
+struct Stores {
+    _dir: tempfile::TempDir,
+    default_path: PathBuf,
+    default_db: SessionDB,
+    profile_db: SessionDB,
+}
+
+fn stores() -> Stores {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let default_path = dir.path().join("state.db");
+    let profile_home = dir.path().join("profiles/developer");
+    std::fs::create_dir_all(&profile_home).unwrap();
+    let default_db = SessionDB::open(Some(default_path.clone()), false).expect("open");
+    let profile_db = SessionDB::open(Some(profile_home.join("state.db")), false).expect("open");
+    Stores {
+        _dir: dir,
+        default_path,
+        default_db,
+        profile_db,
+    }
+}
+
+const STRANDED: &str = "20260823_043331_c93770";
+
+#[test]
+fn adoption_moves_session_and_messages() {
+    let s = stores();
+    seed_stranded(&s.default_db, STRANDED, 3, "Bot Chat");
+
+    let result = s
+        .profile_db
+        .adopt_session_lineage_from(&s.default_db, STRANDED, true)
+        .expect("adopt");
+    assert_eq!(result["adopted"], json!(true));
+    assert_eq!(result["imported"], json!(1));
+    assert!(s.profile_db.get_session(STRANDED).unwrap().is_some());
+    let msgs = s
+        .profile_db
+        .get_messages_dicts(STRANDED, false, None, 0)
+        .unwrap();
+    assert_eq!(msgs.len(), 6);
+    assert_eq!(msgs[0]["content"], json!("question 1"));
+    assert_eq!(msgs[5]["content"], json!("answer 3"));
+    s.default_db.close();
+    s.profile_db.close();
+}
+
+#[test]
+fn adoption_retires_donor_archived_not_deleted() {
+    let s = stores();
+    seed_stranded(&s.default_db, STRANDED, 3, "Bot Chat");
+
+    s.profile_db
+        .adopt_session_lineage_from(&s.default_db, STRANDED, true)
+        .unwrap();
+
+    let donor = s.default_db.get_session(STRANDED).unwrap().expect("donor");
+    assert!(donor.archived, "archived, never deleted");
+    assert_eq!(donor.end_reason.as_deref(), Some("adopted_by_profile"));
+    // Bytes stay recoverable.
+    assert_eq!(
+        s.default_db
+            .get_messages_dicts(STRANDED, false, None, 0)
+            .unwrap()
+            .len(),
+        6
+    );
+    s.default_db.close();
+    s.profile_db.close();
+}
+
+#[test]
+fn adoption_archive_is_not_recoverable_resurrectable() {
+    // test_adoption_archive_is_not_recoverable_resurrectable — the
+    // adoption stamp must fall outside the recoverable set, so
+    // unarchive_recoverable_session refuses it.
+    let s = stores();
+    seed_stranded(&s.default_db, STRANDED, 3, "Bot Chat");
+    s.profile_db
+        .adopt_session_lineage_from(&s.default_db, STRANDED, true)
+        .unwrap();
+
+    assert!(
+        !hermes_state::common::RECOVERABLE_END_REASONS.contains(&"adopted_by_profile"),
+        "adoption is deliberately non-recoverable"
+    );
+    assert!(!s
+        .default_db
+        .unarchive_recoverable_session(STRANDED)
+        .unwrap());
+    let donor = s.default_db.get_session(STRANDED).unwrap().expect("donor");
+    assert!(donor.archived, "still archived after the refused unarchive");
+    s.default_db.close();
+    s.profile_db.close();
+}
+
+#[test]
+fn adoption_is_idempotent() {
+    let s = stores();
+    seed_stranded(&s.default_db, STRANDED, 3, "Bot Chat");
+
+    let first = s
+        .profile_db
+        .adopt_session_lineage_from(&s.default_db, STRANDED, true)
+        .unwrap();
+    let second = s
+        .profile_db
+        .adopt_session_lineage_from(&s.default_db, STRANDED, true)
+        .unwrap();
+    assert_eq!(first["adopted"], json!(true));
+    assert_eq!(second["adopted"], json!(true));
+    assert_eq!(second["imported"], json!(0));
+    assert_eq!(second["skipped"], json!(1));
+    assert_eq!(
+        s.profile_db
+            .get_messages_dicts(STRANDED, false, None, 0)
+            .unwrap()
+            .len(),
+        6
+    );
+    s.default_db.close();
+    s.profile_db.close();
+}
+
+#[test]
+fn missing_donor_session_is_reported_not_raised() {
+    let s = stores();
+    let result = s
+        .profile_db
+        .adopt_session_lineage_from(&s.default_db, "nope", true)
+        .unwrap();
+    assert_eq!(result["adopted"], json!(false));
+    assert!(
+        result["error"].as_str().unwrap().contains("not found"),
+        "{}",
+        result
+    );
+    s.default_db.close();
+    s.profile_db.close();
+}
+
+#[test]
+fn compression_lineage_adopts_as_a_unit() {
+    let s = stores();
+    let parent = "sess-parent";
+    let child = "sess-child";
+    seed_stranded(&s.default_db, parent, 2, "Bot Chat");
+    s.default_db.end_session(parent, "compression").unwrap();
+    s.default_db
+        .create_session(
+            child,
+            "tui",
+            &NewSession {
+                parent_session_id: Some(parent.to_string()),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+    s.default_db.set_session_title(child, "Bot Chat").unwrap();
+    s.default_db
+        .append_message(child, &msg("user", "post-compaction question"), None)
+        .unwrap();
+    s.default_db
+        .append_message(child, &msg("assistant", "post-compaction answer"), None)
+        .unwrap();
+
+    let result = s
+        .profile_db
+        .adopt_session_lineage_from(&s.default_db, parent, true)
+        .unwrap();
+    assert_eq!(result["adopted"], json!(true));
+    assert_eq!(result["imported"], json!(2));
+    assert!(s.profile_db.get_session(parent).unwrap().is_some());
+    assert!(s.profile_db.get_session(child).unwrap().is_some());
+    let child_row = s.profile_db.get_session(child).unwrap().expect("child");
+    assert_eq!(child_row.parent_session_id.as_deref(), Some(parent));
+    for sid in [parent, child] {
+        let donor = s.default_db.get_session(sid).unwrap().expect("donor");
+        assert!(donor.archived, "{sid} must be retired in donor store");
+    }
+    s.default_db.close();
+    s.profile_db.close();
+}
+
+#[test]
+fn adoption_does_not_touch_unrelated_sessions() {
+    let s = stores();
+    seed_stranded(&s.default_db, STRANDED, 3, "Bot Chat");
+    seed_stranded(&s.default_db, "other-session", 3, "Other Chat");
+
+    s.profile_db
+        .adopt_session_lineage_from(&s.default_db, STRANDED, true)
+        .unwrap();
+
+    let other = s
+        .default_db
+        .get_session("other-session")
+        .unwrap()
+        .expect("other");
+    assert!(!other.archived, "unrelated session untouched");
+    assert!(s.profile_db.get_session("other-session").unwrap().is_none());
+    s.default_db.close();
+    s.profile_db.close();
+}
+
+#[test]
+fn divergent_donor_is_not_retired() {
+    // test_divergent_donor_is_not_retired — donor grew after a completed
+    // adoption; re-adoption must refuse retirement (export-time guard).
+    let s = stores();
+    seed_stranded(&s.default_db, STRANDED, 3, "Bot Chat");
+    let first = s
+        .profile_db
+        .adopt_session_lineage_from(&s.default_db, STRANDED, true)
+        .unwrap();
+    assert_eq!(first["adopted"], json!(true));
+    assert_eq!(first["donor_retired"], json!(true));
+
+    // Donor keeps living — un-retire + append.
+    s.default_db.set_session_archived(STRANDED, false).unwrap();
+    s.default_db
+        .append_message(STRANDED, &msg("user", "late question"), None)
+        .unwrap();
+    s.default_db
+        .append_message(STRANDED, &msg("assistant", "late answer"), None)
+        .unwrap();
+
+    let second = s
+        .profile_db
+        .adopt_session_lineage_from(&s.default_db, STRANDED, true)
+        .unwrap();
+    assert_eq!(second["adopted"], json!(true));
+    assert_eq!(second["donor_retired"], json!(false));
+    let donor = s.default_db.get_session(STRANDED).unwrap().expect("donor");
+    assert!(!donor.archived, "diverged donor must stay reachable");
+    assert_eq!(
+        s.default_db
+            .get_messages_dicts(STRANDED, false, None, 0)
+            .unwrap()
+            .len(),
+        8
+    );
+    s.default_db.close();
+    s.profile_db.close();
+}
+
+#[test]
+fn retire_failure_reports_false_readonly_donor() {
+    // M1: donor_retired must not lie when retirement fails. The Python
+    // oracle monkeypatches end_session; the Rust seam forces the same
+    // failure by retiring through a READ-ONLY donor connection
+    // (execute_write cannot BEGIN on a read-only handle).
+    let s = stores();
+    seed_stranded(&s.default_db, STRANDED, 3, "Bot Chat");
+    let path = s.default_path.clone();
+    s.default_db.close();
+
+    let ro = SessionDB::open(Some(path.clone()), true).expect("read-only donor");
+    let result = s
+        .profile_db
+        .adopt_session_lineage_from(&ro, STRANDED, true)
+        .unwrap();
+    assert_eq!(result["adopted"], json!(true));
+    assert_eq!(result["donor_retired"], json!(false));
+    // Reopen writable to inspect: not archived (retirement failed honestly).
+    drop(ro);
+    let donor = SessionDB::open(Some(path), false).expect("reopen");
+    let row = donor.get_session(STRANDED).unwrap().expect("donor");
+    assert!(!row.archived, "retirement failed → not stamped");
+    donor.close();
+    s.profile_db.close();
+}
+
+#[test]
+fn unarchive_recoverable_true_arm_clears_end_reason() {
+    // The adoption test pins the False arm; the True arm is code-as-oracle
+    // (upstream hermes_state_sessions.py unarchive_recoverable_session).
+    let (_dir, path) = tmp_db("state.db");
+    let db = SessionDB::open(Some(path), false).expect("open");
+    db.create_session("accident", "cli", &NewSession::default())
+        .unwrap();
+    db.end_session("accident", "agent_close").unwrap();
+    db.set_session_archived("accident", true).unwrap();
+
+    assert!(db.unarchive_recoverable_session("accident").unwrap());
+    let row = db.get_session("accident").unwrap().expect("row");
+    assert!(!row.archived);
+    assert_eq!(row.end_reason, None, "accidental end stamp cleared");
+
+    // Deliberate archive (no end_reason) is left alone.
+    db.create_session("deliberate", "cli", &NewSession::default())
+        .unwrap();
+    db.set_session_archived("deliberate", true).unwrap();
+    assert!(!db.unarchive_recoverable_session("deliberate").unwrap());
+    assert!(!db.unarchive_recoverable_session("ghost").unwrap());
+    assert!(!db.unarchive_recoverable_session("").unwrap());
+    db.close();
+}
+
+#[test]
+fn recoverable_end_reasons_set_matches_oracle() {
+    // hermes_state_common.py `_RECOVERABLE_END_REASONS` (line 164).
+    assert_eq!(
+        hermes_state::common::RECOVERABLE_END_REASONS,
+        [
+            "agent_close",
+            "ws_orphan_reap",
+            "superseded_by_resume",
+            "startup_orphan_reap"
+        ]
+    );
+}

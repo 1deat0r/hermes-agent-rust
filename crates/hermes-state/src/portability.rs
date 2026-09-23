@@ -1,17 +1,38 @@
 //! Session listing/rich rows, export, and import (portability).
 //!
-//! PARITY: hermes_state_portability.py @ b9aa928 (714 LOC) plus the
-//! portability-mixin dependencies homed in hermes_state.py:
-//!   _is_explicit_fork_child_row / _is_compression_child_row (2645–2667)
-//!   get_compression_lineage                         (8256–8310)
-//!   search_sessions                                 (8030–8071)
-//!   _workspace_key_clause / _cwd_prefix_clause      (module level)
+//! PARITY: hermes_state_portability.py @ 5d59366 (whole module) plus the
+//! portability-mixin dependencies homed elsewhere in the god-file era:
+//!   _is_explicit_fork_child_row / _is_compression_child_row,
+//!   get_compression_lineage, search_sessions,
+//!   _workspace_key_clause / _cwd_prefix_clause.
+//!
+//! PORT SEAMS (documented divergences):
+//! - Reads go through `writer_conn` (a `RefCell` borrow) rather than
+//!   upstream's `_read_ctx` WAL-reader pool: the Pattern-C gate
+//!   (`test_no_locked_readers_gate`) flags Python methods that open
+//!   `with self._lock:` for pure reads. The Rust port has no per-method
+//!   writer mutex — callers already serialize `SessionDB` access — so
+//!   there is no convoy analog to test; reads never take a write
+//!   transaction (`BEGIN IMMEDIATE` lives only in `execute_write`).
+//! - `adopt_session_lineage_from`'s donor-parameter replaces Python's
+//!   duck-typed second DB; the TOCTOU export-patch oracle case
+//!   (`test_donor_growth_between_export_and_retire_blocks_retirement`) is
+//!   skipped — it monkeypatches the donor's instance method mid-call,
+//!   which would need a trait split here (the export-time divergence
+//!   guard itself is covered patch-free by `divergent_donor_is_not_retired`).
+//! - The gateway-handler half of the adoption oracle (session.resume
+//!   JSON-RPC) belongs to the tui_gateway row; only the unit-level
+//!   `stores`-fixture tests are mirrored here.
+//! - `iso_utc` reproduces Python `datetime.isoformat()` (µs precision,
+//!   fraction omitted at whole seconds).
 
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
 use rusqlite::{Connection, OptionalExtension, Row};
-use serde_json::{json, Value};
+use serde_json::{json, Map, Value};
+
+use hermes_time::{coerce_epoch, EpochInput};
 
 use crate::common;
 use crate::schema;
@@ -19,6 +40,186 @@ use crate::state::now;
 
 use super::crud::{MessageInput, SessionRow, CONTENT_JSON_PREFIX};
 use super::state::{SessionDB, WriteError};
+
+/// The ONE session-id mint (upstream `hermes_state_ids.new_session_id`) —
+/// re-exported so this module satisfies the ids-oracle SITES contract.
+pub use crate::ids::new_session_id;
+
+/// Import session text columns (upstream `_IMPORT_SESSION_TEXT_FIELDS`,
+/// lines 23–26); `parent_session_id` + `source` are handled separately.
+const IMPORT_SESSION_TEXT_FIELDS: &[&str] = &[
+    "source",
+    "user_id",
+    "model",
+    "system_prompt",
+    "end_reason",
+    "cwd",
+    "git_branch",
+    "git_repo_root",
+    "billing_provider",
+    "billing_base_url",
+    "billing_mode",
+    "cost_status",
+    "cost_source",
+    "pricing_version",
+    "title",
+];
+
+/// Import message text columns (upstream `_IMPORT_MESSAGE_TEXT_FIELDS`,
+/// lines 28–31); `role` is validated separately (non-empty string).
+const IMPORT_MESSAGE_TEXT_FIELDS: &[&str] = &[
+    "tool_call_id",
+    "tool_name",
+    "effect_disposition",
+    "finish_reason",
+    "reasoning",
+    "reasoning_content",
+    "platform_message_id",
+    "message_id",
+];
+
+/// Size/shape accumulators for one import call (upstream `totals`).
+#[derive(Default)]
+struct ImportTotals {
+    messages: usize,
+    bytes: usize,
+}
+
+/// Map a JSON timestamp cell into [`EpochInput`] (Null/missing → Empty).
+fn epoch_input(value: Option<&Value>) -> EpochInput<'_> {
+    match value {
+        None | Some(Value::Null) => EpochInput::Empty,
+        Some(Value::Number(n)) => EpochInput::Number(n.as_f64().unwrap_or(f64::NAN)),
+        Some(Value::String(s)) if s.is_empty() => EpochInput::Empty,
+        Some(Value::String(s)) => EpochInput::Text(s),
+        Some(_) => EpochInput::Empty,
+    }
+}
+
+/// Python `round()` — half-to-even on `.5` ties (gaps/wall use
+/// `int(round(x))`; Python rounds ties-to-even for floats).
+fn py_round_i64(v: f64) -> i64 {
+    let floor = v.floor();
+    let frac = v - floor;
+    let f = floor as i64;
+    if frac > 0.5 {
+        f + 1
+    } else if frac < 0.5 || (frac == 0.5 && f % 2 == 0) {
+        f
+    } else {
+        f + 1
+    }
+}
+
+/// `datetime.fromtimestamp(ts, tz=utc).isoformat()` — microseconds, the
+/// fraction omitted when the stamp is whole.
+fn iso_utc(ts: f64) -> String {
+    let secs = ts.floor();
+    let micros = (((ts - secs) * 1_000_000.0).round() as u32).min(999_999);
+    let Some(dt) = chrono::DateTime::from_timestamp(secs as i64, micros * 1_000) else {
+        return String::new();
+    };
+    if micros == 0 {
+        dt.format("%Y-%m-%dT%H:%M:%S+00:00").to_string()
+    } else {
+        dt.format("%Y-%m-%dT%H:%M:%S.%6f+00:00").to_string()
+    }
+}
+
+/// `msg.get("role") or "unknown"` — falsy cells (None/""/0/[]/{}/false)
+/// become "unknown"; truthy scalars stringify Python-style.
+fn timing_role(msg: &Value) -> String {
+    match msg.get("role") {
+        Some(Value::String(s)) if !s.is_empty() => s.clone(),
+        Some(Value::Number(n)) if n.as_f64() != Some(0.0) => n.to_string(),
+        Some(Value::Bool(true)) => "True".to_string(),
+        Some(Value::Array(a)) if !a.is_empty() => Value::Array(a.clone()).to_string(),
+        Some(Value::Object(o)) if !o.is_empty() => Value::Object(o.clone()).to_string(),
+        // Falsy cells (Python `x or "unknown"`); container roles never
+        // occur, and non-string scalars render Python-style above.
+        _ => "unknown".to_string(),
+    }
+}
+
+/// Truthy gate for `tool_calls` in the timings count: non-empty arrays
+/// contribute `len`, truthy non-arrays contribute 1, falsy contribute 0
+/// (upstream `sum(len(tc) if isinstance(tc, list) else 1 ... if tc)`).
+fn tool_calls_contrib(msg: &Value) -> usize {
+    match msg.get("tool_calls") {
+        None | Some(Value::Null) => 0,
+        Some(Value::Array(a)) => a.len(),
+        Some(Value::String(s)) if s.is_empty() => 0,
+        Some(Value::Object(o)) if o.is_empty() => 0,
+        Some(Value::Number(n)) if n.as_f64() == Some(0.0) => 0,
+        Some(Value::Bool(false)) => 0,
+        Some(_) => 1,
+    }
+}
+
+/// Text-free timing evidence for a session export (ids, roles, counts and
+/// durations only — never prompt text, arguments or results). Corrupt
+/// timestamp cells go through `coerce_epoch`: they count as `missing` and
+/// never abort the export.
+///
+/// PARITY: `_export_timings` (upstream lines 84–121).
+pub fn export_timings(messages: &[Value], session_id: Option<&str>) -> Value {
+    let mut timestamped: Vec<(usize, f64)> = Vec::new();
+    for (i, msg) in messages.iter().enumerate() {
+        let ts = coerce_epoch(epoch_input(msg.get("timestamp")), session_id, "timestamp");
+        if let Some(ts) = ts {
+            timestamped.push((i, ts));
+        }
+    }
+    // First-seen role order (dict insertion) — serde_json preserve_order.
+    let mut role_counts: Map<String, Value> = Map::new();
+    for msg in messages {
+        let role = timing_role(msg);
+        let entry = role_counts.entry(role).or_insert_with(|| json!(0));
+        *entry = json!(entry.as_i64().unwrap_or(0) + 1);
+    }
+    let tool_calls_emitted: usize = messages.iter().map(tool_calls_contrib).sum();
+
+    let mut intervals: Vec<Value> = Vec::new();
+    for pair in timestamped.windows(2) {
+        let (pi, prev_ts) = pair[0];
+        let (ni, next_ts) = pair[1];
+        let prev = &messages[pi];
+        let next = &messages[ni];
+        intervals.push(json!({
+            "from_message_id": prev.get("id").cloned().unwrap_or(Value::Null),
+            "to_message_id": next.get("id").cloned().unwrap_or(Value::Null),
+            "from_role": prev.get("role").cloned().unwrap_or(Value::Null),
+            "to_role": next.get("role").cloned().unwrap_or(Value::Null),
+            // `max(0, int(round((next - prev) * 1000)))` — py-round, floored at 0.
+            "gap_ms": py_round_i64((next_ts - prev_ts) * 1000.0).max(0),
+        }));
+    }
+
+    let n = timestamped.len();
+    let first_ts = timestamped.first().map(|(_, t)| *t);
+    let last_ts = timestamped.last().map(|(_, t)| *t);
+    let wall = first_ts
+        .zip(last_ts)
+        .map(|(f, l)| py_round_i64((l - f) * 1000.0).max(0));
+    let largest_gap = intervals.iter().filter_map(|i| i["gap_ms"].as_i64()).max();
+    let tool_result_count = role_counts.get("tool").and_then(Value::as_i64).unwrap_or(0);
+
+    json!({
+        "source": "message_timestamps",
+        "available": n > 0,
+        "complete": false,
+        "unavailable_reason": if n > 0 { Value::Null } else { json!("no_timestamped_messages") },
+        "message_timestamps": {"available": n, "missing": messages.len() - n},
+        "first_message_at": first_ts.map(iso_utc).map(Value::String).unwrap_or(Value::Null),
+        "last_message_at": last_ts.map(iso_utc).map(Value::String).unwrap_or(Value::Null),
+        "wall_clock_ms": wall.map(Value::from).unwrap_or(Value::Null),
+        "largest_gap_ms": largest_gap.map(Value::from).unwrap_or(Value::Null),
+        "role_counts": Value::Object(role_counts),
+        "tool_result_count": tool_result_count,
+        "tool_calls_emitted": tool_calls_emitted,
+        "intervals": Value::Array(intervals),
+    })
+}
 
 /// Import size limits (upstream class constants 2171–2175).
 const IMPORT_MAX_SESSIONS: usize = 500;
@@ -471,17 +672,19 @@ impl SessionDB {
         })
     }
 
-    /// Export a single session with all its messages as a dict.
-    /// PARITY: hermes_state_portability.py export_session
+    /// Export a single session with all its messages + timings as a dict.
+    /// PARITY: hermes_state_portability.py `_with_messages` / export_session
     pub fn export_session(&self, session_id: &str) -> Result<Option<Value>, WriteError> {
         let Some(mut session) = self.get_session_dict(session_id)? else {
             return Ok(None);
         };
         let messages = self.get_messages_dicts(session_id, false, None, 0)?;
-        session
-            .as_object_mut()
-            .unwrap()
-            .insert("messages".to_string(), Value::Array(messages));
+        if let Some(obj) = session.as_object_mut() {
+            let msgs = Value::Array(messages);
+            let timings = export_timings(msgs.as_array().unwrap(), Some(session_id));
+            obj.insert("messages".to_string(), msgs);
+            obj.insert("timings".to_string(), timings);
+        }
         Ok(Some(session))
     }
 
@@ -530,7 +733,11 @@ impl SessionDB {
             Value::Array(lineage_session_ids),
         );
         base_obj.insert("message_count".to_string(), json!(total_messages));
-        base_obj.insert("messages".to_string(), Value::Array(all_messages));
+        base_obj.insert("messages".to_string(), Value::Array(all_messages.clone()));
+        // Merged timings span EVERY segment's messages (the segment-level
+        // copies inside `segments` keep their own).
+        let timings = export_timings(&all_messages, Some(session_id));
+        base_obj.insert("timings".to_string(), timings);
         Ok(Some(base))
     }
 
@@ -548,9 +755,12 @@ impl SessionDB {
                 .to_string();
             let mut s = session.clone();
             let messages = self.get_messages_dicts(&sid, false, None, 0)?;
-            s.as_object_mut()
-                .unwrap()
-                .insert("messages".to_string(), Value::Array(messages));
+            if let Some(obj) = s.as_object_mut() {
+                let msgs = Value::Array(messages);
+                let timings = export_timings(msgs.as_array().unwrap(), Some(&sid));
+                obj.insert("messages".to_string(), msgs);
+                obj.insert("timings".to_string(), timings);
+            }
             results.push(s);
         }
         Ok(results)
@@ -714,224 +924,17 @@ impl SessionDB {
         let mut total_messages = 0usize;
         let mut total_bytes = 0usize;
 
-        let session_text_fields = [
-            "source",
-            "user_id",
-            "model",
-            "system_prompt",
-            "end_reason",
-            "cwd",
-            "git_branch",
-            "git_repo_root",
-            "billing_provider",
-            "billing_base_url",
-            "billing_mode",
-            "cost_status",
-            "cost_source",
-            "pricing_version",
-            "title",
-        ];
-        let message_text_fields = [
-            "role",
-            "tool_call_id",
-            "tool_name",
-            "effect_disposition",
-            "finish_reason",
-            "reasoning",
-            "reasoning_content",
-            "platform_message_id",
-            "message_id",
-        ];
-
         for (index, raw) in sessions.iter().enumerate() {
-            let Some(raw_obj) = raw.as_object() else {
-                errors.push(import_error(index, "", "session must be an object"));
-                continue;
-            };
-            let session_id = raw_obj
-                .get("id")
-                .and_then(|v| v.as_str())
-                .map(str::to_string)
-                .unwrap_or_default()
-                .trim()
-                .to_string();
-            if session_id.is_empty() {
-                errors.push(import_error(index, "", "session id is required"));
-                continue;
-            }
-            if seen_ids.contains(&session_id) {
-                errors.push(import_error(index, &session_id, "duplicate session id"));
-                continue;
-            }
-            let messages = raw_obj
-                .get("messages")
-                .cloned()
-                .unwrap_or_else(|| json!([]));
-            let Some(msg_arr) = messages.as_array() else {
-                errors.push(import_error(index, &session_id, "messages must be a list"));
-                continue;
-            };
-            if msg_arr.len() > IMPORT_MAX_MESSAGES_PER_SESSION {
-                errors.push(import_error(
-                    index,
-                    &session_id,
-                    "messages exceeds the per-session import limit",
-                ));
-                continue;
-            }
-            if msg_arr.iter().any(|m| !m.is_object()) {
-                errors.push(import_error(
-                    index,
-                    &session_id,
-                    "messages must contain only objects",
-                ));
-                continue;
-            }
-
-            // session_bytes = len(json.dumps(raw, ensure_ascii=False,
-            // separators=(",", ":")).encode("utf-8")) — compact framing.
-            let session_bytes = serde_json::to_string(raw).map(|s| s.len()).unwrap_or(0);
-            if session_bytes > IMPORT_MAX_SESSION_BYTES {
-                errors.push(import_error(
-                    index,
-                    &session_id,
-                    "session exceeds the import size limit",
-                ));
-                continue;
-            }
-            total_bytes += session_bytes;
-            if total_bytes > IMPORT_MAX_TOTAL_BYTES {
-                errors.push(import_error(
-                    index,
-                    &session_id,
-                    "import exceeds the total size limit",
-                ));
-                continue;
-            }
-
-            // Per-field cleanups (mirror the str/json coercion helpers).
-            let mut clean_session = raw.clone();
-            let clean_obj = clean_session.as_object_mut().unwrap();
-            clean_obj.insert("id".to_string(), json!(session_id));
-            let model_config_res = clean_obj
-                .get("model_config")
-                .cloned()
-                .map(|v| import_json_object_or_none(v, "model_config"))
-                .unwrap_or(Ok(None));
-            let parent_res = clean_obj
-                .get("parent_session_id")
-                .cloned()
-                .map(|v| import_text_or_none(v, "parent_session_id"))
-                .unwrap_or(Ok(None));
-            let field_res = session_text_fields
-                .iter()
-                .map(|field| {
-                    let v = clean_obj
-                        .get(*field)
-                        .cloned()
-                        .map(|v| import_text_or_none(v, field))
-                        .unwrap_or(Ok(None));
-                    v.map(|v| (*field, v))
-                })
-                .collect::<Result<Vec<_>, _>>();
-            let session_clean_result = match (model_config_res, parent_res, field_res) {
-                (Ok(mc), Ok(parent), Ok(fields)) => {
-                    clean_obj.insert(
-                        "model_config".to_string(),
-                        mc.map(Value::String).unwrap_or(Value::Null),
-                    );
-                    clean_obj.insert(
-                        "parent_session_id".to_string(),
-                        parent.map(Value::String).unwrap_or(Value::Null),
-                    );
-                    for (field, v) in fields {
-                        clean_obj.insert(
-                            field.to_string(),
-                            v.map(Value::String).unwrap_or(Value::Null),
-                        );
-                    }
-                    Ok(())
-                }
-                (Err(e), ..) => Err(e),
-                (_, Err(e), _) => Err(e),
-                (.., Err(e)) => Err(e),
-            };
-
-            let mut clean_messages: Vec<MessageInput> = Vec::new();
-            let message_clean_result = (|| {
-                for (message_index, message) in msg_arr.iter().enumerate() {
-                    if message.as_object().is_none() {
-                        return Err(format!("messages[{}] must be an object", message_index));
-                    }
-                    let mut clean_message = message.clone();
-                    let mo = clean_message.as_object_mut().unwrap();
-                    let role = mo
-                        .get("role")
-                        .and_then(|v| v.as_str())
-                        .map(str::to_string)
-                        .unwrap_or_default();
-                    if role.is_empty() {
-                        return Err(format!(
-                            "messages[{}].role must be a non-empty string",
-                            message_index
-                        ));
-                    }
-                    for field in message_text_fields.iter().filter(|f| *f != &"role") {
-                        let r = mo
-                            .get(*field)
-                            .cloned()
-                            .map(|v| import_text_or_none(v, field))
-                            .unwrap_or(Ok(None));
-                        match r {
-                            Ok(v) => {
-                                mo.insert(
-                                    field.to_string(),
-                                    v.map(Value::String).unwrap_or(Value::Null),
-                                );
-                            }
-                            Err(e) => return Err(e),
-                        }
-                    }
-                    let token_count = mo
-                        .get("token_count")
-                        .cloned()
-                        .map(|v| import_int_or_none(v, "token_count"))
-                        .unwrap_or(Ok(None));
-                    match token_count {
-                        Ok(Some(n)) => {
-                            mo.insert("token_count".to_string(), json!(n));
-                        }
-                        Ok(None) => {
-                            mo.insert("token_count".to_string(), Value::Null);
-                        }
-                        Err(e) => return Err(e),
-                    }
-                    // Map into the shared insert row type.
-                    let input = message_input_from_import(&clean_message);
-                    clean_messages.push(input);
-                }
-                Ok(())
-            })();
-
-            match (session_clean_result, message_clean_result) {
-                (Ok(()), Ok(())) => {}
-                (Err(e), _) | (_, Err(e)) => {
-                    errors.push(import_error(index, &session_id, &e));
+            match validate_import_entry(raw, &seen_ids, &mut total_messages, &mut total_bytes) {
+                Err((session_id, message)) => {
+                    errors.push(import_error(index, &session_id, &message));
                     continue;
                 }
+                Ok((session_id, clean_session, clean_messages)) => {
+                    seen_ids.insert(session_id.clone());
+                    normalized.push((index, clean_session, clean_messages));
+                }
             }
-
-            total_messages += clean_messages.len();
-            if total_messages > IMPORT_MAX_TOTAL_MESSAGES {
-                errors.push(import_error(
-                    index,
-                    &session_id,
-                    "messages exceeds the total import limit",
-                ));
-                continue;
-            }
-            seen_ids.insert(session_id.clone());
-            normalized.push((index, clean_session, clean_messages));
         }
 
         if !errors.is_empty() {
@@ -953,9 +956,8 @@ impl SessionDB {
             let mut detached = 0usize;
 
             for item in &normalized {
-                let raw = item.1.clone();
+                let raw = &item.1;
                 let raw_obj = raw.as_object().unwrap();
-                let messages = &item.2;
                 let session_id = raw_obj
                     .get("id")
                     .and_then(|v| v.as_str())
@@ -973,86 +975,7 @@ impl SessionDB {
                     continue;
                 }
 
-                let started_at = float_or_none(raw_obj.get("started_at")).unwrap_or_else(now);
-                let archived = if truthy_value(raw_obj.get("archived")) {
-                    1
-                } else {
-                    0
-                };
-                let system_prompt_hash =
-                    schema::store_system_prompt(conn, value_text(raw_obj.get("system_prompt")))?;
-
-                conn.execute(
-                    "INSERT INTO sessions (
-                       id, source, user_id, model, model_config, system_prompt,
-                       system_prompt_hash,
-                       parent_session_id, started_at, ended_at, end_reason,
-                       message_count, tool_call_count, input_tokens, output_tokens,
-                       cache_read_tokens, cache_write_tokens, reasoning_tokens,
-                       cwd, git_branch, git_repo_root,
-                       billing_provider, billing_base_url, billing_mode,
-                       estimated_cost_usd, actual_cost_usd, cost_status, cost_source,
-                       pricing_version, title, api_call_count, archived
-                     ) VALUES (?, ?, ?, ?, ?, NULL, ?, NULL, ?, ?, ?, 0, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    rusqlite::params![
-                        session_id,
-                        value_str_or_default(raw_obj.get("source"), "import"),
-                        value_text(raw_obj.get("user_id")),
-                        value_text(raw_obj.get("model")),
-                        value_text(raw_obj.get("model_config")),
-                        system_prompt_hash,
-                        started_at,
-                        float_or_none(raw_obj.get("ended_at")),
-                        value_text(raw_obj.get("end_reason")),
-                        int_or_default(raw_obj.get("input_tokens"), 0),
-                        int_or_default(raw_obj.get("output_tokens"), 0),
-                        int_or_default(raw_obj.get("cache_read_tokens"), 0),
-                        int_or_default(raw_obj.get("cache_write_tokens"), 0),
-                        int_or_default(raw_obj.get("reasoning_tokens"), 0),
-                        value_text(raw_obj.get("cwd")),
-                        value_text(raw_obj.get("git_branch")),
-                        value_text(raw_obj.get("git_repo_root")),
-                        value_text(raw_obj.get("billing_provider")),
-                        value_text(raw_obj.get("billing_base_url")),
-                        value_text(raw_obj.get("billing_mode")),
-                        float_or_none(raw_obj.get("estimated_cost_usd")),
-                        float_or_none(raw_obj.get("actual_cost_usd")),
-                        value_text(raw_obj.get("cost_status")),
-                        value_text(raw_obj.get("cost_source")),
-                        value_text(raw_obj.get("pricing_version")),
-                        value_text(raw_obj.get("title")),
-                        int_or_default(raw_obj.get("api_call_count"), 0),
-                        archived,
-                    ],
-                )?;
-
-                // _reasoning_json_value: keep JSON strings parsed so the
-                // insert serializer stores compact JSON (same as import).
-                let sanitized: Vec<MessageInput> = messages
-                    .iter()
-                    .map(|m| {
-                        let mut m = m.clone();
-                        for key in [
-                            "reasoning_details",
-                            "codex_reasoning_items",
-                            "codex_message_items",
-                        ] {
-                            if let Some(field) = m.reasoning_field_mut(key) {
-                                if let Some(v) = field.take() {
-                                    *field = Some(reasoning_json_value(v));
-                                }
-                            }
-                        }
-                        m
-                    })
-                    .collect();
-
-                let (total_messages, total_tool_calls) =
-                    SessionDB::insert_message_rows(conn, &session_id, &sanitized)?;
-                conn.execute(
-                    "UPDATE sessions SET message_count = ?, tool_call_count = ? WHERE id = ?",
-                    rusqlite::params![total_messages, total_tool_calls, session_id],
-                )?;
+                import_session_row(conn, &item.1, &item.2, &session_id)?;
 
                 let parent_id = value_text(raw_obj.get("parent_session_id"))
                     .map(|p| p.trim().to_string())
@@ -1136,6 +1059,550 @@ impl SessionDB {
             })
         };
         self.execute_write(&f, Some(SessionDB::TRANSCRIPT_WRITE_PATIENCE_S))
+    }
+}
+
+/// One payload session → (session_id, normalized session dict, messages).
+/// Err carries `(session_id_for_error, message)` — the caller wraps the
+/// index. Validation order mirrors upstream `_validate_import_session`
+/// (bytes accumulate before their limit check — a rejected oversize entry
+/// still counts; totals likewise keep a failed total-messages add).
+///
+/// PARITY: `_validate_import_payload` / `_validate_import_session` /
+/// `_normalize_import_session` (upstream lines 459–512) folded into one
+/// helper the foreign-import path shares.
+fn validate_import_entry(
+    raw: &Value,
+    seen_ids: &std::collections::HashSet<String>,
+    total_messages: &mut usize,
+    total_bytes: &mut usize,
+) -> Result<(String, Value, Vec<MessageInput>), (String, String)> {
+    let Some(raw_obj) = raw.as_object() else {
+        return Err((String::new(), "session must be an object".to_string()));
+    };
+    let session_id = raw_obj
+        .get("id")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .trim()
+        .to_string();
+    if session_id.is_empty() {
+        return Err((String::new(), "session id is required".to_string()));
+    }
+    if seen_ids.contains(&session_id) {
+        return Err((session_id, "duplicate session id".to_string()));
+    }
+    let messages_value = raw_obj
+        .get("messages")
+        .cloned()
+        .unwrap_or_else(|| json!([]));
+    let Some(msg_arr) = messages_value.as_array() else {
+        return Err((session_id, "messages must be a list".to_string()));
+    };
+    if msg_arr.len() > IMPORT_MAX_MESSAGES_PER_SESSION {
+        return Err((
+            session_id,
+            "messages exceeds the per-session import limit".to_string(),
+        ));
+    }
+    if msg_arr.iter().any(|m| !m.is_object()) {
+        return Err((session_id, "messages must contain only objects".to_string()));
+    }
+
+    // Size budget: `timings` is derived at export time and rebuilt on the
+    // next export — it must not eat into the content's budget (upstream
+    // line 499).
+    let session_bytes = match serde_json::to_string(raw) {
+        Ok(full) => {
+            let stripped = if raw_obj.contains_key("timings") {
+                let filtered: serde_json::Map<String, Value> = raw_obj
+                    .iter()
+                    .filter(|(k, _)| k.as_str() != "timings")
+                    .map(|(k, v)| (k.clone(), v.clone()))
+                    .collect();
+                serde_json::to_string(&Value::Object(filtered)).unwrap_or(full)
+            } else {
+                full
+            };
+            stripped.len()
+        }
+        Err(_) => return Err((session_id, "session must be JSON serializable".to_string())),
+    };
+    if session_bytes > IMPORT_MAX_SESSION_BYTES {
+        return Err((
+            session_id,
+            "session exceeds the import size limit".to_string(),
+        ));
+    }
+    *total_bytes += session_bytes;
+    if *total_bytes > IMPORT_MAX_TOTAL_BYTES {
+        return Err((
+            session_id,
+            "import exceeds the total size limit".to_string(),
+        ));
+    }
+
+    // Normalize (upstream `_normalize_import_session`).
+    let mut clean_session = raw.clone();
+    {
+        let obj = clean_session.as_object_mut().expect("object checked");
+        obj.insert("id".to_string(), json!(session_id));
+        let mc: Result<Option<String>, String> = match obj.get("model_config").cloned() {
+            None | Some(Value::Null) => Ok(None),
+            Some(v) => import_json_object_or_none(v, "model_config"),
+        };
+        let parent: Result<Option<String>, String> = match obj.get("parent_session_id").cloned() {
+            None | Some(Value::Null) => Ok(None),
+            Some(v) => import_text_or_none(v, "parent_session_id"),
+        };
+        let mut field_results: Result<Vec<(String, Option<String>)>, String> = Ok(Vec::new());
+        if mc.is_ok() && parent.is_ok() {
+            for field in IMPORT_SESSION_TEXT_FIELDS {
+                let v = match obj.get(*field).cloned() {
+                    None | Some(Value::Null) => Ok(None),
+                    Some(v) => import_text_or_none(v, field),
+                };
+                match v {
+                    Ok(v) => field_results
+                        .as_mut()
+                        .expect("ok at this point")
+                        .push((field.to_string(), v)),
+                    Err(e) => {
+                        field_results = Err(e);
+                        break;
+                    }
+                }
+            }
+        }
+        let (mc, parent) = match (mc, parent) {
+            (Ok(mc), Ok(parent)) => (mc, parent),
+            (Err(e), _) | (_, Err(e)) => return Err((session_id.clone(), e)),
+        };
+        let fields = match field_results {
+            Ok(fields) => fields,
+            Err(e) => return Err((session_id.clone(), e)),
+        };
+        obj.insert(
+            "model_config".to_string(),
+            mc.map(Value::String).unwrap_or(Value::Null),
+        );
+        obj.insert(
+            "parent_session_id".to_string(),
+            parent.map(Value::String).unwrap_or(Value::Null),
+        );
+        for (field, v) in fields {
+            obj.insert(field, v.map(Value::String).unwrap_or(Value::Null));
+        }
+    }
+
+    let mut clean_messages: Vec<MessageInput> = Vec::new();
+    for (message_index, message) in msg_arr.iter().enumerate() {
+        let mut clean_message = message.clone();
+        let role = clean_message
+            .get("role")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_string();
+        if role.is_empty() {
+            return Err((
+                session_id.clone(),
+                format!("messages[{message_index}].role must be a non-empty string"),
+            ));
+        }
+        {
+            let mo = clean_message.as_object_mut().expect("object checked");
+            for field in IMPORT_MESSAGE_TEXT_FIELDS {
+                let v = match mo.get(*field).cloned() {
+                    None | Some(Value::Null) => Ok(None),
+                    Some(v) => import_text_or_none(v, field),
+                };
+                match v {
+                    Ok(v) => {
+                        mo.insert(
+                            field.to_string(),
+                            v.map(Value::String).unwrap_or(Value::Null),
+                        );
+                    }
+                    Err(e) => return Err((session_id.clone(), e)),
+                }
+            }
+            let token_count = match mo.get("token_count").cloned() {
+                None | Some(Value::Null) => Ok(None),
+                Some(v) => import_int_or_none(v, "token_count"),
+            };
+            match token_count {
+                Ok(v) => {
+                    mo.insert(
+                        "token_count".to_string(),
+                        v.map(|n| json!(n)).unwrap_or(Value::Null),
+                    );
+                }
+                Err(e) => return Err((session_id.clone(), e)),
+            }
+        }
+        clean_messages.push(message_input_from_import(&clean_message));
+    }
+
+    *total_messages += clean_messages.len();
+    if *total_messages > IMPORT_MAX_TOTAL_MESSAGES {
+        return Err((
+            session_id,
+            "messages exceeds the total import limit".to_string(),
+        ));
+    }
+    Ok((session_id, clean_session, clean_messages))
+}
+
+/// INSERT one normalized session + its messages; counts fixed up after.
+///
+/// PARITY: `_import_session_row` (upstream lines 514–534). `started_at`
+/// goes through `coerce_epoch` (upstream) — a corrupt stamp falls back to
+/// `now()`.
+fn import_session_row(
+    conn: &Connection,
+    clean_session: &Value,
+    messages: &[MessageInput],
+    session_id: &str,
+) -> Result<(), WriteError> {
+    let raw_obj = clean_session.as_object().expect("object checked");
+    let started_at = coerce_epoch(
+        epoch_input(raw_obj.get("started_at")),
+        Some(session_id),
+        "started_at",
+    )
+    .unwrap_or_else(now);
+    let archived = if truthy_value(raw_obj.get("archived")) {
+        1
+    } else {
+        0
+    };
+    let system_prompt_hash =
+        schema::store_system_prompt(conn, value_text(raw_obj.get("system_prompt")))?;
+
+    conn.execute(
+        "INSERT INTO sessions (
+           id, source, user_id, model, model_config, system_prompt,
+           system_prompt_hash,
+           parent_session_id, started_at, ended_at, end_reason,
+           message_count, tool_call_count, input_tokens, output_tokens,
+           cache_read_tokens, cache_write_tokens, reasoning_tokens,
+           cwd, git_branch, git_repo_root,
+           billing_provider, billing_base_url, billing_mode,
+           estimated_cost_usd, actual_cost_usd, cost_status, cost_source,
+           pricing_version, title, api_call_count, archived
+         ) VALUES (?, ?, ?, ?, ?, NULL, ?, NULL, ?, ?, ?, 0, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        rusqlite::params![
+            session_id,
+            value_str_or_default(raw_obj.get("source"), "import"),
+            value_text(raw_obj.get("user_id")),
+            value_text(raw_obj.get("model")),
+            value_text(raw_obj.get("model_config")),
+            system_prompt_hash,
+            started_at,
+            float_or_none(raw_obj.get("ended_at")),
+            value_text(raw_obj.get("end_reason")),
+            int_or_default(raw_obj.get("input_tokens"), 0),
+            int_or_default(raw_obj.get("output_tokens"), 0),
+            int_or_default(raw_obj.get("cache_read_tokens"), 0),
+            int_or_default(raw_obj.get("cache_write_tokens"), 0),
+            int_or_default(raw_obj.get("reasoning_tokens"), 0),
+            value_text(raw_obj.get("cwd")),
+            value_text(raw_obj.get("git_branch")),
+            value_text(raw_obj.get("git_repo_root")),
+            value_text(raw_obj.get("billing_provider")),
+            value_text(raw_obj.get("billing_base_url")),
+            value_text(raw_obj.get("billing_mode")),
+            float_or_none(raw_obj.get("estimated_cost_usd")),
+            float_or_none(raw_obj.get("actual_cost_usd")),
+            value_text(raw_obj.get("cost_status")),
+            value_text(raw_obj.get("cost_source")),
+            value_text(raw_obj.get("pricing_version")),
+            value_text(raw_obj.get("title")),
+            int_or_default(raw_obj.get("api_call_count"), 0),
+            archived,
+        ],
+    )?;
+
+    // _reasoning_json_value: keep JSON strings parsed so the insert
+    // serializer stores compact JSON (same as import).
+    let sanitized: Vec<MessageInput> = messages
+        .iter()
+        .map(|m| {
+            let mut m = m.clone();
+            for key in [
+                "reasoning_details",
+                "codex_reasoning_items",
+                "codex_message_items",
+            ] {
+                if let Some(field) = m.reasoning_field_mut(key) {
+                    if let Some(v) = field.take() {
+                        *field = Some(reasoning_json_value(v));
+                    }
+                }
+            }
+            m
+        })
+        .collect();
+
+    let (total_messages, total_tool_calls) =
+        SessionDB::insert_message_rows(conn, session_id, &sanitized)?;
+    conn.execute(
+        "UPDATE sessions SET message_count = ?, tool_call_count = ? WHERE id = ?",
+        rusqlite::params![total_messages, total_tool_calls, session_id],
+    )?;
+    Ok(())
+}
+
+/// Find an existing foreign import for `origin` on one connection: rows
+/// with the same source tool whose `origin_json.imported_from` matches the
+/// origin by `foreign_session_id` (when supplied) or by `path`.
+///
+/// PARITY: `_find_foreign_import_on_conn` (upstream lines 127–139).
+fn find_foreign_import_on_conn(
+    conn: &Connection,
+    origin: &Value,
+) -> Result<Option<String>, rusqlite::Error> {
+    let tool = origin.get("tool").and_then(Value::as_str).unwrap_or("");
+    let mut stmt = conn.prepare(
+        "SELECT id, origin_json FROM sessions \
+         WHERE source = ? AND origin_json IS NOT NULL",
+    )?;
+    let rows = stmt.query_map(rusqlite::params![tool], |row| {
+        Ok((row.get::<_, String>(0)?, row.get::<_, Option<String>>(1)?))
+    })?;
+    let foreign_id = origin
+        .get("foreign_session_id")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_string();
+    for row in rows {
+        let (id, origin_json) = row?;
+        let Some(origin_json) = origin_json else {
+            continue;
+        };
+        let parsed = hermes_utils::safe_json_loads(&origin_json, serde_json::json!({}));
+        let Some(imported_from) = parsed.get("imported_from").and_then(Value::as_object) else {
+            continue;
+        };
+        let imported_tool = imported_from
+            .get("tool")
+            .and_then(Value::as_str)
+            .unwrap_or("");
+        if imported_tool != tool {
+            continue;
+        }
+        if !foreign_id.is_empty() {
+            let imported_foreign = imported_from
+                .get("foreign_session_id")
+                .and_then(Value::as_str)
+                .unwrap_or("");
+            if imported_foreign == foreign_id {
+                return Ok(Some(id));
+            }
+        } else {
+            let imported_path = imported_from
+                .get("path")
+                .and_then(Value::as_str)
+                .unwrap_or("");
+            let origin_path = origin.get("path").and_then(Value::as_str).unwrap_or("");
+            if imported_path == origin_path {
+                return Ok(Some(id));
+            }
+        }
+    }
+    Ok(None)
+}
+
+impl SessionDB {
+    /// Look up an existing foreign import for `origin`, or None.
+    ///
+    /// PARITY: `find_foreign_import` (upstream lines 141–143).
+    pub fn find_foreign_import(&self, origin: &Value) -> Result<Option<String>, WriteError> {
+        let conn = self.writer_conn();
+        find_foreign_import_on_conn(&conn, origin).map_err(WriteError::Sqlite)
+    }
+
+    /// Adopt or mint a foreign snapshot in one transaction, including its
+    /// provenance. BEGIN IMMEDIATE serializes duplicate clicks across
+    /// connections/processes; an already-adopted origin returns the
+    /// EXISTING session id with `already_imported: true`.
+    ///
+    /// PARITY: `import_foreign_history` (upstream lines 145–173): mints a
+    /// 12-hex session id, validates through the shared portability
+    /// validator, suffixes a colliding title with `({id[-12:]})`, stamps
+    /// `origin_json` + `profile_name`.
+    pub fn import_foreign_history(
+        &self,
+        origin: &Value,
+        messages: &[Value],
+        title: &str,
+        cwd: Option<&str>,
+        profile: &str,
+    ) -> Result<Value, WriteError> {
+        let session_id = new_session_id(12);
+        let payload = json!({
+            "id": session_id,
+            "source": origin.get("tool").cloned().unwrap_or(Value::Null),
+            "title": title,
+            "cwd": cwd.map(|c| json!(c)).unwrap_or(Value::Null),
+            "messages": messages,
+        });
+        let mut totals = ImportTotals::default();
+        let (sid, clean_session, clean_messages) = validate_import_entry(
+            &payload,
+            &std::collections::HashSet::new(),
+            &mut totals.messages,
+            &mut totals.bytes,
+        )
+        .map_err(|(_sid, message)| WriteError::ValueError(message))?;
+
+        let f = |conn: &Connection| -> Result<Value, WriteError> {
+            if let Some(existing) = find_foreign_import_on_conn(conn, origin)? {
+                return Ok(json!({"session_id": existing, "already_imported": true}));
+            }
+            // Titles are globally unique within a profile: preserve a
+            // readable title while giving same-text conversations room.
+            let title_dup: Option<i64> = conn
+                .query_row(
+                    "SELECT 1 FROM sessions WHERE title = ?",
+                    rusqlite::params![title],
+                    |r| r.get(0),
+                )
+                .optional()?;
+            let mut clean = clean_session.clone();
+            if title_dup.is_some() {
+                let suffix = &sid[sid.len().saturating_sub(12)..];
+                clean
+                    .as_object_mut()
+                    .expect("object")
+                    .insert("title".to_string(), json!(format!("{title} ({suffix})")));
+            }
+            import_session_row(conn, &clean, &clean_messages, &sid)?;
+            let origin_json = serde_json::to_string(&json!({"imported_from": origin}))
+                .map_err(|e| WriteError::ValueError(e.to_string()))?;
+            conn.execute(
+                "UPDATE sessions SET origin_json = ?, profile_name = ? WHERE id = ?",
+                rusqlite::params![origin_json, profile, sid],
+            )?;
+            Ok(json!({"session_id": sid, "already_imported": false}))
+        };
+        self.execute_write(&f, Some(SessionDB::TRANSCRIPT_WRITE_PATIENCE_S))
+    }
+
+    /// Adopt *session_id*'s full compression lineage from *donor_db*
+    /// (stranded-bot-session heal, #93091/#93296): pure composition
+    /// `donor.export_session_lineage()` → `self.import_sessions()`; runtime
+    /// fields reset, already-present ids skipped (idempotent). With
+    /// `retire_donor` and a complete adoption, donor rows are ARCHIVED
+    /// (never deleted) with `end_reason='adopted_by_profile'` — deliberately
+    /// NOT in the recoverable set, so resurrection cannot undo an adoption.
+    ///
+    /// PARITY: `adopt_session_lineage_from` (upstream lines 323–370) +
+    /// `_retire_donor_segment` (372–396). PORT SEAMS: the export-patch
+    /// TOCTOU oracle case is skipped (needs a donor-method monkeypatch);
+    /// retirement failures catch per-segment instead of upstream's
+    /// blanket try/except.
+    pub fn adopt_session_lineage_from(
+        &self,
+        donor: &SessionDB,
+        session_id: &str,
+        retire_donor: bool,
+    ) -> Result<Value, WriteError> {
+        let payload = donor.export_session_lineage(session_id)?;
+        let Some(payload) = payload else {
+            return Ok(json!({
+                "ok": false, "adopted": false, "donor_retired": false,
+                "error": format!("session {session_id:?} not found in donor store"),
+            }));
+        };
+        let segments: Vec<Value> = payload
+            .get("segments")
+            .and_then(Value::as_array)
+            .cloned()
+            .unwrap_or_else(|| vec![payload.clone()]);
+
+        // Divergence guard: a segment we will SKIP (already here) may have
+        // kept growing in the donor after a partial adoption; retiring it
+        // would strand those messages behind a non-recoverable archive.
+        // Still import, but refuse to retire.
+        let mut donor_ahead = false;
+        for seg in &segments {
+            let Some(seg_id) = seg.get("id").and_then(Value::as_str) else {
+                continue;
+            };
+            if self.get_session(seg_id)?.is_none() {
+                continue;
+            }
+            let donor_count = seg
+                .get("messages")
+                .and_then(Value::as_array)
+                .map(|a| a.len())
+                .unwrap_or(0);
+            let local_count = self.get_messages_dicts(seg_id, false, None, 0)?.len();
+            if donor_count > local_count {
+                donor_ahead = true;
+                log::warn!(
+                    "adoption divergence: donor segment {seg_id} has {donor_count} messages, \
+local copy has {local_count} — donor will NOT be retired"
+                );
+            }
+        }
+
+        let result = self.import_sessions(&segments)?;
+        let adopted_total = result.imported + result.skipped;
+        let adopted = result.ok && adopted_total == segments.len();
+        if !adopted {
+            log::warn!(
+                "adoption of {session_id} did not complete: imported={} skipped={} of {} segment(s); errors={:?}",
+                result.imported, result.skipped, segments.len(), result.errors
+            );
+        }
+
+        let mut donor_retired = false;
+        if adopted && retire_donor && !donor_ahead {
+            donor_retired = segments
+                .iter()
+                .filter_map(|seg| seg.get("id").and_then(Value::as_str))
+                .all(|seg_id| self.retire_donor_segment(donor, seg_id));
+        }
+        let mut out = import_result_value(&result);
+        out.as_object_mut()
+            .expect("object")
+            .insert("adopted".to_string(), json!(adopted));
+        out.as_object_mut()
+            .expect("object")
+            .insert("donor_retired".to_string(), json!(donor_retired));
+        Ok(out)
+    }
+
+    /// Archive one adopted donor segment; False when skipped or failed.
+    /// TOCTOU close-out: the divergence guard used EXPORT-TIME counts;
+    /// re-read both stores right before stamping so donor growth never
+    /// lands behind a non-recoverable archive.
+    ///
+    /// PARITY: `_retire_donor_segment` (upstream lines 372–396).
+    fn retire_donor_segment(&self, donor: &SessionDB, seg_id: &str) -> bool {
+        (|| -> Result<bool, WriteError> {
+            let donor_now = donor.get_messages_dicts(seg_id, false, None, 0)?.len();
+            let local_now = self.get_messages_dicts(seg_id, false, None, 0)?.len();
+            if donor_now > local_now {
+                log::warn!(
+                    "adoption divergence at retire time: donor segment {seg_id} grew to \
+{donor_now} messages (local {local_now}) — leaving donor unretired"
+                );
+                return Ok(false);
+            }
+            // First end_reason wins in end_session(); reopen so the adoption
+            // boundary is stamped even on ended segments.
+            donor.reopen_session(seg_id)?;
+            donor.end_session(seg_id, "adopted_by_profile")?;
+            donor.set_session_archived(seg_id, true)?;
+            Ok(true)
+        })()
+        .unwrap_or_else(|e| {
+            log::warn!("failed to retire donor segment {seg_id} after adoption: {e}");
+            false
+        })
     }
 }
 

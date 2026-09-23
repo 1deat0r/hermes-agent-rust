@@ -1,20 +1,20 @@
 {
  "generated_from": "/run/media/its1deat0r/Projects/AI Agents/Hermes-Agent-Rust/.upstream-pin/5d59366",
- "generated_at": "2026-09-23T12:45:19",
+ "generated_at": "2026-09-23T15:06:12",
  "summary": {
   "modules": 8895,
   "total_lines": 2467838,
   "production_modules": 3481,
   "production_lines": 1147748,
   "status_counts": {
-   "done": 188,
-   "partial": 14,
-   "missing": 8693
+   "done": 190,
+   "partial": 13,
+   "missing": 8692
   },
   "prod_status_counts": {
-   "done": 188,
-   "partial": 14,
-   "missing": 3279
+   "done": 190,
+   "partial": 13,
+   "missing": 3278
   },
   "packages": {
    "tests.tui_gateway": {
@@ -480,7 +480,7 @@
     "modules": 1,
     "status": {
      "missing": 0,
-     "partial": 1
+     "done": 1
     }
    },
    "utils": {
@@ -1781,7 +1781,8 @@
     "lines": 28,
     "modules": 1,
     "status": {
-     "missing": 1
+     "missing": 0,
+     "done": 1
     }
    },
    "tests.fixtures": {
@@ -7928,7 +7929,7 @@
   "hermes_state_portability": {
    "lines": 615,
    "imports": [],
-   "port_status": "partial",
+   "port_status": "done",
    "is_test": false
   },
   "tests.plugins.test_honcho_startup_fail_open": {
@@ -56625,7 +56626,7 @@
   "hermes_state_ids": {
    "lines": 28,
    "imports": [],
-   "port_status": "missing",
+   "port_status": "done",
    "is_test": false
   },
   "tests.agent.test_secret_scope_user_message": {

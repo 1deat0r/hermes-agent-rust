@@ -13,6 +13,10 @@
 //! Invalid timezone values log a warning and fall back safely — Hermes never
 //! crashes due to a bad timezone string.
 
+pub mod coerce;
+
+pub use coerce::{coerce_epoch, EpochInput, EPOCH_MAX, EPOCH_MIN};
+
 use chrono::{DateTime, FixedOffset, Local, Utc};
 use chrono_tz::Tz;
 use std::path::Path;

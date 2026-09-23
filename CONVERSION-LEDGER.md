@@ -1,7 +1,7 @@
 # Hermes Agent → Hermes Agent Rust Conversion Ledger
 
-**Current strict completion: 2.11% of all tracked upstream modules (188/8895).**
-Production-only strict completion: **5.40%** (188/3481 production modules).
+**Current strict completion: 2.14% of all tracked upstream modules (190/8895).**
+Production-only strict completion: **5.46%** (190/3481 production modules).
 
 > This file is generated from `tools/inventory.json`; update the source ledger in `tools/port_status.json`, regenerate the inventory, then run `python3 tools/conversion_ledger.py`. Only `done` counts toward the percentage. `partial` is intentionally zero credit until its stated parity seams are closed. AGENTS: generated-only — query JSON summaries per AGENTS.md §2; never read this file whole.
 
@@ -9,10 +9,10 @@ Production-only strict completion: **5.40%** (188/3481 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 188 | 14 | 8693 | 2.11% | 22,103/2,467,838 done LOC |
-| Production modules | 188 | 14 | 3279 | 5.40% | 22,103/1,147,748 done LOC |
+| All tracked modules | 190 | 13 | 8692 | 2.14% | 22,746/2,467,838 done LOC |
+| Production modules | 190 | 13 | 3278 | 5.46% | 22,746/1,147,748 done LOC |
 
-Inventory source: `/run/media/its1deat0r/Projects/AI Agents/Hermes-Agent-Rust/.upstream-pin/5d59366` at `2026-09-23T12:45:19`.
+Inventory source: `/run/media/its1deat0r/Projects/AI Agents/Hermes-Agent-Rust/.upstream-pin/5d59366` at `2026-09-23T15:06:12`.
 
 ## Definition of 100.00%
 
@@ -36,7 +36,6 @@ The conversion is complete only when all of these are true:
 | `hermes_logging` | P1 | 725 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `hermes_state` | P1 | 1,662 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `hermes_state_common` | P1 | 1,218 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
-| `hermes_state_portability` | P1 | 615 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `hermes_state_schema` | P1 | 1,298 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `hermes_state_search` | P1 | 1,343 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `model_tools` | P2 | 987 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
@@ -1230,11 +1229,11 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `hermes_state_gateway` | production | P2 | 699 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `hermes_state_guard` | production | P2 | 170 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `hermes_state_holders` | production | P2 | 363 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `hermes_state_ids` | production | P2 | 28 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
+| `hermes_state_ids` | production | P2 | 28 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `hermes_state_lockguard` | production | P2 | 172 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `hermes_state_maintenance` | production | P2 | 450 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `hermes_state_messages` | production | P2 | 1,364 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
-| `hermes_state_portability` | production | P1 | 615 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
+| `hermes_state_portability` | production | P1 | 615 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `hermes_state_readpool` | production | P2 | 245 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `hermes_state_registry` | production | P2 | 462 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `hermes_state_repair` | production | P2 | 1,152 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |

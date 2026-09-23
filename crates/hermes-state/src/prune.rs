@@ -527,3 +527,69 @@ pub fn remove_session_files(sessions_dir: &Path, session_id: &str) {
         }
     }
 }
+
+impl SessionDB {
+    /// Un-archive a session archived by a recoverable accident
+    /// (ws_orphan_reap, agent_close, …); deliberate archives are left
+    /// alone. True when un-archived.
+    ///
+    /// Registry-style lookups (Bot Mode's canonical chat) use this to
+    /// resurrect a row an accidental end archived; sessions archived with
+    /// no end_reason or an explicit boundary reason return False. The
+    /// accidental stamp is judged on the compression TIP, and the tip's
+    /// end stamp is cleared so a later deliberate archive cannot
+    /// auto-resurrect.
+    ///
+    /// HOMED here for the adoption oracle; upstream home is
+    /// `hermes_state_sessions.py::unarchive_recoverable_session` (849–881).
+    /// PARITY: hermes_state_sessions.py @ 5d59366. PORT SEAMS: the
+    /// upstream try/except around the tip lookup maps to the tolerant
+    /// `Result` handling below (any tip error → judge the row itself).
+    pub fn unarchive_recoverable_session(&self, session_id: &str) -> Result<bool, WriteError> {
+        if session_id.is_empty() {
+            return Ok(false);
+        }
+        let Some(row) = self.get_session(session_id)? else {
+            return Ok(false);
+        };
+        if !row.archived {
+            return Ok(false);
+        }
+        // The accidental stamp lives on the live TIP; judge recoverability
+        // there (upstream: `get_compression_tip(...) or session_id`).
+        let mut tip_id = session_id.to_string();
+        if let Ok(computed) = self.get_compression_tip(session_id) {
+            if !computed.is_empty() && computed != session_id {
+                tip_id = computed;
+            }
+        }
+        let tip = if tip_id == session_id {
+            row
+        } else {
+            match self.get_session(&tip_id)? {
+                Some(t) => t,
+                None => row,
+            }
+        };
+        let reason = tip.end_reason.as_deref().unwrap_or("");
+        if !crate::common::RECOVERABLE_END_REASONS.contains(&reason) {
+            return Ok(false);
+        }
+        if !self.set_session_archived(session_id, false)? {
+            return Ok(false);
+        }
+        // Clear the accidental end stamp, or a LATER deliberate archive
+        // (which never writes end_reason) would auto-resurrect on the next
+        // lookup.
+        let tip = tip_id.clone();
+        let f = |conn: &rusqlite::Connection| -> Result<(), WriteError> {
+            conn.execute(
+                "UPDATE sessions SET ended_at = NULL, end_reason = NULL WHERE id = ?",
+                rusqlite::params![tip],
+            )?;
+            Ok(())
+        };
+        self.execute_write(&f, None)?;
+        Ok(true)
+    }
+}

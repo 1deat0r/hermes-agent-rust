@@ -593,6 +593,7 @@ dependencies = [
  "fancy-regex",
  "futures",
  "hermes-constants",
+ "hermes-time",
  "hermes-utils",
  "libc",
  "log",
@@ -695,10 +696,14 @@ dependencies = [
 name = "hermes-state"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "hermes-constants",
+ "hermes-time",
  "hermes-utils",
  "libc",
+ "log",
  "once_cell",
+ "rand",
  "regex",
  "rusqlite",
  "serde",
@@ -716,6 +721,7 @@ dependencies = [
  "chrono",
  "chrono-tz",
  "hermes-constants",
+ "log",
  "serde_yaml",
  "tempfile",
  "thiserror",

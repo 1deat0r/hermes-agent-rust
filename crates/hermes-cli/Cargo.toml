@@ -20,6 +20,7 @@ rusqlite = { version = "0.37", features = ["bundled"] }
 fancy-regex.workspace = true
 hermes-constants = { path = "../hermes-constants" }
 hermes-utils = { path = "../hermes-utils" }
+hermes-time = { path = "../hermes-time" }
 regex.workspace = true
 serde_json = { workspace = true }
 log.workspace = true

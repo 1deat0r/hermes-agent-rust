@@ -473,6 +473,27 @@ Files: `PLAN.md`, `HANDOFF.md` updated/verified; `tools/inventory.json`
 + `CONVERSION-LEDGER.md` verified unchanged (additive layer, no
 tracked-module change).
 
+## hermes_state_portability + hermes_state_ids done (2026-09-22)
+
+`hermes_state_portability` partial → done @ 5d59366 (615 LOC) +
+`hermes_state_ids` missing → done (28 LOC): export timings wired
+into all three export paths (coerce_epoch moved to hermes-time as
+the shared floor — CLI re-exports), import strips timings from the
+size budget + coerce_epoch on started_at, shared
+validate/import_session_row factoring, find_foreign_import +
+import_foreign_history (12-hex mint, title suffix, origin stamp),
+adopt_session_lineage_from + retire_donor_segment (divergence guard,
+honest donor_retired) with the unit-level oracle, RECOVERABLE
+const + unarchive landed early (their rows stay partial/missing).
+31 + 3 oracle/unit tests. Skipped-with-note: export-patch TOCTOU
+case, gateway-handler adoption half, Pattern-C source gate (no Rust
+analog). Full workspace: 2,338 passed, 0 failed.
+**Ledger: 190/13/8692 (2.14% tracked, 5.46% prod).**
+Next: next Wave B partial in smallest-LOC order
+(`hermes_logging` 725, then the big hermes_state rows —
+`hermes_state_common` 1218 / `hermes_state_schema` 1298 /
+`hermes_state_search` 1343 / `hermes_state` 1662).
+
 ## utils done (2026-09-22)
 
 Partial → done @ 5d59366 (611 LOC; full root-oracle suite):
@@ -578,9 +599,12 @@ Next: next Wave B partial in smallest-LOC order
 
 ## Next actions, in order
 
-1. Wave B: next smallest-LOC partials (`hermes_state_portability` 615,
-   `hermes_logging` 725, `hermes_cli.main` 3520 — `agent.ssl_guard`,
-   `hermes_cli.dashboard_auth.__init__` are already done).
+1. Wave B: next smallest-LOC partials (`hermes_logging` 725,
+   `hermes_state_common` 1218, `hermes_state_schema` 1298 —
+   `agent.ssl_guard`, `hermes_cli.dashboard_auth.__init__` are
+   already done; `hermes_state_sessions`/`hermes_state_ids` rows:
+   ids closed with the portability unit; sessions gained
+   unarchive early but its file port remains missing).
 2. Wave A: trivial sweep (`__init__` 0–3 LOC, eslint configs, barrels —
    acp/cron-scripts/tui roots need crate-open decision first).
 3. Keep ownership disjoint; commit and publish each logical unit immediately.
