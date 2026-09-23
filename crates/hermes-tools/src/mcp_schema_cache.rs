@@ -200,7 +200,7 @@ fn save_all(data: &Value) {
     if let Some(parent) = path.parent() {
         let _ = std::fs::create_dir_all(parent);
     }
-    let _ = atomic_json_write(&path, data, 2, Some(0o600));
+    let _ = atomic_json_write(&path, data, 2, Some(0o600), false);
 }
 
 /// Return cached entry when fingerprint matches, else None.

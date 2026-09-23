@@ -1,38 +1,153 @@
-//! YAML load/write helpers, including a comment-preserving single-key
-//! update (upstream `atomic_roundtrip_yaml_update`).
+//! YAML load/write helpers: atomic writes, the comment-preserving
+//! single-key update, and the comment-preserving full-state save.
 //!
-//! PARITY: utils.py lines 319–480 (`IndentDumper`, `atomic_yaml_write`,
-//! `atomic_roundtrip_yaml_update`) and 499–524 (`fast_safe_load`).
+//! PARITY: utils.py @ 5d59366 — `IndentDumper` (360–372, exercised through
+//! `atomic_yaml_write`'s 2-space sequence indent), `atomic_yaml_write`
+//! (375–388), `atomic_roundtrip_yaml_update` (410–448),
+//! `_YAML11_AMBIGUOUS_WORDS` + `atomic_roundtrip_yaml_save` (455–492),
+//! `fast_safe_load` (503–511). The ruamel round-trip loader/dumper pair
+//! maps to line-targeted text editing (update) + line-tree merge (save) —
+//! see PORT SEAMS in the save docs.
 
-use crate::atomic::{
-    atomic_replace, fchmod, preserve_file_mode, preserve_file_owner, restore_file_mode,
-    restore_file_owner,
-};
+use crate::atomic::{atomic_write_with, preserve_file_mode, AtomicSpec};
 use serde::Serialize;
+use std::collections::HashSet;
 use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::path::Path;
+
+/// YAML 1.2 (ruamel) resolves `off`/`yes`… as plain strings while every
+/// YAML 1.1 reader here (the safe-load family) parses them as booleans —
+/// the save path forces quotes for the ambiguous set so a re-read cannot
+/// flip `approvals.mode: off` to `False` (upstream
+/// `_YAML11_AMBIGUOUS_WORDS`, line 455).
+const YAML11_AMBIGUOUS_WORDS: [&str; 10] = [
+    "y", "n", "yes", "no", "true", "false", "on", "off", "null", "~",
+];
+
+/// Tags the PyYAML/CSafeLoader family accepts (schema/core constructors).
+const SAFE_YAML_TAGS: [&str; 13] = [
+    "str",
+    "int",
+    "float",
+    "bool",
+    "null",
+    "seq",
+    "map",
+    "set",
+    "omap",
+    "pairs",
+    "binary",
+    "timestamp",
+    "value",
+];
+
+/// Reject tag tokens a safe loader would refuse — quote/comment aware so a
+/// `!!` inside a scalar or comment is content, not a tag. `!!python/…`
+/// (the `test_rejects_arbitrary_python_objects_like_safe_load` oracle) and
+/// unknown local `!tags` error out before serde_yaml's permissive
+/// Value-acceptance can launder them.
+fn reject_unsafe_tags(text: &str) -> Result<(), serde_yaml::Error> {
+    use serde::de::Error as _;
+    let bytes = text.as_bytes();
+    let mut in_single = false;
+    let mut in_double = false;
+    let mut escaped = false;
+    let mut in_comment = false;
+    let mut i = 0;
+    while i < bytes.len() {
+        let c = bytes[i] as char;
+        if in_comment {
+            if c == '\n' {
+                in_comment = false;
+            }
+            i += 1;
+            continue;
+        }
+        if escaped {
+            escaped = false;
+            i += 1;
+            continue;
+        }
+        if in_double {
+            if c == '\\' {
+                escaped = true;
+            } else if c == '"' {
+                in_double = false;
+            }
+            i += 1;
+            continue;
+        }
+        if in_single {
+            if c == '\'' {
+                in_single = false;
+            }
+            i += 1;
+            continue;
+        }
+        match c {
+            '\'' => in_single = true,
+            '"' => in_double = true,
+            '#' => in_comment = true,
+            '!' if i + 1 < bytes.len() && bytes[i + 1] == b'!' => {
+                // `!!name` — must be a safe constructor.
+                let start = i + 2;
+                let mut j = start;
+                while j < bytes.len()
+                    && ((bytes[j] as char).is_ascii_alphanumeric()
+                        || matches!(bytes[j], b'/' | b'-' | b'_' | b'.' | b':'))
+                {
+                    j += 1;
+                }
+                let name = &text[start..j];
+                let at_delim = j >= bytes.len()
+                    || matches!(bytes[j], b' ' | b'\t' | b'\n' | b'\r' | b',' | b']' | b'}');
+                if at_delim && !name.is_empty() && !SAFE_YAML_TAGS.contains(&name) {
+                    return Err(serde_yaml::Error::custom(format!(
+                        "unsafe yaml tag !!{name}"
+                    )));
+                }
+                i = j;
+                continue;
+            }
+            '!' if i + 1 < bytes.len() && (bytes[i + 1] as char).is_ascii_alphanumeric() => {
+                // Unknown local tag `!Foo` — the safe loader rejects these.
+                return Err(serde_yaml::Error::custom("unsupported yaml tag"));
+            }
+            _ => {}
+        }
+        i += 1;
+    }
+    Ok(())
+}
 
 /// `yaml.safe_load` equivalent — parse a YAML document into a Value.
 ///
 /// Upstream prefers the libyaml C loader with pure-Python fallback; both
-/// implement the same restricted safe tag set. serde_yaml's safe parsing is
-/// the Rust equivalent.
+/// implement the same restricted safe tag set (rejected above), and empty
+/// documents return None — serde_yaml yields `Value::Null` for those (the
+/// None analog; callers treat both as "no document").
+///
+/// PARITY: `fast_safe_load` (509–511) + the safe-loader tag contract
+/// (`test_fast_safe_load.py`).
 pub fn fast_safe_load(text: &str) -> serde_yaml::Result<serde_yaml::Value> {
+    reject_unsafe_tags(text)?;
     serde_yaml::from_str(text)
 }
 
 /// Write YAML data to a file atomically.
 ///
-/// Mirrors upstream semantics: parent dirs created; existing mode preserved;
-/// `create_mode` applied only when the target does not exist; temp file mode
-/// applied before the replace (no 0600 transit); `extra_content` appended
-/// after the YAML dump; symlink targets swapped in place.
+/// Mirrors upstream semantics: parent dirs created; existing mode preserved
+/// (`_mode_for_write` with preserve=True); `create_mode` applied only when
+/// the target does not exist; temp file mode applied before the replace
+/// (no 0600 transit); `extra_content` appended after the YAML dump;
+/// symlink targets swapped in place; owner carried across.
 ///
-/// Known serializer divergence (documented in PLAN.md): PyYAML and serde_yaml
-/// emit different whitespace/quoting for identical data. Byte parity with
-/// PyYAML is not a goal; value/schema parity and atomicity are.
+/// Known serializer divergence (documented in PLAN.md): PyYAML and this
+/// emitter emit different whitespace/quoting for identical data. Byte
+/// parity with PyYAML is not a goal; value/schema parity, the 2-space
+/// IndentDuzzer sequence shape (#31999), and atomicity are.
 ///
-/// PARITY: utils.py `atomic_yaml_write` (335–413).
+/// PARITY: `atomic_yaml_write` (375–388).
 pub fn atomic_yaml_write(
     path: &Path,
     data: &impl Serialize,
@@ -40,69 +155,67 @@ pub fn atomic_yaml_write(
     extra_content: Option<&str>,
     create_mode: Option<u32>,
 ) -> std::io::Result<()> {
-    if let Some(parent) = path.parent() {
-        std::fs::create_dir_all(parent)?;
-    }
-
-    let mut original_mode = preserve_file_mode(path);
-    let original_owner = preserve_file_owner(path);
-    if original_mode.is_none() && create_mode.is_some() && !path.exists() {
-        original_mode = create_mode;
-    }
-
+    let mode = mode_for_write(path, create_mode);
     let prefix = format!(
         ".{}_",
         path.file_stem()
             .map(|s| s.to_string_lossy().into_owned())
             .unwrap_or_default()
     );
-    let (mut tmp, tmp_path) = crate::atomic::create_temp_in(
-        path.parent().unwrap_or_else(|| Path::new(".")),
-        &prefix,
-        ".tmp",
-    )?;
-
-    let result = (|| -> std::io::Result<PathBuf> {
-        #[cfg(unix)]
-        if let Some(mode) = original_mode {
-            fchmod(tmp.as_file(), mode)?;
-        }
-        let rendered = render_yaml(data, sort_keys);
-        tmp.write_all(rendered.as_bytes())?;
-        if let Some(extra) = extra_content {
-            tmp.write_all(extra.as_bytes())?;
-        }
-        tmp.flush()?;
-        tmp.as_file().sync_all()?;
-        Ok(atomic_replace(&tmp_path, path))
-    })();
-
-    match result {
-        Ok(real_path) => {
-            restore_file_owner(&real_path, original_owner);
-            restore_file_mode(&real_path, original_mode);
+    atomic_write_with(
+        path,
+        &AtomicSpec {
+            prefix,
+            mode,
+            preserve_owner: true,
+            fsync_dir: false,
+        },
+        |f| {
+            let rendered = render_yaml(data, sort_keys);
+            f.write_all(rendered.as_bytes())?;
+            if let Some(extra) = extra_content {
+                f.write_all(extra.as_bytes())?;
+            }
             Ok(())
-        }
-        Err(e) => {
-            let _ = std::fs::remove_file(&tmp_path);
-            Err(e)
-        }
+        },
+    )?;
+    Ok(())
+}
+
+/// `_mode_for_write` with preserve=True (the yaml writer's policy).
+fn mode_for_write(path: &Path, create_mode: Option<u32>) -> Option<u32> {
+    let mode = preserve_file_mode(path);
+    if mode.is_some() || path.exists() {
+        mode
+    } else {
+        create_mode
     }
 }
 
 /// Render YAML with insertion order preserved (Mapping) or keys sorted
 /// when `sort_keys` is true.
 pub fn render_yaml(data: &impl Serialize, sort_keys: bool) -> String {
+    render_yaml_impl(data, sort_keys, false)
+}
+
+/// Full document render; `yaml11` forces quotes on the YAML-1.1 ambiguous
+/// word set (the save path — see `YAML11_AMBIGUOUS_WORDS`).
+fn render_yaml_impl(data: &impl Serialize, sort_keys: bool, yaml11: bool) -> String {
     // Serialize through serde_json::Value to preserve insertion order and
     // handle sorting deterministically (HashMap iteration is unordered).
     let value = serde_json::to_value(data).unwrap_or(serde_json::Value::Null);
     let yaml_value = json_to_yaml(value);
-    let mut doc = yaml_mapping_to_string(&yaml_value, sort_keys, 0);
+    let mut doc = yaml_mapping_to_string(&yaml_value, sort_keys, 0, yaml11);
     if doc.ends_with('\n') {
         doc.pop();
     }
     doc.push('\n');
     doc
+}
+
+/// Save-path render: value blocks with YAML-1.1 ambiguous words quoted.
+fn render_yaml_quoted(data: &impl Serialize) -> String {
+    render_yaml_impl(data, false, true)
 }
 
 fn json_to_yaml(v: serde_json::Value) -> serde_yaml::Value {
@@ -132,15 +245,20 @@ fn json_to_yaml(v: serde_json::Value) -> serde_yaml::Value {
     }
 }
 
-fn yaml_scalar_string(v: &serde_yaml::Value) -> String {
+fn yaml_scalar_string(v: &serde_yaml::Value, yaml11: bool) -> String {
     // Render a scalar the way serde_yaml would (quoted when needed).
     match v {
         serde_yaml::Value::String(s) => {
             if s.is_empty() {
                 return "''".to_string();
             }
+            // YAML-1.1 ambiguous words (save path): a plain `off` re-reads
+            // as False under the safe loader — force the double-quoted form
+            // PyYAML's representer would pick for a bool-conflicting string.
+            let ambiguous = yaml11 && YAML11_AMBIGUOUS_WORDS.contains(&s.to_lowercase().as_str());
             // Quote only when necessary for YAML plain-scalar safety.
-            if s.chars().all(|c| !c.is_control())
+            if !ambiguous
+                && s.chars().all(|c| !c.is_control())
                 && !s.starts_with(char::is_whitespace)
                 && !s.ends_with(char::is_whitespace)
                 && !s.contains(':')
@@ -170,11 +288,21 @@ fn yaml_scalar_string(v: &serde_yaml::Value) -> String {
                 .unwrap_or_default()
         }
         serde_yaml::Value::Null => "null".to_string(),
+        // Empty containers reached through the scalar arm (the mapping
+        // renderer only routes NON-empty containers elsewhere) must not
+        // render as "" — `key: ` parses as null, not `{}`/`[]`.
+        serde_yaml::Value::Mapping(m) if m.is_empty() => "{}".to_string(),
+        serde_yaml::Value::Sequence(seq) if seq.is_empty() => "[]".to_string(),
         _ => String::new(),
     }
 }
 
-fn yaml_mapping_to_string(v: &serde_yaml::Value, sort_keys: bool, depth: usize) -> String {
+fn yaml_mapping_to_string(
+    v: &serde_yaml::Value,
+    sort_keys: bool,
+    depth: usize,
+    yaml11: bool,
+) -> String {
     let indent = "  ".repeat(depth);
     match v {
         serde_yaml::Value::Mapping(m) => {
@@ -191,14 +319,14 @@ fn yaml_mapping_to_string(v: &serde_yaml::Value, sort_keys: bool, depth: usize) 
             };
             let mut out = String::new();
             for k in keys {
-                let key_str = yaml_scalar_string(k);
+                let key_str = yaml_scalar_string(k, yaml11);
                 let value = m.get(k).unwrap();
                 match value {
                     serde_yaml::Value::Mapping(_) | serde_yaml::Value::Sequence(_)
                         if !is_flow_empty(value) =>
                     {
                         out.push_str(&format!("{}{}:\n", indent, key_str));
-                        out.push_str(&yaml_value_to_string(value, sort_keys, depth + 1));
+                        out.push_str(&yaml_value_to_string(value, sort_keys, depth + 1, yaml11));
                     }
                     serde_yaml::Value::Null => {
                         out.push_str(&format!("{}{}: null\n", indent, key_str));
@@ -208,14 +336,14 @@ fn yaml_mapping_to_string(v: &serde_yaml::Value, sort_keys: bool, depth: usize) 
                             "{}{}: {}\n",
                             indent,
                             key_str,
-                            yaml_scalar_string(other)
+                            yaml_scalar_string(other, yaml11)
                         ));
                     }
                 }
             }
             out
         }
-        other => yaml_value_to_string(other, sort_keys, depth),
+        other => yaml_value_to_string(other, sort_keys, depth, yaml11),
     }
 }
 
@@ -227,7 +355,12 @@ fn is_flow_empty(v: &serde_yaml::Value) -> bool {
     }
 }
 
-fn yaml_value_to_string(v: &serde_yaml::Value, sort_keys: bool, depth: usize) -> String {
+fn yaml_value_to_string(
+    v: &serde_yaml::Value,
+    sort_keys: bool,
+    depth: usize,
+    yaml11: bool,
+) -> String {
     let indent = "  ".repeat(depth);
     match v {
         serde_yaml::Value::Sequence(seq) => {
@@ -236,21 +369,25 @@ fn yaml_value_to_string(v: &serde_yaml::Value, sort_keys: bool, depth: usize) ->
                 match item {
                     serde_yaml::Value::Mapping(_) | serde_yaml::Value::Sequence(_) => {
                         out.push_str(&format!("{}- ", indent));
-                        let rendered = yaml_mapping_to_string(item, sort_keys, 0);
+                        let rendered = yaml_mapping_to_string(item, sort_keys, 0, yaml11);
                         // First line inline after "- ", rest indented.
                         out.push_str(&rendered.replace('\n', &format!("\n{}  ", indent)));
                         out.push('\n');
                     }
                     other => {
-                        out.push_str(&format!("{}- {}\n", indent, yaml_scalar_string(other)));
+                        out.push_str(&format!(
+                            "{}- {}\n",
+                            indent,
+                            yaml_scalar_string(other, yaml11)
+                        ));
                     }
                 }
             }
             out
         }
         serde_yaml::Value::Mapping(m) if m.is_empty() => "{}".to_string(),
-        serde_yaml::Value::Mapping(_) => yaml_mapping_to_string(v, sort_keys, depth),
-        other => format!("{}\n", yaml_scalar_string(other)),
+        serde_yaml::Value::Mapping(_) => yaml_mapping_to_string(v, sort_keys, depth, yaml11),
+        other => format!("{}\n", yaml_scalar_string(other, yaml11)),
     }
 }
 
@@ -274,12 +411,6 @@ pub fn atomic_roundtrip_yaml_update(
     key_path: &str,
     value: &serde_yaml::Value,
 ) -> std::io::Result<()> {
-    if let Some(parent) = path.parent() {
-        std::fs::create_dir_all(parent)?;
-    }
-    let original_mode = preserve_file_mode(path);
-    let original_owner = preserve_file_owner(path);
-
     let text = if path.exists() {
         std::fs::read_to_string(path)?
     } else {
@@ -295,32 +426,20 @@ pub fn atomic_roundtrip_yaml_update(
             .map(|s| s.to_string_lossy().into_owned())
             .unwrap_or_default()
     );
-    let (mut tmp, tmp_path) = crate::atomic::create_temp_in(
-        path.parent().unwrap_or_else(|| Path::new(".")),
-        &prefix,
-        ".tmp",
-    )?;
-    let result = (|| -> std::io::Result<PathBuf> {
-        #[cfg(unix)]
-        if let Some(mode) = original_mode {
-            fchmod(tmp.as_file(), mode)?;
-        }
-        tmp.write_all(new_text.as_bytes())?;
-        tmp.flush()?;
-        tmp.as_file().sync_all()?;
-        Ok(atomic_replace(&tmp_path, path))
-    })();
-    match result {
-        Ok(real_path) => {
-            restore_file_owner(&real_path, original_owner);
-            restore_file_mode(&real_path, original_mode);
+    atomic_write_with(
+        path,
+        &AtomicSpec {
+            prefix,
+            mode: preserve_file_mode(path),
+            preserve_owner: true,
+            fsync_dir: false,
+        },
+        |f| {
+            f.write_all(new_text.as_bytes())?;
             Ok(())
-        }
-        Err(e) => {
-            let _ = std::fs::remove_file(&tmp_path);
-            Err(e)
-        }
-    }
+        },
+    )?;
+    Ok(())
 }
 
 /// Line-targeted scalar updater (public for unit testing).
@@ -566,6 +685,502 @@ fn fallback_roundtrip(text: &str, keys: &[&str], value: &serde_yaml::Value) -> S
     } else {
         format!("{}\n", rendered)
     }
+}
+
+// ---------------------------------------------------------------------------
+// Comment-preserving full-state save (upstream `atomic_roundtrip_yaml_save`,
+// 458–492, backed by `hermes_cli.config.require_readable_config_before_write`
+// 1976–2025 for the fail-closed read gate).
+//
+// PORT SEAMS: ruamel's CommentedMap round-trip maps to a line-tree merge —
+// existing lines are kept verbatim (comments, key order, quoting, Unicode)
+// and edited per node: scalars update in place (trailing comment kept),
+// mappings recurse (interior comments survive), sequence/shape changes
+// replace the node's block, missing new_state keys append at their level,
+// keys absent from new_state delete their whole block ("explicit
+// absence"). The `_FIX_YAML` remediation line omits the backups-dir
+// pointer (needs `hermes_constants::display_hermes_home`, below this
+// crate's dependency edge); the "this change was not saved" contract the
+// oracle pins is preserved verbatim.
+// ---------------------------------------------------------------------------
+
+/// Fail-closed lead + `Details:` line — upstream `_refuse_overwrite`
+/// (hermes_cli/config.py 1958–1966).
+fn refuse_overwrite(
+    path: &Path,
+    reason: &str,
+    fix: &str,
+    detail: impl std::fmt::Display,
+) -> std::io::Error {
+    std::io::Error::new(
+        std::io::ErrorKind::PermissionDenied,
+        format!(
+            "Your settings file ({}) {}, so this change was not saved. {fix} Details: {}",
+            path.display(),
+            reason,
+            flat_ws(&detail.to_string())
+        ),
+    )
+}
+
+fn flat_ws(text: &str) -> String {
+    text.split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
+/// `require_readable_config_before_write` (upstream 1976–2025): an
+/// existing-but-unreadable / unparseable / non-mapping config must raise
+/// rather than be silently replaced with only `new_state`. Returns the
+/// existing text (empty when the file is absent).
+fn require_readable_existing(path: &Path) -> std::io::Result<String> {
+    if !path.exists() {
+        return Ok(String::new());
+    }
+    let text = std::fs::read_to_string(path).map_err(|e| {
+        refuse_overwrite(
+            path,
+            "cannot be read",
+            "Fix the file permissions or move it aside first.",
+            e,
+        )
+    })?;
+    match fast_safe_load(&text) {
+        Ok(serde_yaml::Value::Null) => Ok(text), // empty document
+        Ok(serde_yaml::Value::Mapping(_)) => Ok(text),
+        Ok(_) => Err(refuse_overwrite(
+            path,
+            "must start with settings names, but its top level is not a mapping",
+            "Fix it with `hermes config edit` and check with `hermes config check`.",
+            "top-level YAML must be a mapping",
+        )),
+        Err(e) => Err(refuse_overwrite(
+            path,
+            "has a formatting error",
+            "Fix it with `hermes config edit` and check with `hermes config check`.",
+            e,
+        )),
+    }
+}
+
+/// Persist a full config-state dict while preserving comments and ordering.
+///
+/// Comment-safe replacement for a whole-file dump: merges `new_state` into
+/// the existing text line-by-line so comments, key order, quoting, and
+/// readable Unicode survive; keys missing from `new_state` are deleted
+/// (the explicit-absence semantics of the old `cfg.pop(…)` + save
+/// pattern). Writes via the shared temp+fsync+replace core; refuses to
+/// replace an existing config that cannot be read or parsed (fail closed).
+///
+/// PARITY: `atomic_roundtrip_yaml_save` (458–492).
+pub fn atomic_roundtrip_yaml_save(
+    path: &Path,
+    new_state: &serde_json::Value,
+) -> std::io::Result<()> {
+    let Some(new_map) = new_state.as_object() else {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "atomic_roundtrip_yaml_save: new_state must be a JSON object",
+        ));
+    };
+    let existing = require_readable_existing(path)?;
+    let merged = merge_save_text(&existing, new_map);
+    let prefix = format!(
+        ".{}_",
+        path.file_stem()
+            .map(|s| s.to_string_lossy().into_owned())
+            .unwrap_or_default()
+    );
+    atomic_write_with(
+        path,
+        &AtomicSpec {
+            prefix,
+            mode: preserve_file_mode(path),
+            preserve_owner: true,
+            fsync_dir: false,
+        },
+        |f| {
+            f.write_all(merged.as_bytes())?;
+            Ok(())
+        },
+    )?;
+    Ok(())
+}
+
+/// One mapping entry located in the existing text: `[start, end)` covers
+/// the key line and everything belonging to its block (deeper content and
+/// indented comments); a same-or-less-indented comment before the NEXT key
+/// stays outside every range (raw-emit between nodes).
+struct SaveNode {
+    key: String,
+    start: usize,
+    end: usize,
+}
+
+/// Strict mapping-colon finder (simple-key rule: `:` followed by
+/// whitespace or EOL, outside quotes).
+fn find_mapping_colon_strict(t: &str) -> Option<usize> {
+    let b = t.as_bytes();
+    let mut in_s = false;
+    let mut in_d = false;
+    let mut esc = false;
+    for (i, &c) in b.iter().enumerate() {
+        let ch = c as char;
+        if esc {
+            esc = false;
+            continue;
+        }
+        if in_d {
+            if ch == '\\' {
+                esc = true;
+            } else if ch == '"' {
+                in_d = false;
+            }
+            continue;
+        }
+        if in_s {
+            if ch == '\'' {
+                in_s = false;
+            }
+            continue;
+        }
+        match ch {
+            '\'' => in_s = true,
+            '"' => in_d = true,
+            ':' => {
+                let next = b.get(i + 1).map(|x| *x as char);
+                if matches!(
+                    next,
+                    None | Some(' ') | Some('\t') | Some('\n') | Some('\r')
+                ) {
+                    return Some(i);
+                }
+            }
+            _ => {}
+        }
+    }
+    None
+}
+
+fn unquote_key(raw: &str) -> String {
+    let t = raw.trim();
+    if t.len() >= 2
+        && ((t.starts_with('\'') && t.ends_with('\'')) || (t.starts_with('"') && t.ends_with('"')))
+    {
+        t[1..t.len() - 1].to_string()
+    } else {
+        t.to_string()
+    }
+}
+
+/// Block extent of the entry starting at `from`: deeper content and
+/// indented comments; stops before the next content OR comment at
+/// `indent` or above (those belong between nodes).
+fn find_block_end(lines: &[String], from: usize, hi: usize, indent: usize) -> usize {
+    let mut j = from;
+    while j < hi {
+        let raw = &lines[j];
+        let t = raw.trim();
+        if t.is_empty() {
+            j += 1;
+            continue;
+        }
+        let ind = raw.len() - raw.trim_start().len();
+        if t.starts_with('#') {
+            if ind <= indent {
+                break; // between-node comment — stays outside the range
+            }
+            j += 1;
+            continue;
+        }
+        if ind <= indent {
+            break;
+        }
+        j += 1;
+    }
+    j
+}
+
+/// Mapping entries of one level within `[lo, hi)`.
+fn parse_level(lines: &[String], lo: usize, hi: usize, indent: usize) -> Vec<SaveNode> {
+    let mut nodes = Vec::new();
+    let mut i = lo;
+    while i < hi {
+        let raw = &lines[i];
+        let t = raw.trim();
+        if t.is_empty() || t.starts_with('#') {
+            i += 1;
+            continue;
+        }
+        let ind = raw.len() - raw.trim_start().len();
+        if ind < indent {
+            break;
+        }
+        if ind > indent {
+            i += 1;
+            continue;
+        }
+        let Some(colon) = find_mapping_colon_strict(t) else {
+            i += 1;
+            continue;
+        };
+        let key_raw = t[..colon].trim();
+        if key_raw.is_empty() {
+            i += 1;
+            continue;
+        }
+        let key = unquote_key(key_raw);
+        let end = find_block_end(lines, i + 1, hi, indent);
+        nodes.push(SaveNode {
+            key,
+            start: i,
+            end: end.max(i + 1),
+        });
+        i = end.max(i + 1);
+    }
+    nodes
+}
+
+/// Split a key line's value part into (value, trailing-comment-with-its-spacing).
+fn split_trailing_comment(rest: &str) -> (String, String) {
+    let b = rest.as_bytes();
+    let mut in_s = false;
+    let mut in_d = false;
+    let mut esc = false;
+    for (i, &c) in b.iter().enumerate() {
+        let ch = c as char;
+        if esc {
+            esc = false;
+            continue;
+        }
+        if in_d {
+            if ch == '\\' {
+                esc = true;
+            } else if ch == '"' {
+                in_d = false;
+            }
+            continue;
+        }
+        if in_s {
+            if ch == '\'' {
+                in_s = false;
+            }
+            continue;
+        }
+        match ch {
+            '\'' => in_s = true,
+            '"' => in_d = true,
+            '#' if i == 0 || b[i - 1] == b' ' || b[i - 1] == b'\t' => {
+                // Keep the whitespace run before '#' in the comment so
+                // `value` + comment re-join with the original spacing.
+                let mut start = i;
+                while start > 0 && (b[start - 1] == b' ' || b[start - 1] == b'\t') {
+                    start -= 1;
+                }
+                return (
+                    rest[..start].trim_end().to_string(),
+                    rest[start..].to_string(),
+                );
+            }
+            _ => {}
+        }
+    }
+    (rest.trim_end().to_string(), String::new())
+}
+
+/// Render `{key: value}` through the YAML-1.1-quoted renderer and shift
+/// every line right by `indent` spaces (relative structure preserved).
+fn render_block(indent: usize, key: &str, value: &serde_json::Value) -> Vec<String> {
+    let synthetic = serde_json::json!({ key: value });
+    let rendered = render_yaml_quoted(&synthetic);
+    let pad = " ".repeat(indent);
+    rendered.lines().map(|l| format!("{pad}{l}")).collect()
+}
+
+/// Scalar leaf for an in-place key-line update (YAML-1.1 quoted).
+fn render_scalar_quoted(value: &serde_json::Value) -> String {
+    let yaml_val = json_to_yaml(value.clone());
+    yaml_scalar_string(&yaml_val, true)
+}
+
+#[derive(Clone, Copy, PartialEq)]
+enum NewKind {
+    Scalar,
+    Seq,
+    Map,
+}
+
+fn new_kind_of(v: &serde_json::Value) -> NewKind {
+    if v.is_array() {
+        NewKind::Seq
+    } else if v.is_object() {
+        NewKind::Map
+    } else {
+        NewKind::Scalar
+    }
+}
+
+/// Transform one existing node against its new value; `None` deletes it.
+fn transform_node(
+    lines: &[String],
+    node: &SaveNode,
+    new_val: &serde_json::Value,
+) -> Option<Vec<String>> {
+    let own = &lines[node.start];
+    let ind = own.len() - own.trim_start().len();
+    let prefix = &own[..ind];
+    let trimmed = own.trim();
+    let colon = find_mapping_colon_strict(trimmed).unwrap_or(0);
+    let key_repr = &trimmed[..colon];
+    let rest = &trimmed[colon + 1..];
+    let (value_part, comment) = split_trailing_comment(rest);
+    let value_trim = value_part.trim();
+
+    let interior_lo = node.start + 1;
+    let interior_hi = node.end;
+    let has_interior_content = (interior_lo..interior_hi).any(|i| {
+        let t = lines[i].trim();
+        !t.is_empty() && !t.starts_with('#')
+    });
+    let first_content_is_seq = (interior_lo..interior_hi)
+        .map(|i| lines[i].trim())
+        .find(|t| !t.is_empty() && !t.starts_with('#'))
+        .map(|t| t.starts_with("- "))
+        .unwrap_or(false);
+    let old_is_map = (value_trim.is_empty() && has_interior_content && !first_content_is_seq)
+        || value_trim == "{}"
+        || (value_trim.is_empty() && !has_interior_content);
+
+    match new_kind_of(new_val) {
+        NewKind::Scalar => {
+            let leaf = render_scalar_quoted(new_val);
+            Some(vec![format!("{prefix}{key_repr}: {leaf}{comment}")])
+        }
+        NewKind::Seq => {
+            // Whole-block replace: key line + rendered items (interior of
+            // the old value — comments inside a replaced block — drops with
+            // the shape change; upstream ruamel behaves the same when the
+            // node's value is overwritten wholesale).
+            let mut block = vec![format!("{prefix}{key_repr}:{comment}")];
+            let synthetic = serde_json::json!({ "k": new_val });
+            let rendered = render_yaml_quoted(&synthetic);
+            let mut lines_r = rendered.lines();
+            lines_r.next(); // drop the synthetic key line
+            for l in lines_r {
+                block.push(format!("{prefix}{l}"));
+            }
+            Some(block)
+        }
+        NewKind::Map => {
+            let sub = new_val.as_object().expect("map");
+            if old_is_map {
+                if sub.is_empty() {
+                    return Some(vec![format!("{prefix}{key_repr}: {{}}{comment}")]);
+                }
+                // Recurse: preserve interior comments/order, upsert/delete
+                // children, append new ones.
+                let child_indent = (interior_lo..interior_hi)
+                    .map(|i| &lines[i])
+                    .filter(|l| {
+                        let t = l.trim();
+                        !t.is_empty() && !t.starts_with('#')
+                    })
+                    .map(|l| l.len() - l.trim_start().len())
+                    .next()
+                    .unwrap_or(ind + 2);
+                let mut block = vec![format!("{prefix}{key_repr}:{comment}")];
+                block.extend(build_level(
+                    lines,
+                    interior_lo,
+                    interior_hi,
+                    child_indent,
+                    sub,
+                ));
+                if block.len() == 1 {
+                    // Empty interior and… children were all we needed;
+                    // build_level already appended them. (len==1 means no
+                    // children rendered — sub non-empty guarantees append;
+                    // defensive: render directly.)
+                    block = vec![format!("{prefix}{key_repr}:{comment}")];
+                    block.extend(
+                        render_block(child_indent, "", &serde_json::Value::Object(sub.clone()))
+                            .into_iter()
+                            .skip(1),
+                    );
+                }
+                Some(block)
+            } else {
+                // Scalar/seq → mapping: replace the whole block.
+                let mut block = vec![format!("{prefix}{key_repr}:{comment}")];
+                let synthetic = serde_json::json!({ "k": new_val });
+                let rendered = render_yaml_quoted(&synthetic);
+                let mut lines_r = rendered.lines();
+                lines_r.next();
+                for l in lines_r {
+                    block.push(format!("{prefix}{l}"));
+                }
+                Some(block)
+            }
+        }
+    }
+}
+
+/// Emit the `[lo, hi)` line range merged against `new_map` at `indent`.
+fn build_level(
+    lines: &[String],
+    lo: usize,
+    hi: usize,
+    indent: usize,
+    new_map: &serde_json::Map<String, serde_json::Value>,
+) -> Vec<String> {
+    let nodes = parse_level(lines, lo, hi, indent);
+    let node_keys: HashSet<&str> = nodes.iter().map(|n| n.key.as_str()).collect();
+    let mut out = Vec::new();
+    let mut i = lo;
+    while i < hi {
+        if let Some(n) = nodes.iter().find(|n| n.start == i) {
+            match new_map.get(&n.key) {
+                None => {
+                    i = n.end; // explicit absence: drop the block
+                    continue;
+                }
+                Some(v) => {
+                    if let Some(block) = transform_node(lines, n, v) {
+                        out.extend(block);
+                    }
+                    i = n.end;
+                    continue;
+                }
+            }
+        }
+        out.push(lines[i].clone());
+        i += 1;
+    }
+    // Keys present in new_state but missing here: append at this level
+    // (upstream `_merge` adds them; the dumper places them last).
+    for (k, v) in new_map {
+        if !node_keys.contains(k.as_str()) {
+            out.extend(render_block(indent, k, v));
+        }
+    }
+    out
+}
+
+/// Merge `new_map` into the existing document text.
+fn merge_save_text(existing: &str, new_map: &serde_json::Map<String, serde_json::Value>) -> String {
+    if existing.trim().is_empty() {
+        let synthetic = serde_json::Value::Object(new_map.clone());
+        return render_yaml_quoted(&synthetic);
+    }
+    let had_trailing = existing.ends_with('\n');
+    let lines: Vec<String> = existing.lines().map(str::to_string).collect();
+    let out = build_level(&lines, 0, lines.len(), 0, new_map);
+    let mut text = out.join("\n");
+    if had_trailing && !text.ends_with('\n') {
+        text.push('\n');
+    }
+    if !had_trailing && text.ends_with('\n') {
+        text.pop();
+    }
+    text
 }
 
 #[cfg(test)]

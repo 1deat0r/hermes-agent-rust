@@ -473,6 +473,29 @@ Files: `PLAN.md`, `HANDOFF.md` updated/verified; `tools/inventory.json`
 + `CONVERSION-LEDGER.md` verified unchanged (additive layer, no
 tracked-module change).
 
+## utils done (2026-09-22)
+
+Partial → done @ 5d59366 (611 LOC; full root-oracle suite):
+atomic_replace contended machine + symlink/EXDEV/rewrite paths
+(fixed the old port's silent-success-on-rename-error bug),
+atomic_write_with core (umask default-new, fsync_dir, honored JSON
+indent, owner/mode policy), atomic_roundtrip_yaml_save line-merge
+(comments + YAML-1.1 quoting + fail-closed gate), base_url_origin,
+unsafe-YAML-tag rejection (serde_yaml was accepting `!!python/...`),
+read_json_or_empty, file_signature, fsync_directory, credential
+log::warn + basename fix, env_bool default fix, empty-container
+renderer fix. Test seams mirror upstream monkeypatches; SEAM_LOCK
+serializes the binary. 56 oracle tests; crate 82.
+Full workspace: 2,317 passed, 0 failed.
+**Ledger: 188/14/8693 (2.11% tracked, 5.40% prod).**
+Next: next Wave B partial in smallest-LOC order
+(`hermes_state_portability` 615, `hermes_logging` 725).
+Amateur-code fixes landed this unit: silent replace-error swallow,
+dropped credential basename + eprintln→log, ignored JSON indent,
+triplicated writer bodies, `key: ` empty-container render,
+permissive `!!python` tag acceptance, dead env_bool default,
+stale lib.rs "used by nothing" claim.
+
 ## tools.read_extract done (2026-09-22)
 
 Partial → done @ 5d59366 (551 LOC; was stdlib-only 346): anydoc
@@ -555,10 +578,9 @@ Next: next Wave B partial in smallest-LOC order
 
 ## Next actions, in order
 
-1. Wave B: next smallest-LOC partials (`utils` 611,
-   `hermes_state_portability` 615, `hermes_logging` 725 —
-   `agent.ssl_guard`, `hermes_cli.dashboard_auth.__init__` are
-   already done).
+1. Wave B: next smallest-LOC partials (`hermes_state_portability` 615,
+   `hermes_logging` 725, `hermes_cli.main` 3520 — `agent.ssl_guard`,
+   `hermes_cli.dashboard_auth.__init__` are already done).
 2. Wave A: trivial sweep (`__init__` 0–3 LOC, eslint configs, barrels —
    acp/cron-scripts/tui roots need crate-open decision first).
 3. Keep ownership disjoint; commit and publish each logical unit immediately.

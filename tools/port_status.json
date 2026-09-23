@@ -799,7 +799,7 @@
     "status": "done"
   },
   "utils": {
-    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (666 -> 611 LOC); re-certify line-by-line before promoting",
-    "status": "partial"
+    "retarget_note": "ported 2026-09-22 at 5d59366 (611 LOC): atomic_replace contended state machine + rewrite/copy fallbacks, atomic_write_with core (umask default-new mode, fsync_dir, indent-honored JSON), atomic_roundtrip_yaml_save line-merge, base_url_origin, read_json_or_empty, file_signature, unsafe-yaml-tag rejection, owner/replace test seams; 56 oracle tests in parity_utils.rs",
+    "status": "done"
   }
 }

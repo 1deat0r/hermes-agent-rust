@@ -765,6 +765,7 @@ version = "0.1.0"
 dependencies = [
  "hermes-constants",
  "libc",
+ "log",
  "serde",
  "serde_json",
  "serde_yaml",

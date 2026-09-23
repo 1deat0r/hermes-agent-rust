@@ -1,9 +1,42 @@
-//! URL hostname helpers and model capability detection.
+//! URL hostname / origin helpers and model capability detection.
 //!
-//! PARITY: utils.py lines 590–666 (`base_url_hostname`,
-//! `model_forces_max_completion_tokens`, `base_url_host_matches`).
+//! PARITY: utils.py @ 5d59366 — `_parse_base_url` (557–560),
+//! `_hostname_of` (563–564), `base_url_hostname` (567–574),
+//! `model_forces_max_completion_tokens` (577–580),
+//! `base_url_origin` (583–600), `base_url_host_matches` (603–611).
 
 use url::Url;
+
+/// `_parse_base_url`: `urlparse` that tolerates a bare `host[:port][/path]`
+/// (no scheme). Scheme-less inputs are parsed through a placeholder scheme
+/// that carries NO known default port, so explicit ports survive
+/// normalization — the placeholder's flag is returned so `base_url_origin`
+/// can report the empty scheme upstream's `urlparse("//…")` yields.
+fn parse_base_url(base_url: &str) -> Option<(bool, Url)> {
+    let raw = base_url.trim();
+    if raw.is_empty() {
+        return None;
+    }
+    if raw.contains("://") {
+        Url::parse(raw).ok().map(|u| (true, u))
+    } else {
+        // `hermes-bare` has no default port in the url crate's known-scheme
+        // table, so `//h:80` keeps its explicit port (urlparse semantics).
+        Url::parse(&format!("hermes-bare://{raw}"))
+            .ok()
+            .map(|u| (false, u))
+    }
+}
+
+/// `_hostname_of`: lowercased hostname, trailing dots stripped.
+fn hostname_of(parsed: Option<&Url>) -> String {
+    parsed
+        .and_then(|u| u.host_str())
+        .unwrap_or("")
+        .to_lowercase()
+        .trim_end_matches('.')
+        .to_string()
+}
 
 /// Return the lowercased hostname for a base URL, or `""` if absent.
 ///
@@ -11,33 +44,56 @@ use url::Url;
 /// substring matches on the raw URL (which false-positive on
 /// `https://api.openai.com.example/v1` or `https://proxy.test/api.openai.com/v1`).
 ///
-/// PARITY: utils.py `base_url_hostname` (593–607).
+/// PARITY: `base_url_hostname` (567–574).
 pub fn base_url_hostname(base_url: &str) -> String {
-    let raw = base_url.trim();
-    if raw.is_empty() {
+    let Some((_had_scheme, parsed)) = parse_base_url(base_url) else {
         return String::new();
-    }
-    // Python's urlparse handles protocol-relative input ("//host/path");
-    // the url crate needs a scheme, so synthesize one for scheme-less input.
-    let with_scheme = if raw.contains("://") {
-        raw.to_string()
-    } else {
-        format!("https://{}", raw)
     };
-    match Url::parse(&with_scheme) {
-        Ok(u) => u
-            .host_str()
-            .unwrap_or("")
-            .to_lowercase()
-            .trim_end_matches('.')
-            .to_string(),
-        Err(_) => String::new(),
+    hostname_of(Some(&parsed))
+}
+
+/// `(scheme, hostname, effective_port)` for a base URL;
+/// `("", "", 0)` on no host / bad port.
+///
+/// Origin, not just host: `https://h` vs `http://h` and two ports on one
+/// host are different trust boundaries, so handing a bearer secret to a new
+/// URL must compare all three — hostname alone would authorise an
+/// HTTPS→HTTP downgrade. Port defaults to 443/80 so `https://h` equals
+/// `https://h:443`.
+///
+/// PARITY: `base_url_origin` (583–600).
+pub fn base_url_origin(base_url: &str) -> (String, String, u16) {
+    let Some((had_scheme, parsed)) = parse_base_url(base_url) else {
+        return (String::new(), String::new(), 0);
+    };
+    let hostname = hostname_of(Some(&parsed));
+    if hostname.is_empty() {
+        return (String::new(), String::new(), 0);
     }
+    let scheme = if had_scheme {
+        parsed.scheme().to_lowercase()
+    } else {
+        String::new()
+    };
+    // Out-of-range ports make Url::parse fail above (upstream ValueError →
+    // ("", "", 0)). `parsed.port()` is the explicit port (known-default
+    // ports are normalized away by the url crate — the default fill below
+    // restores them, matching urlparse's `port` property).
+    let port = match parsed.port_or_known_default() {
+        Some(p) => p,
+        None => match scheme.as_str() {
+            "https" => 443,
+            "http" => 80,
+            _ => 0,
+        },
+    };
+    let effective = parsed.port().unwrap_or(port);
+    (scheme, hostname, effective)
 }
 
 /// Return True when the base URL's hostname is `domain` or a subdomain.
 ///
-/// PARITY: utils.py `base_url_host_matches` (648–666).
+/// PARITY: `base_url_host_matches` (603–611).
 pub fn base_url_host_matches(base_url: &str, domain: &str) -> bool {
     let hostname = base_url_hostname(base_url);
     if hostname.is_empty() {
@@ -51,7 +107,7 @@ pub fn base_url_host_matches(base_url: &str, domain: &str) -> bool {
     if domain.is_empty() {
         return false;
     }
-    hostname == domain || hostname.ends_with(&format!(".{}", domain))
+    hostname == domain || hostname.ends_with(&format!(".{domain}"))
 }
 
 /// Return True for model families that require `max_completion_tokens`.
@@ -59,7 +115,7 @@ pub fn base_url_host_matches(base_url: &str, domain: &str) -> bool {
 /// OpenAI's newer families reject `max_tokens` on `/v1/chat/completions`.
 /// Handles vendor prefixes by stripping to the tail after the last `/`.
 ///
-/// PARITY: utils.py `model_forces_max_completion_tokens` (613–645).
+/// PARITY: `model_forces_max_completion_tokens` (577–580).
 pub fn model_forces_max_completion_tokens(model: &str) -> bool {
     let mut m = model.trim().to_lowercase();
     if m.is_empty() {

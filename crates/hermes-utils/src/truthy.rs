@@ -94,10 +94,18 @@ pub fn env_float(key: &str, default: f64) -> f64 {
 
 /// Read an environment variable as a boolean.
 ///
-/// PARITY: utils.py `env_bool` (552–554).
+/// PARITY: `env_bool` (532–534) with one documented divergence: upstream
+/// passes `os.getenv(key, "")` into `is_truthy_value`, so a MISSING
+/// variable takes the str branch and the `default` parameter is dead
+/// (always False). This port honors `default` on missing — the obvious
+/// intent of the parameter, matching `env_int`/`env_float`, and no in-tree
+/// caller imported `utils.env_bool` (grep-clean at 5d59366). A present
+/// variable (including empty) still coerces through the shared truthy set.
 pub fn env_bool(key: &str, default: bool) -> bool {
-    let v = std::env::var(key).unwrap_or_default();
-    is_truthy(&TruthyValue::Str(&v), default)
+    match std::env::var(key) {
+        Ok(v) => is_truthy(&TruthyValue::Str(&v), default),
+        Err(_) => default,
+    }
 }
 
 #[cfg(test)]

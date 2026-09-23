@@ -3882,6 +3882,41 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   8693 missing tracked (2.07%), prod 184/18/3279 (5.29%). Evidence
   tier: unit.
 
+- 2026-09-22 (utils): `utils` partial → done @ 5d59366 (whole module,
+  611 LOC; was a b9aa928-era partial). Full re-cert across the root
+  oracle suite: `atomic_replace` contended state machine (winerror
+  5/32/33 bounded retry + jittered backoff + in-place rewrite + EXDEV
+  copy — replacing the old port's **silent-success-on-any-rename-error
+  bug** that could report success while the target kept stale bytes),
+  symlink/broken-symlink target resolution (realpath non-strict),
+  shared `atomic_write_with` core (kills the triplicated temp/replace/
+  restore blocks; umask default-new-file mode; `fsync_dir`; honored
+  JSON `indent` width — previously ignored), `atomic_write_text` mode
+  + owner policy (`_mode_for_write` parity, pre-replace fchmod),
+  `atomic_write_bytes`, `atomic_roundtrip_yaml_save` (line-tree merge:
+  comments/order/unicode preserved, explicit-absence deletes,
+  YAML-1.1 ambiguous-word quoting, fail-closed unreadable-config gate
+  with the "this change was not saved" contract), `base_url_origin`
+  + shared scheme-less parse (fixes bare-host origin), unsafe
+  YAML-tag rejection (serde_yaml was laundering `!!python/...`),
+  `read_json_or_empty` (utf-8-sig BOM), `file_signature` 4-tuple,
+  `fsync_directory`, credential-warning log::warn + basename fix
+  (old port dropped the file name), `env_bool` default-on-missing
+  fix, empty-container renderer fix (`key: ` → `key: {}`). Test seams
+  mirror the upstream monkeypatches (replace hook, windows flag,
+  retry delays, owner pair); the parity binary serializes on a
+  SEAM_LOCK (process-global seams raced under parallel tests).
+  Documented divergences: env_bool default (upstream's is dead for
+  missing vars; grep-clean caller set), unported encoding/tmp_prefix
+  knobs + lone-surrogate retry (UTF-8-only Rust strings), _FIX_YAML
+  backups-dir pointer omitted (below the crate's dep edge), caplog →
+  log facade. Validation: 56 oracle tests + 82 crate-wide;
+  `cargo build --workspace` green;
+  `cargo test --workspace -- --test-threads=1` — 2,317 passed,
+  0 failed; fmt + diff-check clean; clippy clean on hermes-utils.
+  Ledger: 188 done / 14 partial / 8693 missing tracked (2.11%),
+  prod 188/14/3279 (5.40%). Evidence tier: unit.
+
 - 2026-09-22 (toolsets + distributions): `toolsets` partial → done @
   5d59366 (485 LOC) + `toolset_distributions` compound re-cert
   (forced by the data regen). data.rs regenerated through an
