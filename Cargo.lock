@@ -667,6 +667,7 @@ dependencies = [
  "fancy-regex",
  "hermes-constants",
  "hermes-utils",
+ "libc",
  "once_cell",
  "serde_json",
  "serde_yaml",

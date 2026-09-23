@@ -255,22 +255,29 @@ Legend: ✅ done · 🟡 partial · ❌ missing
 | base_url_hostname / base_url_host_matches | ✅ | urls |
 | model_forces_max_completion_tokens | ✅ | urls |
 
-### hermes_logging (upstream: hermes_logging.py, 800 LOC) — core complete (P1)
+### hermes_logging (upstream: hermes_logging.py, 725 LOC) — ✅ re-certified @ 5d59366 (2026-09-23)
 | Function/surface | Status | Rust home |
 |---|---|---|
 | LOG_FORMAT / LOG_FORMAT_VERBOSE | ✅ | record::LOG_FORMAT(_VERBOSE) |
 | set_session_context / clear_session_context (thread-local) | ✅ | record |
-| LogRecord factory session_tag injection | ✅ | record::LogRecord::new + session_tag |
+| LogRecord factory session_tag + hermes_home stamp (#97489) | ✅ | record::LogRecord::new |
 | Level parsing (getattr fallback→INFO) | ✅ | record::Level::parse |
-| COMPONENT_PREFIXES / NOISY_LOGGERS | ✅ | setup |
-| setup_logging (agent.log/errors.log/gateway.log/gui.log, idempotent, force) | ✅ | setup |
-| _read_logging_config (logging.level/max_size_mb/backup_count) | ✅ | setup (managed overlay identity until P3) |
-| _ManagedRotatingFileHandler (rotation, managed chmod, inode reopen) | ✅ | rotating (managed chmod deferred to config crate) |
+| COMPONENT_PREFIXES / NOISY_LOGGERS | ✅ | setup (quiet_noisy has no Python-root analog — PORT SEAMS) |
+| setup_logging (agent/errors/gateway/gui, idempotent, force, adopt early-return) | ✅ | setup + profile::adopt_secondary_home |
+| _read_logging_config (config_effective preferred upstream; direct fast_safe_load fallback here) | ✅ | setup (PORT SEAMS: cache lives in hermes_cli) |
+| _ManagedRotatingFileHandler (rotation, inode reopen, EIO name-once recovery) | ✅ | rotating (managed chmod deferred to config crate) |
+| handler.setFormatter / _LOG_FORMAT default | ✅ | rotating::set_formatter (Arc formatter; router copies to per-home) |
+| shouldRollover >= boundary + empty-file guard (gh-116263) | ✅ | rotating::emit_record (live-size metadata refresh = seek/tell analog) |
+| _is_unavailable_log_stream / _is_windows_concurrent_log_lock_timeout | ✅ | rotating (EIO classifier + tracker; CLH helper inert on POSIX) |
+| _safe_stderr | ⚠ no-analog | Rust stderr is Unicode-native (PORT SEAMS) |
 | _ComponentFilter | ✅ | rotating::ComponentFilter |
 | QueueListener async path (_NonFormattingQueueHandler) | ✅ | queue (mpsc + worker thread) |
-| flush_log_queue / drain_log_queue / rotating_file_handlers / _reset_queued_handlers | ✅ | queue (drain join is unbounded — documented) |
+| flush_log_queue / drain_log_queue / rotating_file_handlers / _reset_queued_handlers | ✅ | queue (drain join unbounded; atexit via libc::atexit) |
+| _known_log_homes / _adopt_secondary_home / enable_profile_log_routing | ✅ | profile (+ queue routers) |
+| _ProfileRoutingFileHandler (route by record.hermes_home, widen union) | ✅ | profile::ProfileRouter |
+| _add_rotating_handler (resolve_tolerant dedup, router wrap/dedup) | ✅ | setup::add_rotating_handler |
+| setup_verbose_logging (_hermes_verbose marker, idempotent) | ✅ | setup (stderr LogTarget; no Python root level) |
 | RedactingFormatter (agent/redact.py, 1,197 LOC) | ✅ | logging::redact::RedactingFormatter, installed at setup_logging |
-| setup_verbose_logging | ✅ | setup (stderr LogTarget with verbose format) |
 
 ### hermes_state_common (upstream: hermes_state_common.py, 614 LOC) — ✅ complete
 | Function/surface | Status | Rust home |
@@ -4020,3 +4027,50 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   0 failed; fmt + diff-check clean; clippy clean on touched files.
   Ledger: 190 done / 13 partial / 8692 missing tracked (2.14%),
   prod 190/13/3278 (5.46%). Evidence tier: unit.
+
+- 2026-09-23 (hermes_logging re-cert): `hermes_logging` partial → done @
+  5d59366 (725 LOC — module changed upstream since b9aa928: profile
+  routing + EIO machinery landed there). Full surface added this unit:
+  `LogRecord.hermes_home` factory stamp (#97489 → resolve_tolerant, now
+  exported from hermes-constants); `_known_log_homes` +
+  `_adopt_secondary_home` + `enable_profile_log_routing` +
+  `_ProfileRoutingFileHandler` (profile.rs — lazy per-home handlers,
+  union-widen under the queue lock, bare→router replacement with Arc-ptr
+  identity, listener restart); `_add_rotating_handler` rework
+  (resolve_tolerant lexical dedup — fixes the renamed-away-path canonicalize
+  miss; router filename+home dedup; wrap-into-router when routing live);
+  `_ManagedRotatingFileHandler` EIO machine (`_is_unavailable_log_stream`
+  errno-5 classifier, name-once tracker + report_count, drop stream, lazy
+  reopen, reset-tail only on live stream = Py3.14 FileHandler.emit analog);
+  `_is_windows_concurrent_log_lock_timeout` (cfg!(windows)-gated, inert
+  on POSIX per linux_only oracle); handler `setFormatter` seam (Arc
+  formatter, router copies to per-home handlers — needed for the oracle's
+  exact-equality `%(message)s` asserts); `setup_verbose_logging`
+  `_hermes_verbose` marker (swap-guard + count accessor); atexit drain via
+  `libc::atexit` (statics never Drop); config parse through
+  `hermes_utils::fast_safe_load`. Amateur fixes: rollover boundary `>` →
+  `>=` + empty-file guard (gh-116263 — live oracle probe: 9×5-byte lines
+  fill a 50-byte cap, 10th rolls BEFORE writing); emit previously swallowed
+  every write error (`let _ = writeln!`) and never recovered from a
+  dropped stream (file=None + matching inode = permanent silent loss +
+  phantom size accounting); external-truncate size staleness fixed with a
+  live metadata refresh (upstream seek/tell analog); unit test env-var race
+  → thread-local override. Skipped-with-note: managed 0660 chmod (config
+  crate), windows_only CLH rows ×2 (no CLH on POSIX; inert row ported),
+  `_safe_stderr` wrap (Rust stderr Unicode-native), root/QueueHandler
+  shape asserts (custom queue), TestLogIsolation (pytest conftest
+  import-time guard — Rust tests use explicit tmp homes), config_effective
+  cache preference (upward import — direct parse = upstream fallback,
+  same values sans managed overlay), `(name, home)` tuple entries in
+  enable (no in-tree caller), bpo-45401 named-pipe rollover skip (no fifo
+  analog), non-EIO handleError traceback → io::Error Display. Evidence:
+  66 Rust tests in-crate (31 lib + parity_logging 4 + recovery 6 +
+  routing 15 + redact 10); oracle
+  `python3 -m pytest tests/test_hermes_logging.py tests/test_log_isolation.py -q`
+  @ pin — 35 passed, 2 skipped (windows_only);
+  `cargo build --workspace` green; `cargo test --workspace -- --test-threads=1`
+  — 2,366 passed, 0 failed; `cargo fmt --all --check` +
+  `git diff --check` clean; clippy clean on touched files (pre-existing
+  hermes-constants/reasoning.rs needless_borrow warnings untouched).
+  Ledger: 191 done / 12 partial / 8692 missing tracked (2.15%),
+  prod 191/12/3278 (5.49%). Evidence tier: unit.

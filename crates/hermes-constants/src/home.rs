@@ -248,7 +248,11 @@ pub(crate) fn get_process_hermes_home_with(platform: Platform, probe: &dyn Probe
 /// Python `Path.resolve()`-style tolerant resolution: canonicalize what
 /// exists, append the rest lexically. Upstream `Path.resolve()` is
 /// non-strict (Python 3.11 default `strict=False`).
-pub(crate) fn resolve_tolerant(path: &Path) -> PathBuf {
+///
+/// Public: callers outside this crate (e.g. `hermes-logging` record stamps,
+/// profile routing) must share the one resolution helper — never duplicate
+/// resolution logic (AGENTS.md §3).
+pub fn resolve_tolerant(path: &Path) -> PathBuf {
     if let Ok(c) = std::fs::canonicalize(path) {
         return c;
     }

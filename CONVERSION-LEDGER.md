@@ -1,7 +1,7 @@
 # Hermes Agent → Hermes Agent Rust Conversion Ledger
 
-**Current strict completion: 2.14% of all tracked upstream modules (190/8895).**
-Production-only strict completion: **5.46%** (190/3481 production modules).
+**Current strict completion: 2.15% of all tracked upstream modules (191/8895).**
+Production-only strict completion: **5.49%** (191/3481 production modules).
 
 > This file is generated from `tools/inventory.json`; update the source ledger in `tools/port_status.json`, regenerate the inventory, then run `python3 tools/conversion_ledger.py`. Only `done` counts toward the percentage. `partial` is intentionally zero credit until its stated parity seams are closed. AGENTS: generated-only — query JSON summaries per AGENTS.md §2; never read this file whole.
 
@@ -9,10 +9,10 @@ Production-only strict completion: **5.46%** (190/3481 production modules).
 
 | Scope | Done | Partial | Missing | Strict completion | Lines |
 |---|---:|---:|---:|---:|---:|
-| All tracked modules | 190 | 13 | 8692 | 2.14% | 22,746/2,467,838 done LOC |
-| Production modules | 190 | 13 | 3278 | 5.46% | 22,746/1,147,748 done LOC |
+| All tracked modules | 191 | 12 | 8692 | 2.15% | 23,471/2,467,838 done LOC |
+| Production modules | 191 | 12 | 3278 | 5.49% | 23,471/1,147,748 done LOC |
 
-Inventory source: `/run/media/its1deat0r/Projects/AI Agents/Hermes-Agent-Rust/.upstream-pin/5d59366` at `2026-09-23T15:06:12`.
+Inventory source: `/run/media/its1deat0r/Projects/AI Agents/Hermes-Agent-Rust/.upstream-pin/5d59366` at `2026-09-23T16:13:04`.
 
 ## Definition of 100.00%
 
@@ -33,7 +33,6 @@ The conversion is complete only when all of these are true:
 | `agent.credential_pool` | P2 | 2,778 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `hermes_cli.main` | P3 | 3,520 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `hermes_constants` | P1 | 1,293 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
-| `hermes_logging` | P1 | 725 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `hermes_state` | P1 | 1,662 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `hermes_state_common` | P1 | 1,218 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
 | `hermes_state_schema` | P1 | 1,298 | Close the module-specific seam documented in `PLAN.md` and its Rust module doc. |
@@ -1218,7 +1217,7 @@ Every upstream Python module in the inventory has one row. Production rows are c
 | `hermes_cli.write_approval_commands` | production | P3 | 152 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `hermes_cli.xai_retirement` | production | P3 | 177 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `hermes_constants` | production | P1 | 1,293 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
-| `hermes_logging` | production | P1 | 725 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
+| `hermes_logging` | production | P1 | 725 | ✅ done | Maintain parity evidence; no remaining task in this row. |
 | `hermes_startup_watchdog` | production | P2 | 519 | ⬜ missing | Read upstream module + tests; write tests first, implement, audit, build, test, ledger, commit. |
 | `hermes_state` | production | P1 | 1,662 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |
 | `hermes_state_common` | production | P1 | 1,218 | 🟡 partial | Close every documented seam, add parity evidence, then promote to done. |

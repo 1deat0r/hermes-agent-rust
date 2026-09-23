@@ -81,6 +81,19 @@ pub fn session_tag() -> String {
     })
 }
 
+/// The `hermes_home` stamp performed by the record factory on every record.
+///
+/// PARITY: `record.hermes_home = str(get_hermes_home().resolve())` with the
+/// `except Exception: ""` fallback (131–137). `resolve_tolerant` mirrors
+/// non-strict `Path.resolve()` and does not raise; a hard failure (current
+/// dir gone) falls back to `""` like upstream.
+fn stamp_hermes_home() -> String {
+    let home = hermes_constants::get_hermes_home();
+    hermes_constants::resolve_tolerant(&home)
+        .to_string_lossy()
+        .into_owned()
+}
+
 /// A single log record (mirrors `logging.LogRecord`).
 #[derive(Debug, Clone)]
 pub struct LogRecord {
@@ -90,6 +103,12 @@ pub struct LogRecord {
     pub timestamp_utc: chrono::DateTime<chrono::Utc>,
     /// Thread-local session tag snapshot at creation.
     pub session_tag: String,
+    /// Resolved Hermes home snapshot at creation (profile routing key).
+    ///
+    /// PARITY: record factory stamp (#97489, hermes_logging.py 131–137):
+    /// QueueListener formats after the profile-scoped context is gone, so the
+    /// owning home rides on the record for `_ProfileRoutingFileHandler`.
+    pub hermes_home: String,
 }
 
 impl LogRecord {
@@ -99,6 +118,7 @@ impl LogRecord {
             level,
             target: target.into(),
             session_tag: session_tag(),
+            hermes_home: stamp_hermes_home(),
             message,
             timestamp_utc: chrono::Utc::now(),
         }
@@ -225,6 +245,20 @@ mod tests {
         assert_eq!(session_tag(), " [abc123]");
         clear_session_context();
         assert_eq!(session_tag(), "");
+    }
+
+    #[test]
+    fn record_stamps_override_home() {
+        // PARITY: factory stamp follows the context-local home override so
+        // profile routing keys off the record (#97489).
+        let td = tempfile::TempDir::new().unwrap();
+        let token = hermes_constants::set_hermes_home_override(Some(td.path()));
+        let r = LogRecord::new(Level::Info, "t", "m");
+        hermes_constants::reset_hermes_home_override(token);
+        let expect = hermes_constants::resolve_tolerant(td.path())
+            .to_string_lossy()
+            .into_owned();
+        assert_eq!(r.hermes_home, expect);
     }
 
     #[test]

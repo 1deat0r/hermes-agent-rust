@@ -20,8 +20,11 @@ validation commands recorded after each batch section below.
 
 ## Tree state
 
-Branch `main` @ `a7ad46e`, tree clean (update per commit). Pinned
-worktree: `.upstream-pin/5d59366` (persistent disk; never /tmp).
+Branch `main`, tree clean; HEAD = the `feat(logging): port hermes_logging
+re-cert done @ 5d59366` commit (9 units ahead of origin: qqbot.keyboards →
+verify.recipes → schema_sanitizer → toolsets → file_safety → read_extract →
+utils → portability/ids → hermes_logging — never pushed unless asked).
+Pinned worktree: `.upstream-pin/5d59366` (persistent disk; never /tmp).
 
 ## Resume point
 
@@ -597,10 +600,38 @@ closure), 0 failed.
 Next: next Wave B partial in smallest-LOC order
 (`agent.verify.recipes` 296, `tools.schema_sanitizer` 386).
 
+## hermes_logging re-cert done (2026-09-23)
+
+`hermes_logging` partial → **done** @ 5d59366 (725 LOC; upstream grew
+profile routing + EIO recovery since the b9aa928-era port). New surface:
+record `hermes_home` stamp (#97489), profile/second-home routing
+(`profile.rs`: adopt early-return, bare→router swap, union-widen, lazy
+per-home handlers), `_add_rotating_handler` rework (resolve_tolerant
+lexical dedup + router dedup/wrap), EIO name-once recovery machine +
+live-size refresh + `>=`/empty-file rollover rules, `setFormatter` seam,
+verbose `_hermes_verbose` guard, `libc::atexit` drain, config via
+`fast_safe_load`. Amateur fixes: swallowed write errors, dropped-stream
+permanent loss, canonicalize dedup miss on renamed paths, stale size after
+truncate, env-var race in a unit test. resolve_tolerant exported from
+hermes-constants (shared helper, no duplication). Skips with reasons in
+PLAN §7 (managed 0660, windows_only CLH ×2, `_safe_stderr`, root shape,
+log-isolation conftest, config_effective cache, tuple entries, fifo
+rollover, traceback Display). Docs: PLAN §5 table + §7 entry, this
+section, `tools/port_status.json` (`done`), inventory + conversion
+ledger regenerated. Validation:
+`python3 -m pytest tests/test_hermes_logging.py tests/test_log_isolation.py -q`
+@ pin — 35 passed, 2 skipped; `cargo build --workspace` green;
+`cargo test --workspace -- --test-threads=1` — **2,366 passed,
+0 failed**; `cargo fmt --all --check` + `git diff --check` clean;
+clippy clean on touched files. **Ledger: 191 done / 12 partial /
+8692 missing tracked (2.15%), prod 191/12/3278 (5.49%).**
+Evidence tier: unit.
+Next: `hermes_state_common` (1,218 LOC) per the queue below.
+
 ## Next actions, in order
 
-1. Wave B: next smallest-LOC partials (`hermes_logging` 725,
-   `hermes_state_common` 1218, `hermes_state_schema` 1298 —
+1. Wave B: next smallest-LOC partials (`hermes_state_common` 1218,
+   `hermes_state_schema` 1298 — `hermes_logging` closed 2026-09-23;
    `agent.ssl_guard`, `hermes_cli.dashboard_auth.__init__` are
    already done; `hermes_state_sessions`/`hermes_state_ids` rows:
    ids closed with the portability unit; sessions gained

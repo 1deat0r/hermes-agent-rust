@@ -31,7 +31,7 @@ pub use home::{
     apply_subprocess_home_env, get_default_hermes_root, get_hermes_home, get_hermes_home_override,
     get_process_hermes_home, get_real_home, get_subprocess_home, is_profile_home,
     iter_real_home_candidates, norm_home_path, profile_home_path, reset_hermes_home_override,
-    set_hermes_home_override, EnvMap, OverrideToken, Platform,
+    resolve_tolerant, set_hermes_home_override, EnvMap, OverrideToken, Platform,
 };
 pub use modules::{is_first_party_module, FIRST_PARTY_MODULE_ROOTS};
 pub use paths::{

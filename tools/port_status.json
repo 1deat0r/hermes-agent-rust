@@ -361,8 +361,8 @@
     "status": "partial"
   },
   "hermes_logging": {
-    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (800 -> 725 LOC); re-certify line-by-line before promoting",
-    "status": "partial"
+    "retarget_note": "re-certified line-by-line @ 5d59366 (profile/second-home routing, hermes_home record stamp, EIO name-once recovery, formatter seam, >= rollover boundary; oracle tests/test_hermes_logging.py mirrored)",
+    "status": "done"
   },
   "hermes_state": {
     "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (9996 -> 1662 LOC); re-certify line-by-line before promoting",
@@ -371,6 +371,10 @@
   "hermes_state_common": {
     "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (614 -> 1218 LOC); re-certify line-by-line before promoting; RECOVERABLE_END_REASONS const landed 2026-09-22 under the portability unit (adoption oracle)",
     "status": "partial"
+  },
+  "hermes_state_ids": {
+    "retarget_note": "ported 2026-09-22 at 5d59366 (28 LOC): new_session_id + SESSION_ID_PATTERN + DEFAULT_HEX_LEN (rand-0.10 hex width sink); landed with the portability unit (SITES oracle); ids unit tests + portability re-export oracle",
+    "status": "done"
   },
   "hermes_state_portability": {
     "retarget_note": "ported 2026-09-22 at 5d59366 (615 LOC): export timings (coerce_epoch, py-round gaps, iso8601) wired into all 3 export paths, import strips timings from size budget + started_at coerce, shared validate/import_session_row factored out, find_foreign_import + import_foreign_history (12-hex mint, title suffix, origin stamp), adopt_session_lineage_from + retire_donor_segment, RECOVERABLE/unarchive landed early (adoption oracle); 31 oracle tests in parity_state_portability.rs",
@@ -700,7 +704,7 @@
     "status": "done"
   },
   "tools.mcp_dashboard_oauth": {
-    "retarget_note": "re-certified at 5d59366 (2026-09-21): whole module line-by-line (140 LOC); added iss carry-through (was dropped), parse_qs-exact state parse (blank→missing, %XX/+, first-wins — 6 probes vs live Python); 3 new oracle tests; header re-pinned",
+    "retarget_note": "re-certified at 5d59366 (2026-09-21): whole module line-by-line (140 LOC); added iss carry-through (was dropped), parse_qs-exact state parse (blank\u2192missing, %XX/+, first-wins \u2014 6 probes vs live Python); 3 new oracle tests; header re-pinned",
     "status": "done"
   },
   "tools.mcp_death_supervisor": {
@@ -716,7 +720,7 @@
     "status": "done"
   },
   "tools.path_security": {
-    "retarget_note": "ported 2026-09-16 Wave B: has_traversal_component was missing — TDD-added with 2 tests; PLUGIN-COMPAT logger PENDING with tools.approval",
+    "retarget_note": "ported 2026-09-16 Wave B: has_traversal_component was missing \u2014 TDD-added with 2 tests; PLUGIN-COMPAT logger PENDING with tools.approval",
     "status": "done"
   },
   "tools.read_extract": {
@@ -787,7 +791,7 @@
     "status": "done"
   },
   "toolset_distributions": {
-    "retarget_note": "ported at 5d59366 (2026-09-22, with toolsets re-cert): '+'-grouped compound entries (#64503) were missing from the prior re-cert — members split/trim, invalid-member warning + whole-entry skip, first-max all-valid fallback, overlay inject/remove (monkeypatch.setitem analog), verbose warnings seam, print_distribution_info; 3 compound oracle tests",
+    "retarget_note": "ported at 5d59366 (2026-09-22, with toolsets re-cert): '+'-grouped compound entries (#64503) were missing from the prior re-cert \u2014 members split/trim, invalid-member warning + whole-entry skip, first-max all-valid fallback, overlay inject/remove (monkeypatch.setitem analog), verbose warnings seam, print_distribution_info; 3 compound oracle tests",
     "status": "done"
   },
   "toolsets": {
@@ -800,10 +804,6 @@
   },
   "utils": {
     "retarget_note": "ported 2026-09-22 at 5d59366 (611 LOC): atomic_replace contended state machine + rewrite/copy fallbacks, atomic_write_with core (umask default-new mode, fsync_dir, indent-honored JSON), atomic_roundtrip_yaml_save line-merge, base_url_origin, read_json_or_empty, file_signature, unsafe-yaml-tag rejection, owner/replace test seams; 56 oracle tests in parity_utils.rs",
-    "status": "done"
-  },
-  "hermes_state_ids": {
-    "retarget_note": "ported 2026-09-22 at 5d59366 (28 LOC): new_session_id + SESSION_ID_PATTERN + DEFAULT_HEX_LEN (rand-0.10 hex width sink); landed with the portability unit (SITES oracle); ids unit tests + portability re-export oracle",
     "status": "done"
   }
 }

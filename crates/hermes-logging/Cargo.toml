@@ -10,6 +10,7 @@ chrono.workspace = true
 fancy-regex.workspace = true
 hermes-constants = { path = "../hermes-constants" }
 hermes-utils = { path = "../hermes-utils" }
+libc = { version = "0.2", default-features = false }
 once_cell.workspace = true
 serde_yaml.workspace = true
 

@@ -1,11 +1,13 @@
 //! Background queue listener — file I/O never runs on the emitting thread.
 //!
-//! PARITY: hermes_logging.py lines 595–703 (`_NonFormattingQueueHandler`,
-//! `_stop_queue_listener`, `_register_queued_handler`, `flush_log_queue`,
-//! `drain_log_queue`, `rotating_file_handlers`).
+//! PARITY: hermes_logging.py lines 479–626 (queue globals, listener,
+//! `_register_queued_handler`, `flush_log_queue`, `drain_log_queue`,
+//! `enable_profile_log_routing` internals, `rotating_file_handlers`).
 
+use crate::profile::ProfileRouter;
 use crate::record::{LogRecord, LogTarget};
 use crate::rotating::RotatingHandler;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
@@ -17,11 +19,19 @@ enum Msg {
 
 /// The shared queue + background listener (guarded like upstream's
 /// `_queue_state_lock`).
+///
+/// Upstream keeps ONE `_queued_file_handlers` list holding bare rotating
+/// handlers AND profile routers; the port splits typed bare handlers
+/// (`file_handlers`, backing `rotating_file_handlers()`) from routers
+/// (`routers`) because the accessor is typed — both sets live in `handlers`
+/// for dispatch. After routing, `file_handlers` is empty exactly where the
+/// oracle asserts "no bare RotatingFileHandler".
 pub(crate) struct QueueState {
     tx: Option<Sender<Msg>>,
     listener: Option<JoinHandle<()>>,
-    handlers: Vec<Arc<dyn LogTarget>>,
+    pub(crate) handlers: Vec<Arc<dyn LogTarget>>,
     pub file_handlers: Vec<Arc<RotatingHandler>>,
+    pub routers: Vec<Arc<ProfileRouter>>,
 }
 
 static QUEUE: Mutex<Option<QueueState>> = Mutex::new(None);
@@ -31,8 +41,28 @@ static QUEUE: Mutex<Option<QueueState>> = Mutex::new(None);
 #[cfg(test)]
 pub(crate) static TEST_QUEUE_MUTEX: Mutex<()> = Mutex::new(());
 
+static ATEXIT_REGISTERED: AtomicBool = AtomicBool::new(false);
+
 fn queue() -> std::sync::MutexGuard<'static, Option<QueueState>> {
     QUEUE.lock().unwrap_or_else(|p| p.into_inner())
+}
+
+fn empty_state() -> QueueState {
+    QueueState {
+        tx: None,
+        listener: None,
+        handlers: Vec::new(),
+        file_handlers: Vec::new(),
+        routers: Vec::new(),
+    }
+}
+
+/// Run `f` with exclusive access to the queue state (upstream's
+/// `_queue_state_lock` critical section).
+pub(crate) fn with_queue_state<R>(f: impl FnOnce(&mut QueueState) -> R) -> R {
+    let mut q = queue();
+    let state = q.get_or_insert_with(empty_state);
+    f(state)
 }
 
 fn start_listener(rx: Receiver<Msg>, handlers: Vec<Arc<dyn LogTarget>>) -> JoinHandle<()> {
@@ -55,24 +85,9 @@ fn start_listener(rx: Receiver<Msg>, handlers: Vec<Arc<dyn LogTarget>>) -> JoinH
         .expect("spawn log listener")
 }
 
-/// Register a file handler with the shared queue. The listener applies each
-/// handler's own level + component filters on its worker thread. Adding a
-/// handler rebuilds the listener over the full target set — mirroring
-/// upstream `_register_queued_handler`, which stops and restarts the
-/// `QueueListener` on every registration.
-///
-/// PARITY: `_register_queued_handler` (615–645).
-pub fn register_queued_handler(handler: Arc<RotatingHandler>) {
-    let mut q = queue();
-    let state = q.get_or_insert_with(|| QueueState {
-        tx: None,
-        listener: None,
-        handlers: Vec::new(),
-        file_handlers: Vec::new(),
-    });
-    state.handlers.push(handler.clone());
-    state.file_handlers.push(handler);
-    // Stop any running listener (drains), then start one over the full set.
+/// Stop any running listener (drains), then start one over the full target
+/// set — PARITY: `_start_queue_listener_locked` (518–527).
+pub(crate) fn restart_listener(state: &mut QueueState) {
     if let Some(handle) = state.listener.take() {
         if let Some(tx) = state.tx.clone() {
             let _ = tx.send(Msg::Stop);
@@ -82,6 +97,63 @@ pub fn register_queued_handler(handler: Arc<RotatingHandler>) {
     let (tx, rx) = channel();
     state.tx = Some(tx);
     state.listener = Some(start_listener(rx, state.handlers.clone()));
+}
+
+extern "C" fn queue_at_exit() {
+    // PARITY: `atexit.register(_stop_queue_listener)` (547–551) — runs
+    // before logging.shutdown; stops (drains) the listener, no restart.
+    // Statics never run Drop, so this is the process-exit flush analog.
+    let mut q = QUEUE.lock().unwrap_or_else(|p| p.into_inner());
+    if let Some(state) = q.as_mut() {
+        stop_listener(state);
+    }
+}
+
+fn ensure_atexit() {
+    if !ATEXIT_REGISTERED.swap(true, Ordering::SeqCst) {
+        // SAFETY: `queue_at_exit` is a plain extern fn; libc runs it once at
+        // process exit. Registering exactly once via the swap above.
+        unsafe {
+            libc::atexit(queue_at_exit);
+        }
+    }
+}
+
+/// Register a file handler with the shared queue. The listener applies each
+/// handler's own level + component filters on its worker thread. Adding a
+/// handler rebuilds the listener over the full target set — mirroring
+/// upstream `_register_queued_handler`, which stops and restarts the
+/// `QueueListener` on every registration.
+///
+/// PARITY: `_register_queued_handler` (531–551), including the atexit stop.
+pub fn register_queued_handler(handler: Arc<RotatingHandler>) {
+    with_queue_state(|state| {
+        state.handlers.push(handler.clone());
+        state.file_handlers.push(handler);
+        restart_listener(state);
+        ensure_atexit();
+    });
+}
+
+/// Register a profile router with the shared queue (bare rotating handler
+/// replaced by a router — PARITY: the `_queued_file_handlers[:] = replacement`
+/// swap inside `enable_profile_log_routing` / the wrap in `_add_rotating_handler`).
+///
+/// Routers dispatch through `handlers` but never enter the typed bare list.
+pub fn register_queued_router(router: Arc<ProfileRouter>) {
+    with_queue_state(|state| {
+        state.handlers.push(router.clone());
+        state.routers.push(router);
+        restart_listener(state);
+        ensure_atexit();
+    });
+}
+
+/// Snapshot of the bare + router sets under the queue lock (dedup reads in
+/// `_add_rotating_handler` — PARITY: the unlocked `_queued_file_handlers`
+/// iteration there; the port reads both typed sets atomically).
+pub(crate) fn file_targets_snapshot() -> (Vec<Arc<RotatingHandler>>, Vec<Arc<ProfileRouter>>) {
+    with_queue_state(|state| (state.file_handlers.clone(), state.routers.clone()))
 }
 
 /// Enqueue a record — never blocks (unbounded channel like Python's
@@ -114,42 +186,21 @@ fn stop_listener(state: &mut QueueState) {
 ///
 /// Stopping joins the worker (draining the queue); restarting resumes.
 ///
-/// PARITY: `flush_log_queue` (647–662).
+/// PARITY: `flush_log_queue` (554–566).
 pub fn flush_log_queue() {
     let mut q = queue();
     if let Some(state) = q.as_mut() {
-        // Stopping joins the worker, which drains every queued record.
-        if let Some(handle) = state.listener.take() {
-            if let Some(tx) = state.tx.clone() {
-                let _ = tx.send(Msg::Stop);
-            }
-            let _ = handle.join();
-        }
-        // Restart a fresh listener over the same handlers.
-        let (tx, rx) = channel();
-        state.tx = Some(tx);
-        state.listener = Some(start_listener(rx, state.handlers.clone()));
+        restart_listener(state);
     }
 }
 
 /// Best-effort, time-bounded drain for hard-exit paths (no restart).
 ///
-/// PARITY: `drain_log_queue` (666–692).
+/// PARITY: `drain_log_queue` (569–580).
 pub fn drain_log_queue(timeout: std::time::Duration) {
     let mut q = queue();
     let Some(state) = q.as_mut() else { return };
-    let tx = state.tx.take();
-    let handle = state.listener.take();
-    drop(q);
-    let joiner = std::thread::spawn(move || {
-        if let Some(tx) = tx {
-            let _ = tx.send(Msg::Stop);
-        }
-        if let Some(h) = handle {
-            let _ = h.join();
-        }
-    });
-    let _ = joiner.join();
+    stop_listener(state);
     // NOTE: upstream bounds the wait by joining with a timeout; std threads
     // cannot be timed out. For a hard-exit drain this still flushes the queue
     // in the common case; the timeout contract is approximated by the caller
@@ -159,28 +210,20 @@ pub fn drain_log_queue(timeout: std::time::Duration) {
 
 /// Register any log target (e.g. a stderr handler) with the shared queue.
 pub fn register_queued_target(target: Arc<dyn LogTarget>) {
-    let mut q = queue();
-    let state = q.get_or_insert_with(|| QueueState {
-        tx: None,
-        listener: None,
-        handlers: Vec::new(),
-        file_handlers: Vec::new(),
+    with_queue_state(|state| {
+        state.handlers.push(target);
+        restart_listener(state);
+        ensure_atexit();
     });
-    state.handlers.push(target);
-    if let Some(handle) = state.listener.take() {
-        if let Some(tx) = state.tx.clone() {
-            let _ = tx.send(Msg::Stop);
-        }
-        let _ = handle.join();
-    }
-    let (tx, rx) = channel();
-    state.tx = Some(tx);
-    state.listener = Some(start_listener(rx, state.handlers.clone()));
 }
 
-/// The live rotating file handlers (attached to the async listener).
+/// The live bare rotating file handlers (attached to the async listener).
 ///
-/// PARITY: `rotating_file_handlers` (694–700).
+/// PARITY: `rotating_file_handlers` (718–724). Divergence note: upstream's
+/// single list also returns profile routers after routing; this typed accessor
+/// returns only bare `RotatingFileHandler`s — empty exactly where the oracle
+/// asserts `not [h for h in ... if isinstance(h, RotatingFileHandler)]`.
+/// Routers remain discoverable via `with_queue_state` internals.
 pub fn rotating_file_handlers() -> Vec<Arc<RotatingHandler>> {
     let q = queue();
     q.as_ref()
@@ -190,13 +233,14 @@ pub fn rotating_file_handlers() -> Vec<Arc<RotatingHandler>> {
 
 /// Tear down the async queue + listener (test-isolation helper).
 ///
-/// PARITY: `_reset_queued_handlers` (703–715).
+/// PARITY: `_reset_queued_handlers` (629–641).
 pub fn reset_queued_handlers() {
     let mut q = queue();
     if let Some(state) = q.as_mut() {
         stop_listener(state);
         state.handlers.clear();
         state.file_handlers.clear();
+        state.routers.clear();
     }
     *q = None;
 }
@@ -209,7 +253,7 @@ mod tests {
 
     #[test]
     fn queue_flush_writes_records() {
-        let _g = TEST_QUEUE_MUTEX.lock().unwrap();
+        let _g = TEST_QUEUE_MUTEX.lock().unwrap_or_else(|p| p.into_inner());
         reset_queued_handlers();
         let td = TempDir::new().unwrap();
         let path = td.path().join("q.log");
@@ -228,7 +272,7 @@ mod tests {
 
     #[test]
     fn rotating_file_handlers_returns_registered() {
-        let _g = TEST_QUEUE_MUTEX.lock().unwrap();
+        let _g = TEST_QUEUE_MUTEX.lock().unwrap_or_else(|p| p.into_inner());
         reset_queued_handlers();
         let td = TempDir::new().unwrap();
         let h = std::sync::Arc::new(
