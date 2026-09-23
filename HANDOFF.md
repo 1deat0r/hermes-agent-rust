@@ -628,11 +628,33 @@ clippy clean on touched files. **Ledger: 191 done / 12 partial /
 Evidence tier: unit.
 Next: `hermes_state_common` (1,218 LOC) per the queue below.
 
+## hermes_state_common re-cert done (2026-09-23)
+
+`hermes_state_common` partial → **done** @ 5d59366 (1,218 LOC; grew from
+614 LOC upstream since b9aa928). Regenerated constants
+(`gen_state_common_constants.py`: SCHEMA_VERSION 30 / FTS_STORAGE_VERSION
+2); byte oracle `golden_state_common.py` → `golden_state_common.json`.
+New surface: end-reason taxonomy + `is_automatic_end_reason`, reset-aware
+child SQL, FTS tool high-water + trigram session predicate,
+`fts_rebuild_admission` flock authority (`fts_lock.rs`), tool-role LIKE
+early route in `search.rs`. Real bugs fixed: trigram INSERT missing
+`tool_calls`/session join (infinite empty rebuild), base boundary-sweep
+missing CASE tool truncation, `rebuild_fts` not stamping high-water under
+lock, seed path not stamping on both branches, tool-role LIKE route gated
+behind `fts_enabled`. LIKE SQL constants byte-equal after Rust string
+processing. 15 tests in `parity_state_common.rs` + 42 lib + 15
+compression_locks + 15 search. Oracle at pin: 6 hermes_state FTS/lock
+suites passed. Full workspace serial: **0 failed**. `cargo fmt --all
+--check` + `git diff --check` clean. **Ledger: 192 done / 11 partial /
+8692 missing tracked (2.16%), prod 192/11/3278 (5.52%).**
+Evidence tier: unit.
+Next: `hermes_state_schema` (1,298 LOC).
+
 ## Next actions, in order
 
-1. Wave B: next smallest-LOC partials (`hermes_state_common` 1218,
-   `hermes_state_schema` 1298 — `hermes_logging` closed 2026-09-23;
-   `agent.ssl_guard`, `hermes_cli.dashboard_auth.__init__` are
+1. Wave B: next smallest-LOC partials (`hermes_state_schema` 1298 —
+   `hermes_state_common` closed 2026-09-23; `hermes_logging` closed
+   2026-09-23; `agent.ssl_guard`, `hermes_cli.dashboard_auth.__init__` are
    already done; `hermes_state_sessions`/`hermes_state_ids` rows:
    ids closed with the portability unit; sessions gained
    unarchive early but its file port remains missing).

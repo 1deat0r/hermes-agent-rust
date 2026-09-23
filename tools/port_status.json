@@ -369,8 +369,8 @@
     "status": "partial"
   },
   "hermes_state_common": {
-    "retarget_note": "done-vs-b9aa928 stale at 5d59366; module changed upstream (614 -> 1218 LOC); re-certify line-by-line before promoting; RECOVERABLE_END_REASONS const landed 2026-09-22 under the portability unit (adoption oracle)",
-    "status": "partial"
+    "retarget_note": "re-certified 2026-09-23 @ 5d59366 (1218 LOC): SCHEMA/FTS constants regen (SCHEMA_VERSION 30 / FTS_STORAGE_VERSION 2), end-reason taxonomy + is_automatic_end_reason, reset-aware child SQL, FTS tool high-water + trigram session predicate, fts_rebuild_admission flock authority, tool-role LIKE early route; 15 parity_state_common tests",
+    "status": "done"
   },
   "hermes_state_ids": {
     "retarget_note": "ported 2026-09-22 at 5d59366 (28 LOC): new_session_id + SESSION_ID_PATTERN + DEFAULT_HEX_LEN (rand-0.10 hex width sink); landed with the portability unit (SITES oracle); ids unit tests + portability re-export oracle",

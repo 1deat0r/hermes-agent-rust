@@ -269,12 +269,7 @@ impl SessionDB {
             )
             .optional()
             .map_err(WriteError::Sqlite)?;
-        let is_compression_ended = match parent {
-            Some((ended_at, end_reason)) => {
-                ended_at.is_some() && end_reason.as_deref() == Some("compression")
-            }
-            None => false,
-        };
+        let is_compression_ended = common::_ended_by_compression(parent);
         if !is_compression_ended {
             return Ok(None);
         }
@@ -334,12 +329,7 @@ impl SessionDB {
                     |r| Ok((r.get::<_, Option<f64>>(0)?, r.get::<_, Option<String>>(1)?)),
                 )
                 .optional()?;
-            let is_orphan = match parent {
-                Some((ended_at, end_reason)) => {
-                    ended_at.is_some() && end_reason.as_deref() == Some("compression")
-                }
-                None => false,
-            };
+            let is_orphan = common::_ended_by_compression(parent);
             if !is_orphan {
                 return Ok(false);
             }
@@ -459,7 +449,7 @@ impl SessionDB {
             }
             let parent = conn
                 .query_row(
-                    "SELECT ended_at, cwd, git_branch, git_repo_root,
+                    "SELECT ended_at, end_reason, cwd, git_branch, git_repo_root,
                             user_id, session_key, chat_id, chat_type,
                             thread_id, display_name, origin_json, profile_name
                      FROM sessions WHERE id = ?",
@@ -478,6 +468,7 @@ impl SessionDB {
                             r.get::<_, Option<String>>(9)?,
                             r.get::<_, Option<String>>(10)?,
                             r.get::<_, Option<String>>(11)?,
+                            r.get::<_, Option<String>>(12)?,
                         ))
                     },
                 )
@@ -489,10 +480,23 @@ impl SessionDB {
                 )));
             };
             if parent.0.is_some() {
-                return Err(WriteError::Runtime(format!(
-                    "Compression parent already ended: {}",
-                    parent_session_id
-                )));
+                // PARITY: hermes_state_compression.py 267–276 — an AUTOMATIC
+                // end stamp (tui_shutdown, ws_disconnect, orphan reap, idle/LRU
+                // evict) is stale by construction; this lease holder is still
+                // continuing the conversation, and left alone it wedges
+                // rotation forever (#88197). Clear it; the closure UPDATE below
+                // re-stamps end_reason='compression'. Deliberate boundaries
+                // fail closed.
+                if !crate::common::is_automatic_end_reason(parent.1.as_deref()) {
+                    return Err(WriteError::Runtime(format!(
+                        "Compression parent already ended: {}",
+                        parent_session_id
+                    )));
+                }
+                conn.execute(
+                    "UPDATE sessions SET ended_at = NULL, end_reason = NULL WHERE id = ?",
+                    rusqlite::params![parent_session_id],
+                )?;
             }
             if messages.is_empty() {
                 return Err(WriteError::Runtime(
@@ -517,19 +521,22 @@ impl SessionDB {
                     model_config,
                     system_prompt_hash,
                     parent_session_id,
-                    cwd.map(str::to_string).or(parent.1.clone()),
-                    parent.2,
+                    // parent tuple: (ended_at, end_reason, cwd, git_branch,
+                    // git_repo_root, user_id, session_key, chat_id, chat_type,
+                    // thread_id, display_name, origin_json, profile_name)
+                    cwd.map(str::to_string).or(parent.2.clone()),
                     parent.3,
+                    parent.4,
                     // Same inheritance contract as _insert_session_row's
                     // compression-fork backfill (#59527).
-                    profile_name.map(str::to_string).or(parent.11),
-                    parent.4,
+                    profile_name.map(str::to_string).or(parent.12.clone()),
                     parent.5,
                     parent.6,
                     parent.7,
                     parent.8,
                     parent.9,
                     parent.10,
+                    parent.11,
                     now(),
                 ],
             )?;

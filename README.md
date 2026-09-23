@@ -6,9 +6,9 @@ An in-progress **1:1 Rust port of [NousResearch/hermes-agent](https://github.com
 
 The live conversion ledger currently reports:
 
-- **All tracked modules:** **2.15%** — `191 / 8,895` done, `12` partial,
+- **All tracked modules:** **2.16%** — `192 / 8,895` done, `11` partial,
   `8,692` missing.
-- **Production modules:** **5.49%** — `191 / 3,481` done, `12` partial,
+- **Production modules:** **5.52%** — `192 / 3,481` done, `11` partial,
   `3,278` missing.
 
 Only `done` rows receive credit; partial rows remain zero-credit until their

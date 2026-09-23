@@ -279,7 +279,7 @@ Legend: ✅ done · 🟡 partial · ❌ missing
 | setup_verbose_logging (_hermes_verbose marker, idempotent) | ✅ | setup (stderr LogTarget; no Python root level) |
 | RedactingFormatter (agent/redact.py, 1,197 LOC) | ✅ | logging::redact::RedactingFormatter, installed at setup_logging |
 
-### hermes_state_common (upstream: hermes_state_common.py, 614 LOC) — ✅ complete
+### hermes_state_common (upstream: hermes_state_common.py, 1,218 LOC) — ✅ re-certified @ 5d59366 (2026-09-23)
 | Function/surface | Status | Rust home |
 |---|---|---|
 | SCHEMA_SQL / DEFERRED_INDEX_SQL / FTS_SQL / FTS_TRIGRAM_SQL / LEGACY_FTS(_TRIGRAM)_SQL | ✅ byte-identical | common::* (generator: tools/gen_state_common_constants.py) |
@@ -287,8 +287,12 @@ Legend: ✅ done · 🟡 partial · ❌ missing
 | _FTS_TRIGGERS / _FTS_CJK_TRIGGERS / FTS_CJK_TABLE_SQL / FTS_CJK_TRIGGER_SQL | ✅ | common |
 | escape_like | ✅ | common::escape_like |
 | preview shaping (_PREVIEW_RAW_SELECT, _shape_preview) | ✅ | common::{_preview_raw_select, _shape_preview} |
-| child classification SQL (_branch/_compression/_listable/_ephemeral_child_sql) | ✅ | common |
+| child classification SQL (_branch/_compression/_listable/_ephemeral_child_sql + reset-aware) | ✅ | common |
 | last-active SQL builders | ✅ | common |
+| end-reason taxonomy (_RECOVERABLE_END_REASONS, is_automatic_end_reason) | ✅ | common |
+| FTS tool high-water + trigram session predicate (_fts_indexed_content_sql, fts_trigram_session_sql) | ✅ | common |
+| fts_rebuild_admission flock authority (_acquire_db_flock, holder record) | ✅ | fts_lock |
+| tool-role LIKE early route (_search_messages_like_fallback, _finalize_search_matches) | ✅ | search |
 | skill-commands subset (SKILL_SCAFFOLD_SQL_LIKE, describe_skill_invocation, extract_user_instruction_from_skill_message) | ✅ | skill (inlined until agent crate lands, P2) |
 
 ### hermes_state_schema (upstream: hermes_state_schema.py, 1,126 LOC) — ✅ complete
@@ -4074,3 +4078,37 @@ Evidence format: every claim in this file must cite `unit` | `mock` | `live`
   hermes-constants/reasoning.rs needless_borrow warnings untouched).
   Ledger: 191 done / 12 partial / 8692 missing tracked (2.15%),
   prod 191/12/3278 (5.49%). Evidence tier: unit.
+- 2026-09-23 (hermes_state_common re-cert): `hermes_state_common` partial →
+  done @ 5d59366 (1,218 LOC — module grew 614→1218 upstream since b9aa928).
+  Regenerated SQL constants via `tools/gen_state_common_constants.py`
+  (SCHEMA_VERSION 30 / FTS_STORAGE_VERSION 2); byte oracle
+  `tools/golden_state_common.py` → `upstream/golden_state_common.json`.
+  New/changed surfaces: end-reason taxonomy (`_RECOVERABLE_END_REASONS`,
+  `is_automatic_end_reason`) wired into compression publish heal;
+  reset-aware child SQL (`_reset_child_sql`, `_legacy_reset_child_sql`);
+  FTS tool-content high-water (`FTS_TOOL_FULL_CONTENT_HIGH_WATER_KEY`,
+  bounded-prefix index + explicit tool-role LIKE full-body route);
+  trigram session predicate (`fts_trigram_session_sql` — cron/subagent
+  exclusion); `fts_rebuild_admission` flock authority in `fts_lock.rs`
+  (holder record, fail-closed when lock file unopenable, deferred
+  admission). Real bugs fixed in the search path: trigram INSERT omitted
+  `tool_calls`/session join (infinite empty rebuild), base boundary-sweep
+  missing CASE tool truncation, `rebuild_fts` not stamping high-water
+  under lock, seed path not stamping on both branches, tool-role LIKE
+  route was gated behind `fts_enabled` (should run before). LIKE SQL
+  constants verified byte-equal to upstream after Rust string-literal
+  processing. Evidence: 15 tests in `parity_state_common.rs` +
+  42 lib tests + 15 `parity_state_compression_locks` + 15
+  `parity_state_search`; oracle
+  `python3 -m pytest tests/hermes_state/test_automatic_ended_stamp.py
+  tests/hermes_state/test_state_db_lock_fail_closed.py
+  tests/hermes_state/test_fts_rebuild_admission.py
+  tests/hermes_state/test_fts_tool_write_bounds.py
+  tests/hermes_state/test_fts_trigram_subagent_exclusion.py
+  tests/hermes_state/test_fts_trigram_cron_exclusion.py -q` @ pin — passed;
+   `cargo build --workspace` green; `cargo test --workspace --
+   --test-threads=1` — 0 failed; `cargo fmt --all --check` +
+   `git diff --check` clean. Ledger: 192 done / 11 partial /
+   8692 missing tracked (2.16%), prod 192/11/3278 (5.52%).
+   Evidence tier: unit.
+   Next: `hermes_state_schema` (1,298 LOC).

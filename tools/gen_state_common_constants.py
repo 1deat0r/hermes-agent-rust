@@ -1,54 +1,127 @@
 #!/usr/bin/env python3
-"""Generate the SQL-constant section of crates/hermes-state/src/common.rs from
-upstream hermes_state_common.py. Byte-identical extraction: constants are copied
-verbatim into Rust raw string literals; the emitted code is reviewed + committed
-(the generator is a helper, not a build step)."""
-import re, sys, textwrap
+"""Regenerate crates/hermes-state/src/common_constants.rs from the pinned
+upstream hermes_state_common.py (+ CJK SQL from hermes_state_fts.py).
 
-UP = "/home/mustbearn/Projects/Research/hermes-agent-repo/hermes_state_common.py"
-src = open(UP).read()
+Evaluates the pinned module (system python3 imports it cleanly) and emits
+Rust constants 1:1: f-string SQL bodies come out fully interpolated, exactly
+byte-equal to what Python would hand to executescript. The emitted file is
+reviewed + committed (the generator is a helper, not a build step).
 
-# Constant names assigned a triple-quoted string at module scope.
-const_re = re.compile(
-    r'^([A-Z_][A-Z0-9_]*)\s*=\s*"""(.*?)"""\s*$',
-    re.MULTILINE | re.DOTALL,
+Usage:  HERMES_UPSTREAM=.upstream-pin/5d59366 python3 tools/gen_state_common_constants.py
+"""
+import os
+import sys
+
+UP = os.environ.get("HERMES_UPSTREAM", ".upstream-pin/5d59366")
+HERE = os.path.dirname(os.path.abspath(__file__))
+OUT = os.path.normpath(
+    os.path.join(HERE, "..", "crates", "hermes-state", "src", "common_constants.rs")
 )
+
+sys.path.insert(0, UP)
+import hermes_state_common as c  # noqa: E402
+import hermes_state_fts as f  # noqa: E402
+
+
+def rust_str(name: str, body: str) -> str:
+    delim = "#"
+    while ('"' + delim) in body or (delim + '"') in body:
+        delim += "#"
+    return f'pub const {name}: &str = r{delim}"{body}"{delim};'
+
+
+def rust_f64(name: str, value: float) -> str:
+    return f"pub const {name}: f64 = {value};"
+
+
+def rust_int(name: str, value: int) -> str:
+    return f"pub const {name}: i64 = {value};"
+
+
+def rust_usize(name: str, value: int) -> str:
+    return f"pub const {name}: usize = {value};"
+
+
+def rust_str_lit(name: str, value: str) -> str:
+    return f'pub const {name}: &str = "{value}";'
+
+
+def rust_str_tuple(name: str, values) -> str:
+    items = ", ".join(f'"{v}"' for v in values)
+    return f"pub const {name}: [&str; {len(values)}] = [{items}];"
+
+
+def rust_i32_set(name: str, values) -> str:
+    items = ", ".join(str(int(v)) for v in sorted(values))
+    return f"pub const {name}: [i32; {len(values)}] = [{items}];"
+
 
 out = []
 out.append("//! Shared SQL constants and query builders for the SessionDB family.")
-out.append("// PARITY: hermes_state_common.py @ b9aa928 (extracted verbatim;")
-out.append("//         regenerable via tools/gen_state_common_constants.py).")
-out.append("")
-out.append("pub const SCHEMA_VERSION: i64 = 25;")
-out.append("pub const FTS_STORAGE_VERSION: i64 = 1;")
-out.append("pub const MAX_FTS5_QUERY_CHARS: usize = 2_048;")
-out.append("pub const FTS_CJK_STALE_KEY: &str = \"fts_cjk_stale\";")
+out.append("// PARITY: hermes_state_common.py @ 5d59366 (extracted verbatim via")
+out.append("//         tools/gen_state_common_constants.py — live module eval so")
+out.append("//         f-string SQL bodies are byte-equal to executescript).")
+out.append("//         CJK SQL tail from hermes_state_fts.py @ 5d59366.")
 out.append("")
 
-for m in const_re.finditer(src):
-    name = m.group(1)
-    body = m.group(2)
-    # Rust raw string delimiters: use r#"..."# unless body contains "#.
-    delim = '#'
-    while ('"' + delim) in body or (delim + '"') in body:
-        delim += '#'
-    out.append(f"pub const {name}: &str = r{delim}\"{body}\"{delim};")
+# Scalars evaluated from the live module (never hand-maintained again).
+out.append(rust_int("SCHEMA_VERSION", c.SCHEMA_VERSION))
+out.append(rust_int("FTS_STORAGE_VERSION", c.FTS_STORAGE_VERSION))
+out.append(rust_usize("MAX_FTS5_QUERY_CHARS", c.MAX_FTS5_QUERY_CHARS))
+out.append(rust_usize("_PREVIEW_HEAD_CHARS", c._PREVIEW_HEAD_CHARS))
+out.append(rust_usize("_PREVIEW_SCAFFOLD_WINDOW", c._PREVIEW_SCAFFOLD_WINDOW))
+out.append(rust_usize("_PREVIEW_MAX_CHARS", c._PREVIEW_MAX_CHARS))
+out.append(rust_usize("_SQL_IN_CHUNK", c._SQL_IN_CHUNK))
+out.append(rust_usize("FTS_TOOL_CONTENT_PREFIX_CHARS", c.FTS_TOOL_CONTENT_PREFIX_CHARS))
+out.append(rust_f64("AUTO_VACUUM_MIN_FREELIST_RATIO", c.AUTO_VACUUM_MIN_FREELIST_RATIO))
+out.append(rust_f64("_FTS_REBUILD_LOCK_TIMEOUT_SECONDS", c._FTS_REBUILD_LOCK_TIMEOUT_SECONDS))
+out.append(rust_f64("_FTS_REBUILD_LOCK_POLL_SECONDS", c._FTS_REBUILD_LOCK_POLL_SECONDS))
+out.append(rust_f64("_LOCK_BREAK_REACQUIRE_SECONDS", c._LOCK_BREAK_REACQUIRE_SECONDS))
+out.append("")
+for name in (
+    "FTS_CJK_STALE_KEY",
+    "FTS_STALE_KEY",
+    "FTS_REBUILD_DEFERRAL_KEY",
+    "FTS_TOOL_FULL_CONTENT_HIGH_WATER_KEY",
+    "_ENDED_ROW_SQL",
+    "_COMPRESSION_LOCK_ROW_SQL",
+    "_PREVIEW_CONTENT_SQL",
+    "SCHEMA_SQL",
+    "DEFERRED_INDEX_SQL",
+    "FTS_SQL",
+    "FTS_TRIGRAM_SQL",
+    "LEGACY_FTS_SQL",
+    "LEGACY_FTS_TRIGRAM_SQL",
+    "FTS_CJK_TABLE_SQL",
+    "FTS_CJK_TRIGGER_SQL",
+):
+    src_obj = f if name.startswith("FTS_CJK_") and hasattr(f, name) else c
+    out.append(rust_str(name, getattr(src_obj, name)))
     out.append("")
+out.append(rust_str_tuple("_FTS_TRIGGERS", c._FTS_TRIGGERS))
+out.append(rust_str_tuple("_FTS_CJK_TRIGGERS", c._FTS_CJK_TRIGGERS))
+out.append(rust_str_tuple("FTS_TRIGRAM_EXCLUDED_SOURCES", c.FTS_TRIGRAM_EXCLUDED_SOURCES))
+out.append(rust_str_tuple("_RESET_END_REASONS", c._RESET_END_REASONS))
+out.append(rust_str_tuple("_RECOVERABLE_END_REASONS", c._RECOVERABLE_END_REASONS))
+out.append(rust_str_lit("_RESET_END_REASONS_SQL", c._RESET_END_REASONS_SQL))
+out.append(rust_str_lit("_RECOVERABLE_END_REASONS_SQL", c._RECOVERABLE_END_REASONS_SQL))
+# frozensets have unstable order — sort for a deterministic Rust array;
+# membership semantics are order-independent (golden sorts them too).
+out.append(rust_str_tuple("_BOUNDARY_END_REASONS", sorted(c._BOUNDARY_END_REASONS)))
+out.append(rust_str_tuple("_AUTOMATIC_END_REASONS", sorted(c._AUTOMATIC_END_REASONS)))
+out.append("")
+out.append(rust_str_tuple("_LOCK_CONTENTION_ERRNOS", [str(e) for e in sorted(c._LOCK_CONTENTION_ERRNOS)]).replace(
+    'pub const _LOCK_CONTENTION_ERRNOS: [&str;',
+    'pub const _LOCK_CONTENTION_ERRNOS: [i32;',
+).replace(", ".join(f'"{e}"' for e in sorted(c._LOCK_CONTENTION_ERRNOS)),
+          ", ".join(str(e) for e in sorted(c._LOCK_CONTENTION_ERRNOS))))
+out.append("")
 
-# The FTS trigger tuples are Python string tuples, not triple-quoted; emit
-# explicitly from the source tuple literal.
-triggers = re.search(r"^_FTS_TRIGGERS = \((.*?)\)\s*$", src, re.M | re.S)
-if triggers:
-    names = re.findall(r'"([^"]+)"', triggers.group(1))
-    out.append("pub const _FTS_TRIGGERS: [&str; %d] = [%s];" % (
-        len(names), ", ".join(f'"{n}"' for n in names)))
-    out.append("")
-cjk_triggers = re.search(r"^_FTS_CJK_TRIGGERS = \((.*?)\)\s*$", src, re.M | re.S)
-if cjk_triggers:
-    names = re.findall(r'"([^"]+)"', cjk_triggers.group(1))
-    out.append("pub const _FTS_CJK_TRIGGERS: [&str; %d] = [%s];" % (
-        len(names), ", ".join(f'"{n}"' for n in names)))
-    out.append("")
-
-open("crates/hermes-state/src/common_constants.rs", "w").write("\n".join(out))
-print("wrote crates/hermes-state/src/common_constants.rs (%d lines)" % len(out))
+text = "\n".join(out) + "\n"
+with open(OUT, "w") as fh:
+    fh.write(text)
+print(f"wrote {OUT} ({len(text.splitlines())} lines)")
+print(
+    f"SCHEMA_VERSION={c.SCHEMA_VERSION} FTS_STORAGE_VERSION={c.FTS_STORAGE_VERSION} "
+    f"SQL bytes: SCHEMA={len(c.SCHEMA_SQL)} FTS={len(c.FTS_SQL)} TRIGRAM={len(c.FTS_TRIGRAM_SQL)}"
+)

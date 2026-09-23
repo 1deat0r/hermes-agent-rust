@@ -50,7 +50,122 @@ static TRAILING_OPERATOR_RE: Lazy<Regex> =
     Lazy::new(|| Regex::new(r"(?i)\s+(AND|OR|NOT)\s*$").unwrap());
 static DOTTED_TERM_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"\b(\w+(?:[._-]\w+)+)\b").unwrap());
 static QUOTED_NON_SPACE_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r#""[^"]*"|\S+"#).unwrap());
+/// `_LIKE_TOKEN_RE` @ 5d59366 — non-empty quoted phrase or bare token.
+static LIKE_TOKEN_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r#""[^"]+"|\S+"#).unwrap());
 // ── helpers ────────────────────────────────────────────────────────────────
+
+/// `_LIKE_SNIPPET_SQL` @ 5d59366 — shared SELECT tail for LIKE routes (never content).
+const LIKE_SNIPPET_SQL: &str =
+    "substr(m.content, max(1, instr(m.content, ?) - 40), 120) AS snippet";
+const SEARCH_SELECT_TAIL: &str =
+    "m.timestamp, m.tool_name, s.source, s.model, s.started_at AS session_started";
+/// `_LIKE_COALESCED_COLUMN_SQL` @ 5d59366
+const LIKE_COALESCED_COLUMN_SQL: &str = "(COALESCE(m.content, '') LIKE ? ESCAPE '\\' OR \
+    COALESCE(m.tool_name, '') LIKE ? ESCAPE '\\' OR \
+    COALESCE(m.tool_calls, '') LIKE ? ESCAPE '\\')";
+
+/// `_like_params` @ 5d59366 — one `%term%` bind per LIKE column.
+fn like_params(term: &str) -> [String; 3] {
+    let needle = format!("%{}%", common::escape_like(term));
+    [needle.clone(), needle.clone(), needle]
+}
+
+/// `_compile_like_boolean_query` @ 5d59366 — FTS boolean subset → LIKE predicates.
+/// Terms within an OR group are ANDed; `NOT` negates the next term.
+fn compile_like_boolean_query(query: &str) -> (String, Vec<String>, Option<String>) {
+    let mut groups: Vec<Vec<(String, bool)>> = vec![Vec::new()];
+    let mut negate_next = false;
+    for m in LIKE_TOKEN_RE.find_iter(query) {
+        let raw_token = m.as_str();
+        let operator = raw_token.to_ascii_uppercase();
+        if operator == "OR" {
+            if !groups.last().is_some_and(|g| g.is_empty()) {
+                groups.push(Vec::new());
+            }
+            negate_next = false;
+            continue;
+        }
+        if matches!(operator.as_str(), "AND" | "NEAR") {
+            continue;
+        }
+        if operator == "NOT" {
+            negate_next = true;
+            continue;
+        }
+        let term = raw_token
+            .trim_matches('"')
+            .trim_end_matches('*')
+            .trim()
+            .to_string();
+        if !term.is_empty() {
+            if let Some(g) = groups.last_mut() {
+                g.push((term, negate_next));
+            }
+            negate_next = false;
+        }
+    }
+
+    let mut compiled_groups: Vec<String> = Vec::new();
+    let mut params: Vec<String> = Vec::new();
+    let mut snippet_term: Option<String> = None;
+    for group in groups {
+        if group.is_empty() || !group.iter().any(|(_, negated)| !negated) {
+            continue;
+        }
+        let mut clauses: Vec<String> = Vec::new();
+        for (term, negated) in &group {
+            clauses.push(if *negated {
+                format!("NOT {}", LIKE_COALESCED_COLUMN_SQL)
+            } else {
+                LIKE_COALESCED_COLUMN_SQL.to_string()
+            });
+            params.extend(like_params(term));
+            if snippet_term.is_none() && !negated {
+                snippet_term = Some(term.clone());
+            }
+        }
+        compiled_groups.push(format!("({})", clauses.join(" AND ")));
+    }
+    (compiled_groups.join(" OR "), params, snippet_term)
+}
+
+/// `_search_select_sql` + `_like_rows` @ 5d59366 — canonical-table LIKE scan.
+/// `params[0]` is the snippet anchor term.
+fn search_like_rows(
+    conn: &Connection,
+    where_clauses: &[String],
+    mut params: Vec<String>,
+    order_by: &str,
+    limit: i64,
+    offset: i64,
+) -> Result<Vec<Value>, WriteError> {
+    let sql = format!(
+        "SELECT m.id, m.session_id, m.role, \
+            {}, \
+            {} \
+         FROM messages m \
+         JOIN sessions s ON s.id = m.session_id \
+         WHERE {} \
+         {} \
+         LIMIT ? OFFSET ?",
+        LIKE_SNIPPET_SQL,
+        SEARCH_SELECT_TAIL,
+        where_clauses.join(" AND "),
+        order_by,
+    );
+    params.push(limit.to_string());
+    params.push(offset.to_string());
+    let mut stmt = conn.prepare(&sql).map_err(WriteError::Sqlite)?;
+    let rows = stmt
+        .query_map(
+            rusqlite::params_from_iter(params.iter()),
+            super::portability::row_to_value,
+        )
+        .map_err(WriteError::Sqlite)?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(WriteError::Sqlite)?;
+    Ok(rows)
+}
 
 fn malformed_or_fts_corrupt(msg: &str) -> bool {
     let m = msg.to_ascii_lowercase();
@@ -255,6 +370,13 @@ impl SessionDB {
                         [],
                     )?;
                 }
+                // PARITY: hermes_state_search.py _seed_fts_rebuild_markers —
+                // reuse path still stamps the tool full-content boundary.
+                conn.execute(
+                    "INSERT INTO state_meta (key, value) VALUES (?, ?) \
+                     ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+                    rusqlite::params![common::FTS_TOOL_FULL_CONTENT_HIGH_WATER_KEY, hw.to_string()],
+                )?;
                 return Ok(hw);
             }
         }
@@ -270,6 +392,11 @@ impl SessionDB {
             "INSERT INTO state_meta (key, value) VALUES ('fts_rebuild_progress', '0') \
              ON CONFLICT(key) DO UPDATE SET value = excluded.value",
             [],
+        )?;
+        conn.execute(
+            "INSERT INTO state_meta (key, value) VALUES (?, ?) \
+             ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+            rusqlite::params![common::FTS_TOOL_FULL_CONTENT_HIGH_WATER_KEY, hw.to_string()],
         )?;
         Ok(hw)
     }
@@ -519,10 +646,16 @@ impl SessionDB {
                 rusqlite::params![progress, upper],
             )?;
             if include_trigram {
+                // PARITY: _TRIGRAM_CHUNK_INSERT_SQL — no tool_calls column;
+                // excludes tool rows + FTS_TRIGRAM_EXCLUDED_SOURCES + delegate_from.
+                let sess = common::fts_trigram_session_sql("s");
                 conn.execute(
-                    "INSERT INTO messages_fts_trigram(rowid, content, tool_name, tool_calls) \
-                     SELECT id, content, tool_name, tool_calls FROM messages \
-                     WHERE id > ? AND id <= ? AND role <> 'tool'",
+                    &format!(
+                        "INSERT INTO messages_fts_trigram(rowid, content, tool_name) \
+                         SELECT m.id, m.content, m.tool_name FROM messages m \
+                         JOIN sessions s ON s.id = m.session_id \
+                         WHERE m.id > ? AND m.id <= ? AND m.role <> 'tool' AND {sess}"
+                    ),
                     rusqlite::params![progress, upper],
                 )?;
             }
@@ -537,6 +670,12 @@ impl SessionDB {
             Err(_) => return true, // transient — caller retries
         };
         if !more {
+            // PARITY: _rebuild_step finish_when_empty — empty messages table
+            // (high_water <= 0) finalizes instead of leaving markers pending.
+            if high_water <= 0 {
+                self._fts_rebuild_finish();
+                return false;
+            }
             if let Some(status) = self.fts_rebuild_status() {
                 if status["indexed"].as_i64().unwrap_or(0) >= status["total"].as_i64().unwrap_or(0)
                 {
@@ -601,21 +740,35 @@ impl SessionDB {
                     return Err(WriteError::Runtime("high_water unparseable".into()));
                 };
                 let (lo, hi) = (hw - 1000, hw + 1000);
+                // PARITY: _BASE_BOUNDARY_SWEEP_SQL (bounded tool-content prefix).
                 conn.execute(
                     "INSERT INTO messages_fts(rowid, content, tool_name, tool_calls) \
-                     SELECT m.id, m.content, m.tool_name, m.tool_calls \
+                     SELECT m.id, \
+                        CASE WHEN m.role = 'tool' AND m.id > ? \
+                             THEN substr(COALESCE(m.content, ''), 1, ?) \
+                             ELSE m.content END, \
+                        m.tool_name, m.tool_calls \
                      FROM messages m \
                      WHERE m.id > ? AND m.id <= ? \
                      AND NOT EXISTS (SELECT 1 FROM messages_fts_docsize d WHERE d.id = m.id)",
-                    rusqlite::params![lo, hi],
+                    rusqlite::params![
+                        hw as i64,
+                        common::FTS_TOOL_CONTENT_PREFIX_CHARS as i64,
+                        lo,
+                        hi
+                    ],
                 )?;
                 if include_trigram {
+                    // PARITY: _TRIGRAM_BOUNDARY_SWEEP_SQL — no tool_calls; session predicate.
+                    let sess = common::fts_trigram_session_sql("s");
                     conn.execute(
-                        "INSERT INTO messages_fts_trigram(rowid, content, tool_name, tool_calls) \
-                         SELECT m.id, m.content, m.tool_name, m.tool_calls \
-                         FROM messages m \
-                         WHERE m.id > ? AND m.id <= ? AND m.role <> 'tool' \
-                         AND NOT EXISTS (SELECT 1 FROM messages_fts_trigram_docsize d WHERE d.id = m.id)",
+                        &format!(
+                            "INSERT INTO messages_fts_trigram(rowid, content, tool_name) \
+                             SELECT m.id, m.content, m.tool_name FROM messages m \
+                             JOIN sessions s ON s.id = m.session_id \
+                             WHERE m.id > ? AND m.id <= ? AND m.role <> 'tool' AND {sess} \
+                             AND NOT EXISTS (SELECT 1 FROM messages_fts_trigram_docsize d WHERE d.id = m.id)"
+                        ),
                         rusqlite::params![lo, hi],
                     )?;
                 }
@@ -1267,6 +1420,28 @@ impl SessionDB {
             return Ok(vec![]);
         }
 
+        // New oversized tool results index only a bounded prefix; an explicit
+        // tool-role search is the opt-in full-body path and scans canonical
+        // rows via LIKE. PARITY: hermes_state_search.py _search_messages_impl
+        // @ 5d59366.
+        if role_filter.is_some_and(|r| r.iter().any(|v| v == "tool")) {
+            let matches = self._search_messages_like_fallback(
+                &sanitized,
+                limit,
+                offset,
+                sort,
+                include_inactive,
+                source_filter,
+                exclude_sources,
+                role_filter,
+            )?;
+            return self._finalize_search_matches(matches, &result_fields, query, started);
+        }
+
+        if !self.fts_enabled() {
+            return Ok(vec![]);
+        }
+
         // Normalise sort; anything not in the allowed set falls back to
         // rank-only.
         let sort_norm = match sort {
@@ -1441,6 +1616,18 @@ impl SessionDB {
 
         // Add surrounding context (1 message before + after each match) only
         // when the selected projection consumes it.
+        self._finalize_search_matches(matches, &result_fields, query, started)
+    }
+
+    /// `_finalize_search_matches` @ 5d59366 — attach context when requested,
+    /// drop full content, apply projection, emit slow-search log.
+    fn _finalize_search_matches(
+        &self,
+        mut matches: Vec<Value>,
+        result_fields: &Option<Vec<String>>,
+        query: &str,
+        started: std::time::Instant,
+    ) -> Result<Vec<Value>, WriteError> {
         let wants_context = result_fields
             .as_ref()
             .is_none_or(|f| f.iter().any(|x| x == "context"));
@@ -1459,7 +1646,7 @@ impl SessionDB {
         }
 
         // Projection.
-        if let Some(fields_list) = &result_fields {
+        if let Some(fields_list) = result_fields {
             matches = matches
                 .into_iter()
                 .map(|m| {
@@ -1493,6 +1680,62 @@ impl SessionDB {
             ));
         }
         Ok(matches)
+    }
+
+    /// `_search_messages_like_fallback` @ 5d59366 — full-body LIKE scan of
+    /// canonical rows (explicit tool-role / stale-FTS opt-in).
+    fn _search_messages_like_fallback(
+        &self,
+        query: &str,
+        limit: i64,
+        offset: i64,
+        sort: Option<&str>,
+        include_inactive: bool,
+        source_filter: Option<&[String]>,
+        exclude_sources: Option<&[String]>,
+        role_filter: Option<&[String]>,
+    ) -> Result<Vec<Value>, WriteError> {
+        let (predicate, mut params, snippet_term) = compile_like_boolean_query(query);
+        if predicate.is_empty() {
+            return Ok(vec![]);
+        }
+        let Some(snippet_term) = snippet_term else {
+            return Ok(vec![]);
+        };
+        // PARITY: _search_filter_clauses @ 5d59366 — shared visibility/role
+        // predicates for every search route.
+        let mut where_clauses = vec![format!("({})", predicate)];
+        if !include_inactive {
+            where_clauses.push("(m.active = 1 OR m.compacted = 1)".to_string());
+        }
+        where_clauses.push("COALESCE(m.display_kind, '') <> 'hidden'".to_string());
+        if let Some(filters) = source_filter {
+            let ph = vec!["?"; filters.len()].join(",");
+            where_clauses.push(format!("s.source IN ({})", ph));
+            params.extend(filters.iter().cloned());
+        }
+        if let Some(filters) = exclude_sources {
+            let ph = vec!["?"; filters.len()].join(",");
+            where_clauses.push(format!("s.source NOT IN ({})", ph));
+            params.extend(filters.iter().cloned());
+        }
+        if let Some(filters) = role_filter {
+            if !filters.is_empty() {
+                let ph = vec!["?"; filters.len()].join(",");
+                where_clauses.push(format!("m.role IN ({})", ph));
+                params.extend(filters.iter().cloned());
+            }
+        }
+        let order = if sort.is_some_and(|s| s.trim().eq_ignore_ascii_case("oldest")) {
+            "ASC"
+        } else {
+            "DESC"
+        };
+        let order_by = format!("ORDER BY m.timestamp {}, m.id {}", order, order);
+        let mut all = vec![snippet_term];
+        all.extend(params);
+        let conn = self.writer_conn();
+        search_like_rows(&conn, &where_clauses, all, &order_by, limit, offset)
     }
 
     fn _context_around(&self, message_id: i64) -> Result<Value, WriteError> {
@@ -1886,10 +2129,35 @@ impl SessionDB {
     }
 
     /// Rebuild FTS5 indexes from the canonical messages table.
-    /// PARITY: hermes_state_search.py rebuild_fts @ b9aa928
+    ///
+    /// PARITY: hermes_state_search.py rebuild_fts @ 5d59366 — every full
+    /// structural rebuild admits through the cross-process FTS rebuild
+    /// lock (hermes_state_common.fts_rebuild_admission) and FAILS CLOSED:
+    /// without the authority this returns 0 (defers) instead of racing a
+    /// concurrent holder (PR #93200 class).
     pub fn rebuild_fts(&self) -> i64 {
+        let admission = crate::common::fts_rebuild_admission(Some(&self.db_path));
+        if !admission.acquired() {
+            return 0;
+        }
         let mut rebuilt = 0i64;
         let conn = self.writer_conn();
+        // PARITY: hermes_state_search.py rebuild_fts @ 5d59366 — stamp the
+        // tool full-content high-water to MAX(messages.id) BEFORE rewriting
+        // the indexes so subsequent tool rows stay bounded by this rebuild.
+        let high_water: i64 = conn
+            .query_row("SELECT COALESCE(MAX(id), 0) FROM messages", [], |r| {
+                r.get(0)
+            })
+            .unwrap_or(0);
+        let _ = conn.execute(
+            "INSERT INTO state_meta (key, value) VALUES (?, ?) \
+             ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+            rusqlite::params![
+                common::FTS_TOOL_FULL_CONTENT_HIGH_WATER_KEY,
+                high_water.to_string()
+            ],
+        );
         for tbl in FTS_TABLES {
             if !self._fts_table_exists(tbl) {
                 continue;

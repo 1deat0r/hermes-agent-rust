@@ -1,79 +1,291 @@
 {
- "samples": [
-  "ordinary user message that is kind of long but not skill scaffolding at all",
-  "short",
-  "",
-  "   ",
-  "[IMPORTANT: The user has invoked the \"work\"\nThe full skill content is loaded below.]",
-  "[IMPORTANT: The user has invoked the \"work\"\nThe full skill content is loaded below.]\n\nThe user has provided the following instruction alongside the skill invocation: fix the title leak",
-  "[IMPORTANT: The user has invoked the \"clean /work\" skill bundle, each skill's full content is loaded below.\nUser instruction: clean up the workspace\n\n[Loaded as part of the ...\n",
-  "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-  "[IMPORTANT: The user has invoked the \"work\"\nThe full skill content is loaded below.]\n\nThe user has provided the following instruction alongside the skill invocation: put the real instruction here at the endpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpad",
-  "[IMPORTANT: The user has invoked the \"work\"\nThe full skill content is loaded below.]\n\nThe user has provided the following instruction alongside the skill invocation: yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
-  "[IMPORTANT: The user has invoked the \"remember\"\nThe full skill content is loaded below.]",
-  "[IMPORTANT: The user has invoked the \"work\"\nThe full skill content is loaded below.]\n\nThe user has provided the following instruction alongside the skill invocation: do the thing\n\n[Runtime note: something]",
-  "head\u001etail instruction bits"
- ],
- "shape_preview": [
-  "ordinary user message that is kind of long but not skill sca...",
-  "short",
-  "",
-  "",
-  "/work",
-  "/work — fix the title leak",
-  "/clean /work — clean up the workspace",
-  "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx...",
-  "/work — put the real instruction here at the endpadpadpadpad...",
-  "/work — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy...",
-  "/remember",
-  "/work — do the thing",
-  "head"
- ],
- "describe": [
-  null,
-  null,
-  null,
-  null,
-  "/work",
-  "/work — fix the title leak",
-  "/clean /work — clean up the workspace",
-  null,
-  "/work — put the real instruction here at the endpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpad",
-  "/work — yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
-  "/remember",
-  "/work — do the thing",
-  null
- ],
- "extract": [
-  "ordinary user message that is kind of long but not skill scaffolding at all",
-  "short",
-  "",
-  "   ",
-  null,
-  "fix the title leak",
-  "clean up the workspace",
-  "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-  "put the real instruction here at the endpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpadpad",
-  "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
-  null,
-  "do the thing",
-  "head\u001etail instruction bits"
- ],
- "escape_like": [
-  "plain",
-  "50\\%\\_",
-  "a\\\\b\\_c.d\\%",
-  "",
-  "\\%\\%\\%",
-  "\\_"
- ],
- "branch_s": "json_extract(COALESCE(s.model_config, '{}'), '$._branched_from') IS NOT NULL OR EXISTS (SELECT 1 FROM sessions p            WHERE p.id = s.parent_session_id            AND p.end_reason = 'branched'            AND s.started_at >= p.ended_at)",
- "compression_s": "EXISTS (SELECT 1 FROM sessions p        WHERE p.id = s.parent_session_id        AND p.end_reason = 'compression')",
- "listable": "(s.parent_session_id IS NULL OR json_extract(COALESCE(s.model_config, '{}'), '$._branched_from') IS NOT NULL OR EXISTS (SELECT 1 FROM sessions p            WHERE p.id = s.parent_session_id            AND p.end_reason = 'branched'            AND s.started_at >= p.ended_at))",
- "ephemeral_s": "(s.parent_session_id IS NOT NULL AND NOT (json_extract(COALESCE(s.model_config, '{}'), '$._branched_from') IS NOT NULL OR EXISTS (SELECT 1 FROM sessions p            WHERE p.id = s.parent_session_id            AND p.end_reason = 'branched'            AND s.started_at >= p.ended_at)) AND NOT (EXISTS (SELECT 1 FROM sessions p        WHERE p.id = s.parent_session_id        AND p.end_reason = 'compression')))",
- "last_active_s": "COALESCE((SELECT MAX(_act_v.v) FROM (SELECT s.last_activity_at AS v UNION ALL SELECT (SELECT MAX(_act_m.timestamp) FROM messages _act_m WHERE _act_m.session_id = s.id)) _act_v), s.started_at)",
- "last_active_by_id": "COALESCE((SELECT MAX(_act_v.v) FROM (SELECT (SELECT last_activity_at FROM sessions _act_s WHERE _act_s.id = 'abc') AS v UNION ALL SELECT (SELECT MAX(_act_m.timestamp) FROM messages _act_m WHERE _act_m.session_id = 'abc')) _act_v), (SELECT started_at FROM sessions _act_s WHERE _act_s.id = 'abc'))",
- "preview_content_sql": "REPLACE(REPLACE(m.content, X'0A', ' '), X'0D', ' ')",
- "preview_scaffolded_sql": "m.content LIKE '[IMPORTANT: The user has invoked the %'",
- "preview_raw_select": "CASE WHEN m.content LIKE '[IMPORTANT: The user has invoked the %' AND LENGTH(m.content) > 800 THEN SUBSTR(REPLACE(REPLACE(m.content, X'0A', ' '), X'0D', ' '), 1, 400) || '\u001e' || SUBSTR(REPLACE(REPLACE(m.content, X'0A', ' '), X'0D', ' '), -400) WHEN m.content LIKE '[IMPORTANT: The user has invoked the %' THEN SUBSTR(REPLACE(REPLACE(m.content, X'0A', ' '), X'0D', ' '), 1, 800) ELSE SUBSTR(REPLACE(REPLACE(m.content, X'0A', ' '), X'0D', ' '), 1, 63) END"
+  "automatic_end_reasons": [
+    "agent_close",
+    "idle_timeout",
+    "lru_evict",
+    "startup_orphan_reap",
+    "superseded_by_resume",
+    "tui_shutdown",
+    "ws_disconnect",
+    "ws_orphan_reap"
+  ],
+  "boundary_end_reasons": [
+    "daily",
+    "idle",
+    "new_session",
+    "resume_pending_expired",
+    "session_reset",
+    "session_switch",
+    "suspended"
+  ],
+  "branch_s": "json_extract((CASE WHEN json_valid(s.model_config) THEN s.model_config ELSE json_object() END), '$._branched_from') IS NOT NULL OR EXISTS (SELECT 1 FROM sessions p            WHERE p.id = s.parent_session_id            AND p.end_reason = 'branched'            AND s.started_at >= p.ended_at)",
+  "compression_s": "EXISTS (SELECT 1 FROM sessions p        WHERE p.id = s.parent_session_id        AND p.end_reason = 'compression')",
+  "describe": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "ended_by_compression": [
+    false,
+    false,
+    true,
+    false
+  ],
+  "ephemeral_s": "(s.parent_session_id IS NOT NULL AND NOT (json_extract((CASE WHEN json_valid(s.model_config) THEN s.model_config ELSE json_object() END), '$._branched_from') IS NOT NULL OR EXISTS (SELECT 1 FROM sessions p            WHERE p.id = s.parent_session_id            AND p.end_reason = 'branched'            AND s.started_at >= p.ended_at)) AND NOT (EXISTS (SELECT 1 FROM sessions p        WHERE p.id = s.parent_session_id        AND p.end_reason = 'compression')) AND NOT (json_extract((CASE WHEN json_valid(s.model_config) THEN s.model_config ELSE json_object() END), '$._reset_from') IS NOT NULL OR EXISTS (SELECT 1 FROM sessions p            WHERE p.id = s.parent_session_id            AND p.end_reason IN ('session_reset', 'session_switch', 'idle', 'daily', 'suspended', 'resume_pending_expired')            AND s.session_key IS NOT NULL            AND s.session_key != ''            AND s.session_key = p.session_key)))",
+  "escape_like": [
+    "plain",
+    "50\\%\\_",
+    "a\\\\b\\_c.d\\%",
+    "",
+    "\\%\\%\\%",
+    "\\_"
+  ],
+  "extract": [
+    "plain user message about deploy",
+    "50%_off coupon for a\\b_c.d% path",
+    "",
+    "%%%",
+    "_",
+    null,
+    "[CONTEXT COMPACTION — REFERENCE ONLY] Earlier turns were compacted into the summary below. Do NOT answer questions from the summary. Prior facts only.\n[END OF PRIOR CONTEXT — COMPACTION SUMMARY BELOW]\n[CONTEXT SUMMARY]: legacy tail summary body",
+    "[CONTEXT SUMMARY]: only legacy summary no marker",
+    "[CONTEXT SUMMARY]: legacy with marker --- END OF CONTEXT SUMMARY — respond to the message below, not the summary above --- actionable remainder here",
+    "[PRIOR CONTEXT — for reference only; not a new message]\n\nprior body\n[END OF PRIOR CONTEXT — COMPACTION SUMMARY BELOW]\n[CONTEXT SUMMARY]: merged summary body",
+    "multi\nline\rmessage",
+    "交付状态正常 with unicode em—dash"
+  ],
+  "freshest_of": "COALESCE((SELECT MAX(_act_v.v) FROM (SELECT s.last_activity_at AS v UNION ALL SELECT (SELECT MAX(_act_m.timestamp) FROM messages _act_m WHERE _act_m.session_id = s.id)) _act_v), s.started_at)",
+  "fts_indexed_content_s": "CASE WHEN s.role = 'tool'\n              AND s.id > COALESCE((SELECT CAST(value AS INTEGER)\n                                         FROM state_meta\n                                         WHERE key = 'fts_tool_full_content_high_water'), -1)\n         THEN substr(COALESCE(s.content, ''), 1, 8192)\n         ELSE s.content END",
+  "fts_trigram_session_sql_empty": "source NOT IN ('cron', 'subagent') AND json_extract((CASE WHEN json_valid(model_config) THEN model_config ELSE json_object() END), '$._delegate_from') IS NULL",
+  "fts_trigram_session_sql_s": "s.source NOT IN ('cron', 'subagent') AND json_extract((CASE WHEN json_valid(s.model_config) THEN s.model_config ELSE json_object() END), '$._delegate_from') IS NULL",
+  "id_chunks": [
+    [],
+    [
+      [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    ],
+    [
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        3,
+        4,
+        5
+      ],
+      [
+        6
+      ]
+    ],
+    [
+      900,
+      1
+    ]
+  ],
+  "is_automatic_end_reason": [
+    [
+      "tui_shutdown",
+      true
+    ],
+    [
+      "ws_disconnect",
+      true
+    ],
+    [
+      "idle_timeout",
+      true
+    ],
+    [
+      "lru_evict",
+      true
+    ],
+    [
+      "ws_orphan_reap",
+      true
+    ],
+    [
+      "agent_close",
+      true
+    ],
+    [
+      "startup_orphan_reap",
+      true
+    ],
+    [
+      "superseded_by_resume",
+      true
+    ],
+    [
+      "compression",
+      false
+    ],
+    [
+      "session_reset",
+      false
+    ],
+    [
+      "session_switch",
+      false
+    ],
+    [
+      "tui_close",
+      false
+    ],
+    [
+      null,
+      false
+    ],
+    [
+      "",
+      false
+    ]
+  ],
+  "keys": {
+    "FTS_CJK_STALE_KEY": "fts_cjk_stale",
+    "FTS_REBUILD_DEFERRAL_KEY": "fts_rebuild_deferral",
+    "FTS_STALE_KEY": "fts_stale",
+    "FTS_TOOL_FULL_CONTENT_HIGH_WATER_KEY": "fts_tool_full_content_high_water"
+  },
+  "last_active_by_id": "COALESCE((SELECT MAX(_act_v.v) FROM (SELECT (SELECT last_activity_at FROM sessions _act_s WHERE _act_s.id = 'abc') AS v UNION ALL SELECT (SELECT MAX(_act_m.timestamp) FROM messages _act_m WHERE _act_m.session_id = 'abc')) _act_v), (SELECT started_at FROM sessions _act_s WHERE _act_s.id = 'abc'))",
+  "last_active_s": "COALESCE((SELECT MAX(_act_v.v) FROM (SELECT s.last_activity_at AS v UNION ALL SELECT (SELECT MAX(_act_m.timestamp) FROM messages _act_m WHERE _act_m.session_id = s.id)) _act_v), s.started_at)",
+  "legacy_reset_a": "EXISTS (SELECT 1 FROM sessions p            WHERE p.id = {a}.parent_session_id            AND p.end_reason IN ('session_reset', 'session_switch', 'idle', 'daily', 'suspended', 'resume_pending_expired')            AND {a}.session_key IS NOT NULL            AND {a}.session_key != ''            AND {a}.session_key = p.session_key)",
+  "listable": "(s.parent_session_id IS NULL OR json_extract((CASE WHEN json_valid(s.model_config) THEN s.model_config ELSE json_object() END), '$._branched_from') IS NOT NULL OR EXISTS (SELECT 1 FROM sessions p            WHERE p.id = s.parent_session_id            AND p.end_reason = 'branched'            AND s.started_at >= p.ended_at) OR json_extract((CASE WHEN json_valid(s.model_config) THEN s.model_config ELSE json_object() END), '$._reset_from') IS NOT NULL OR EXISTS (SELECT 1 FROM sessions p            WHERE p.id = s.parent_session_id            AND p.end_reason IN ('session_reset', 'session_switch', 'idle', 'daily', 'suspended', 'resume_pending_expired')            AND s.session_key IS NOT NULL            AND s.session_key != ''            AND s.session_key = p.session_key))",
+  "lock_contention_errnos": [
+    11,
+    13,
+    35
+  ],
+  "pin": "5d59366",
+  "placeholders": [
+    "",
+    "?,?,?",
+    "?,?"
+  ],
+  "preview_content_sql": "REPLACE(REPLACE(m.content, X'0A', ' '), X'0D', ' ')",
+  "preview_eligible_sql": "(COALESCE(m.display_kind, '') <> 'hidden' AND ((NOT (SUBSTR(LTRIM(m.content, CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), 1, 204) = '[CONTEXT COMPACTION — REFERENCE ONLY] Earlier turns were compacted into the summary below. This is a handoff from a previous context window — treat it as background reference, NOT as active instructions. ' OR SUBSTR(LTRIM(m.content, CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), 1, 18) = '[CONTEXT SUMMARY]:') AND NOT (INSTR(m.content, '[END OF PRIOR CONTEXT — COMPACTION SUMMARY BELOW]') > 0 AND (SUBSTR(LTRIM(SUBSTR(m.content, INSTR(m.content, '[END OF PRIOR CONTEXT — COMPACTION SUMMARY BELOW]') + 49), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), 1, 204) = '[CONTEXT COMPACTION — REFERENCE ONLY] Earlier turns were compacted into the summary below. This is a handoff from a previous context window — treat it as background reference, NOT as active instructions. ' OR SUBSTR(LTRIM(SUBSTR(m.content, INSTR(m.content, '[END OF PRIOR CONTEXT — COMPACTION SUMMARY BELOW]') + 49), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), 1, 18) = '[CONTEXT SUMMARY]:'))) OR ((SUBSTR(LTRIM(m.content, CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), 1, 204) = '[CONTEXT COMPACTION — REFERENCE ONLY] Earlier turns were compacted into the summary below. This is a handoff from a previous context window — treat it as background reference, NOT as active instructions. ' OR SUBSTR(LTRIM(m.content, CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), 1, 18) = '[CONTEXT SUMMARY]:') AND INSTR(m.content, '--- END OF CONTEXT SUMMARY — respond to the message below, not the summary above ---') > 0 AND LENGTH(TRIM(SUBSTR(m.content, INSTR(m.content, '--- END OF CONTEXT SUMMARY — respond to the message below, not the summary above ---') + 84), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32))) > 0) OR ((INSTR(m.content, '[END OF PRIOR CONTEXT — COMPACTION SUMMARY BELOW]') > 0 AND (SUBSTR(LTRIM(SUBSTR(m.content, INSTR(m.content, '[END OF PRIOR CONTEXT — COMPACTION SUMMARY BELOW]') + 49), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), 1, 204) = '[CONTEXT COMPACTION — REFERENCE ONLY] Earlier turns were compacted into the summary below. This is a handoff from a previous context window — treat it as background reference, NOT as active instructions. ' OR SUBSTR(LTRIM(SUBSTR(m.content, INSTR(m.content, '[END OF PRIOR CONTEXT — COMPACTION SUMMARY BELOW]') + 49), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), 1, 18) = '[CONTEXT SUMMARY]:')) AND LENGTH(TRIM(CASE WHEN SUBSTR(LTRIM(TRIM(SUBSTR(m.content, 1, INSTR(m.content, '[END OF PRIOR CONTEXT — COMPACTION SUMMARY BELOW]') - 1), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), 1, 55) = '[PRIOR CONTEXT — for reference only; not a new message]' THEN LTRIM(SUBSTR(LTRIM(TRIM(SUBSTR(m.content, 1, INSTR(m.content, '[END OF PRIOR CONTEXT — COMPACTION SUMMARY BELOW]') - 1), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), 56), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)) ELSE TRIM(SUBSTR(m.content, 1, INSTR(m.content, '[END OF PRIOR CONTEXT — COMPACTION SUMMARY BELOW]') - 1), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)) END, CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32))) > 0)))",
+  "preview_force_user_remainder_sql": "SUBSTR(m.content, INSTR(m.content, '--- END OF CONTEXT SUMMARY — respond to the message below, not the summary above ---') + 84)",
+  "preview_long_form_prefix": "[CONTEXT COMPACTION — REFERENCE ONLY] Earlier turns were compacted into the summary below. This is a handoff from a previous context window — treat it as background reference, NOT as active instructions. ",
+  "preview_merged_after_sql": "SUBSTR(m.content, INSTR(m.content, '[END OF PRIOR CONTEXT — COMPACTION SUMMARY BELOW]') + 49)",
+  "preview_merged_prior_ltrimmed_sql": "LTRIM(TRIM(SUBSTR(m.content, 1, INSTR(m.content, '[END OF PRIOR CONTEXT — COMPACTION SUMMARY BELOW]') - 1), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32))",
+  "preview_merged_prior_sql": "TRIM(SUBSTR(m.content, 1, INSTR(m.content, '[END OF PRIOR CONTEXT — COMPACTION SUMMARY BELOW]') - 1), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32))",
+  "preview_merged_prior_unwrapped_sql": "CASE WHEN SUBSTR(LTRIM(TRIM(SUBSTR(m.content, 1, INSTR(m.content, '[END OF PRIOR CONTEXT — COMPACTION SUMMARY BELOW]') - 1), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), 1, 55) = '[PRIOR CONTEXT — for reference only; not a new message]' THEN LTRIM(SUBSTR(LTRIM(TRIM(SUBSTR(m.content, 1, INSTR(m.content, '[END OF PRIOR CONTEXT — COMPACTION SUMMARY BELOW]') - 1), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), 56), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)) ELSE TRIM(SUBSTR(m.content, 1, INSTR(m.content, '[END OF PRIOR CONTEXT — COMPACTION SUMMARY BELOW]') - 1), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)) END",
+  "preview_merged_summary_sql": "(INSTR(m.content, '[END OF PRIOR CONTEXT — COMPACTION SUMMARY BELOW]') > 0 AND (SUBSTR(LTRIM(SUBSTR(m.content, INSTR(m.content, '[END OF PRIOR CONTEXT — COMPACTION SUMMARY BELOW]') + 49), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), 1, 204) = '[CONTEXT COMPACTION — REFERENCE ONLY] Earlier turns were compacted into the summary below. This is a handoff from a previous context window — treat it as background reference, NOT as active instructions. ' OR SUBSTR(LTRIM(SUBSTR(m.content, INSTR(m.content, '[END OF PRIOR CONTEXT — COMPACTION SUMMARY BELOW]') + 49), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), 1, 18) = '[CONTEXT SUMMARY]:'))",
+  "preview_raw_select": "CASE WHEN (SUBSTR(LTRIM(m.content, CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), 1, 204) = '[CONTEXT COMPACTION — REFERENCE ONLY] Earlier turns were compacted into the summary below. This is a handoff from a previous context window — treat it as background reference, NOT as active instructions. ' OR SUBSTR(LTRIM(m.content, CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), 1, 18) = '[CONTEXT SUMMARY]:') THEN SUBSTR(m.content, INSTR(m.content, '--- END OF CONTEXT SUMMARY — respond to the message below, not the summary above ---') + 84) WHEN (INSTR(m.content, '[END OF PRIOR CONTEXT — COMPACTION SUMMARY BELOW]') > 0 AND (SUBSTR(LTRIM(SUBSTR(m.content, INSTR(m.content, '[END OF PRIOR CONTEXT — COMPACTION SUMMARY BELOW]') + 49), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), 1, 204) = '[CONTEXT COMPACTION — REFERENCE ONLY] Earlier turns were compacted into the summary below. This is a handoff from a previous context window — treat it as background reference, NOT as active instructions. ' OR SUBSTR(LTRIM(SUBSTR(m.content, INSTR(m.content, '[END OF PRIOR CONTEXT — COMPACTION SUMMARY BELOW]') + 49), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), 1, 18) = '[CONTEXT SUMMARY]:')) THEN CASE WHEN SUBSTR(LTRIM(TRIM(SUBSTR(m.content, 1, INSTR(m.content, '[END OF PRIOR CONTEXT — COMPACTION SUMMARY BELOW]') - 1), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), 1, 55) = '[PRIOR CONTEXT — for reference only; not a new message]' THEN LTRIM(SUBSTR(LTRIM(TRIM(SUBSTR(m.content, 1, INSTR(m.content, '[END OF PRIOR CONTEXT — COMPACTION SUMMARY BELOW]') - 1), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), 56), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)) ELSE TRIM(SUBSTR(m.content, 1, INSTR(m.content, '[END OF PRIOR CONTEXT — COMPACTION SUMMARY BELOW]') - 1), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)) END WHEN m.content LIKE '[IMPORTANT: The user has invoked the %' AND LENGTH(m.content) > 800 THEN SUBSTR(REPLACE(REPLACE(m.content, X'0A', ' '), X'0D', ' '), 1, 400) || '\u001e' || SUBSTR(REPLACE(REPLACE(m.content, X'0A', ' '), X'0D', ' '), -400) WHEN m.content LIKE '[IMPORTANT: The user has invoked the %' THEN SUBSTR(REPLACE(REPLACE(m.content, X'0A', ' '), X'0D', ' '), 1, 800) ELSE SUBSTR(REPLACE(REPLACE(m.content, X'0A', ' '), X'0D', ' '), 1, 63) END",
+  "preview_raw_subquery_sql": "COALESCE((SELECT CASE WHEN (SUBSTR(LTRIM(m.content, CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), 1, 204) = '[CONTEXT COMPACTION — REFERENCE ONLY] Earlier turns were compacted into the summary below. This is a handoff from a previous context window — treat it as background reference, NOT as active instructions. ' OR SUBSTR(LTRIM(m.content, CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), 1, 18) = '[CONTEXT SUMMARY]:') THEN SUBSTR(m.content, INSTR(m.content, '--- END OF CONTEXT SUMMARY — respond to the message below, not the summary above ---') + 84) WHEN (INSTR(m.content, '[END OF PRIOR CONTEXT — COMPACTION SUMMARY BELOW]') > 0 AND (SUBSTR(LTRIM(SUBSTR(m.content, INSTR(m.content, '[END OF PRIOR CONTEXT — COMPACTION SUMMARY BELOW]') + 49), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), 1, 204) = '[CONTEXT COMPACTION — REFERENCE ONLY] Earlier turns were compacted into the summary below. This is a handoff from a previous context window — treat it as background reference, NOT as active instructions. ' OR SUBSTR(LTRIM(SUBSTR(m.content, INSTR(m.content, '[END OF PRIOR CONTEXT — COMPACTION SUMMARY BELOW]') + 49), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), 1, 18) = '[CONTEXT SUMMARY]:')) THEN CASE WHEN SUBSTR(LTRIM(TRIM(SUBSTR(m.content, 1, INSTR(m.content, '[END OF PRIOR CONTEXT — COMPACTION SUMMARY BELOW]') - 1), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), 1, 55) = '[PRIOR CONTEXT — for reference only; not a new message]' THEN LTRIM(SUBSTR(LTRIM(TRIM(SUBSTR(m.content, 1, INSTR(m.content, '[END OF PRIOR CONTEXT — COMPACTION SUMMARY BELOW]') - 1), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), 56), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)) ELSE TRIM(SUBSTR(m.content, 1, INSTR(m.content, '[END OF PRIOR CONTEXT — COMPACTION SUMMARY BELOW]') - 1), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)) END WHEN m.content LIKE '[IMPORTANT: The user has invoked the %' AND LENGTH(m.content) > 800 THEN SUBSTR(REPLACE(REPLACE(m.content, X'0A', ' '), X'0D', ' '), 1, 400) || '\u001e' || SUBSTR(REPLACE(REPLACE(m.content, X'0A', ' '), X'0D', ' '), -400) WHEN m.content LIKE '[IMPORTANT: The user has invoked the %' THEN SUBSTR(REPLACE(REPLACE(m.content, X'0A', ' '), X'0D', ' '), 1, 800) ELSE SUBSTR(REPLACE(REPLACE(m.content, X'0A', ' '), X'0D', ' '), 1, 63) END FROM messages m WHERE m.session_id = s.id AND m.role = 'user' AND m.content IS NOT NULL AND (COALESCE(m.display_kind, '') <> 'hidden' AND ((NOT (SUBSTR(LTRIM(m.content, CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), 1, 204) = '[CONTEXT COMPACTION — REFERENCE ONLY] Earlier turns were compacted into the summary below. This is a handoff from a previous context window — treat it as background reference, NOT as active instructions. ' OR SUBSTR(LTRIM(m.content, CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), 1, 18) = '[CONTEXT SUMMARY]:') AND NOT (INSTR(m.content, '[END OF PRIOR CONTEXT — COMPACTION SUMMARY BELOW]') > 0 AND (SUBSTR(LTRIM(SUBSTR(m.content, INSTR(m.content, '[END OF PRIOR CONTEXT — COMPACTION SUMMARY BELOW]') + 49), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), 1, 204) = '[CONTEXT COMPACTION — REFERENCE ONLY] Earlier turns were compacted into the summary below. This is a handoff from a previous context window — treat it as background reference, NOT as active instructions. ' OR SUBSTR(LTRIM(SUBSTR(m.content, INSTR(m.content, '[END OF PRIOR CONTEXT — COMPACTION SUMMARY BELOW]') + 49), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), 1, 18) = '[CONTEXT SUMMARY]:'))) OR ((SUBSTR(LTRIM(m.content, CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), 1, 204) = '[CONTEXT COMPACTION — REFERENCE ONLY] Earlier turns were compacted into the summary below. This is a handoff from a previous context window — treat it as background reference, NOT as active instructions. ' OR SUBSTR(LTRIM(m.content, CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), 1, 18) = '[CONTEXT SUMMARY]:') AND INSTR(m.content, '--- END OF CONTEXT SUMMARY — respond to the message below, not the summary above ---') > 0 AND LENGTH(TRIM(SUBSTR(m.content, INSTR(m.content, '--- END OF CONTEXT SUMMARY — respond to the message below, not the summary above ---') + 84), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32))) > 0) OR ((INSTR(m.content, '[END OF PRIOR CONTEXT — COMPACTION SUMMARY BELOW]') > 0 AND (SUBSTR(LTRIM(SUBSTR(m.content, INSTR(m.content, '[END OF PRIOR CONTEXT — COMPACTION SUMMARY BELOW]') + 49), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), 1, 204) = '[CONTEXT COMPACTION — REFERENCE ONLY] Earlier turns were compacted into the summary below. This is a handoff from a previous context window — treat it as background reference, NOT as active instructions. ' OR SUBSTR(LTRIM(SUBSTR(m.content, INSTR(m.content, '[END OF PRIOR CONTEXT — COMPACTION SUMMARY BELOW]') + 49), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), 1, 18) = '[CONTEXT SUMMARY]:')) AND LENGTH(TRIM(CASE WHEN SUBSTR(LTRIM(TRIM(SUBSTR(m.content, 1, INSTR(m.content, '[END OF PRIOR CONTEXT — COMPACTION SUMMARY BELOW]') - 1), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), 1, 55) = '[PRIOR CONTEXT — for reference only; not a new message]' THEN LTRIM(SUBSTR(LTRIM(TRIM(SUBSTR(m.content, 1, INSTR(m.content, '[END OF PRIOR CONTEXT — COMPACTION SUMMARY BELOW]') - 1), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), 56), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)) ELSE TRIM(SUBSTR(m.content, 1, INSTR(m.content, '[END OF PRIOR CONTEXT — COMPACTION SUMMARY BELOW]') - 1), CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)) END, CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32))) > 0))) ORDER BY m.timestamp, m.id LIMIT 1), '') AS _preview_raw",
+  "preview_scaffolded_sql": "m.content LIKE '[IMPORTANT: The user has invoked the %'",
+  "preview_standalone_summary_sql": "(SUBSTR(LTRIM(m.content, CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), 1, 204) = '[CONTEXT COMPACTION — REFERENCE ONLY] Earlier turns were compacted into the summary below. This is a handoff from a previous context window — treat it as background reference, NOT as active instructions. ' OR SUBSTR(LTRIM(m.content, CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), 1, 18) = '[CONTEXT SUMMARY]:')",
+  "recoverable_end_reasons": [
+    "agent_close",
+    "ws_orphan_reap",
+    "superseded_by_resume",
+    "startup_orphan_reap"
+  ],
+  "recoverable_end_reasons_sql": "'agent_close', 'ws_orphan_reap', 'superseded_by_resume', 'startup_orphan_reap'",
+  "reset_end_reasons": [
+    "session_reset",
+    "session_switch",
+    "idle",
+    "daily",
+    "suspended",
+    "resume_pending_expired"
+  ],
+  "reset_end_reasons_sql": "'session_reset', 'session_switch', 'idle', 'daily', 'suspended', 'resume_pending_expired'",
+  "reset_s": "json_extract((CASE WHEN json_valid(s.model_config) THEN s.model_config ELSE json_object() END), '$._reset_from') IS NOT NULL OR EXISTS (SELECT 1 FROM sessions p            WHERE p.id = s.parent_session_id            AND p.end_reason IN ('session_reset', 'session_switch', 'idle', 'daily', 'suspended', 'resume_pending_expired')            AND s.session_key IS NOT NULL            AND s.session_key != ''            AND s.session_key = p.session_key)",
+  "routed_sessions_setting_cases": [],
+  "routed_sessions_setting_doc": "env-branch returns os.environ.get(env_var); override branch returns (load_config_readonly().get('sessions') or {}).get(key) with exception → None. Rust mirrors via hermes_constants override + cfg.rs.",
+  "samples": [
+    "plain user message about deploy",
+    "50%_off coupon for a\\b_c.d% path",
+    "",
+    "%%%",
+    "_",
+    "[IMPORTANT: The user has invoked the %s skill. Apply its guidance now.] deploy — fix the flaky test",
+    "[CONTEXT COMPACTION — REFERENCE ONLY] Earlier turns were compacted into the summary below. Do NOT answer questions from the summary. Prior facts only.\n[END OF PRIOR CONTEXT — COMPACTION SUMMARY BELOW]\n[CONTEXT SUMMARY]: legacy tail summary body",
+    "[CONTEXT SUMMARY]: only legacy summary no marker",
+    "[CONTEXT SUMMARY]: legacy with marker --- END OF CONTEXT SUMMARY — respond to the message below, not the summary above --- actionable remainder here",
+    "[PRIOR CONTEXT — for reference only; not a new message]\n\nprior body\n[END OF PRIOR CONTEXT — COMPACTION SUMMARY BELOW]\n[CONTEXT SUMMARY]: merged summary body",
+    "multi\nline\rmessage",
+    "交付状态正常 with unicode em—dash"
+  ],
+  "scalars": {
+    "AUTO_VACUUM_MIN_FREELIST_RATIO": 0.25,
+    "FTS_STORAGE_VERSION": 2,
+    "FTS_TOOL_CONTENT_PREFIX_CHARS": 8192,
+    "MAX_FTS5_QUERY_CHARS": 2048,
+    "PREVIEW_HEAD": 63,
+    "PREVIEW_MAX": 60,
+    "PREVIEW_WINDOW": 400,
+    "SCHEMA_VERSION": 30,
+    "_SQL_IN_CHUNK": 900
+  },
+  "shape_preview": [
+    "plain user message about deploy",
+    "50%_off coupon for a\\b_c.d% path",
+    "",
+    "%%%",
+    "_",
+    "[IMPORTANT: The user has invoked the %s skill. Apply its gui...",
+    "[CONTEXT COMPACTION — REFERENCE ONLY] Earlier turns were com...",
+    "[CONTEXT SUMMARY]: only legacy summary no marker",
+    "[CONTEXT SUMMARY]: legacy with marker --- END OF CONTEXT SUM...",
+    "[PRIOR CONTEXT — for reference only; not a new message]  pri...",
+    "multi line message",
+    "交付状态正常 with unicode em—dash"
+  ],
+  "sql_after_marker": "SUBSTR(m.content, INSTR(m.content, 'MARK') + 4)",
+  "sql_json_extract": "json_extract((CASE WHEN json_valid({a}.model_config) THEN {a}.model_config ELSE json_object() END), '$._branched_from')",
+  "sql_literal": [
+    "'plain'",
+    "'it''s'",
+    "'a''''b'",
+    "''"
+  ],
+  "sql_ltrim": "LTRIM(m.content, CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32))",
+  "sql_starts_with": "(SUBSTR(LTRIM(m.content, CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), 1, 4) = '[A] ' OR SUBSTR(LTRIM(m.content, CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32)), 1, 4) = '[B] ')",
+  "sql_trim": "TRIM(m.content, CHAR(9) || CHAR(10) || CHAR(13) || CHAR(32))",
+  "string_consts": {
+    "DEFERRED_INDEX_SQL": "\nCREATE INDEX IF NOT EXISTS idx_messages_session_active\n    ON messages(session_id, active, timestamp);\nCREATE INDEX IF NOT EXISTS idx_messages_display_page\n    ON messages(session_id, display_order, active DESC, id DESC)\n    WHERE active = 1 OR compacted = 1;\nCREATE INDEX IF NOT EXISTS idx_messages_display_backfill\n    ON messages(session_id) WHERE (display_order IS NULL OR display_identity IS NULL)\n    AND (active = 1 OR compacted = 1);\nCREATE INDEX IF NOT EXISTS idx_messages_display_identity\n    ON messages(session_id, display_identity, display_order)\n    WHERE display_identity IS NOT NULL AND (active = 1 OR compacted = 1);\nDROP TRIGGER IF EXISTS messages_display_order_insert;\nCREATE TRIGGER IF NOT EXISTS messages_display_order_insert\nAFTER INSERT ON messages WHEN new.display_order IS NULL\nBEGIN\n    UPDATE messages SET display_order = COALESCE((\n        SELECT display_order FROM messages\n        WHERE session_id = new.session_id AND id <> new.id\n          AND (active = 1 OR compacted = 1)\n          AND display_identity = new.display_identity AND display_order IS NOT NULL\n        ORDER BY display_order LIMIT 1\n    ), new.id) WHERE id = new.id;\nEND;\nDROP TRIGGER IF EXISTS messages_display_visibility_update;\nCREATE TRIGGER IF NOT EXISTS messages_display_visibility_update\nAFTER UPDATE OF active, compacted ON messages\nWHEN (new.active = 1 OR new.compacted = 1) <> (old.active = 1 OR old.compacted = 1)\nBEGIN\n    UPDATE messages SET display_order = MIN(new.id, COALESCE((\n        SELECT display_order FROM messages\n        WHERE session_id = new.session_id AND id <> new.id\n          AND (active = 1 OR compacted = 1)\n          AND display_identity = new.display_identity AND display_order IS NOT NULL\n        ORDER BY display_order LIMIT 1\n    ), new.id)) WHERE id = new.id\n      AND (new.active = 1 OR new.compacted = 1);\n    UPDATE messages SET display_order = (SELECT display_order FROM messages WHERE id = new.id)\n    WHERE session_id = new.session_id AND id <> new.id AND (active = 1 OR compacted = 1)\n      AND display_identity = new.display_identity\n      AND (new.active = 1 OR new.compacted = 1);\n    UPDATE messages SET display_order = (\n        SELECT MIN(peer.id) FROM messages AS peer\n        WHERE peer.session_id = old.session_id AND (peer.active = 1 OR peer.compacted = 1)\n          AND peer.display_identity = old.display_identity\n    ) WHERE session_id = old.session_id AND (active = 1 OR compacted = 1)\n      AND display_identity = old.display_identity\n      AND NOT (new.active = 1 OR new.compacted = 1);\nEND;\nDROP TRIGGER IF EXISTS messages_display_identity_update;\nCREATE TRIGGER IF NOT EXISTS messages_display_identity_update\nAFTER UPDATE OF role, content, timestamp, tool_call_id, tool_calls, tool_name,\n                display_kind ON messages\nWHEN new.role IS NOT old.role\n  OR new.content IS NOT old.content\n  OR new.timestamp IS NOT old.timestamp\n  OR new.tool_call_id IS NOT old.tool_call_id\n  OR new.tool_calls IS NOT old.tool_calls\n  OR new.tool_name IS NOT old.tool_name\n  OR new.display_kind IS NOT old.display_kind\nBEGIN\n    UPDATE messages SET display_identity = NULL, display_order = NULL\n    WHERE id = new.id OR (\n        session_id = old.session_id AND display_identity = old.display_identity\n        AND (active = 1 OR compacted = 1)\n    );\nEND;\nDROP TRIGGER IF EXISTS messages_display_identity_delete;\nCREATE TRIGGER IF NOT EXISTS messages_display_identity_delete\nAFTER DELETE ON messages WHEN old.active = 1 OR old.compacted = 1\nBEGIN\n    UPDATE messages SET display_order = (\n        SELECT MIN(peer.id) FROM messages AS peer\n        WHERE peer.session_id = old.session_id AND (peer.active = 1 OR peer.compacted = 1)\n          AND peer.display_identity = old.display_identity\n    ) WHERE session_id = old.session_id AND (active = 1 OR compacted = 1)\n      AND display_identity = old.display_identity;\nEND;\nCREATE INDEX IF NOT EXISTS idx_messages_active_null\n    ON messages(active) WHERE active IS NULL;\nCREATE INDEX IF NOT EXISTS idx_sessions_session_key\n    ON sessions(session_key, started_at DESC);\nCREATE INDEX IF NOT EXISTS idx_sessions_gateway_peer\n    ON sessions(source, user_id, chat_id, chat_type, thread_id, started_at DESC);\nCREATE INDEX IF NOT EXISTS idx_sessions_handoff_state\n    ON sessions(handoff_state, started_at);\nCREATE INDEX IF NOT EXISTS idx_sessions_system_prompt_hash\n    ON sessions(system_prompt_hash);\n-- Recent-session browsing must never derive recency by scanning messages.\n-- This expression is the durable, indexable approximation used to preselect\n-- a small candidate set before compression-chain and preview hydration.\nCREATE INDEX IF NOT EXISTS idx_sessions_effective_activity\n    ON sessions(COALESCE(last_activity_at, started_at) DESC, started_at DESC);\n",
+    "FTS_SQL": "\nCREATE VIRTUAL TABLE IF NOT EXISTS messages_fts USING fts5(\n    content,\n    tool_name,\n    tool_calls,\n    content='messages',\n    content_rowid='id'\n);\n\nCREATE TRIGGER IF NOT EXISTS messages_fts_insert AFTER INSERT ON messages\nWHEN (new.id > COALESCE((SELECT CAST(value AS INTEGER) FROM state_meta\n                         WHERE key = 'fts_rebuild_high_water'), -1)\n   OR new.id <= COALESCE((SELECT CAST(value AS INTEGER) FROM state_meta\n                          WHERE key = 'fts_rebuild_progress'), -1))\nBEGIN\n    INSERT INTO messages_fts(rowid, content, tool_name, tool_calls)\n    VALUES (\n        new.id,\n        CASE WHEN new.role = 'tool'\n              AND new.id > COALESCE((SELECT CAST(value AS INTEGER)\n                                         FROM state_meta\n                                         WHERE key = 'fts_tool_full_content_high_water'), -1)\n         THEN substr(COALESCE(new.content, ''), 1, 8192)\n         ELSE new.content END,\n        new.tool_name,\n        new.tool_calls\n    );\nEND;\n\nCREATE TRIGGER IF NOT EXISTS messages_fts_delete AFTER DELETE ON messages\nWHEN (old.id > COALESCE((SELECT CAST(value AS INTEGER) FROM state_meta\n                         WHERE key = 'fts_rebuild_high_water'), -1)\n   OR old.id <= COALESCE((SELECT CAST(value AS INTEGER) FROM state_meta\n                          WHERE key = 'fts_rebuild_progress'), -1))\nBEGIN\n    INSERT INTO messages_fts(messages_fts, rowid, content, tool_name, tool_calls)\n    VALUES (\n        'delete',\n        old.id,\n        CASE WHEN old.role = 'tool'\n              AND old.id > COALESCE((SELECT CAST(value AS INTEGER)\n                                         FROM state_meta\n                                         WHERE key = 'fts_tool_full_content_high_water'), -1)\n         THEN substr(COALESCE(old.content, ''), 1, 8192)\n         ELSE old.content END,\n        old.tool_name,\n        old.tool_calls\n    );\nEND;\n\n-- UPDATE OF skips the trigger entirely for non-content column writes\n-- (status/compacted/observed/etc.), which is stronger than the WHEN gate\n-- alone and avoids FTS I/O saturation on large state.db (#68858 / #73639).\nCREATE TRIGGER IF NOT EXISTS messages_fts_update\nAFTER UPDATE OF content, tool_name, tool_calls, role ON messages\nWHEN (old.content IS NOT new.content\n    OR old.tool_name IS NOT new.tool_name\n    OR old.tool_calls IS NOT new.tool_calls\n    OR old.role IS NOT new.role)\n   AND (old.id > COALESCE((SELECT CAST(value AS INTEGER) FROM state_meta\n                           WHERE key = 'fts_rebuild_high_water'), -1)\n     OR old.id <= COALESCE((SELECT CAST(value AS INTEGER) FROM state_meta\n                            WHERE key = 'fts_rebuild_progress'), -1))\nBEGIN\n    INSERT INTO messages_fts(messages_fts, rowid, content, tool_name, tool_calls)\n    VALUES (\n        'delete',\n        old.id,\n        CASE WHEN old.role = 'tool'\n              AND old.id > COALESCE((SELECT CAST(value AS INTEGER)\n                                         FROM state_meta\n                                         WHERE key = 'fts_tool_full_content_high_water'), -1)\n         THEN substr(COALESCE(old.content, ''), 1, 8192)\n         ELSE old.content END,\n        old.tool_name,\n        old.tool_calls\n    );\n    INSERT INTO messages_fts(rowid, content, tool_name, tool_calls)\n    VALUES (\n        new.id,\n        CASE WHEN new.role = 'tool'\n              AND new.id > COALESCE((SELECT CAST(value AS INTEGER)\n                                         FROM state_meta\n                                         WHERE key = 'fts_tool_full_content_high_water'), -1)\n         THEN substr(COALESCE(new.content, ''), 1, 8192)\n         ELSE new.content END,\n        new.tool_name,\n        new.tool_calls\n    );\nEND;\n",
+    "FTS_TRIGRAM_SQL": "\nCREATE VIEW IF NOT EXISTS messages_fts_trigram_src AS\n    SELECT m.id, m.role, m.content, m.tool_name\n    FROM messages AS m\n    JOIN sessions AS s ON s.id = m.session_id\n    WHERE m.role <> 'tool' AND s.source NOT IN ('cron', 'subagent') AND json_extract((CASE WHEN json_valid(s.model_config) THEN s.model_config ELSE json_object() END), '$._delegate_from') IS NULL;\n\nCREATE VIRTUAL TABLE IF NOT EXISTS messages_fts_trigram USING fts5(\n    content,\n    tool_name,\n    content='messages_fts_trigram_src',\n    content_rowid='id',\n    tokenize='trigram'\n);\n\nCREATE TRIGGER IF NOT EXISTS messages_fts_trigram_insert AFTER INSERT ON messages\nWHEN new.role <> 'tool'\n   AND EXISTS (SELECT 1 FROM sessions\n               WHERE id = new.session_id AND source NOT IN ('cron', 'subagent') AND json_extract((CASE WHEN json_valid(model_config) THEN model_config ELSE json_object() END), '$._delegate_from') IS NULL)\n   AND (new.id > COALESCE((SELECT CAST(value AS INTEGER) FROM state_meta\n                           WHERE key = 'fts_rebuild_high_water'), -1)\n     OR new.id <= COALESCE((SELECT CAST(value AS INTEGER) FROM state_meta\n                            WHERE key = 'fts_rebuild_progress'), -1))\nBEGIN\n    INSERT INTO messages_fts_trigram(rowid, content, tool_name)\n    VALUES (new.id, new.content, new.tool_name);\nEND;\n\nCREATE TRIGGER IF NOT EXISTS messages_fts_trigram_delete AFTER DELETE ON messages\nWHEN old.role <> 'tool'\n   AND EXISTS (SELECT 1 FROM sessions\n               WHERE id = old.session_id AND source NOT IN ('cron', 'subagent') AND json_extract((CASE WHEN json_valid(model_config) THEN model_config ELSE json_object() END), '$._delegate_from') IS NULL)\n   AND (old.id > COALESCE((SELECT CAST(value AS INTEGER) FROM state_meta\n                           WHERE key = 'fts_rebuild_high_water'), -1)\n     OR old.id <= COALESCE((SELECT CAST(value AS INTEGER) FROM state_meta\n                            WHERE key = 'fts_rebuild_progress'), -1))\nBEGIN\n    INSERT INTO messages_fts_trigram(messages_fts_trigram, rowid, content, tool_name)\n    VALUES ('delete', old.id, old.content, old.tool_name);\nEND;\n\nCREATE TRIGGER IF NOT EXISTS messages_fts_trigram_update\nAFTER UPDATE OF content, tool_name, role ON messages\nWHEN (old.content IS NOT new.content\n    OR old.tool_name IS NOT new.tool_name\n    OR old.role IS NOT new.role)\n   AND (old.id > COALESCE((SELECT CAST(value AS INTEGER) FROM state_meta\n                           WHERE key = 'fts_rebuild_high_water'), -1)\n     OR old.id <= COALESCE((SELECT CAST(value AS INTEGER) FROM state_meta\n                            WHERE key = 'fts_rebuild_progress'), -1))\nBEGIN\n    INSERT INTO messages_fts_trigram(messages_fts_trigram, rowid, content, tool_name)\n    SELECT 'delete', old.id, old.content, old.tool_name\n    WHERE old.role <> 'tool'\n      AND EXISTS (SELECT 1 FROM sessions\n                  WHERE id = old.session_id AND source NOT IN ('cron', 'subagent') AND json_extract((CASE WHEN json_valid(model_config) THEN model_config ELSE json_object() END), '$._delegate_from') IS NULL);\n    INSERT INTO messages_fts_trigram(rowid, content, tool_name)\n    SELECT new.id, new.content, new.tool_name\n    WHERE new.role <> 'tool'\n      AND EXISTS (SELECT 1 FROM sessions\n                  WHERE id = new.session_id AND source NOT IN ('cron', 'subagent') AND json_extract((CASE WHEN json_valid(model_config) THEN model_config ELSE json_object() END), '$._delegate_from') IS NULL);\nEND;\n",
+    "LEGACY_FTS_SQL": "\nCREATE VIRTUAL TABLE IF NOT EXISTS messages_fts USING fts5(\n    content\n);\n\nCREATE TRIGGER IF NOT EXISTS messages_fts_insert AFTER INSERT ON messages BEGIN\n    INSERT INTO messages_fts(rowid, content) VALUES (\n        new.id,\n        COALESCE(CASE WHEN new.role = 'tool'\n              AND new.id > COALESCE((SELECT CAST(value AS INTEGER)\n                                         FROM state_meta\n                                         WHERE key = 'fts_tool_full_content_high_water'), -1)\n         THEN substr(COALESCE(new.content, ''), 1, 8192)\n         ELSE new.content END, '')\n        || ' ' || COALESCE(new.tool_name, '') || ' ' || COALESCE(new.tool_calls, '')\n    );\nEND;\n\nCREATE TRIGGER IF NOT EXISTS messages_fts_delete AFTER DELETE ON messages BEGIN\n    DELETE FROM messages_fts WHERE rowid = old.id;\nEND;\n\nCREATE TRIGGER IF NOT EXISTS messages_fts_update\nAFTER UPDATE OF content, tool_name, tool_calls, role ON messages BEGIN\n    DELETE FROM messages_fts WHERE rowid = old.id;\n    INSERT INTO messages_fts(rowid, content) VALUES (\n        new.id,\n        COALESCE(CASE WHEN new.role = 'tool'\n              AND new.id > COALESCE((SELECT CAST(value AS INTEGER)\n                                         FROM state_meta\n                                         WHERE key = 'fts_tool_full_content_high_water'), -1)\n         THEN substr(COALESCE(new.content, ''), 1, 8192)\n         ELSE new.content END, '')\n        || ' ' || COALESCE(new.tool_name, '') || ' ' || COALESCE(new.tool_calls, '')\n    );\nEND;\n",
+    "LEGACY_FTS_TRIGRAM_SQL": "\nCREATE VIRTUAL TABLE IF NOT EXISTS messages_fts_trigram USING fts5(\n    content,\n    tokenize='trigram'\n);\n\nCREATE TRIGGER IF NOT EXISTS messages_fts_trigram_insert AFTER INSERT ON messages BEGIN\n    INSERT INTO messages_fts_trigram(rowid, content) VALUES (\n        new.id,\n        COALESCE(CASE WHEN new.role = 'tool'\n              AND new.id > COALESCE((SELECT CAST(value AS INTEGER)\n                                         FROM state_meta\n                                         WHERE key = 'fts_tool_full_content_high_water'), -1)\n         THEN substr(COALESCE(new.content, ''), 1, 8192)\n         ELSE new.content END, '')\n        || ' ' || COALESCE(new.tool_name, '') || ' ' || COALESCE(new.tool_calls, '')\n    );\nEND;\n\nCREATE TRIGGER IF NOT EXISTS messages_fts_trigram_delete AFTER DELETE ON messages BEGIN\n    DELETE FROM messages_fts_trigram WHERE rowid = old.id;\nEND;\n\nCREATE TRIGGER IF NOT EXISTS messages_fts_trigram_update\nAFTER UPDATE OF content, tool_name, tool_calls, role ON messages BEGIN\n    DELETE FROM messages_fts_trigram WHERE rowid = old.id;\n    INSERT INTO messages_fts_trigram(rowid, content) VALUES (\n        new.id,\n        COALESCE(CASE WHEN new.role = 'tool'\n              AND new.id > COALESCE((SELECT CAST(value AS INTEGER)\n                                         FROM state_meta\n                                         WHERE key = 'fts_tool_full_content_high_water'), -1)\n         THEN substr(COALESCE(new.content, ''), 1, 8192)\n         ELSE new.content END, '')\n        || ' ' || COALESCE(new.tool_name, '') || ' ' || COALESCE(new.tool_calls, '')\n    );\nEND;\n",
+    "SCHEMA_SQL": "\nCREATE TABLE IF NOT EXISTS schema_version (\n    version INTEGER NOT NULL\n);\n\nCREATE TABLE IF NOT EXISTS system_prompts (\n    hash TEXT PRIMARY KEY,\n    prompt TEXT NOT NULL\n);\n\nCREATE TABLE IF NOT EXISTS sessions (\n    id TEXT PRIMARY KEY,\n    source TEXT NOT NULL,\n    user_id TEXT,\n    session_key TEXT,\n    chat_id TEXT,\n    chat_type TEXT,\n    thread_id TEXT,\n    display_name TEXT,\n    origin_json TEXT,\n    expiry_finalized INTEGER DEFAULT 0,\n    model TEXT,\n    model_config TEXT,\n    system_prompt TEXT,\n    system_prompt_hash TEXT,\n    parent_session_id TEXT,\n    started_at REAL NOT NULL,\n    ended_at REAL,\n    end_reason TEXT,\n    message_count INTEGER DEFAULT 0,\n    tool_call_count INTEGER DEFAULT 0,\n    input_tokens INTEGER DEFAULT 0,\n    output_tokens INTEGER DEFAULT 0,\n    cache_read_tokens INTEGER DEFAULT 0,\n    cache_write_tokens INTEGER DEFAULT 0,\n    reasoning_tokens INTEGER DEFAULT 0,\n    cwd TEXT,\n    git_branch TEXT,\n    git_repo_root TEXT,\n    git_metadata_generation INTEGER NOT NULL DEFAULT 0,\n    billing_provider TEXT,\n    billing_base_url TEXT,\n    billing_mode TEXT,\n    estimated_cost_usd REAL,\n    actual_cost_usd REAL,\n    cost_status TEXT,\n    cost_source TEXT,\n    pricing_version TEXT,\n    title TEXT,\n    title_source TEXT,\n    last_activity_at REAL,\n    last_activity_description TEXT,\n    last_activity_provenance TEXT,\n    api_call_count INTEGER DEFAULT 0,\n    handoff_state TEXT,\n    handoff_platform TEXT,\n    handoff_error TEXT,\n    compression_failure_cooldown_until REAL,\n    compression_failure_error TEXT,\n    compression_fallback_streak INTEGER NOT NULL DEFAULT 0,\n    compression_ineffective_count INTEGER NOT NULL DEFAULT 0,\n    compression_recovery_deadline REAL,\n    profile_name TEXT,\n    rewind_count INTEGER NOT NULL DEFAULT 0,\n    archived INTEGER NOT NULL DEFAULT 0,\n    pinned INTEGER NOT NULL DEFAULT 0,\n    hidden INTEGER NOT NULL DEFAULT 0,\n    last_read_at REAL,\n    tool_names TEXT,\n    FOREIGN KEY (parent_session_id) REFERENCES sessions(id),\n    FOREIGN KEY (system_prompt_hash) REFERENCES system_prompts(hash)\n);\n\nCREATE TABLE IF NOT EXISTS messages (\n    id INTEGER PRIMARY KEY AUTOINCREMENT,\n    session_id TEXT NOT NULL REFERENCES sessions(id),\n    role TEXT NOT NULL,\n    content TEXT,\n    tool_call_id TEXT,\n    tool_calls TEXT,\n    tool_name TEXT,\n    effect_disposition TEXT,\n    timestamp REAL NOT NULL,\n    token_count INTEGER,\n    finish_reason TEXT,\n    reasoning TEXT,\n    reasoning_content TEXT,\n    reasoning_details TEXT,\n    codex_reasoning_items TEXT,\n    codex_message_items TEXT,\n    platform_message_id TEXT,\n    observed INTEGER DEFAULT 0,\n    _compressed_summary INTEGER NOT NULL DEFAULT 0,\n    active INTEGER NOT NULL DEFAULT 1,\n    compacted INTEGER NOT NULL DEFAULT 0,\n    api_content TEXT,\n    display_kind TEXT,\n    display_metadata TEXT,\n    display_identity BLOB,\n    display_order INTEGER\n);\n\nCREATE TABLE IF NOT EXISTS session_model_usage (\n    session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,\n    model TEXT NOT NULL,\n    billing_provider TEXT NOT NULL DEFAULT '',\n    billing_base_url TEXT NOT NULL DEFAULT '',\n    billing_mode TEXT NOT NULL DEFAULT '',\n    task TEXT NOT NULL DEFAULT '',\n    api_call_count INTEGER NOT NULL DEFAULT 0,\n    input_tokens INTEGER NOT NULL DEFAULT 0,\n    output_tokens INTEGER NOT NULL DEFAULT 0,\n    cache_read_tokens INTEGER NOT NULL DEFAULT 0,\n    cache_write_tokens INTEGER NOT NULL DEFAULT 0,\n    reasoning_tokens INTEGER NOT NULL DEFAULT 0,\n    estimated_cost_usd REAL NOT NULL DEFAULT 0,\n    actual_cost_usd REAL NOT NULL DEFAULT 0,\n    cost_status TEXT,\n    cost_source TEXT,\n    first_seen REAL,\n    last_seen REAL,\n    PRIMARY KEY (session_id, model, billing_provider, billing_base_url, billing_mode, task)\n);\n\nCREATE TABLE IF NOT EXISTS state_meta (\n    key TEXT PRIMARY KEY,\n    value TEXT\n);\n\nCREATE TABLE IF NOT EXISTS gateway_routing (\n    scope TEXT NOT NULL DEFAULT '',\n    session_key TEXT NOT NULL,\n    entry_json TEXT NOT NULL,\n    updated_at REAL NOT NULL,\n    PRIMARY KEY (scope, session_key)\n);\n\nCREATE TABLE IF NOT EXISTS gateway_hygiene_state (\n    session_key TEXT PRIMARY KEY,\n    failure_streak INTEGER NOT NULL DEFAULT 0\n);\n\n-- Monotonic conversation generation per routing peer (#96811).\n--\n-- A host-declared conversation key (X-Hermes-Session-Key / build_session_key)\n-- is per-CHAT and outlives any single conversation on it, so the prompt-cache\n-- affinity scope derived from it must be qualified by which conversation is\n-- currently live. Deriving that from the session rows themselves\n-- (COUNT/MAX over _RESET_END_REASONS boundaries) cannot prove non-reuse:\n-- delete_session() and bulk pruning remove ended rows, so an aggregate can\n-- return a pair it already emitted and hand a new conversation a retired\n-- affinity identity.\n--\n-- This counter lives outside prunable session history and only ever\n-- increments, once per boundary actually written, so a generation can never\n-- be reused for a peer even if every session row behind it is deleted.\n--\n-- These rows are deliberately NEVER garbage-collected, including when every\n-- session row for the peer is gone. Collecting one resets that peer to \"no\n-- generation\", so its next boundary writes generation = 1 again and re-issues\n-- a gwk_ scope a retired conversation already used — exactly the ABA this\n-- table exists to close. Do not add it to delete_session()'s cascade or to any\n-- prune sweep. One (TEXT, TEXT, INTEGER) row per routing peer is the intended,\n-- bounded cost.\nCREATE TABLE IF NOT EXISTS conversation_generations (\n    source TEXT NOT NULL,\n    session_key TEXT NOT NULL,\n    generation INTEGER NOT NULL DEFAULT 0,\n    PRIMARY KEY (source, session_key)\n);\n\n-- Per-backend liveness heartbeat (#94895). Each serve / tui_gateway process\n-- registers a row at startup and refreshes ``last_heartbeat`` periodically.\n-- The startup orphan sweep (sessions.startup_orphan_reap) consults this\n-- table to avoid reaping rows whose owning backend is still alive but\n-- just idle (multi-backend state.db shared by isolated serve processes).\n-- A backend whose ``last_heartbeat`` is older than the heartbeat staleness\n-- window is treated as dead; rows without ANY matching heartbeat fall back\n-- to the original staleness predicate so legacy deployments keep working.\nCREATE TABLE IF NOT EXISTS gateway_heartbeats (\n    backend_id TEXT PRIMARY KEY,\n    pid INTEGER NOT NULL,\n    started_at REAL NOT NULL,\n    last_heartbeat REAL NOT NULL,\n    profile TEXT NOT NULL DEFAULT '',\n    host TEXT NOT NULL DEFAULT ''\n);\n\nCREATE TABLE IF NOT EXISTS compression_locks (\n    session_id TEXT PRIMARY KEY,\n    holder TEXT NOT NULL,\n    acquired_at REAL NOT NULL,\n    expires_at REAL NOT NULL\n);\n\nCREATE TABLE IF NOT EXISTS session_turn_leases (\n    conversation_id TEXT PRIMARY KEY,\n    holder TEXT NOT NULL,\n    acquired_at REAL NOT NULL,\n    expires_at REAL NOT NULL\n);\n\nCREATE TABLE IF NOT EXISTS async_delegations (\n    delegation_id TEXT PRIMARY KEY,\n    origin_session TEXT NOT NULL,\n    origin_ui_session_id TEXT NOT NULL DEFAULT '',\n    parent_session_id TEXT,\n    state TEXT NOT NULL,\n    dispatched_at REAL NOT NULL,\n    completed_at REAL,\n    updated_at REAL NOT NULL,\n    event_json TEXT,\n    result_json TEXT,\n    delivery_state TEXT NOT NULL DEFAULT 'pending',\n    delivery_attempts INTEGER NOT NULL DEFAULT 0,\n    delivered_at REAL,\n    owner_pid INTEGER,\n    owner_started_at INTEGER,\n    task_json TEXT,\n    delivery_claim TEXT,\n    delivery_claimed_at REAL,\n    -- Mirrors the delegation tool's own CREATE TABLE (tools/async_delegation.py\n    -- _initialize_schema). Keeping the canonical fresh-install shape identical\n    -- to the tool's avoids a silent schema drift: the tool's lazy\n    -- ALTER TABLE ADD COLUMN used to be the only source of this column, so two\n    -- databases at the same schema_version had different\n    -- async_delegations shapes depending on whether the delegation tool had\n    -- ever run, breaking rebuild/replay pipelines that reconstruct state.db\n    -- from the canonical schema (#94691).\n    origin_session_id TEXT NOT NULL DEFAULT ''\n);\n\nCREATE INDEX IF NOT EXISTS idx_sessions_source ON sessions(source);\nCREATE INDEX IF NOT EXISTS idx_sessions_source_id ON sessions(source, id);\nCREATE INDEX IF NOT EXISTS idx_sessions_parent ON sessions(parent_session_id);\nCREATE INDEX IF NOT EXISTS idx_sessions_started ON sessions(started_at DESC);\nCREATE INDEX IF NOT EXISTS idx_messages_session ON messages(session_id, timestamp);\nCREATE INDEX IF NOT EXISTS idx_messages_session_id ON messages(session_id, id);\n-- Partial index for the Insights assistant tool-call scan\n-- (agent/insights.py _get_tool_usage / _get_skill_usage): those queries filter\n-- messages by role='assistant' AND tool_calls IS NOT NULL, a small fraction of\n-- rows on a large state.db. role and tool_calls are base columns, so this can\n-- live in SCHEMA_SQL rather than DEFERRED_INDEX_SQL.\nCREATE INDEX IF NOT EXISTS idx_messages_assistant_calls_by_session\n    ON messages(session_id)\n    WHERE role = 'assistant' AND tool_calls IS NOT NULL;\nCREATE INDEX IF NOT EXISTS idx_compression_locks_expires ON compression_locks(expires_at);\nCREATE INDEX IF NOT EXISTS idx_session_turn_leases_expires ON session_turn_leases(expires_at);\nCREATE INDEX IF NOT EXISTS idx_session_model_usage_session ON session_model_usage(session_id);\nCREATE INDEX IF NOT EXISTS idx_session_model_usage_model ON session_model_usage(model);\nCREATE INDEX IF NOT EXISTS idx_async_delegations_delivery\n    ON async_delegations(delivery_state, completed_at);\n",
+    "_COMPRESSION_LOCK_ROW_SQL": "SELECT holder, expires_at FROM compression_locks WHERE session_id = ?",
+    "_ENDED_ROW_SQL": "SELECT ended_at, end_reason FROM sessions WHERE id = ?"
+  },
+  "triggers": {
+    "_FTS_CJK_TRIGGERS": [
+      "messages_fts_cjk_insert",
+      "messages_fts_cjk_delete",
+      "messages_fts_cjk_update"
+    ],
+    "_FTS_TRIGGERS": [
+      "messages_fts_insert",
+      "messages_fts_delete",
+      "messages_fts_update",
+      "messages_fts_trigram_insert",
+      "messages_fts_trigram_delete",
+      "messages_fts_trigram_update"
+    ]
+  },
+  "trigram_excluded_sources": [
+    "cron",
+    "subagent"
+  ]
 }

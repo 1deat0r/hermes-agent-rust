@@ -1,7 +1,7 @@
 //! hermes-state — 1:1 Rust port of the hermes_state* module family
 //! (hermes_state.py, hermes_state_schema.py, hermes_state_common.py,
 //! hermes_state_portability.py, hermes_state_search.py).
-//! Port target: upstream @ b9aa928.
+//! Port target: upstream @ 5d59366 (per-module re-cert dates in PLAN §7).
 pub mod activity;
 pub mod cfg;
 pub mod common;
@@ -10,6 +10,7 @@ pub mod conversation;
 pub mod cooldown;
 pub mod crud;
 pub mod delete;
+pub mod fts_lock;
 pub mod handoff;
 pub mod ids;
 pub mod locks;

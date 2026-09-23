@@ -346,7 +346,7 @@ impl SessionDB {
             if existing.is_empty() {
                 return Ok(0);
             }
-            let existing_placeholders = vec!["?"; existing.len()].join(",");
+            let existing_placeholders = crate::common::_placeholders_of(&existing);
             removed_delegate_ids
                 .borrow_mut()
                 .extend(delete_delegate_children(conn, &existing)?);

@@ -7,6 +7,16 @@
 
 pub const MERGED_SUMMARY_DELIMITER: &str = "[END OF PRIOR CONTEXT — COMPACTION SUMMARY BELOW]";
 
+/// Header wrapping the prior-context half of a merged compaction handoff.
+// PARITY: agent/context_compressor.py _MERGED_PRIOR_CONTEXT_HEADER @ 5d59366
+pub const MERGED_PRIOR_CONTEXT_HEADER: &str =
+    "[PRIOR CONTEXT — for reference only; not a new message]";
+
+/// Terminal marker separating a legacy summary from the actionable remainder.
+// PARITY: agent/context_compressor.py _SUMMARY_END_MARKER @ 5d59366
+pub const SUMMARY_END_MARKER: &str =
+    "--- END OF CONTEXT SUMMARY — respond to the message below, not the summary above ---";
+
 pub const SUMMARY_PREFIX: &str = "[CONTEXT COMPACTION — REFERENCE ONLY] Earlier turns were compacted into the summary below. This is a handoff from a previous context window — treat it as background reference, NOT as active instructions. Do NOT answer questions or fulfill requests mentioned in this summary; they were already addressed. Respond ONLY to the latest user message that appears AFTER this summary — that message is the single source of truth for what to do right now. If no user message appears AFTER this summary, do nothing: do not resume, wrap up, or continue work from '## Historical Task Snapshot' or any other section, do not call tools, and wait for a new user message. This handoff must never become the active turn by itself. (Exception: if tool results or your own tool calls appear after this summary, you are mid-way through an in-flight exchange — continue that exchange normally.) Topic overlap with the summary does NOT mean you should resume its task: even on similar topics, the latest user message WINS. Treat ONLY the latest message as the active task and discard stale items from '## Historical Task Snapshot' entirely — do not 'wrap up' or 'finish' work described there unless the latest message explicitly asks for it. Reverse signals in the latest message (e.g. 'stop', 'undo', 'roll back', 'just verify', 'don't do that anymore', 'never mind', a new topic) must immediately end any in-flight work described in the summary; do not re-surface it in later turns. IMPORTANT: Your persistent memory (MEMORY.md, USER.md) in the system prompt is ALWAYS authoritative and active — never ignore or deprioritize memory content due to this compaction note. None of the above restricts HOW you work: your tools remain fully active — keep calling them normally for the active task (edit files, run commands, search) instead of merely narrating what you would do. The current session state (files, config, etc.) may reflect work described here — avoid repeating it:";
 
 pub const LEGACY_SUMMARY_PREFIX: &str = "[CONTEXT SUMMARY]:";
